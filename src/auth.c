@@ -20,6 +20,10 @@
 #include "common.h"
 #include "sasl.h"
 
+#ifdef _WIN32
+#define strcasecmp stricmp
+#endif
+
 #define FEATURES_TIMEOUT 2000 /* 2 seconds */
 #define BIND_TIMEOUT 2000 /* 2 seconds */
 #define LEGACY_TIMEOUT 2000 /* 2 seconds */

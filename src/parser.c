@@ -21,6 +21,10 @@
 #include "strophe.h"
 #include "common.h"
 
+#ifdef _WIN32
+#define snprintf _snprintf
+#endif
+
 static void _log_open_tag(xmpp_conn_t * const conn,
 			  const XML_Char **attr)
 {

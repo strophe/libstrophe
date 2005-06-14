@@ -80,7 +80,7 @@ expatenv.Append(CCFLAGS=" -DHAVE_UNISTD")
 expat = expatenv.Library('expat', path(join('expat', 'lib'), ExpatSources))
 Default(expat)
 
-stropheenv = env.Copy()  
+stropheenv = env.Copy()
 stropheenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
 
 strophe = stropheenv.Library('strophe', path("src", Sources))
@@ -89,13 +89,15 @@ Default(strophe)
 exenv = stropheenv.Copy()
 exenv.Append(LIBS=["strophe", "expat"])
 exenv.Append(LIBPATH=["."])
+if exenv["PLATFORM"] == "win32":
+  exenv.Append(LIBS=["ws2_32", "winmm"])
 for e in path("examples", Examples):
   example = exenv.Program(e)
   Default(example)
 
 # generate a MSVC project for convenience
 # TODO: this doesn't seem to be implemented?
-#env.MSVSProject(target = 'strophe' + env['MSVSPROJECTSUFFIX'], 
+#env.MSVSProject(target = 'strophe' + env['MSVSPROJECTSUFFIX'],
 #	srcs = path("src", Sources), incs = path("src", Headers),
 #	variant = 'Release', buildtarget = strophe)
 

@@ -20,6 +20,7 @@
 #include "hash.h"
 
 #ifdef _WIN32
+#define snprintf _snprintf
 #define inline __inline
 #endif
 
