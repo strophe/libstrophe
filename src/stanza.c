@@ -19,6 +19,10 @@
 #include "common.h"
 #include "hash.h"
 
+#ifdef _WIN32
+#define inline __inline
+#endif
+
 /* allocate an initialize a blank stanza */
 xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx)
 {
@@ -82,7 +86,7 @@ xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza)
 	iter = hash_iter_new(stanza->attributes);
 	if (!iter) { printf("DEBUG HERE\n"); goto copy_error; }
 	while ((key = hash_iter_next(iter))) {
-	    val = xmpp_strdup(stanza->ctx, 
+	    val = xmpp_strdup(stanza->ctx,
 			      (char *)hash_get(stanza->attributes, key));
 	    if (!val) goto copy_error;
 	    
@@ -153,8 +157,8 @@ static inline void _render_update(int *written, const int length,
     }
 }
 
-/* always returns number of bytes written or that would have been 
- * written if the buffer was large enough 
+/* always returns number of bytes written or that would have been
+ * written if the buffer was large enough
  * return values < 0 indicate some error occured,
  * and return values > buflen indicate buffer was not large enough
  */
@@ -303,7 +307,7 @@ char *xmpp_stanza_get_name(xmpp_stanza_t * const stanza)
 
 /* convinience function to copy attributes from the xml parser
  * callback into a stanza.  this replaces all previous attributes */
-void xmpp_stanza_set_attributes(xmpp_stanza_t *stanza,
+void xmpp_stanza_set_attributes(xmpp_stanza_t * const stanza,
 				const char * const * const attr)
 {
     int i;
@@ -311,7 +315,7 @@ void xmpp_stanza_set_attributes(xmpp_stanza_t *stanza,
 
     if (stanza->attributes != NULL)
 	hash_release(stanza->attributes);
-    
+
     stanza->attributes = hash_new(stanza->ctx, 8, xmpp_free);
     if (!stanza->attributes) return;
     

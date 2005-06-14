@@ -1,5 +1,5 @@
-/* util.h
-** XMPP client library -- various utility functions
+/* ostypes.h
+** XMPP client library -- type definitions for platforms without stdint.h
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **
@@ -12,17 +12,11 @@
 **  distribution.
 */
 
-#ifndef __LIBSTROPHE_UTIL_H__
-#define __LIBSTROPHE_UTIL_H__
+#ifndef __LIBSTROPHE_OSTYPES_H__
+#define __LIBSTROPHE_OSTYPES_H__
 
-#ifndef _WIN32
-#include <stdint.h>
-#else
-#include "ostypes.h"
+#ifdef _WIN32
+typedef unsigned __int64 uint64_t; 
 #endif
 
-/* timing functions */
-uint64_t time_stamp(void);
-uint64_t time_elapsed(uint64_t t1, uint64_t t2);
-
-#endif /* __LIBSTROPHE_UTIL_H__ */
+#endif /* __LIBSTROPHE_OSTYPES_H__ */

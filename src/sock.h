@@ -20,6 +20,7 @@
 #ifndef _WIN32
 typedef int sock_t;
 #else
+#include <winsock2.h>
 typedef SOCKET sock_t;
 #endif
 

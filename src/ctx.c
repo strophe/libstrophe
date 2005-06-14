@@ -21,6 +21,10 @@
 #include "common.h"
 #include "util.h"
 
+#ifdef _WIN32
+#define vsnprintf _vsnprintf
+#endif
+
 /** version **/
 
 /* TODO: update from the build system? */
@@ -75,10 +79,10 @@ void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size)
 
 void xmpp_free(const xmpp_ctx_t * const ctx, void *p)
 {
-    return ctx->mem->free(p);
+    ctx->mem->free(p);
 }
 
-void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p, 
+void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p,
 		   const size_t size)
 {
     return ctx->mem->realloc(p, size);
@@ -86,7 +90,7 @@ void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p,
 
 /* logger */
 
-void xmpp_log(const xmpp_ctx_t * const ctx, 
+void xmpp_log(const xmpp_ctx_t * const ctx,
 	      const xmpp_log_level_t level,
 	      const char * const area,
 	      const char * const fmt,

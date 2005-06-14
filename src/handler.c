@@ -15,7 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _WIN32
 #include <stdint.h>
+#else
+#include "ostypes.h"
+#endif
 
 #include "strophe.h"
 #include "common.h"
