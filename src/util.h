@@ -12,8 +12,8 @@
 **  distribution.
 */
 
-#ifndef __LIBXMPP_UTIL_H__
-#define __LIBXMPP_UTIL_H__
+#ifndef __LIBSTROPHE_UTIL_H__
+#define __LIBSTROPHE_UTIL_H__
 
 #ifndef _WIN32
 #include <stdint.h>
@@ -23,4 +23,4 @@
 uint64_t time_stamp(void);
 uint64_t time_elapsed(uint64_t t1, uint64_t t2);
 
-#endif /* __LIBXMPP_UTIL_H__ */
+#endif /* __LIBSTROPHE_UTIL_H__ */

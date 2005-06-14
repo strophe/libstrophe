@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 #include "sasl.h"
 #include "md5.h"

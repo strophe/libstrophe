@@ -17,7 +17,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 #include "util.h"
 

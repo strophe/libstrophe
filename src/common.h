@@ -12,8 +12,8 @@
 **  distribution.
 */
 
-#ifndef __LIBXMPP_XMPP_COMMON_H__
-#define __LIBXMPP_XMPP_COMMON_H__
+#ifndef __LIBSTROPHE_COMMON_H__
+#define __LIBSTROPHE_COMMON_H__
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -22,7 +22,7 @@
 #endif
 
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "sock.h"
 #include "hash.h"
 #include "util.h"
@@ -269,4 +269,4 @@ void disconnect_mem_error(xmpp_conn_t * const conn);
 /* auth functions */
 void auth_handle_open(xmpp_conn_t * const conn);
 
-#endif /* __LIBXMPP_XMPP_COMMON_H__ */
+#endif /* __LIBSTROPHE_COMMON_H__ */

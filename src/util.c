@@ -23,7 +23,7 @@
 #include <stdint.h>
 #endif
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 #include "util.h"
 

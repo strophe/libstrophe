@@ -12,10 +12,10 @@
 **  distribution.
 */
 
-#ifndef __LIBXMPP_SASL_H__
-#define __LIBXMPP_SASL_H__
+#ifndef __LIBSTROPHE_SASL_H__
+#define __LIBSTROPHE_SASL_H__
 
-#include "xmpp.h"
+#include "strophe.h"
 
 /** low-level sasl routines */
 

@@ -15,7 +15,7 @@
 
 #include <string.h>
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 
 /** join jid component parts to form a new jid string */

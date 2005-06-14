@@ -12,8 +12,8 @@
 **  distribution.
 */
 
-#ifndef __LIBXMPP_HASH_H__
-#define __LIBXMPP_HASH_H__
+#ifndef __LIBSTROPHE_HASH_H__
+#define __LIBSTROPHE_HASH_H__
 
 typedef struct _hash_t hash_t;
 

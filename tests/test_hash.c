@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 #include "hash.h"
 

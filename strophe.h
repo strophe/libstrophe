@@ -1,11 +1,11 @@
-/* xmpp.h
-** XMPP client library API
+/* strophe.h
+** libstrophe XMPP client library API
 **
 ** Copyright (C) 2005 OGG, LLC. All rights reserved.
 */
 
-#ifndef __LIBXMPP_XMPP_H__
-#define __LIBXMPP_XMPP_H__
+#ifndef __LIBSTROPHE_STROPHE_H__
+#define __LIBSTROPHE_STROPHE_H__
 
 #include <stdio.h>
 
@@ -258,4 +258,4 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
 
-#endif /* __LIBXMPP_XMPP_H__ */
+#endif /* __LIBSTROPHE_STROPHE_H__ */

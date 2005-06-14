@@ -17,7 +17,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 
 void handler_fire_stanza(xmpp_conn_t * const conn,

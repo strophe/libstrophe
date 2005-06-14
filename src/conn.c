@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 
 #define DEFAULT_SEND_QUEUE_MAX 64

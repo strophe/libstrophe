@@ -18,7 +18,7 @@
 
 #include <sys/select.h>
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 
 #define DEFAULT_TIMEOUT 1

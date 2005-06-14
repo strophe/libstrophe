@@ -18,7 +18,7 @@
 
 #include "expat.h"
 
-#include "xmpp.h"
+#include "strophe.h"
 #include "common.h"
 
 static void _log_open_tag(xmpp_conn_t * const conn,

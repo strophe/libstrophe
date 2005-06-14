@@ -48,7 +48,7 @@ Sources = Split("""
 """)
 
 Headers = Split("""
-  xmpp.h
+  strophe.h
   common.h
   sock.h
   hash.h

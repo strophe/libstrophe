@@ -12,8 +12,8 @@
 **  distribution.
 */
 
-#ifndef __LIBXMPP_SOCK_H__
-#define __LIBXMPP_SOCK_H__
+#ifndef __LIBSTROPHE_SOCK_H__
+#define __LIBSTROPHE_SOCK_H__
 
 #include <stdio.h>
 
@@ -39,4 +39,4 @@ int sock_is_recoverable(const int error);
 /* checks for an error after connect, return 0 if connect successful */
 int sock_connect_error(const sock_t sock);
 
-#endif /* __LIBXMPP_SOCK_H__ */
+#endif /* __LIBSTROPHE_SOCK_H__ */

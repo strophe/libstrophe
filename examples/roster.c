@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <xmpp.h>
+#include <strophe.h>
 
 int handle_reply(xmpp_conn_t * const conn,
 		 xmpp_stanza_t * const stanza,
