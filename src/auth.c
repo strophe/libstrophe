@@ -106,15 +106,11 @@ static int _handle_features(xmpp_conn_t * const conn,
 static char *_get_authid(xmpp_conn_t * const conn)
 {
     char *authid = NULL;
-    char *at;
 
     if (conn->type == XMPP_CLIENT) {
 	/* authid is the node portion of jid */
 	if (!conn->jid) return NULL;
-	authid = xmpp_strdup(conn->ctx, conn->jid);
-	if (!authid) return NULL;
-	at = strchr(authid, '@');
-	at[0] = 0;
+	authid = xmpp_jid_node(conn->ctx, conn->jid);
     }
 
     return authid;
