@@ -489,7 +489,8 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 				 xmpp_stanza_t * const stanza,
 				 void * const userdata)
 {
-    xmpp_stanza_t *bind, *iq;
+    xmpp_stanza_t *bind, *iq, *res, *text;
+    char *resource;
 
     /* remove missing features handler */
     xmpp_timed_handler_delete(conn, _handle_missing_features_sasl);
@@ -523,6 +524,33 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 	    disconnect_mem_error(conn);
 	    return 0;
 	}
+
+	/* request a specific resource if we have one */
+        resource = xmpp_jid_resource(conn->ctx, conn->jid);
+	if (strlen(resource) == 0) {
+	    /* j2 doesn't handle an empty resource */
+	    xmpp_free(conn->ctx, resource);
+	    resource = NULL;
+	}
+	if (resource) {
+	    /* request a specific resource */
+	    res = xmpp_stanza_new(conn->ctx);
+	    if (!res) {
+		disconnect_mem_error(conn);
+		return 0;
+	    }
+	    xmpp_stanza_set_name(res, "resource");
+	    text = xmpp_stanza_new(conn->ctx);
+	    if (!text) {
+		disconnect_mem_error(conn);
+		return 0;
+	    }
+	    xmpp_stanza_set_text(text, resource);
+	    xmpp_stanza_add_child(res, text);
+	    xmpp_stanza_add_child(bind, res);
+	    xmpp_free(conn->ctx, resource);
+	}
+
 	xmpp_stanza_add_child(iq, bind);
 	xmpp_stanza_release(bind);
 
