@@ -16,8 +16,8 @@
 
 # invoke with 'scons' to build the library
 
-LIBXMPP_VERSION_MAJOR=0
-LIBXMPP_VERSION_MINOR=0
+LIBSTROPHE_VERSION_MAJOR=0
+LIBSTROPHE_VERSION_MINOR=7
 
 from os.path import join
 
@@ -80,14 +80,14 @@ expatenv.Append(CCFLAGS=" -DHAVE_UNISTD")
 expat = expatenv.Library('expat', path(join('expat', 'lib'), ExpatSources))
 Default(expat)
 
-xmppenv = env.Copy()  
-xmppenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
+stropheenv = env.Copy()  
+stropheenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
 
-xmpp = xmppenv.Library('xmpp', path("src", Sources))
-Default(xmpp)
+strophe = stropheenv.Library('strophe', path("src", Sources))
+Default(strophe)
 
-exenv = xmppenv.Copy()
-exenv.Append(LIBS=["xmpp", "expat"])
+exenv = stropheenv.Copy()
+exenv.Append(LIBS=["strophe", "expat"])
 exenv.Append(LIBPATH=["."])
 for e in path("examples", Examples):
   example = exenv.Program(e)
@@ -95,9 +95,9 @@ for e in path("examples", Examples):
 
 # generate a MSVC project for convenience
 # TODO: this doesn't seem to be implemented?
-#env.MSVSProject(target = 'xmpp' + env['MSVSPROJECTSUFFIX'], 
+#env.MSVSProject(target = 'strophe' + env['MSVSPROJECTSUFFIX'], 
 #	srcs = path("src", Sources), incs = path("src", Headers),
-#	variant = 'Release', buildtarget = xmpp)
+#	variant = 'Release', buildtarget = strophe)
 
 ### unit and regression tests
 
@@ -125,7 +125,7 @@ def testcase_runner(target, source, env):
 
 testenv = env.Copy()
 testenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
-testenv.Append(LIBS=['xmpp', 'expat'])
+testenv.Append(LIBS=['strophe', 'expat'])
 testenv.Append(LIBPATH=['.'])
 
 import SCons.Node
