@@ -1,0 +1,4 @@
+* thread safety: specifically the reference counting is NOT THREAD SAFE
+  and we should fix this later to make reference count operations atomic.
+
+* SRV lookups

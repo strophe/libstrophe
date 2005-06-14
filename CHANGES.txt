@@ -1,0 +1,10 @@
+Version 0.7 (unreleased)
+
+ * first public release
+ * basic connection support
+ * event handling through callbacks
+ * stanza creation through local mini-DOM
+ * support SASL DIGEST-MD5 authentication
+ * support SASL PLAIN authentication
+ * support fallback to jabber:auth
+ * support resource binding
