@@ -531,7 +531,7 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 
 	/* request a specific resource if we have one */
         resource = xmpp_jid_resource(conn->ctx, conn->jid);
-	if (strlen(resource) == 0) {
+	if ((resource != NULL) && (strlen(resource) == 0)) {
 	    /* j2 doesn't handle an empty resource */
 	    xmpp_free(conn->ctx, resource);
 	    resource = NULL;
