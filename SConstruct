@@ -17,7 +17,7 @@
 # invoke with 'scons' to build the library
 
 LIBSTROPHE_VERSION_MAJOR=0
-LIBSTROPHE_VERSION_MINOR=8
+LIBSTROPHE_VERSION_MINOR=7
 
 from os.path import join
 
