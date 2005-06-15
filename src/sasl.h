@@ -1,5 +1,5 @@
 /* sasl.h
-** XMPP client library -- SASL authentication helpers
+** libstrophe XMPP client library -- SASL authentication helpers
 ** 
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

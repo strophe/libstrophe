@@ -1,5 +1,5 @@
 /* ctx.c
-** XMPP client library -- run-time context implementation
+** libstrophe XMPP client library -- run-time context implementation
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

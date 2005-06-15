@@ -1,5 +1,5 @@
 /* event.c
-** XMPP client library -- event loop and management
+** libstrophe XMPP client library -- event loop and management
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

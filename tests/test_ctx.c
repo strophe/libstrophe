@@ -1,5 +1,5 @@
 /* test_ctx.c
-** XMPP client library -- test routines for the library run-time context
+** libstrophe XMPP client library -- test routines for the library run-time context
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

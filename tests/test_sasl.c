@@ -1,5 +1,5 @@
 /* test_sasl.c
-** XMPP client library -- test routines for the SASL implementation
+** libstrophe XMPP client library -- test routines for the SASL implementation
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

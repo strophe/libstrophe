@@ -1,5 +1,5 @@
 /* parser.c
-** XMPP client library -- xml parser handlers and utility functions
+** libstrophe XMPP client library -- xml parser handlers and utility functions
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

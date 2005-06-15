@@ -1,5 +1,5 @@
 /* stanza.c
-** XMPP client library -- XMPP stanza object and utilities
+** libstrophe XMPP client library -- XMPP stanza object and utilities
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

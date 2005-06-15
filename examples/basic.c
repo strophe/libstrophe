@@ -1,5 +1,5 @@
 /* basic.c
-** XMPP client library -- basic usage example
+** libstrophe XMPP client library -- basic usage example
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

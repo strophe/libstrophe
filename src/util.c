@@ -1,5 +1,5 @@
 /* util.c
-** XMPP client library -- various utility functions
+** libstrophe XMPP client library -- various utility functions
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

@@ -1,5 +1,5 @@
 /* hash.h
-** XMPP client library -- hash table interface
+** libstrophe XMPP client library -- hash table interface
 ** 
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

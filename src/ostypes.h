@@ -1,5 +1,5 @@
 /* ostypes.h
-** XMPP client library -- type definitions for platforms without stdint.h
+** libstrophe XMPP client library -- type definitions for platforms without stdint.h
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

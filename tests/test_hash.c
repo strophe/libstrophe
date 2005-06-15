@@ -1,5 +1,5 @@
 /* test_hash.c
-** XMPP client library -- self-test for the hash-table implementation
+** libstrophe XMPP client library -- self-test for the hash-table implementation
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

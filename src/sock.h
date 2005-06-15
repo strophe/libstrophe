@@ -1,5 +1,5 @@
 /* sock.h
-** XMPP client library -- socket abstraction header
+** libstrophe XMPP client library -- socket abstraction header
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

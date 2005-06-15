@@ -1,5 +1,5 @@
 /* auth.c
-** XMPP client library -- auth functions and handlers
+** libstrophe XMPP client library -- auth functions and handlers
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

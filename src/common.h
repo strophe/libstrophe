@@ -1,5 +1,5 @@
 /* common.h
-** XMPP client library -- internal common structures
+** libstrophe XMPP client library -- internal common structures
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

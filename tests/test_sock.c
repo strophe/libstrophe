@@ -1,5 +1,5 @@
 /* test_sock.c
-** XMPP client library -- test routines for the socket abstraction
+** libstrophe XMPP client library -- test routines for the socket abstraction
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

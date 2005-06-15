@@ -1,5 +1,5 @@
 /* test_base64.c
-** XMPP client library -- test routines for the jid utils
+** libstrophe XMPP client library -- test routines for the jid utils
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

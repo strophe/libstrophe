@@ -1,5 +1,5 @@
 /* handler.c
-** XMPP client library -- event handler management
+** libstrophe XMPP client library -- event handler management
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **

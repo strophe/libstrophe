@@ -1,5 +1,5 @@
 /* roster.c
-** XMPP client library -- handler example
+** libstrophe XMPP client library -- handler example
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **
