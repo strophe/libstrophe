@@ -14,7 +14,10 @@
 
 #include <stdio.h>
 #include <string.h>
+
+#ifndef _WIN32
 #include <sys/select.h>
+#endif
 
 #include "sock.h"
 

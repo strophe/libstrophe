@@ -81,6 +81,7 @@ expat = expatenv.Library('expat', path(join('expat', 'lib'), ExpatSources))
 Default(expat)
 
 stropheenv = env.Copy()
+stropheenv.Append(CCFLAGS=" -DXML_STATIC")
 stropheenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
 
 strophe = stropheenv.Library('strophe', path("src", Sources))
@@ -128,6 +129,8 @@ def testcase_runner(target, source, env):
 testenv = env.Copy()
 testenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
 testenv.Append(LIBS=['strophe', 'expat'])
+if testenv["PLATFORM"] == "win32":
+  testenv.Append(LIBS=["winmm", "ws2_32"])
 testenv.Append(LIBPATH=['.'])
 
 import SCons.Node
