@@ -1,3 +1,5 @@
+Version 0.8 (unreleased)
+
 Version 0.7 (20050615)
 
  * first public release
