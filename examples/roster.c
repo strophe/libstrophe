@@ -103,6 +103,9 @@ int main(int argc, char **argv)
 	return 1;
     }
 
+    /* initialize lib */
+    xmpp_initialize();
+
     /* create a context */
     ctx = xmpp_ctx_new(NULL, NULL);
 
@@ -122,6 +125,9 @@ int main(int argc, char **argv)
     /* release our connection and context */
     xmpp_conn_release(conn);
     xmpp_ctx_free(ctx);
+
+    /* shutdown lib */
+    xmpp_shutdown();
 
     return 0;
 }

@@ -22,6 +22,11 @@
 #define XMPP_NS_DISCO_ITEMS "http://jabber.org/protocol/disco#items"
 #define XMPP_NS_ROSTER "jabber:iq:roster"
 
+/** initialization and shutdown **/
+
+void xmpp_initialize(void);
+void xmpp_shutdown(void);
+
 /** version **/
 
 int xmpp_version_check(int major, int minor);

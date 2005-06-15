@@ -25,6 +25,18 @@
 #define vsnprintf _vsnprintf
 #endif
 
+/* initialization and shutdown */
+
+void xmpp_initialize(void)
+{
+    sock_initialize();
+}
+
+void xmpp_shutdown(void)
+{
+    sock_shutdown();
+}
+
 /** version **/
 
 /* TODO: update from the build system? */
