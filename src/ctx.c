@@ -73,12 +73,7 @@ void xmpp_default_logger(void * const userdata,
     fprintf(stderr, "%s %s %s\n", area, xmpp_log_level_name[level], msg);
 }
 
-#ifdef _WIN32
 static xmpp_log_t xmpp_default_log = { NULL, NULL };
-#else
-static xmpp_log_t xmpp_default_log = { xmpp_default_logger, NULL };
-#endif
-
 
 /** convenience functions for accessing the context **/
 
@@ -114,7 +109,8 @@ void xmpp_log(const xmpp_ctx_t * const ctx,
 
     vsnprintf(buf, 1023, fmt, ap);
 
-    ctx->log->handler(ctx->log->userdata, level, area, buf);
+    if (ctx->log->handler)
+        ctx->log->handler(ctx->log->userdata, level, area, buf);
 }
 
 void xmpp_error(const xmpp_ctx_t * const ctx,
