@@ -45,6 +45,7 @@ Sources = Split("""
   sha1.c
   md5.c
   util.c
+  thread.c
 """)
 
 Headers = Split("""
@@ -55,6 +56,7 @@ Headers = Split("""
   sha1.h
   md5.h
   util.h
+  thread.h
 """)
 
 Examples = Split("""
