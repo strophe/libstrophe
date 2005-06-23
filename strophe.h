@@ -7,6 +7,10 @@
 #ifndef __LIBSTROPHE_STROPHE_H__
 #define __LIBSTROPHE_STROPHE_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 
 /* namespace defines */
@@ -262,5 +266,9 @@ void xmpp_presence_new();
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __LIBSTROPHE_STROPHE_H__ */
