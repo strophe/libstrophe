@@ -4,11 +4,6 @@
 #include "strophe.h"
 
 namespace XMPP {
-
-    typedef void (*alloc_handler)(const size_t size);
-    typedef void (*free_handler)(void *p);
-    typedef void (*realloc_handler)(void *p const size_t size);
-
     class Context {
     private:
 	xmpp_ctx_t *ctx;
@@ -17,10 +12,15 @@ namespace XMPP {
 	Context();
 	virtual ~Context();
 
-	void setAlloc(alloc_handler handler);
-	void setRealloc(realloc_handler handler);
-	void setFree(free_handler handler);
-	void setLogger(xmpp_log_handler handler, void * const userdata);
+	virtual void *alloc(const size_t size) = 0;
+	virtual void *realloc(void *p, const size_t size) = 0;
+	virtual void free(void *p) = 0;
+	virtual void log(xmpp_log_handler handler, void * const userdata) = 0;
+
+    private:
+	static void *callAlloc(const size_t size, void *userdata);
+	static void *callRealloc(void *p, const size_t size, void *userdata);
+	static void *callFree(void *p, void *userdata);
     }
 
     class Connection {
@@ -28,9 +28,10 @@ namespace XMPP {
 	xmpp_conn_t *conn;
 
     public:
-	Connection();
+	Connection(Context *ctx);
 	virtual ~Connection();
 	Connection *clone();
+	void operator delete(void *p);
 
 	const char *getJID();
 	void setJID(const char * const jid);
@@ -63,8 +64,9 @@ namespace XMPP {
 	xmpp_stanza_t *stanza;
 
     public:
-	Stanza();
+	Stanza(Context *ctx);
 	virtual ~Stanza();
+	void operator delete(void *p);
 	Stanza *clone();
 	Stanza *copy();
 	
