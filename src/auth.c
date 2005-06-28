@@ -63,6 +63,9 @@ static int _handle_missing_features(xmpp_conn_t * const conn,
 {
     xmpp_debug(conn->ctx, "xmpp", "didn't get stream features");
 
+    /* legacy auth will be attempted */
+    _auth(conn);
+
     return 0;
 }
 
@@ -448,9 +451,17 @@ static void _auth(xmpp_conn_t * const conn)
 	    return;
 	}
 	str = xmpp_jid_resource(conn->ctx, conn->jid);
-	if (str)
+	if (str) {
 	    xmpp_stanza_set_text(authdata, str);
-	xmpp_free(conn->ctx, str);
+	    xmpp_free(conn->ctx, str);
+	} else {
+	    xmpp_stanza_release(authdata);
+	    xmpp_stanza_release(iq);
+	    xmpp_error(conn->ctx, "auth", 
+		       "Cannot authenticate without resource");
+	    xmpp_disconnect(conn);
+	    return;
+	}
 	xmpp_stanza_add_child(child, authdata);
 	xmpp_stanza_release(authdata);
 
