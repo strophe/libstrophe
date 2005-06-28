@@ -166,9 +166,9 @@ void xmpp_conn_release(xmpp_conn_t * const conn)
 	    thli = hlitem;
 	    hlitem = hlitem->next;
 
-	    if (hlitem->ns) xmpp_free(ctx, hlitem->ns);
-	    if (hlitem->name) xmpp_free(ctx, hlitem->name);
-	    if (hlitem->type) xmpp_free(ctx, hlitem->type);
+	    if (thli->ns) xmpp_free(ctx, thli->ns);
+	    if (thli->name) xmpp_free(ctx, thli->name);
+	    if (thli->type) xmpp_free(ctx, thli->type);
 	    xmpp_free(ctx, thli);
 	}
 
