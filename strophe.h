@@ -63,6 +63,8 @@ typedef enum {
   XMPP_LEVEL_ERROR
 } xmpp_log_level_t;
 
+static const char * const xmpp_log_level_name[4] = {"DEBUG", "INFO", "WARN", "ERROR"};
+
 typedef enum {
     XMPP_UNKNOWN,
     XMPP_CLIENT,
