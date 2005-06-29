@@ -61,7 +61,6 @@ Headers = Split("""
 
 Examples = Split("""
   basic.c
-  basic_logging.c
   active.c
   roster.c
 """)

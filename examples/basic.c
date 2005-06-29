@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     /* take a jid and password on the command line,
        with optional server to connect to */
     if ((argc < 3) || (argc > 4)) {
-	fprintf(stderr, "Usage: basic <jid> <pass> <server>\n\n");
+	fprintf(stderr, "Usage: basic <jid> <pass> [<server>]\n\n");
 	return 1;
     }
     
@@ -68,19 +68,21 @@ int main(int argc, char **argv)
     conn = xmpp_conn_new(ctx);
 
     /* setup authentication information */
-    xmpp_conn_set_jid(conn, argv[1]);
-    xmpp_conn_set_pass(conn, argv[2]);
+    xmpp_conn_set_jid(conn, jid);
+    xmpp_conn_set_pass(conn, pass);
 
     /* initiate connection */
-    xmpp_connect_client(conn, argv[3], conn_handler, ctx);
+    xmpp_connect_client(conn, server, conn_handler, ctx);
 
-    /* start the event loop */
+    /* enter the event loop - 
+       our connect handler will trigger an exit */
     xmpp_run(ctx);
 
     /* release our connection and context */
     xmpp_conn_release(conn);
     xmpp_ctx_free(ctx);
 
+    /* final shutdown of the library */
     xmpp_shutdown();
 
     return 0;
