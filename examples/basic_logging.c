@@ -21,7 +21,9 @@ void log_handler(void * const userdata,
 		 const char * const area,
 		 const char * const msg)
 {
-    fprintf(stderr, "%s %s %s\n", area, xmpp_log_level_name[level], msg);
+    static const char * const log_level_name[4] = {"DEBUG", "INFO", "WARN", "ERROR"};
+    
+    fprintf(stderr, "%s %s %s\n", area, log_level_name[level], msg);
 }
 
 void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status, 

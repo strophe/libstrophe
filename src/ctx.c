@@ -63,6 +63,8 @@ static xmpp_mem_t xmpp_default_mem = {
     realloc
 };
 
+static const char * const xmpp_log_level_name[4] = {"DEBUG", "INFO", "WARN", "ERROR"};
+
 void xmpp_default_logger(void * const userdata,
 			 const xmpp_log_level_t level,
 			 const char * const area,
