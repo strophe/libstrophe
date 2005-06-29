@@ -91,7 +91,8 @@ typedef struct _xmpp_stanza_t xmpp_stanza_t;
 /* connect callback */
 typedef enum {
     XMPP_CONN_CONNECT,
-    XMPP_CONN_DISCONNECT
+    XMPP_CONN_DISCONNECT,
+    XMPP_CONN_FAIL
 } xmpp_conn_event_t;
 
 typedef enum {

@@ -162,6 +162,9 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		    xmpp_debug(ctx, "xmpp", "connection failed");
 		    conn->state = XMPP_STATE_DISCONNECTED;
 		    sock_close(conn->sock);
+                    /* notify the connection handler */
+                    conn->conn_handler(conn, XMPP_CONN_FAIL, conn->error,
+                                       conn->stream_error, conn->userdata);
 		    break;
 		}
 
