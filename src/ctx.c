@@ -63,14 +63,36 @@ static xmpp_mem_t xmpp_default_mem = {
     realloc
 };
 
-static const char * const xmpp_log_level_name[4] = {"DEBUG", "INFO", "WARN", "ERROR"};
+static const char * const _xmpp_log_level_name[4] = {"DEBUG", "INFO", "WARN", "ERROR"};
+static const xmpp_log_level_t _xmpp_default_logger_levels[] = {XMPP_LEVEL_DEBUG,
+							       XMPP_LEVEL_INFO,
+							       XMPP_LEVEL_WARN,
+							       XMPP_LEVEL_ERROR};
 
 void xmpp_default_logger(void * const userdata,
 			 const xmpp_log_level_t level,
 			 const char * const area,
 			 const char * const msg)
 {
-    fprintf(stderr, "%s %s %s\n", area, xmpp_log_level_name[level], msg);
+    xmpp_log_level_t filter_level = * (xmpp_log_level_t*)userdata;
+    if (level >= filter_level)
+	fprintf(stderr, "%s %s %s\n", area, _xmpp_log_level_name[level], msg);
+}
+
+static const xmpp_log_t _xmpp_default_loggers[] = {
+	{&xmpp_default_logger, (void*)&_xmpp_default_logger_levels[XMPP_LEVEL_DEBUG]},
+	{&xmpp_default_logger, (void*)&_xmpp_default_logger_levels[XMPP_LEVEL_INFO]},
+	{&xmpp_default_logger, (void*)&_xmpp_default_logger_levels[XMPP_LEVEL_WARN]},
+	{&xmpp_default_logger, (void*)&_xmpp_default_logger_levels[XMPP_LEVEL_ERROR]}
+};
+
+xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level)
+{
+    /* clamp to the known range */
+    if (level > XMPP_LEVEL_ERROR) level = XMPP_LEVEL_ERROR;
+    if (level < XMPP_LEVEL_DEBUG) level = XMPP_LEVEL_DEBUG;
+
+    return (xmpp_log_t*)&_xmpp_default_loggers[level];
 }
 
 static xmpp_log_t xmpp_default_log = { NULL, NULL };

@@ -16,16 +16,8 @@
 
 #include <strophe.h>
 
-void log_handler(void * const userdata, 
-		 const xmpp_log_level_t level,
-		 const char * const area,
-		 const char * const msg)
-{
-    static const char * const log_level_name[4] = {"DEBUG", "INFO", "WARN", "ERROR"};
-    
-    fprintf(stderr, "%s %s %s\n", area, log_level_name[level], msg);
-}
 
+/* define a handler for connection events */
 void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status, 
 		  const int error, xmpp_stream_error_t * const stream_error,
 		  void * const userdata)
@@ -46,10 +38,12 @@ int main(int argc, char **argv)
 {
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
-    xmpp_log_t log;
+    xmpp_log_t *log;
     char *jid, *pass;
     char *server;
 
+    /* take a jid and password on the command line,
+       with optional server to connect to */
     if ((argc < 3) || (argc > 4)) {
 	fprintf(stderr, "Usage: basic <jid> <pass> <server>\n\n");
 	return 1;
@@ -57,16 +51,18 @@ int main(int argc, char **argv)
     
     jid = argv[1];
     pass = argv[2];
+    server = NULL;
+    /* Normally we pass NULL for the connection domain, in which case
+       the library derives the target host from the jid, but we can
+       override this for testing. */
     if (argc >= 4) server = argv[3];
-    else server = NULL;
     
     /* init library */
     xmpp_initialize();
 
     /* create a context */
-    log.handler = log_handler;
-    log.userdata = NULL;
-    ctx = xmpp_ctx_new(NULL, &log);
+    log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG); /* pass NULL instead to silence output */
+    ctx = xmpp_ctx_new(NULL, log);
 
     /* create a connection */
     conn = xmpp_conn_new(ctx);

@@ -80,6 +80,9 @@ struct _xmpp_log_t {
   /* mutex_t lock; */
 };
 
+/* return a default logger filtering at a given level */
+xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level);
+
 /** connection **/
 
 /* opaque connection object */
