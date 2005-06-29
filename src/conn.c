@@ -228,10 +228,15 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 {
     conn->type = XMPP_CLIENT;
 
-    conn->domain = xmpp_strdup(conn->ctx, domain);
+    if (domain) {
+        conn->domain = xmpp_strdup(conn->ctx, domain);
+    } else {
+        conn->domain = xmpp_jid_domain(conn->ctx, conn->jid);
+    }
     if (!conn->domain) return -1;
 
-    conn->sock = sock_connect(domain, 5222);
+    /* TODO: look up SRV record for actual host and port */
+    conn->sock = sock_connect(conn->domain, 5222);
     if (conn->sock < 0) return -1;
 
     /* setup handler */
@@ -244,7 +249,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
      * from within the event loop */
 
     conn->state = XMPP_STATE_CONNECTING;
-    xmpp_debug(conn->ctx, "xmpp", "attempting to connect to %s", domain);
+    xmpp_debug(conn->ctx, "xmpp", "attempting to connect to %s", conn->domain);
 
     return 0;
 }

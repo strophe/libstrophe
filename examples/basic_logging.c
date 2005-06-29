@@ -45,12 +45,19 @@ int main(int argc, char **argv)
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t log;
+    char *jid, *pass;
+    char *server;
 
-    if (argc != 4) {
+    if ((argc < 3) || (argc > 4)) {
 	fprintf(stderr, "Usage: basic <jid> <pass> <server>\n\n");
 	return 1;
     }
-
+    
+    jid = argv[1];
+    pass = argv[2];
+    if (argc >= 4) server = argv[3];
+    else server = NULL;
+    
     /* init library */
     xmpp_initialize();
 
