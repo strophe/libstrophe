@@ -1,7 +1,7 @@
 /* thread.c
-** XMPP client library -- thread abstraction
+** libstrophe XMPP client library -- thread abstraction
 **
-** Copyright (C) 2005 Online Game Group. All rights reserved.
+** Copyright (C) 2005 OGG, LLC. All rights reserved.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.

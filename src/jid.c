@@ -1,6 +1,5 @@
 /* jid.c
-** libstrophe XMPP client library
-** helper functions for parsing jid's
+** libstrophe XMPP client library -- helper functions for parsing JIDs
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
 **
