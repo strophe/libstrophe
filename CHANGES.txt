@@ -1,3 +1,6 @@
+Version 0.8 (unreleased)
+
+
 Version 0.7.1 (20050702)
 
  * fix a bug in the fallback to jabber auth
