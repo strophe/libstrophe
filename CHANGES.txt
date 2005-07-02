@@ -1,4 +1,10 @@
-Version 0.8 (unreleased)
+Version 0.7.1 (20050702)
+
+ * fix a bug in the fallback to jabber auth
+   that prevented login to jabberd 1.4 servers
+ * Simplify access to the default loggers, and
+   merge the basic_logging and basic examples
+ * draft C++ api
 
 Version 0.7 (20050615)
 
