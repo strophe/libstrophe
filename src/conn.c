@@ -19,6 +19,10 @@
 #include "strophe.h"
 #include "common.h"
 
+#ifdef _WIN32
+#define vsnprintf _vsnprintf
+#endif
+
 #define DEFAULT_SEND_QUEUE_MAX 64
 #define DISCONNECT_TIMEOUT 2000 /* 2 seconds */
 
