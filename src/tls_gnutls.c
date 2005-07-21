@@ -72,7 +72,7 @@ void tls_free(tls_t *tls)
     xmpp_free(tls->ctx, tls);
 }
 
-int tls_setcredentials(tls_t *tls, const char *cafilename)
+int tls_set_credentials(tls_t *tls, const char *cafilename)
 {
     int err;
 
