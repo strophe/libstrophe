@@ -40,7 +40,6 @@ Sources = Split("""
   stanza.c
   jid.c
   sock.c
-  tls_gnutls.c
   hash.c
   sasl.c
   sha1.c
@@ -53,7 +52,6 @@ Headers = Split("""
   strophe.h
   common.h
   sock.h
-  tls.h
   hash.h
   sha1.h
   md5.h
@@ -133,10 +131,10 @@ def testcase_runner(target, source, env):
 
 testenv = env.Copy()
 testenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
-testenv.Append(LIBS=['strophe', 'expat', 'gnutls'])
+testenv.Append(LIBS=['strophe', 'expat'])
 if testenv["PLATFORM"] == "win32":
   testenv.Append(LIBS=["winmm", "ws2_32"])
-testenv.Append(LIBPATH=['.', '/usr/local/lib'])
+testenv.Append(LIBPATH=['.'])
 
 import SCons.Node
 test_builder = Builder(action = testcase_runner,
