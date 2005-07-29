@@ -230,8 +230,8 @@ struct _xmpp_stanza_t {
     hash_t *attributes;
 };
 
-void xmpp_stanza_set_attributes(xmpp_stanza_t * const  stanza,
-				const char * const * const attr);
+int xmpp_stanza_set_attributes(xmpp_stanza_t * const  stanza,
+			       const char * const * const attr);
 
 /* parser functions */
 void parser_handle_start(void *userdata,

@@ -26,6 +26,12 @@ extern "C" {
 #define XMPP_NS_DISCO_ITEMS "http://jabber.org/protocol/disco#items"
 #define XMPP_NS_ROSTER "jabber:iq:roster"
 
+/* error defines */
+#define XMPP_EOK 0
+#define XMPP_EMEM -1
+#define XMPP_EINVOP -2
+#define XMPP_EINT -3
+
 /** initialization and shutdown **/
 
 void xmpp_initialize(void);
@@ -228,31 +234,31 @@ char * xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_text(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_name(xmpp_stanza_t * const stanza);
 
-void xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child);
-void xmpp_stanza_set_ns(xmpp_stanza_t * const stanza, const char * const ns);
+int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child);
+int xmpp_stanza_set_ns(xmpp_stanza_t * const stanza, const char * const ns);
 /* set_attribute adds/replaces attributes */
-void xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza, 
-			       const char * const key,
-			       const char * const value);
-void xmpp_stanza_set_name(xmpp_stanza_t *stanza,
-			  const char * const name);
-void xmpp_stanza_set_text(xmpp_stanza_t *stanza,
-			  const char * const text);
-void xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
-				    const char * const text, 
-				    const size_t size);
+int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza, 
+			      const char * const key,
+			      const char * const value);
+int xmpp_stanza_set_name(xmpp_stanza_t *stanza,
+			 const char * const name);
+int xmpp_stanza_set_text(xmpp_stanza_t *stanza,
+			 const char * const text);
+int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
+				   const char * const text, 
+				   const size_t size);
 
 /* common stanza helpers */
 char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
-void xmpp_stanza_get_to();
-void xmpp_stanza_get_from();
-void xmpp_stanza_set_id(xmpp_stanza_t * const stanza, 
-			const char * const id);
-void xmpp_stanza_set_type(xmpp_stanza_t * const stanza, 
-			  const char * const type);
-void xmpp_stanza_set_to();
-void xmpp_stanza_set_from();
+int xmpp_stanza_get_to();
+int xmpp_stanza_get_from();
+int xmpp_stanza_set_id(xmpp_stanza_t * const stanza, 
+		       const char * const id);
+int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, 
+			 const char * const type);
+int xmpp_stanza_set_to();
+int xmpp_stanza_set_from();
 
 /** allocate and initialize a stanza in reply to another */
 xmpp_stanza_t *xmpp_stanza_reply(const xmpp_stanza_t *stanza);
