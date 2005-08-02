@@ -40,11 +40,12 @@ namespace XMPP {
 	xmpp_stanza_t *m_stanza;
 
 	void *operator new(size_t size, Context *ctx);
-	void operator delete(void *p, Context *ctx);
+	void operator delete(void *p);
 	Stanza(Context *ctx);
 	virtual ~Stanza();
 
     public:
+	static Stanza *create(Context *ctx);
 	void release();
 	Stanza *clone();
 	Stanza *copy();

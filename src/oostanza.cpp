@@ -5,12 +5,30 @@ using namespace XMPP;
 
 void *Stanza::operator new(size_t size, Context *ctx)
 {
-    return ctx->alloc(size);
+    void *p;
+
+    /* we must allocate extra room for the Context object so that the
+    destructor can access it to free the object.  C++ does not allow
+    us to access normal members in the destructor, so we have to hide
+    it.  This must be prepended as well, since C++ will add stuff to
+    the end in subclasses. */
+
+    p = ctx->alloc(size + sizeof(Context *));
+    if (!p) return p;
+
+    *reinterpret_cast<Context **>(p) = ctx;
+    p = reinterpret_cast<void *>(reinterpret_cast<char *>(p) + 
+				 sizeof(Context *));
+
+    return p;
 }
 
-void Stanza::operator delete(void *p, Context *ctx)
+void Stanza::operator delete(void *p)
 {
-    ctx->free(p);
+    Context *ctx;
+
+    ctx = *reinterpret_cast<Context **>(reinterpret_cast<char *>(p) - 4);
+    ctx->free(reinterpret_cast<char *>(p) - 4);
 }
 
 Stanza::Stanza(Context *ctx)
@@ -22,13 +40,17 @@ Stanza::Stanza(Context *ctx)
 
 Stanza::~Stanza()
 {
-    ::xmpp_stanza_release(m_stanza);
+}
+
+Stanza *Stanza::create(Context *ctx)
+{
+    return new (ctx) Stanza(ctx);
 }
 
 void Stanza::release()
 {
     if (::xmpp_stanza_release(m_stanza))
-	delete(m_ctx) this;
+	delete this;
 }
 
 Stanza *Stanza::clone()
