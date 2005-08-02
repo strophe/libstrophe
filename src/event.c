@@ -139,7 +139,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 
     /* select errored */
     if (ret < 0) {
-	xmpp_error(ctx, "xmpp", "event watcher internal error");
+	xmpp_error(ctx, "xmpp", "event watcher internal error %d", 
+                   sock_error());
 	return;
     }
     

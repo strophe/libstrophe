@@ -6,29 +6,83 @@
 namespace XMPP {
     class Context {
     private:
-	xmpp_ctx_t *ctx;
+	xmpp_mem_t m_mem;
+	xmpp_log_t m_log;
+	xmpp_ctx_t *m_ctx;
 
     public:
 	Context();
 	virtual ~Context();
 
-	virtual void *alloc(const size_t size) = 0;
-	virtual void *realloc(void *p, const size_t size) = 0;
-	virtual void free(void *p) = 0;
-	virtual void log(xmpp_log_handler handler, void * const userdata) = 0;
+	virtual void *alloc(const size_t size);
+	virtual void *realloc(void *p, const size_t size);
+	virtual void free(void *p);
+	virtual void log(const xmpp_log_level_t level,
+			 const char * const area,
+			 const char * const msg);
+
+	xmpp_ctx_t *getContext();
 
     private:
-	static void *callAlloc(const size_t size, void *userdata);
-	static void *callRealloc(void *p, const size_t size, void *userdata);
-	static void *callFree(void *p, void *userdata);
-    }
+	static void *callAlloc(const size_t size, void * const userdata);
+	static void *callRealloc(void *p, const size_t size, 
+				 void * const userdata);
+	static void callFree(void *p, void * const userdata);
+	static void callLog(void * const userdata, 
+			    const xmpp_log_level_t level,
+			    const char * const area,
+			    const char * const msg);
+    };
+
+    class Stanza {
+    private:
+	Context *m_ctx;
+	xmpp_stanza_t *m_stanza;
+
+	void *operator new(size_t size, Context *ctx);
+	void operator delete(void *p, Context *ctx);
+	Stanza(Context *ctx);
+	virtual ~Stanza();
+
+    public:
+	void release();
+	Stanza *clone();
+	Stanza *copy();
+	
+	int toText(const char ** const buf, size_t * const buflen);
+	Stanza *getChildren();
+	Stanza *getChildByName(const char * const name);
+	Stanza *getNext();
+        char *getAttribute(const char * const name);
+	char *getNamespace();
+	char *getText();
+	char *getName();
+	void addChild(Stanza *child);
+	void setNamespace(const char * const ns);
+	void setAttribute(const char * const key, const char * const value);
+	void setName(const char * const name);
+	void setText(const char * const text);
+	void setText(const char * const text, const size_t size);
+	char *getType();
+	char *getId();
+	char *getTo();
+	char *getFrom();
+	void setType(const char * const type);
+	void setId(const char * const id);
+	void setTo(const char * const to);
+	void setFrom(const char * const from);
+    };
 
     class Connection {
     private:
+	Context *m_ctx;
 	xmpp_conn_t *conn;
 
-    public:
+	void *operator new(size_t size, Context *ctx);
 	Connection(Context *ctx);
+
+    public:
+	static Connection *create(Context *ctx);
 	virtual ~Connection();
 	Connection *clone();
 	void operator delete(void *p);
@@ -57,42 +111,7 @@ namespace XMPP {
 			  const char * const id,
 			  void * const userdata);
 	void deleteIdHandler(xmpp_handler handler);
-    }
-
-    class Stanza {
-    private:
-	xmpp_stanza_t *stanza;
-
-    public:
-	Stanza(Context *ctx);
-	virtual ~Stanza();
-	void operator delete(void *p);
-	Stanza *clone();
-	Stanza *copy();
-	
-	int toText(const char ** const buf, size_t * const buflen);
-	Stanza *getChildren();
-	Stanza *getChildByName(const char * const name);
-	Stanza *getNext();
-        char *getAttribute(const char * const name);
-	char *getNamespace();
-	char *getText();
-	char *getName();
-	void addChild(Stanza *child);
-	void setNamespace(const char * const ns);
-	void setAttribute(const char * const key, const char * const value);
-	void setName(const char * const name);
-	void setText(const char * const text);
-	void setText(const char * const text, const size_t size);
-	char *getType();
-	char *getId();
-	char *getTo();
-	char *getFrom();
-	void setType(const char * const type);
-	void setId(const char * const id);
-	void setTo(const char * const to);
-	void setFrom(const char * const from);
-    }
+    };
 }
 
 #endif /* __LIBSTROPHE_STROPHEPP_H__ */

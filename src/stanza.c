@@ -120,8 +120,9 @@ copy_error:
 }
 
 /* free a stanza object and it's contents */
-void xmpp_stanza_release(xmpp_stanza_t * const stanza)
+int xmpp_stanza_release(xmpp_stanza_t * const stanza)
 {
+    int released = 0;
     xmpp_stanza_t *child, *tchild;
 
     /* release all children */
@@ -139,7 +140,10 @@ void xmpp_stanza_release(xmpp_stanza_t * const stanza)
 	if (stanza->attributes) hash_release(stanza->attributes);
 	if (stanza->data) xmpp_free(stanza->ctx, stanza->data);
 	xmpp_free(stanza->ctx, stanza);
+	released = 1;
     }
+
+    return released;
 }
 
 /* small helper function */

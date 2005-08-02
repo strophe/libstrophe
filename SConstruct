@@ -46,6 +46,8 @@ Sources = Split("""
   md5.c
   util.c
   thread.c
+  oocontext.cpp
+  oostanza.cpp
 """)
 
 Headers = Split("""

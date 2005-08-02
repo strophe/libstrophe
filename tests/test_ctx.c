@@ -24,19 +24,19 @@ static int mem_alloc_called = 0;
 static int mem_free_called = 0;
 static int mem_realloc_called = 0;
 
-void *my_alloc(const size_t size)
+void *my_alloc(const size_t size, void * const userdata)
 {
     mem_alloc_called++;
     return malloc(size);
 }
 
-void my_free(void *p)
+void my_free(void *p, void * const userdata)
 {
     mem_free_called++;
     return free(p);
 }
 
-void *my_realloc(void *p, const size_t size)
+void *my_realloc(void *p, const size_t size, void * const userdata)
 {
     mem_realloc_called++;
     return realloc(p, size);

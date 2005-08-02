@@ -57,16 +57,17 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem,
 void xmpp_ctx_free(xmpp_ctx_t * const ctx);
 
 struct _xmpp_mem_t {
-  void *(*alloc)(const size_t size);
-  void (*free)(void *p);
-  void *(*realloc)(void *p, const size_t size);
+    void *(*alloc)(const size_t size, void * const userdata);
+    void (*free)(void *p, void * const userdata);
+    void *(*realloc)(void *p, const size_t size, void * const userdata);
+    void *userdata;
 };
 
 typedef enum {
-  XMPP_LEVEL_DEBUG,
-  XMPP_LEVEL_INFO,
-  XMPP_LEVEL_WARN,
-  XMPP_LEVEL_ERROR
+    XMPP_LEVEL_DEBUG,
+    XMPP_LEVEL_INFO,
+    XMPP_LEVEL_WARN,
+    XMPP_LEVEL_ERROR
 } xmpp_log_level_t;
 
 typedef enum {
@@ -81,9 +82,9 @@ typedef void (*xmpp_log_handler)(void * const userdata,
 				 const char * const msg);
 
 struct _xmpp_log_t {
-  xmpp_log_handler handler;
-  void * userdata;
-  /* mutex_t lock; */
+    xmpp_log_handler handler;
+    void *userdata;
+    /* mutex_t lock; */
 };
 
 /* return a default logger filtering at a given level */
@@ -143,7 +144,7 @@ typedef void (*xmpp_conn_handler)(xmpp_conn_t * const conn,
 
 xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx);
 xmpp_conn_t * xmpp_conn_clone(xmpp_conn_t * const conn);
-void xmpp_conn_release(xmpp_conn_t * const conn);
+int xmpp_conn_release(xmpp_conn_t * const conn);
 
 const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn);
 void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
@@ -216,7 +217,7 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza);
 xmpp_stanza_t * xmpp_stanza_copy(const xmpp_stanza_t * const stanza);
 
 /** free a stanza object and it's contents */
-void xmpp_stanza_release(xmpp_stanza_t * const stanza);
+int xmpp_stanza_release(xmpp_stanza_t * const stanza);
 
 /** marshall a stanza into text for transmission or display **/
 int xmpp_stanza_to_text(xmpp_stanza_t *stanza, 

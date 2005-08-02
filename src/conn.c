@@ -110,13 +110,14 @@ xmpp_conn_t * xmpp_conn_clone(xmpp_conn_t * const conn)
     return conn;
 }
 
-void xmpp_conn_release(xmpp_conn_t * const conn)
+int xmpp_conn_release(xmpp_conn_t * const conn)
 {
     xmpp_ctx_t *ctx;
     xmpp_connlist_t *item, *prev;
     xmpp_handlist_t *hlitem, *thli;
     hash_iterator_t *iter;
     const char *key;
+    int released = 0;
 
     if (conn->ref > 1) 
 	conn->ref--;
@@ -196,7 +197,10 @@ void xmpp_conn_release(xmpp_conn_t * const conn)
 	if (conn->pass) xmpp_free(ctx, conn->pass);
 	if (conn->stream_id) xmpp_free(ctx, conn->stream_id);
 	xmpp_free(ctx, conn);
+	released = 1;
     }
+
+    return released;
 }
 
 const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn)

@@ -57,10 +57,27 @@ int xmpp_version_check(int major, int minor)
 
 /* define the global default allocator, logger and context here */
 
+/* wrap stdlib routines to deal with userdata pointer */
+static void *_malloc(const size_t size, void * const userdata)
+{
+    return malloc(size);
+}
+
+static void _free(void *p, void * const userdata)
+{
+    free(p);
+}
+
+static void *_realloc(void *p, const size_t size, void * const userdata)
+{
+    return realloc(p, size);
+}
+
 static xmpp_mem_t xmpp_default_mem = {
-    malloc, /* use the stdlib routines by default */
-    free,
-    realloc
+    _malloc, /* use the thinly wrapped stdlib routines by default */
+    _free,
+    _realloc,
+    NULL
 };
 
 static const char * const _xmpp_log_level_name[4] = {"DEBUG", "INFO", "WARN", "ERROR"};
@@ -103,18 +120,18 @@ static xmpp_log_t xmpp_default_log = { NULL, NULL };
 
 void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size)
 {
-    return ctx->mem->alloc(size);
+    return ctx->mem->alloc(size, ctx->mem->userdata);
 }
 
 void xmpp_free(const xmpp_ctx_t * const ctx, void *p)
 {
-    ctx->mem->free(p);
+    ctx->mem->free(p, ctx->mem->userdata);
 }
 
 void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p,
 		   const size_t size)
 {
-    return ctx->mem->realloc(p, size);
+    return ctx->mem->realloc(p, size, ctx->mem->userdata);
 }
 
 /* logger */
@@ -190,9 +207,9 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem,
     xmpp_ctx_t *ctx = NULL;
 
     if (mem == NULL)
-	ctx = xmpp_default_mem.alloc(sizeof(xmpp_ctx_t));
+	ctx = xmpp_default_mem.alloc(sizeof(xmpp_ctx_t), NULL);
     else
-	ctx = mem->alloc(sizeof(xmpp_ctx_t));
+	ctx = mem->alloc(sizeof(xmpp_ctx_t), mem->userdata);
 
     if (ctx != NULL) {
 	if (mem != NULL) 
