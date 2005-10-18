@@ -161,6 +161,10 @@ struct _xmpp_conn_t {
     int sasl_support; /* if true, field is a bitfield of supported 
 			 mechanisms */ 
 
+    /* if server returns <bind/> or <session/> we must do them */
+    int bind_required;
+    int session_required;
+
     char *lang;
     char *domain;
     char *jid;

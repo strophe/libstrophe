@@ -66,6 +66,9 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	conn->tls_support = 0;
 	conn->sasl_support = 0;
 
+	conn->bind_required = 0;
+	conn->session_required = 0;
+
 	conn->parser = NULL;
 	conn->stanza = NULL;
 	parser_prepare_reset(conn, auth_handle_open);

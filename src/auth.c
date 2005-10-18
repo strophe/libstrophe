@@ -24,8 +24,10 @@
 #define strcasecmp stricmp
 #endif
 
+/* FIXME: these should be configurable */
 #define FEATURES_TIMEOUT 2000 /* 2 seconds */
 #define BIND_TIMEOUT 2000 /* 2 seconds */
+#define SESSION_TIMEOUT 2000 /* 2 seconds */
 #define LEGACY_TIMEOUT 2000 /* 2 seconds */
 
 static void _auth(xmpp_conn_t * const conn);
@@ -55,6 +57,11 @@ static int _handle_missing_bind(xmpp_conn_t * const conn,
 static int _handle_bind(xmpp_conn_t * const conn,
 			xmpp_stanza_t * const stanza,
 			void * const userdata);
+static int _handle_session(xmpp_conn_t * const conn,
+			   xmpp_stanza_t * const stanza,
+			   void * const userdata);
+static int _handle_missing_session(xmpp_conn_t * const conn,
+				   void * const userdata);
 
 /* stream:features handlers */
 
@@ -324,6 +331,7 @@ static void _auth(xmpp_conn_t * const conn)
 	if (!auth) {
 	    disconnect_mem_error(conn);
 	    return;
+
 	}
 
 	handler_add(conn, _handle_digestmd5_challenge, 
@@ -504,15 +512,29 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 				 xmpp_stanza_t * const stanza,
 				 void * const userdata)
 {
-    xmpp_stanza_t *bind, *iq, *res, *text;
+    xmpp_stanza_t *bind, *session, *iq, *res, *text;
     char *resource;
 
     /* remove missing features handler */
     xmpp_timed_handler_delete(conn, _handle_missing_features_sasl);
 
-    /* we are expecting <bind/> */
+    /* we are expecting <bind/> and <session/> since this is a
+       XMPP style connection */
+
     bind = xmpp_stanza_get_child_by_name(stanza, "bind");
     if (bind && strcmp(xmpp_stanza_get_ns(bind), XMPP_NS_BIND) == 0) {
+	/* resource binding is required */
+	conn->bind_required = 1;
+    }
+
+    session = xmpp_stanza_get_child_by_name(stanza, "session");
+    if (session && strcmp(xmpp_stanza_get_ns(session), XMPP_NS_SESSION) == 0) {
+	/* session establishment required */
+	conn->session_required = 1;
+    }
+
+    /* if bind is required, go ahead and start it */
+    if (conn->bind_required) {
 	/* bind resource */
 	
 	/* setup response handlers */
@@ -520,10 +542,7 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 	handler_add_timed(conn, _handle_missing_bind,
 			  BIND_TIMEOUT, NULL);
 
-	/* send bind response */
-	/* FIXME: this should detect whether a resource is present in
-	   conn->jid and bind that instead.  right now we let the server bind
-	   us */
+	/* send bind request */
 	iq = xmpp_stanza_new(conn->ctx);
 	if (!iq) {
 	    disconnect_mem_error(conn);
@@ -536,6 +555,7 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 
 	bind = xmpp_stanza_copy(bind);
 	if (!bind) {
+	    xmpp_stanza_release(iq);
 	    disconnect_mem_error(conn);
 	    return 0;
 	}
@@ -547,16 +567,23 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 	    xmpp_free(conn->ctx, resource);
 	    resource = NULL;
 	}
+
+	/* if we have a resource to request, do it. otherwise the 
+	   server will assign us one */
 	if (resource) {
-	    /* request a specific resource */
 	    res = xmpp_stanza_new(conn->ctx);
 	    if (!res) {
+		xmpp_stanza_release(bind);
+		xmpp_stanza_release(iq);
 		disconnect_mem_error(conn);
 		return 0;
 	    }
 	    xmpp_stanza_set_name(res, "resource");
 	    text = xmpp_stanza_new(conn->ctx);
 	    if (!text) {
+		xmpp_stanza_release(res);
+		xmpp_stanza_release(bind);
+		xmpp_stanza_release(iq);
 		disconnect_mem_error(conn);
 		return 0;
 	    }
@@ -596,25 +623,63 @@ static int _handle_bind(xmpp_conn_t * const conn,
 			void * const userdata)
 {
     char *type;
+    xmpp_stanza_t *iq, *session;
 
     /* delete missing bind handler */
     xmpp_timed_handler_delete(conn, _handle_missing_bind);
 
     /* server has replied to bind request */
     type = xmpp_stanza_get_type(stanza);
-    if (!type) {
-	xmpp_error(conn->ctx, "xmpp", "Server sent malformed bind reply.");
-	xmpp_disconnect(conn);
-    } else if (strcmp(type, "error") == 0) {
+    if (type && strcmp(type, "error") == 0) {
 	xmpp_error(conn->ctx, "xmpp", "Binding failed.");
 	xmpp_disconnect(conn);
-    } else if (strcmp(type, "result") == 0) {
+    } else if (type && strcmp(type, "result") == 0) {
 	/* TODO: extract resource if present */
 	xmpp_debug(conn->ctx, "xmpp", "Bind successful.");
-	conn->authenticated = 1;
-	
-	/* call connection handler */
-	conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+
+	/* establish a session if required */
+	if (conn->session_required) {
+	    /* setup response handlers */
+	    handler_add_id(conn, _handle_session, "_xmpp_session1", NULL);
+	    handler_add_timed(conn, _handle_missing_session, 
+			      SESSION_TIMEOUT, NULL);
+
+	    /* send session request */
+	    iq = xmpp_stanza_new(conn->ctx);
+	    if (!iq) {
+		disconnect_mem_error(conn);
+		return 0;
+	    }
+
+	    xmpp_stanza_set_name(iq, "iq");
+	    xmpp_stanza_set_type(iq, "set");
+	    xmpp_stanza_set_id(iq, "_xmpp_session1");
+
+	    session = xmpp_stanza_new(conn->ctx);
+	    if (!session) {
+		xmpp_stanza_release(iq);
+		disconnect_mem_error(conn);
+	    }
+
+	    xmpp_stanza_set_name(session, "session");
+	    xmpp_stanza_set_ns(session, XMPP_NS_SESSION);
+
+	    xmpp_stanza_add_child(iq, session);
+	    xmpp_stanza_release(session);
+
+	    /* send session establishment request */
+	    xmpp_send(conn, iq);
+	    xmpp_stanza_release(iq);
+	} else {
+	    conn->authenticated = 1;
+	   
+	    /* call connection handler */
+	    conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, 
+			       conn->userdata);
+	}
+    } else {
+	xmpp_error(conn->ctx, "xmpp", "Server sent malformed bind reply.");
+	xmpp_disconnect(conn);
     }
 
     return 0;
@@ -624,6 +689,43 @@ static int _handle_missing_bind(xmpp_conn_t * const conn,
 				void * const userdata)
 {
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to bind request.");
+    xmpp_disconnect(conn);
+    return 0;
+}
+
+static int _handle_session(xmpp_conn_t * const conn,
+			   xmpp_stanza_t * const stanza,
+			   void * const userdata)
+{
+    char *type;
+
+    /* delete missing session handler */
+    xmpp_timed_handler_delete(conn, _handle_missing_bind);
+
+    /* server has replied to the session request */
+    type = xmpp_stanza_get_type(stanza);
+    if (type && strcmp(type, "error") == 0) {
+	xmpp_error(conn->ctx, "xmpp", "Session establishment failed.");
+	xmpp_disconnect(conn);
+    } else if (type && strcmp(type, "result") == 0) {
+	xmpp_debug(conn->ctx, "xmpp", "Session establishment successful.");
+
+	conn->authenticated = 1;
+	
+	/* call connection handler */
+	conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+    } else {
+	xmpp_error(conn->ctx, "xmpp", "Server sent malformed session reply.");
+	xmpp_disconnect(conn);
+    }
+
+    return 0;
+}
+
+static int _handle_missing_session(xmpp_conn_t * const conn,
+				   void * const userdata)
+{
+    xmpp_error(conn->ctx, "xmpp", "Server did not reply to session request.");
     xmpp_disconnect(conn);
     return 0;
 }
