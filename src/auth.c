@@ -700,7 +700,7 @@ static int _handle_session(xmpp_conn_t * const conn,
     char *type;
 
     /* delete missing session handler */
-    xmpp_timed_handler_delete(conn, _handle_missing_bind);
+    xmpp_timed_handler_delete(conn, _handle_missing_session);
 
     /* server has replied to the session request */
     type = xmpp_stanza_get_type(stanza);
