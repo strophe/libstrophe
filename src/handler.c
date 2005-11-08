@@ -34,12 +34,30 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
     /* call id handlers */
     id = xmpp_stanza_get_id(stanza);
     if (id) {
-	item = (xmpp_handlist_t *)hash_get(conn->id_handlers, id);
-	for (; item; item = item->next) {
-	    if (item->user_handler && !conn->authenticated)
-		continue;
-	    
-	    ((xmpp_handler)(item->handler))(conn, stanza, item->userdata);
+	prev = NULL;
+ 	item = (xmpp_handlist_t *)hash_get(conn->id_handlers, id);
+	while (item) {
+	    xmpp_handlist_t *next = item->next;
+
+	    if (item->user_handler && !conn->authenticated) {
+		item = next;
+ 		continue;
+	    }
+
+	    if (!((xmpp_handler)(item->handler))(conn, stanza, item->userdata)) {
+		/* handler is one-shot, so delete it */
+		if (prev)
+		    prev->next = next;
+		else {
+		    hash_drop(conn->id_handlers, id);
+		    hash_add(conn->id_handlers, id, next);
+		}
+		xmpp_free(conn->ctx, item);
+		item = NULL;
+	    }
+	    if (item)
+		prev = item;
+	    item = next;
 	}
     }
     
