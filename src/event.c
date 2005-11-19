@@ -83,9 +83,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	if (conn->error) {
 	    /* FIXME: need to tear down send queues and random other things
 	     * maybe this should be abstracted */
-	    xmpp_debug(ctx, "xmpp", "send error occured, tear down socket");
-	    sock_close(conn->sock);
-	    conn->state = XMPP_STATE_DISCONNECTED;
+	    xmpp_debug(ctx, "xmpp", "send error occured, disconnecting");
+	    conn_disconnect(conn);
 	}
 	
 	connitem = connitem->next;
@@ -161,11 +160,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		if (sock_connect_error(conn->sock) != 0) {
 		    /* connection failed */
 		    xmpp_debug(ctx, "xmpp", "connection failed");
-		    conn->state = XMPP_STATE_DISCONNECTED;
-		    sock_close(conn->sock);
-                    /* notify the connection handler */
-                    conn->conn_handler(conn, XMPP_CONN_FAIL, conn->error,
-                                       conn->stream_error, conn->userdata);
+		    conn_disconnect(conn);
 		    break;
 		}
 
@@ -186,9 +181,14 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		    if (!ret) {
 			/* parse error, we need to shut down */
 			/* FIXME */
+			xmpp_debug(ctx, "xmpp", "parse error, disconnecting");
+			conn_disconnect(conn);
 		    }
+		} else {
+		    /* return of 0 means socket closed by server */
+		    xmpp_debug(ctx, "xmpp", "socket closed by remote host");
+		    conn_disconnect(conn);
 		}
-		/* return of 0 means socket closed by server */
 	    }
 
 	    break;
