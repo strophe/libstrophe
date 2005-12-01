@@ -21,6 +21,8 @@
 #else
 #include <winsock2.h>
 #define ETIMEOUT WSAETIMEOUT
+#define ECONNRESET WSAECONNRESET
+#define ECONNABORTED WSAECONNABORTED
 #endif
 
 #include "strophe.h"
@@ -86,7 +88,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	if (conn->error) {
 	    /* FIXME: need to tear down send queues and random other things
 	     * maybe this should be abstracted */
-	    xmpp_debug(ctx, "xmpp", "send error occured, disconnecting");
+	    xmpp_debug(ctx, "xmpp", "Send error occured, disconnecting.");
+	    conn->error = ECONNABORTED;
 	    conn_disconnect(conn);
 	}
 	
@@ -198,7 +201,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		    }
 		} else {
 		    /* return of 0 means socket closed by server */
-		    xmpp_debug(ctx, "xmpp", "socket closed by remote host");
+		    xmpp_debug(ctx, "xmpp", "Socket closed by remote host.");
+		    conn->error = ECONNRESET;
 		    conn_disconnect(conn);
 		}
 	    }
