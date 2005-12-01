@@ -18,6 +18,7 @@
 
 #include "strophe.h"
 #include "common.h"
+#include "util.h"
 
 #ifdef _WIN32
 #define vsnprintf _vsnprintf
@@ -25,6 +26,7 @@
 
 #define DEFAULT_SEND_QUEUE_MAX 64
 #define DISCONNECT_TIMEOUT 2000 /* 2 seconds */
+#define CONNECT_TIMEOUT 5000 /* 5 seconds */
 
 static int _disconnect_cleanup(xmpp_conn_t * const conn, 
 			       void * const userdata);
@@ -43,6 +45,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 
 	conn->type = XMPP_UNKNOWN;
 	conn->sock = -1;
+	conn->timeout_stamp = 0;
 	conn->error = 0;
 	conn->stream_error = NULL;
 
@@ -52,6 +55,9 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	conn->send_queue_len = 0;
 	conn->send_queue_head = NULL;
 	conn->send_queue_tail = NULL;
+
+	/* default timeouts */
+	conn->connect_timeout = CONNECT_TIMEOUT;
 
 	conn->lang = xmpp_strdup(conn->ctx, "en");
 	if (!conn->lang) {
@@ -260,6 +266,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
      * from within the event loop */
 
     conn->state = XMPP_STATE_CONNECTING;
+    conn->timeout_stamp = time_stamp();
     xmpp_debug(conn->ctx, "xmpp", "attempting to connect to %s", conn->domain);
 
     return 0;
@@ -278,7 +285,7 @@ void conn_disconnect_clean(xmpp_conn_t * const conn)
 
 void conn_disconnect(xmpp_conn_t * const conn) 
 {
-    xmpp_info(conn->ctx, "xmpp", "Disconnected from server");
+    xmpp_debug(conn->ctx, "xmpp", "Closing socket.");
     conn->state = XMPP_STATE_DISCONNECTED;
     sock_close(conn->sock);
 

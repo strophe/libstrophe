@@ -153,6 +153,7 @@ struct _xmpp_conn_t {
     xmpp_conn_type_t type;
 
     xmpp_conn_state_t state;
+    uint64_t timeout_stamp;
     int error;
     xmpp_stream_error_t *stream_error;
     sock_t sock;
@@ -183,6 +184,9 @@ struct _xmpp_conn_t {
     XML_Parser parser;
     int depth;
     xmpp_stanza_t *stanza;
+
+    /* timeouts */
+    unsigned int connect_timeout;
 
     /* event handlers */    
 

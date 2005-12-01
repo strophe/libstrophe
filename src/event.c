@@ -101,7 +101,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
        make sure we don't wait past the time when timed handlers need 
        to be called */
     next = handler_fire_timed(ctx);
-    
+
     tv.tv_sec = 0;
     tv.tv_usec = ((next < timeout) ? next : timeout) * 1000;
 
@@ -117,7 +117,15 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	case XMPP_STATE_CONNECTING:
 	    /* connect has been called and we're waiting for it to complete */
 	    /* connection will give us write or error events */
-	    FD_SET(conn->sock, &wfds);
+	    
+	    /* make sure the timeout hasn't expired */
+	    if (time_elapsed(conn->timeout_stamp, time_stamp()) <= 
+		conn->connect_timeout)
+		FD_SET(conn->sock, &wfds);
+	    else {
+		xmpp_info(ctx, "xmpp", "Connection attempt timed out.");
+		conn_disconnect(conn);
+	    }
 	    break;
 	case XMPP_STATE_CONNECTED:
 	    FD_SET(conn->sock, &rfds);
