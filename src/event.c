@@ -62,13 +62,13 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	    towrite = sq->len - sq->written;
 	    ret = sock_write(conn->sock, &sq->data[sq->written], towrite);
 
-	    if (ret < 0 && sock_is_recoverable(sock_error())) {
+	    if (ret < 0 && !sock_is_recoverable(sock_error())) {
 		/* an error occured */
 		conn->error = sock_error();
 		break;
 	    } else if (ret < towrite) {
 		/* not all data could be sent now */
-		sq->written += ret;
+	        if (ret >= 0) sq->written += ret;
 		break;
 	    }
 
