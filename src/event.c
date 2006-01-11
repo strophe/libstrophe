@@ -20,7 +20,7 @@
 #include <sys/select.h>
 #else
 #include <winsock2.h>
-#define ETIMEOUT WSAETIMEOUT
+#define ETIMEOUT WSAETIMEDOUT
 #define ECONNRESET WSAECONNRESET
 #define ECONNABORTED WSAECONNABORTED
 #endif
