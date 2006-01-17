@@ -1,5 +1,9 @@
-Version 0.8 (unreleased)
+Version 0.7.2 (20060118)
 
+ * fixed a bug in error names/includes
+ * fixed a bug with sending data when the pipe is full
+ * fixed a bug with setting error states on connection timeouts
+ * fixed a bug where session initiation wasn't happening 
 
 Version 0.7.1 (20050702)
 
