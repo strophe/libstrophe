@@ -18,9 +18,10 @@
 
 #ifndef _WIN32
 #include <sys/select.h>
+#include <errno.h>
 #else
 #include <winsock2.h>
-#define ETIMEOUT WSAETIMEDOUT
+#define ETIMEDOUT WSAETIMEDOUT
 #define ECONNRESET WSAECONNRESET
 #define ECONNABORTED WSAECONNABORTED
 #endif
@@ -129,7 +130,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		conn->connect_timeout)
 		FD_SET(conn->sock, &wfds);
 	    else {
-		conn->error = ETIMEOUT;
+		conn->error = ETIMEDOUT;
 		xmpp_info(ctx, "xmpp", "Connection attempt timed out.");
 		conn_disconnect(conn);
 	    }
