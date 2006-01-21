@@ -21,10 +21,6 @@
 #include "strophe.h"
 #include "common.h"
 
-#ifdef _WIN32
-#define snprintf _snprintf
-#endif
-
 static void _log_open_tag(xmpp_conn_t * const conn,
 			  const XML_Char **attr)
 {
@@ -33,20 +29,20 @@ static void _log_open_tag(xmpp_conn_t * const conn,
     int i;
 
     pos = 0;
-    len = snprintf(buf, 4096, "<stream:stream");
+    len = xmpp_snprintf(buf, 4096, "<stream:stream");
     if (len < 0) return;
 
     pos += len;
 
     for (i = 0; attr[i]; i += 2) {
-	len = snprintf(&buf[pos], 4096 - pos, " %s=\"%s\"", 
-		       attr[i], attr[i+1]);
+	len = xmpp_snprintf(&buf[pos], 4096 - pos, " %s=\"%s\"", 
+			    attr[i], attr[i+1]);
 	if (len < 0) return;
 
 	pos += len;
     }
 
-    len = snprintf(&buf[pos], 4096 - pos, ">");
+    len = xmpp_snprintf(&buf[pos], 4096 - pos, ">");
     if (len < 0) return;
 
     xmpp_debug(conn->ctx, "xmpp", "RECV: %s", buf);

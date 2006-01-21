@@ -20,10 +20,6 @@
 #include "common.h"
 #include "util.h"
 
-#ifdef _WIN32
-#define vsnprintf _vsnprintf
-#endif
-
 #define DEFAULT_SEND_QUEUE_MAX 64
 #define DISCONNECT_TIMEOUT 2000 /* 2 seconds */
 #define CONNECT_TIMEOUT 5000 /* 5 seconds */
@@ -333,7 +329,7 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
     char *bigbuf;
 
     va_start(ap, fmt);
-    len = vsnprintf(buf, 1024, fmt, ap);
+    len = xmpp_vsnprintf(buf, 1024, fmt, ap);
     va_end(ap);
 
     if (len >= 1024) {
@@ -346,7 +342,7 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
 	    return;
 	}
 	va_start(ap, fmt);
-	vsnprintf(bigbuf, len, fmt, ap);
+	xmpp_vsnprintf(bigbuf, len, fmt, ap);
 	va_end(ap);
 
 	xmpp_debug(conn->ctx, "conn", "SENT: %s", bigbuf);
@@ -407,7 +403,7 @@ void xmpp_send(xmpp_conn_t * const conn,
     if (conn->state == XMPP_STATE_CONNECTED) {
 	if ((ret = xmpp_stanza_to_text(stanza, &buf, &len)) == 0) {
 	    xmpp_send_raw(conn, buf, len);
-	    xmpp_debug(conn->ctx, "xmpp", "SENT: %s", buf);
+	    xmpp_debug(conn->ctx, "conn", "SENT: %s", buf);
 	    xmpp_free(conn->ctx, buf);
 	}
     }

@@ -20,7 +20,6 @@
 #include "hash.h"
 
 #ifdef _WIN32
-#define snprintf _snprintf
 #define inline __inline
 #endif
 
@@ -184,21 +183,21 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
     if (stanza->type == XMPP_STANZA_TEXT) {
 	if (!stanza->data) return XMPP_EINVOP;
 
-	ret = snprintf(ptr, left, "%s", stanza->data);
+	ret = xmpp_snprintf(ptr, left, "%s", stanza->data);
 	if (ret < 0) return XMPP_EMEM;
 	_render_update(&written, buflen, ret, &left, &ptr);
     } else { /* stanza->type == XMPP_STANZA_TAG */
 	if (!stanza->data) return XMPP_EINVOP;
 
 	/* write begining of tag and attributes */
-	ret = snprintf(ptr, left, "<%s", stanza->data);
+	ret = xmpp_snprintf(ptr, left, "<%s", stanza->data);
 	if (ret < 0) return XMPP_EMEM;
 	_render_update(&written, buflen, ret, &left, &ptr);
 
 	if (stanza->attributes && hash_num_keys(stanza->attributes) > 0) {
 	    iter = hash_iter_new(stanza->attributes);
 	    while ((key = hash_iter_next(iter))) {
-		ret = snprintf(ptr, left, " %s=\"%s\"", key,
+		ret = xmpp_snprintf(ptr, left, " %s=\"%s\"", key,
 			       (char *)hash_get(stanza->attributes, key));
 		if (ret < 0) return XMPP_EMEM;
 		_render_update(&written, buflen, ret, &left, &ptr);
@@ -208,14 +207,14 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
 
 	if (!stanza->children) {
 	    /* write end if singleton tag */
-	    ret = snprintf(ptr, left, "/>");
+	    ret = xmpp_snprintf(ptr, left, "/>");
 	    if (ret < 0) return XMPP_EMEM;
 	    _render_update(&written, buflen, ret, &left, &ptr);
 	} else {
 	    /* this stanza has child stanzas */
 
 	    /* write end of start tag */
-	    ret = snprintf(ptr, left, ">");
+	    ret = xmpp_snprintf(ptr, left, ">");
 	    if (ret < 0) return XMPP_EMEM;
 	    _render_update(&written, buflen, ret, &left, &ptr);
 	    
@@ -231,7 +230,7 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
 	    }
 
 	    /* write end tag */
-	    ret = snprintf(ptr, left, "</%s>", stanza->data);
+	    ret = xmpp_snprintf(ptr, left, "</%s>", stanza->data);
 	    if (ret < 0) return XMPP_EMEM;
 	    
 	    _render_update(&written, buflen, ret, &left, &ptr);
@@ -276,19 +275,17 @@ int  xmpp_stanza_to_text(xmpp_stanza_t *stanza,
 	    *buflen = 0;
 	    return XMPP_EMEM;
 	}
-	length = ret;
+	length = ret + 1;
 	buffer = tmp;
-	buffer[length-1] = 0;
 
 	ret = _render_stanza_recursive(stanza, buffer, length);
-	if (ret > length) return XMPP_EMEM;
+	if (ret > length - 1) return XMPP_EMEM;
     }
     
-    length = ret + 1;
     buffer[length - 1] = 0;
 
     *buf = buffer;
-    *buflen = length - 1;
+    *buflen = ret;
 
     return XMPP_EOK;
 }

@@ -46,6 +46,7 @@ Sources = Split("""
   md5.c
   util.c
   thread.c
+  snprintf.c
   oocontext.cpp
   oostanza.cpp
 """)
