@@ -1,3 +1,9 @@
+Version 0.7.3 (20060309)
+
+ * fixed a bug with long log lines getting truncated
+ * fixed a bug with xmpp_stanza_to_text truncating some lines by one char
+ * fixed win32 bug where long stanzas didn't work
+
 Version 0.7.2 (20060118)
 
  * fixed a bug in error names/includes
