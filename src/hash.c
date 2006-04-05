@@ -217,7 +217,7 @@ hash_iterator_t *hash_iter_new(hash_t *table)
 	iter->ref = 1;
 	iter->table = hash_clone(table);
 	iter->entry = NULL;
-	iter->index = 0;
+	iter->index = -1;
     }
 
     return iter;
