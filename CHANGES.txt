@@ -1,3 +1,6 @@
+ * fixed a bug in the hash where the first entry was never used in an
+   iterator
+
 Version 0.7.3 (20060309)
 
  * fixed a bug with long log lines getting truncated
