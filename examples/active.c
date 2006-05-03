@@ -30,7 +30,7 @@ int handle_reply(xmpp_conn_t * const conn,
     char *type;
 
     type = xmpp_stanza_get_type(stanza);
-    if (strcmp("type", "error") == 0)
+    if (strcmp(type, "error") == 0)
 	fprintf(stderr, "ERROR: query failed\n");
     else {
 	query = xmpp_stanza_get_child_by_name(stanza, "query");
