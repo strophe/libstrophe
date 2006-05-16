@@ -413,7 +413,7 @@ char *base64_encode(xmpp_ctx_t *ctx,
 	    case 1:
 		hextet = (buffer[len-1] & 0xFC) >> 2;
 		*c++ = _base64_charmap[hextet];
-		hextet = (buffer[len-1] & 0x02) << 6;
+		hextet = (buffer[len-1] & 0x03) << 4;
 		*c++ = _base64_charmap[hextet];
 		*c++ = _base64_charmap[64]; /* pad */
 		*c++ = _base64_charmap[64]; /* pad */
@@ -448,16 +448,16 @@ int base64_decoded_len(xmpp_ctx_t *ctx,
     if (c < 64) nudge = 0;
     else if (c == 64) {
 	c = _base64_invcharmap[(int)buffer[len-2]];
-	if (c < 64) nudge = 2;
+	if (c < 64) nudge = 1;
 	else if (c == 64) {
 	    c = _base64_invcharmap[(int)buffer[len-3]];
-	    if (c < 64) nudge = 1;
+	    if (c < 64) nudge = 2;
 	} 
     }
     if (nudge < 0) return 0; /* reject bad coding */
 
     /* decoded steam is 3 bytes for every four */ 
-    return 3 * ((len + 3) >> 2) + nudge;
+    return 3 * (len >> 2) - nudge;
 }
 
 unsigned char *base64_decode(xmpp_ctx_t *ctx,
