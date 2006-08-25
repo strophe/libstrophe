@@ -109,7 +109,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
     return conn;
 }
 
-xmpp_conn_t * xmpp_conn_clone(xmpp_conn_t * const conn)
+xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn)
 {
     conn->ref++;
     return conn;
@@ -192,6 +192,8 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 
 	if (conn->stream_error) {
 	    xmpp_stanza_release(conn->stream_error->stanza);
+	    if (conn->stream_error->text)
+		xmpp_free(ctx, conn->stream_error->text);
 	    xmpp_free(ctx, conn->stream_error);
 	}
 

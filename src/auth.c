@@ -63,6 +63,92 @@ static int _handle_session(xmpp_conn_t * const conn,
 static int _handle_missing_session(xmpp_conn_t * const conn,
 				   void * const userdata);
 
+/* stream:error handler */
+
+static int _handle_error(xmpp_conn_t * const conn,
+			 xmpp_stanza_t * const stanza,
+			 void * const userdata)
+{
+    xmpp_stanza_t *child;
+    char *name;
+
+    /* free old stream error if it's still there */
+    if (conn->stream_error) {
+	xmpp_stanza_release(conn->stream_error->stanza);
+	if (conn->stream_error->text) 
+	    xmpp_free(conn->ctx, conn->stream_error->text);
+	xmpp_free(conn->ctx, conn->stream_error);
+    }
+
+    /* create stream error structure */
+    conn->stream_error = (xmpp_stream_error_t *)xmpp_alloc(conn->ctx, sizeof(xmpp_stream_error_t));
+    if (conn->stream_error) {
+	child = xmpp_stanza_get_children(stanza);
+	do {
+	    if (child && strcmp(xmpp_stanza_get_ns(child),
+				XMPP_NS_STREAMS) == 0) {
+		name = xmpp_stanza_get_name(child);
+		if (strcmp(name, "text")) {
+		    if (conn->stream_error->text)
+			xmpp_free(conn->ctx, conn->stream_error->text);
+		    conn->stream_error->text = xmpp_stanza_get_text(child);
+		} else if (strcmp(name, "bad-format") == 0)
+		    conn->stream_error->type = XMPP_SE_BAD_FORMAT;
+		else if (strcmp(name, "bad-namespace-prefix") == 0)
+		    conn->stream_error->type = XMPP_SE_BAD_NS_PREFIX;
+		else if (strcmp(name, "conflict") == 0)
+		    conn->stream_error->type = XMPP_SE_CONFLICT;
+		else if (strcmp(name, "connection-timeout") == 0)
+		    conn->stream_error->type = XMPP_SE_CONN_TIMEOUT;
+		else if (strcmp(name, "host-gone") == 0)
+		    conn->stream_error->type = XMPP_SE_HOST_GONE;
+		else if (strcmp(name, "host-unknown") == 0)
+		    conn->stream_error->type = XMPP_SE_HOST_UNKNOWN;
+		else if (strcmp(name, "improper-addressing") == 0)
+		    conn->stream_error->type = XMPP_SE_IMPROPER_ADDR;
+		else if (strcmp(name, "internal-server-error") == 0)
+		    conn->stream_error->type = XMPP_SE_INTERNAL_SERVER_ERROR;
+		else if (strcmp(name, "invalid-from") == 0)
+		    conn->stream_error->type = XMPP_SE_INVALID_FROM;
+		else if (strcmp(name, "invalid-id") == 0)
+		    conn->stream_error->type = XMPP_SE_INVALID_ID;
+		else if (strcmp(name, "invalid-namespace") == 0)
+		    conn->stream_error->type = XMPP_SE_INVALID_NS;
+		else if (strcmp(name, "invalid-xml") == 0)
+		    conn->stream_error->type = XMPP_SE_INVALID_XML;
+		else if (strcmp(name, "not-authorized") == 0)
+		    conn->stream_error->type = XMPP_SE_NOT_AUTHORIZED;
+		else if (strcmp(name, "policy-violation") == 0)
+		    conn->stream_error->type = XMPP_SE_POLICY_VIOLATION;
+		else if (strcmp(name, "remote-connection-failed") == 0)
+		    conn->stream_error->type = XMPP_SE_REMOTE_CONN_FAILED;
+		else if (strcmp(name, "resource-constraint") == 0)
+		    conn->stream_error->type = XMPP_SE_RESOURCE_CONSTRAINT;
+		else if (strcmp(name, "restricted-xml") == 0)
+		    conn->stream_error->type = XMPP_SE_RESTRICTED_XML;
+		else if (strcmp(name, "see-other-host") == 0)
+		    conn->stream_error->type = XMPP_SE_SEE_OTHER_HOST;
+		else if (strcmp(name, "system-shutdown") == 0)
+		    conn->stream_error->type = XMPP_SE_SYSTEM_SHUTDOWN;
+		else if (strcmp(name, "undefined-condition") == 0)
+		    conn->stream_error->type = XMPP_SE_UNDEFINED_CONDITION;
+		else if (strcmp(name, "unsupported-encoding") == 0)
+		    conn->stream_error->type = XMPP_SE_UNSUPPORTED_ENCODING;
+		else if (strcmp(name, "unsupported-stanza-type") == 0)
+		    conn->stream_error->type = XMPP_SE_UNSUPPORTED_STANZA_TYPE;
+		else if (strcmp(name, "unsupported-version") == 0)
+		    conn->stream_error->type = XMPP_SE_UNSUPPORTED_VERSION;
+		else if (strcmp(name, "xml-not-well-formed") == 0)
+		    conn->stream_error->type = XMPP_SE_XML_NOT_WELL_FORMED;
+	    }
+	} while ((child = xmpp_stanza_get_next(child)));
+
+	conn->stream_error->stanza = xmpp_stanza_clone(stanza);
+    }
+
+    return 1;
+}
+
 /* stream:features handlers */
 
 static int _handle_missing_features(xmpp_conn_t * const conn,
@@ -75,6 +161,8 @@ static int _handle_missing_features(xmpp_conn_t * const conn,
 
     return 0;
 }
+
+
 
 static int _handle_features(xmpp_conn_t * const conn,
 			    xmpp_stanza_t * const stanza,
@@ -488,6 +576,10 @@ void auth_handle_open(xmpp_conn_t * const conn)
 {
     /* reset all timed handlers */
     handler_reset_timed(conn, 0);
+
+    /* setup handler for stream:error */
+    handler_add(conn, _handle_error,
+		NULL, "stream:error", NULL, NULL);
 
     /* setup handlers for incoming <stream:features> */
     handler_add(conn, _handle_features,
