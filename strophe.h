@@ -17,6 +17,7 @@ extern "C" {
 #define XMPP_NS_CLIENT "jabber:client"
 #define XMPP_NS_COMPONENT "jabber:component:accept"
 #define XMPP_NS_STREAMS "http://etherx.jabber.org/streams"
+#define XMPP_NS_STREAMS_IETF "urn:ietf:params:xml:ns:xmpp-streams"
 #define XMPP_NS_TLS "urn:ietf:params:xml:ns:xmpp-tls"
 #define XMPP_NS_SASL "urn:ietf:params:xml:ns:xmpp-sasl"
 #define XMPP_NS_BIND "urn:ietf:params:xml:ns:xmpp-bind"

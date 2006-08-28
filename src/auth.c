@@ -82,13 +82,17 @@ static int _handle_error(xmpp_conn_t * const conn,
 
     /* create stream error structure */
     conn->stream_error = (xmpp_stream_error_t *)xmpp_alloc(conn->ctx, sizeof(xmpp_stream_error_t));
+
+	conn->stream_error->text = NULL;
+	conn->stream_error->type = XMPP_SE_UNDEFINED_CONDITION;
+
     if (conn->stream_error) {
 	child = xmpp_stanza_get_children(stanza);
 	do {
 	    if (child && strcmp(xmpp_stanza_get_ns(child),
-				XMPP_NS_STREAMS) == 0) {
+				XMPP_NS_STREAMS_IETF) == 0) {
 		name = xmpp_stanza_get_name(child);
-		if (strcmp(name, "text")) {
+		if (strcmp(name, "text") == 0) {
 		    if (conn->stream_error->text)
 			xmpp_free(conn->ctx, conn->stream_error->text);
 		    conn->stream_error->text = xmpp_stanza_get_text(child);
