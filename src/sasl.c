@@ -108,6 +108,8 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
     if (result != NULL) {
 	s = text;
 	while (*s != '\0') {
+	    /* skip any leading commas and spaces */
+	    while ((*s == ',') || (*s == ' ')) s++;
 	    /* accumulate a key ending at '=' */
 	    t = s;
 	    while ((*t != '=') && (*t != '\0')) t++;
