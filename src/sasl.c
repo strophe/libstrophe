@@ -118,15 +118,24 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
 	    if (key == NULL) break;
             /* advance our start pointer past the key */
 	    s = t + 1;
-	    /* accumulate a value ending in ',' or '\0' */
 	    t = s;
-	    while ((*t != ',') && (*t != '\0')) t++;
-	    /* trim quotes if they occur */
-	    if (((*s == '\'') && (*(t-1) == '\'')) ||
-		((*s == '"') && (*(t-1) == '"'))) {
-		value = _make_string(ctx, s+1, (t-s-2));
+	    /* if we see quotes, grab the string in between */
+	    if ((*s == '\'') || (*s == '"')) {
+		t++;
+		while ((*t != *s) && (*t != '\0'))
+		    t++;
+		if (*t == *s) {
+		    value = _make_string(ctx, s+1, (t-s-2));
+		    s = t + 1;
+		} else {
+		    value = _make_string(ctx, s+1, (t-s-1));
+		    s = t;
+		}
+	    /* otherwise, accumulate a value ending in ',' or '\0' */
 	    } else {
+		while ((*t != ',') && (*t != '\0')) t++;
 		value = _make_string(ctx, s, (t-s));
+		s = t;
 	    }
 	    if (value == NULL) {
 		xmpp_free(ctx, key);
@@ -136,8 +145,6 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
 	    hash_add(result, key, value);
 	    /* hash table now owns the value, free the key */
 	    xmpp_free(ctx, key);
-	    /* advance past the value and any trailing comma */
-	    s = (*t) ? t + 1 : t;
 	}
     }
     xmpp_free(ctx, text);
