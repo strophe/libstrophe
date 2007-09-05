@@ -19,6 +19,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <windns.h>
 #define snprintf _snprintf
 #else
 #include <errno.h>
@@ -162,4 +163,55 @@ int sock_connect_error(const sock_t sock)
     ret = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
     if (ret < 0) return ret;
     return error;
+}
+
+void sock_srv_lookup(const char *service, const char *proto, const char *domain, char *resulttarget, int resulttargetlength, int *resultport)
+{
+    int set = 0;
+    char fulldomain[2048];
+
+    snprintf(fulldomain, 2048, "_%s._%s.%s", service, proto, domain);
+#ifdef _WIN32
+    {
+        HINSTANCE hdnsapi = NULL;
+	
+	DNS_STATUS (WINAPI * pDnsQuery_A)(PCSTR, WORD, DWORD, PIP4_ARRAY, PDNS_RECORD*, PVOID*);
+	void (WINAPI * pDnsRecordListFree)(PDNS_RECORD, DNS_FREE_TYPE);
+
+	if (hdnsapi = LoadLibrary("dnsapi.dll")) {
+	    pDnsQuery_A = GetProcAddress(hdnsapi, "DnsQuery_A");
+	    pDnsRecordListFree = GetProcAddress(hdnsapi, "DnsRecordListFree");
+
+	    if (pDnsQuery_A && pDnsRecordListFree) {
+		PDNS_RECORD dnsrecords = NULL;
+
+		if (pDnsQuery_A(fulldomain, DNS_TYPE_SRV, DNS_QUERY_STANDARD, NULL, &dnsrecords, NULL) == 0) {
+		    PDNS_RECORD current = dnsrecords;
+
+		    while (current) {
+			if (current->wType == DNS_TYPE_SRV) {
+			    snprintf(resulttarget, resulttargetlength, current->Data.Srv.pNameTarget);
+			    *resultport = current->Data.Srv.wPort;
+			    set = 1;
+
+			    current = NULL;
+			} else {
+			    current = current->pNext;
+			}
+		    }
+		}
+
+		pDnsRecordListFree(dnsrecords, DnsFreeRecordList);
+	    }
+	    /*UnloadLibrary(hdnsapi);*/
+	}
+    }
+#else
+#endif
+
+    if (!set)
+    {
+	snprintf(resulttarget, resulttargetlength, domain);
+	*resultport = 5222;
+    }
 }

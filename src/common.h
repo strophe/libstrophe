@@ -24,6 +24,7 @@
 
 #include "strophe.h"
 #include "sock.h"
+#include "tls.h"
 #include "hash.h"
 #include "util.h"
 
@@ -157,6 +158,7 @@ struct _xmpp_conn_t {
     int error;
     xmpp_stream_error_t *stream_error;
     sock_t sock;
+    tls_t *tls;
 
     int tls_support; 
     int sasl_support; /* if true, field is a bitfield of supported 

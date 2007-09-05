@@ -15,7 +15,6 @@
 #ifndef __LIBSTROPHE_TLS_H__
 #define __LIBSTROPHE_TLS_H__
 
-#include <gnutls/gnutls.h>
 #include "common.h"
 #include "sock.h"
 

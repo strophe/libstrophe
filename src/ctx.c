@@ -26,11 +26,13 @@
 void xmpp_initialize(void)
 {
     sock_initialize();
+    tls_initialize();
 }
 
 void xmpp_shutdown(void)
 {
     sock_shutdown();
+    tls_shutdown();
 }
 
 /** version **/

@@ -61,16 +61,31 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	sq = conn->send_queue_head;
 	while (sq) {
 	    towrite = sq->len - sq->written;
-	    ret = sock_write(conn->sock, &sq->data[sq->written], towrite);
 
-	    if (ret < 0 && !sock_is_recoverable(sock_error())) {
-		/* an error occured */
-		conn->error = sock_error();
-		break;
-	    } else if (ret < towrite) {
-		/* not all data could be sent now */
-	        if (ret >= 0) sq->written += ret;
-		break;
+	    if (conn->tls) {
+		ret = tls_write(conn->tls, &sq->data[sq->written], towrite);
+
+		if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls))) {
+		    /* an error occured */
+		    conn->error = tls_error(conn->tls);
+		    break;
+		} else if (ret < towrite) {
+		    /* not all data could be sent now */
+		    if (ret >= 0) sq->written += ret;
+		    break;
+		}
+	    } else {
+		ret = sock_write(conn->sock, &sq->data[sq->written], towrite);
+
+		if (ret < 0 && !sock_is_recoverable(sock_error())) {
+		    /* an error occured */
+		    conn->error = sock_error();
+		    break;
+		} else if (ret < towrite) {
+		    /* not all data could be sent now */
+		    if (ret >= 0) sq->written += ret;
+		    break;
+		}
 	    }
 
 	    /* all data for this queue item written, delete and move on */
@@ -161,7 +176,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     
     /* no events happened */
     if (ret == 0) return;
-
+    
     /* process events */
     connitem = ctx->connlist;
     while (connitem) {
@@ -191,7 +206,12 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	    break;
 	case XMPP_STATE_CONNECTED:
 	    if (FD_ISSET(conn->sock, &rfds)) {
-		ret = sock_read(conn->sock, buf, 4096);
+		if (conn->tls) {
+		    ret = tls_read(conn->tls, buf, 4096);
+		} else {
+		    ret = sock_read(conn->sock, buf, 4096);
+		}
+
 		if (ret > 0) {
 		    ret = XML_Parse(conn->parser, buf, ret, 0);
 		    if (!ret) {
@@ -201,10 +221,19 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 			conn_disconnect(conn);
 		    }
 		} else {
-		    /* return of 0 means socket closed by server */
-		    xmpp_debug(ctx, "xmpp", "Socket closed by remote host.");
-		    conn->error = ECONNRESET;
-		    conn_disconnect(conn);
+		    if (conn->tls) {
+			if (!tls_is_recoverable(tls_error(conn->tls)))
+			{
+			    xmpp_debug(ctx, "xmpp", "Unrecoverable TLS error.");
+			    conn->error = tls_error(conn->tls);
+			    conn_disconnect(conn);
+			}
+		    } else {
+			/* return of 0 means socket closed by server */
+			xmpp_debug(ctx, "xmpp", "Socket closed by remote host.");
+			conn->error = ECONNRESET;
+			conn_disconnect(conn);
+		    }
 		}
 	    }
 

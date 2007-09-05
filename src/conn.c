@@ -41,6 +41,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 
 	conn->type = XMPP_UNKNOWN;
 	conn->sock = -1;
+	conn->tls = NULL;
 	conn->timeout_stamp = 0;
 	conn->error = 0;
 	conn->stream_error = NULL;
@@ -241,6 +242,9 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 			  xmpp_conn_handler callback,
 			  void * const userdata)
 {
+    char connectdomain[2048];
+    int connectport;
+
     conn->type = XMPP_CLIENT;
 
     if (domain) {
@@ -250,8 +254,8 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     }
     if (!conn->domain) return -1;
 
-    /* TODO: look up SRV record for actual host and port */
-    conn->sock = sock_connect(conn->domain, 5222);
+    sock_srv_lookup("xmpp-client", "tcp", conn->domain, connectdomain, 2048, &connectport);
+    conn->sock = sock_connect(connectdomain, connectport);
     if (conn->sock < 0) return -1;
 
     /* setup handler */
@@ -265,7 +269,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 
     conn->state = XMPP_STATE_CONNECTING;
     conn->timeout_stamp = time_stamp();
-    xmpp_debug(conn->ctx, "xmpp", "attempting to connect to %s", conn->domain);
+    xmpp_debug(conn->ctx, "xmpp", "attempting to connect to %s", connectdomain);
 
     return 0;
 }
@@ -285,6 +289,11 @@ void conn_disconnect(xmpp_conn_t * const conn)
 {
     xmpp_debug(conn->ctx, "xmpp", "Closing socket.");
     conn->state = XMPP_STATE_DISCONNECTED;
+    if (conn->tls) {
+	tls_stop(conn->tls);
+	tls_free(conn->tls);
+	conn->tls = NULL;
+    }
     sock_close(conn->sock);
 
     /* fire off connection handler */

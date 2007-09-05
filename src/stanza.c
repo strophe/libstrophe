@@ -335,6 +335,47 @@ int xmpp_stanza_set_attributes(xmpp_stanza_t * const stanza,
     return XMPP_EOK;
 }
 
+int xmpp_stanza_get_attribute_count(xmpp_stanza_t * const stanza)
+{
+    if (stanza->attributes == NULL) {
+	return 0;
+    }
+
+    return hash_num_keys(stanza->attributes);
+}
+
+int xmpp_stanza_get_attributes(xmpp_stanza_t * const stanza,
+			       char **attr, int attrlen)
+{
+    hash_iterator_t *iter;
+    char *key;
+    int num = 0;
+
+    if (stanza->attributes == NULL) {
+	return 0;
+    }
+
+    iter = hash_iter_new(stanza->attributes);
+    while ((key = hash_iter_next(iter)) != NULL && attrlen) {
+	attr[num++] = key;
+	attrlen--;
+	if (attrlen == 0) {
+	    hash_iter_release(iter);
+	    return num;
+	}
+	attr[num++] = hash_get(stanza->attributes, key);
+	attrlen--;
+	if (attrlen == 0) {
+	    hash_iter_release(iter);
+	    return num;
+	}
+    }
+
+    hash_iter_release(iter);
+    return num;
+}
+
+
 int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza,
 			      const char * const key,
 			      const char * const value)

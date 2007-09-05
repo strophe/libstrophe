@@ -27,10 +27,11 @@
 /* FIXME: these should be configurable */
 #define FEATURES_TIMEOUT 2000 /* 2 seconds */
 #define BIND_TIMEOUT 2000 /* 2 seconds */
-#define SESSION_TIMEOUT 2000 /* 2 seconds */
+#define SESSION_TIMEOUT 15000 /* 15 seconds */
 #define LEGACY_TIMEOUT 2000 /* 2 seconds */
 
 static void _auth(xmpp_conn_t * const conn);
+static void _handle_open_tls(xmpp_conn_t * const conn);
 static void _handle_open_sasl(xmpp_conn_t * const conn);
 static int _handle_missing_legacy(xmpp_conn_t * const conn,
 				  void * const userdata);
@@ -89,8 +90,13 @@ static int _handle_error(xmpp_conn_t * const conn,
     if (conn->stream_error) {
 	child = xmpp_stanza_get_children(stanza);
 	do {
-	    if (child && strcmp(xmpp_stanza_get_ns(child),
-				XMPP_NS_STREAMS_IETF) == 0) {
+	    char *ns = NULL;
+
+	    if (child) {
+		ns = xmpp_stanza_get_ns(child);
+	    }
+
+	    if (ns && strcmp(ns, XMPP_NS_STREAMS_IETF) == 0) {
 		name = xmpp_stanza_get_name(child);
 		if (strcmp(name, "text") == 0) {
 		    if (conn->stream_error->text)
@@ -203,7 +209,7 @@ static int _handle_features(xmpp_conn_t * const conn,
     /* TODO: Implement TLS */
 
     _auth(conn);
-
+ 
     return 0;
 }
 
@@ -221,6 +227,36 @@ static char *_get_authid(xmpp_conn_t * const conn)
 
     return authid;
 }
+
+static int _handle_proceedtls_default(xmpp_conn_t * const conn,
+			      xmpp_stanza_t * const stanza,
+			      void * const userdata)
+{
+    char *name;
+    name = xmpp_stanza_get_name(stanza);
+    xmpp_debug(conn->ctx, "xmpp", 
+	"handle proceedtls called for %s", name);
+
+    if (strcmp(name, "proceed") == 0) {
+        xmpp_debug(conn->ctx, "xmpp", "proceeding with TLS");
+
+	parser_prepare_reset(conn, _handle_open_tls);
+
+	conn->tls = tls_new(conn->ctx, conn->sock);
+
+	if (!tls_start(conn->tls))
+	{
+	    xmpp_debug(conn->ctx, "xmpp", "Couldn't start TLS!");
+	}
+	else
+	{
+	    conn_open_stream(conn);
+	}
+    }
+
+    return 0;
+}
+
 
 static int _handle_digestmd5_default(xmpp_conn_t * const conn,
 			      xmpp_stanza_t * const stanza,
@@ -393,6 +429,20 @@ static int _handle_plain(xmpp_conn_t * const conn,
     return ret;
 }
 
+static xmpp_stanza_t *_make_starttls(xmpp_conn_t * const conn)
+{
+    xmpp_stanza_t *starttls;
+
+    /* build start stanza */
+    starttls = xmpp_stanza_new(conn->ctx);
+    if (starttls) {
+	xmpp_stanza_set_name(starttls, "starttls");
+	xmpp_stanza_set_ns(starttls, XMPP_NS_TLS);
+    }
+    
+    return starttls;
+}
+
 static xmpp_stanza_t *_make_sasl_auth(xmpp_conn_t * const conn,
 				 const char * const mechanism)
 {
@@ -418,7 +468,25 @@ static void _auth(xmpp_conn_t * const conn)
     xmpp_stanza_t *auth, *authdata, *query, *child, *iq;
     char *str, *authid;
 
-    if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
+    if (conn->tls_support)
+    {
+	auth = _make_starttls(conn);
+
+	if (!auth) {
+	    disconnect_mem_error(conn);
+	    return;
+	}
+
+	handler_add(conn, _handle_proceedtls_default, 
+		    XMPP_NS_TLS, NULL, NULL, NULL);
+
+	xmpp_send(conn, auth);
+	xmpp_stanza_release(auth);
+
+	/* TLS was tried, unset flag */
+	conn->tls_support = 0;
+    }
+    else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
 	auth = _make_sasl_auth(conn, "DIGEST-MD5");
 	if (!auth) {
 	    disconnect_mem_error(conn);
@@ -591,6 +659,16 @@ void auth_handle_open(xmpp_conn_t * const conn)
     handler_add_timed(conn, _handle_missing_features,
 		      FEATURES_TIMEOUT, NULL);
 }
+
+/* called when stream:stream tag received after TLS connection */
+static void _handle_open_tls(xmpp_conn_t * const conn)
+{
+    xmpp_debug(conn->ctx, "xmpp", "TLS successful, proceeding with SASL");
+
+    /* go straight to SASL auth */
+    _auth(conn);
+}
+
 
 /* called when stream:stream tag received after SASL auth */
 static void _handle_open_sasl(xmpp_conn_t * const conn)
