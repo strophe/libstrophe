@@ -345,10 +345,10 @@ int xmpp_stanza_get_attribute_count(xmpp_stanza_t * const stanza)
 }
 
 int xmpp_stanza_get_attributes(xmpp_stanza_t * const stanza,
-			       char **attr, int attrlen)
+			       const char **attr, int attrlen)
 {
     hash_iterator_t *iter;
-    char *key;
+    const char *key;
     int num = 0;
 
     if (stanza->attributes == NULL) {

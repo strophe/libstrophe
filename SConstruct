@@ -47,6 +47,7 @@ Sources = Split("""
   util.c
   thread.c
   snprintf.c
+  tls_schannel.c
   oocontext.cpp
   oostanza.cpp
 """)
@@ -71,7 +72,9 @@ Examples = Split("""
 env = Environment()
 if env['CC'] == 'gcc':
   env.Append(CCFLAGS=["-g", "-Wall"])
-
+if env['CC'] == 'cl':
+  env.Append(CCFLAGS=["/MDd", "/ZI"])
+  
 expatenv = env.Copy()
 # feature defs
 expatenv.Append(CCFLAGS=" -DXML_DTD")

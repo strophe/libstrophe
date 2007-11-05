@@ -25,7 +25,7 @@
 #endif
 
 /* FIXME: these should be configurable */
-#define FEATURES_TIMEOUT 2000 /* 2 seconds */
+#define FEATURES_TIMEOUT 5000 /* 5 seconds */
 #define BIND_TIMEOUT 2000 /* 2 seconds */
 #define SESSION_TIMEOUT 15000 /* 15 seconds */
 #define LEGACY_TIMEOUT 2000 /* 2 seconds */

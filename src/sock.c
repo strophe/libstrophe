@@ -160,7 +160,7 @@ int sock_connect_error(const sock_t sock)
 
     len = sizeof(int);
     
-    ret = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
+    ret = getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&error, &len);
     if (ret < 0) return ret;
     return error;
 }
@@ -179,8 +179,8 @@ void sock_srv_lookup(const char *service, const char *proto, const char *domain,
 	void (WINAPI * pDnsRecordListFree)(PDNS_RECORD, DNS_FREE_TYPE);
 
 	if (hdnsapi = LoadLibrary("dnsapi.dll")) {
-	    pDnsQuery_A = GetProcAddress(hdnsapi, "DnsQuery_A");
-	    pDnsRecordListFree = GetProcAddress(hdnsapi, "DnsRecordListFree");
+	    pDnsQuery_A = (void *)GetProcAddress(hdnsapi, "DnsQuery_A");
+	    pDnsRecordListFree = (void *)GetProcAddress(hdnsapi, "DnsRecordListFree");
 
 	    if (pDnsQuery_A && pDnsRecordListFree) {
 		PDNS_RECORD dnsrecords = NULL;
