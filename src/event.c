@@ -224,7 +224,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		    if (conn->tls) {
 			if (!tls_is_recoverable(tls_error(conn->tls)))
 			{
-			    xmpp_debug(ctx, "xmpp", "Unrecoverable TLS error.");
+			    xmpp_debug(ctx, "xmpp", "Unrecoverable TLS error, %d.", tls_error(conn->tls));
 			    conn->error = tls_error(conn->tls);
 			    conn_disconnect(conn);
 			}

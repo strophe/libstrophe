@@ -247,6 +247,9 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
 	if (!tls_start(conn->tls))
 	{
 	    xmpp_debug(conn->ctx, "xmpp", "Couldn't start TLS!");
+	    tls_free(conn->tls);
+	    conn->tls = NULL;
+	    xmpp_disconnect(conn);
 	}
 	else
 	{

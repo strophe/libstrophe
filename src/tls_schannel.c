@@ -20,15 +20,16 @@
 #include <security.h>
 #include <schnlsp.h>
 
-static HANDLE hsec32 = NULL;
-static SecurityFunctionTable *sft = NULL;
-static CredHandle hcred;
-static SecPkgInfo *spi;
-static int init = 0;
-
 struct _tls {
     xmpp_ctx_t *ctx;
     sock_t sock;
+
+    HANDLE hsec32;
+    SecurityFunctionTable *sft;
+    CredHandle hcred;
+    SecPkgInfo *spi;
+    int init;
+
     CtxtHandle hctxt;
     SecPkgContext_StreamSizes spcss;
 
@@ -50,70 +51,66 @@ struct _tls {
 
 void tls_initialize(void)
 {
-    PSecurityFunctionTable (*pInitSecurityInterface)(void);
-    SCHANNEL_CRED scred;
-    int ret;
-
-    if (!(hsec32 = LoadLibrary ("secur32.dll"))) {
-	    return;
-    }
-
-    if (!(pInitSecurityInterface = 
-	  (void *)GetProcAddress(hsec32, "InitSecurityInterfaceA"))) {
-	FreeLibrary(hsec32);
-	hsec32 = NULL;
-	return;
-    }
-
-    sft = pInitSecurityInterface();
-
-    if (!sft) {
-	sft = NULL;
-	FreeLibrary(hsec32);
-	hsec32 = NULL;
-	return;
-    }
-
-    ret = sft->QuerySecurityPackageInfo(UNISP_NAME, &spi);
-
-    memset(&scred, 0, sizeof(scred));
-    scred.dwVersion = SCHANNEL_CRED_VERSION;
-    scred.grbitEnabledProtocols = SP_PROT_TLS1_CLIENT;
-
-    sft->AcquireCredentialsHandleA(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND,
-				   NULL, &scred, NULL, NULL, &hcred, NULL);
-
-    init = 1;
-
     return;
 }
 
 void tls_shutdown(void)
 {
-    if (init) {
-	sft->FreeCredentialsHandle(&hcred);
-    }
-
-    sft = NULL;
-
-    if (hsec32) {
-	FreeLibrary(hsec32);
-	hsec32 = NULL;
-    }
-
     return;
 }
 
 tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 {
-    tls_t *tls = xmpp_alloc(ctx, sizeof(*tls));
+    tls_t *tls;
+    PSecurityFunctionTable (*pInitSecurityInterface)(void);
+    SCHANNEL_CRED scred;
+    int ret;
+    ALG_ID algs[1];
 
-    if (tls) {
-	memset(tls, 0, sizeof(*tls));
-	tls->ctx = ctx;
-	tls->sock = sock;
+    tls = xmpp_alloc(ctx, sizeof(*tls));
+
+    if (!tls) {
+	return NULL;
     }
 
+    memset(tls, 0, sizeof(*tls));
+    tls->ctx = ctx;
+    tls->sock = sock;
+
+    if (!(tls->hsec32 = LoadLibrary ("secur32.dll"))) {
+	return NULL;
+    }
+
+    if (!(pInitSecurityInterface = 
+	  (void *)GetProcAddress(tls->hsec32, "InitSecurityInterfaceA"))) {
+	FreeLibrary(tls->hsec32);
+	tls->hsec32 = NULL;
+	return NULL;
+    }
+
+    tls->sft = pInitSecurityInterface();
+
+    if (!tls->sft) {
+	tls->sft = NULL;
+	FreeLibrary(tls->hsec32);
+	tls->hsec32 = NULL;
+	return NULL;
+    }
+
+    ret = tls->sft->QuerySecurityPackageInfo(UNISP_NAME, &(tls->spi));
+
+    memset(&scred, 0, sizeof(scred));
+    scred.dwVersion = SCHANNEL_CRED_VERSION;
+    /*scred.grbitEnabledProtocols = SP_PROT_TLS1_CLIENT;*/
+    /* Something down the line doesn't like AES, so force it to RC4 */
+    algs[0] = CALG_RC4;
+    scred.cSupportedAlgs = 1;
+    scred.palgSupportedAlgs = algs;
+
+    tls->sft->AcquireCredentialsHandleA(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND,
+				   NULL, &scred, NULL, NULL, &(tls->hcred), NULL);
+
+    tls->init = 1;
     return tls;
 }
 
@@ -131,6 +128,17 @@ void tls_free(tls_t *tls)
 	xmpp_free(tls->ctx, tls->sendbuffer);
     }
 
+    if (tls->init) {
+	tls->sft->FreeCredentialsHandle(&(tls->hcred));
+    }
+
+    tls->sft = NULL;
+
+    if (tls->hsec32) {
+	FreeLibrary(tls->hsec32);
+	tls->hsec32 = NULL;
+    }
+    
     xmpp_free(tls->ctx, tls);
     return;
 }
@@ -181,8 +189,8 @@ int tls_start(tls_t *tls)
 
     memset(&(sbin[0]), 0, sizeof(sbin[0]));
     sbin[0].BufferType = SECBUFFER_TOKEN;
-    sbin[0].pvBuffer = xmpp_alloc(tls->ctx, spi->cbMaxToken);
-    sbin[0].cbBuffer = spi->cbMaxToken;
+    sbin[0].pvBuffer = xmpp_alloc(tls->ctx, tls->spi->cbMaxToken);
+    sbin[0].cbBuffer = tls->spi->cbMaxToken;
 
     memset(&(sbin[1]), 0, sizeof(sbin[1]));
     sbin[1].BufferType = SECBUFFER_EMPTY;
@@ -192,7 +200,7 @@ int tls_start(tls_t *tls)
     sbdin.cBuffers = 2;
     sbdin.pBuffers = sbin;
 
-    ret = sft->InitializeSecurityContextA(&hcred, NULL, name, ctxtreq, 0, 0,
+    ret = tls->sft->InitializeSecurityContextA(&(tls->hcred), NULL, name, ctxtreq, 0, 0,
 					  NULL, 0, &(tls->hctxt), &sbdout,
 					  &ctxtattr, NULL);
 
@@ -202,16 +210,26 @@ int tls_start(tls_t *tls)
 	int len = 0, inbytes = 0;
 
 	if (sbdout.pBuffers[0].cbBuffer) {
-	    sent = sock_write(tls->sock, sbdout.pBuffers[0].pvBuffer,
-			      sbdout.pBuffers[0].cbBuffer);
-	    sft->FreeContextBuffer(sbdout.pBuffers[0].pvBuffer);
+	    unsigned char *writebuff = sbdout.pBuffers[0].pvBuffer;
+	    unsigned int writelen = sbdout.pBuffers[0].cbBuffer;
+
+	    sent = sock_write(tls->sock, writebuff, writelen);
+	    if (sent == -1) {
+		tls->lasterror = sock_error();
+	    }
+	    else
+	    {
+		writebuff += sent;
+		writelen -= sent;
+	    }
+	    tls->sft->FreeContextBuffer(sbdout.pBuffers[0].pvBuffer);
 	    sbdout.pBuffers[0].pvBuffer = NULL;
 	    sbdout.pBuffers[0].cbBuffer = 0;
 	}
 
 	/* poll for a bit until the remote server stops sending data, ie it
 	 * finishes sending the token */
-	inbytes = 0;
+	inbytes = 1;
 	{
 	    fd_set fds;
 	    struct timeval tv;
@@ -225,7 +243,7 @@ int tls_start(tls_t *tls)
 	    select(tls->sock, &fds, NULL, NULL, &tv);
 	}
 
-	while (inbytes != -1) {
+	while (inbytes > 0) {
 	    fd_set fds;
 	    struct timeval tv;
 
@@ -237,17 +255,22 @@ int tls_start(tls_t *tls)
     
 	    select(tls->sock, &fds, NULL, NULL, &tv);
 
-	    inbytes = sock_read(tls->sock, p, spi->cbMaxToken - len);
+	    inbytes = sock_read(tls->sock, p, tls->spi->cbMaxToken - len);
 
 	    if (inbytes > 0) {
 		len += inbytes;
 		p += inbytes;
 	    }
+	    else
+	    {
+	        tls->lasterror = sock_error();
+	    }
+
 	}
 
 	sbin[0].cbBuffer = len;
 
-	ret = sft->InitializeSecurityContextA(&hcred, &(tls->hctxt), name,
+	ret = tls->sft->InitializeSecurityContextA(&(tls->hcred), &(tls->hctxt), name,
 					      ctxtreq, 0, 0, &sbdin, 0,
 					      &(tls->hctxt), &sbdout,
 					      &ctxtattr, NULL);
@@ -255,9 +278,18 @@ int tls_start(tls_t *tls)
 
     if (ret == SEC_E_OK) {
 	if (sbdout.pBuffers[0].cbBuffer) {
-	    sent = sock_write(tls->sock, sbdout.pBuffers[0].pvBuffer,
-			      sbdout.pBuffers[0].cbBuffer);
-	    sft->FreeContextBuffer(sbdout.pBuffers[0].pvBuffer);
+	    unsigned char *writebuff = sbdout.pBuffers[0].pvBuffer;
+	    unsigned int writelen = sbdout.pBuffers[0].cbBuffer;
+	    sent = sock_write(tls->sock, writebuff, writelen);
+	    if (sent == -1) {
+		tls->lasterror = sock_error();
+	    }
+	    else
+	    {
+		writebuff += sent;
+		writelen -= sent;
+	    }
+	    tls->sft->FreeContextBuffer(sbdout.pBuffers[0].pvBuffer);
 	    sbdout.pBuffers[0].pvBuffer = NULL;
 	    sbdout.pBuffers[0].cbBuffer = 0;
 	}
@@ -266,13 +298,11 @@ int tls_start(tls_t *tls)
     xmpp_free(tls->ctx, sbin[0].pvBuffer);
 
     if (ret != SEC_E_OK) {
-	xmpp_debug(tls->ctx, "TLSS",
-		   "Couldn't initialize security context: error %d", ret);
 	tls->lasterror = ret;
 	return 0;
     }
 
-    sft->QueryContextAttributes(&(tls->hctxt), SECPKG_ATTR_STREAM_SIZES, 
+    tls->sft->QueryContextAttributes(&(tls->hctxt), SECPKG_ATTR_STREAM_SIZES, 
 				&(tls->spcss));
 
     tls->recvbuffermaxlen = tls->spcss.cbHeader + tls->spcss.cbMaximumMessage
@@ -387,7 +417,7 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
 	memset(&(sbdec[3]), 0, sizeof(sbdec[3]));
 	sbdec[3].BufferType = SECBUFFER_EMPTY;
 
-	ret = sft->DecryptMessage(&(tls->hctxt), &sbddec, 0, NULL);
+	ret = tls->sft->DecryptMessage(&(tls->hctxt), &sbddec, 0, NULL);
 
 	if (ret == SEC_E_OK) {
 	    memcpy(tls->readybuffer, sbdec[1].pvBuffer, sbdec[1].cbBuffer);
@@ -420,6 +450,7 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
 
 	/* something bad happened, so we bail */
 	tls->lasterror = ret;
+
 	return -1;
     }
 
@@ -509,7 +540,7 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 	tls->sendbufferlen = sbenc[0].cbBuffer + sbenc[1].cbBuffer
 			     + sbenc[2].cbBuffer;
 
-	ret = sft->EncryptMessage(&(tls->hctxt), 0, &sbdenc, 0);
+	ret = tls->sft->EncryptMessage(&(tls->hctxt), 0, &sbdenc, 0);
 
 	if (ret != SEC_E_OK) {
 	    tls->lasterror = ret;
