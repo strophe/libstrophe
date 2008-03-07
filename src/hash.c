@@ -129,6 +129,9 @@ int hash_add(hash_t *table, const char * const key, void *data)
    hashentry_t *entry = NULL;
    int index = _hash_key(table, key);
 
+   /* drop existing entry, if any */
+   hash_drop(table, key);
+
    /* allocate and fill a new entry */
    entry = xmpp_alloc(ctx, sizeof(hashentry_t));
    if (!entry) return -1;
