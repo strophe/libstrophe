@@ -42,7 +42,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     int ret;
     struct timeval tv;
     xmpp_send_queue_t *sq, *tsq;
-    size_t towrite;
+    int towrite;
     char buf[4096];
     uint64_t next;
 
@@ -56,6 +56,19 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	if (conn->state != XMPP_STATE_CONNECTED) {
 	    connitem = connitem->next;
 	    continue;
+	}
+
+	/* if we're running tls, there may be some remaining data waiting to
+	 * be sent, so push that out */
+	if (conn->tls) {
+	    ret = tls_clear_pending_write(conn->tls);
+
+	    if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls))) {
+		/* an error occured */
+		xmpp_debug(ctx, "xmpp", "Send error occured, disconnecting.");
+		conn->error = ECONNABORTED;
+		conn_disconnect(conn);
+	    }
 	}
 
 	sq = conn->send_queue_head;
@@ -74,6 +87,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		    if (ret >= 0) sq->written += ret;
 		    break;
 		}
+
 	    } else {
 		ret = sock_write(conn->sock, &sq->data[sq->written], towrite);
 

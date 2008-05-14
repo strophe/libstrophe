@@ -67,6 +67,22 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
     int ret;
     ALG_ID algs[1];
 
+    SecPkgCred_SupportedAlgs spc_sa;
+    SecPkgCred_CipherStrengths spc_cs;
+    SecPkgCred_SupportedProtocols spc_sp;
+
+    OSVERSIONINFO osvi;
+
+    memset(&osvi, 0, sizeof(osvi));
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+
+    GetVersionEx(&osvi);
+
+    /* no TLS support on win9x/me, despite what anyone says */
+    if (osvi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) {
+	return NULL;
+    }
+
     tls = xmpp_alloc(ctx, sizeof(*tls));
 
     if (!tls) {
@@ -78,26 +94,32 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
     tls->sock = sock;
 
     if (!(tls->hsec32 = LoadLibrary ("secur32.dll"))) {
+	tls_free(tls);
 	return NULL;
     }
 
     if (!(pInitSecurityInterface = 
 	  (void *)GetProcAddress(tls->hsec32, "InitSecurityInterfaceA"))) {
-	FreeLibrary(tls->hsec32);
-	tls->hsec32 = NULL;
+	tls_free(tls);
 	return NULL;
     }
 
     tls->sft = pInitSecurityInterface();
 
     if (!tls->sft) {
-	tls->sft = NULL;
-	FreeLibrary(tls->hsec32);
-	tls->hsec32 = NULL;
+	tls_free(tls);
 	return NULL;
     }
 
     ret = tls->sft->QuerySecurityPackageInfo(UNISP_NAME, &(tls->spi));
+
+    if (ret != SEC_E_OK)
+    {
+	tls_free(tls);
+	return NULL;
+    }
+
+    xmpp_debug(ctx, "TLSS", "QuerySecurityPackageInfo() success");
 
     memset(&scred, 0, sizeof(scred));
     scred.dwVersion = SCHANNEL_CRED_VERSION;
@@ -107,10 +129,42 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
     scred.cSupportedAlgs = 1;
     scred.palgSupportedAlgs = algs;
 
-    tls->sft->AcquireCredentialsHandleA(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND,
-				   NULL, &scred, NULL, NULL, &(tls->hcred), NULL);
+    ret = tls->sft->AcquireCredentialsHandleA(NULL, UNISP_NAME,
+	SECPKG_CRED_OUTBOUND, NULL, &scred, NULL, NULL, &(tls->hcred), NULL);
+
+    if (ret != SEC_E_OK)
+    {
+	tls_free(tls);
+	return NULL;
+    }
+
+    xmpp_debug(ctx, "TLSS", "AcquireCredentialsHandle() success");
 
     tls->init = 1;
+
+    /* This bunch of queries should trip up wine until someone fixes
+     * schannel support there */
+    ret = tls->sft->QueryCredentialsAttributes(&(tls->hcred), SECPKG_ATTR_SUPPORTED_ALGS, &spc_sa);
+    if (ret != SEC_E_OK)
+    {
+	tls_free(tls);
+	return NULL;
+    }
+
+    ret = tls->sft->QueryCredentialsAttributes(&(tls->hcred), SECPKG_ATTR_CIPHER_STRENGTHS, &spc_cs);
+    if (ret != SEC_E_OK)
+    {
+	tls_free(tls);
+	return NULL;
+    }
+
+    ret = tls->sft->QueryCredentialsAttributes(&(tls->hcred), SECPKG_ATTR_SUPPORTED_PROTOCOLS, &spc_sp);
+    if (ret != SEC_E_OK)
+    {
+	tls_free(tls);
+	return NULL;
+    }
+
     return tls;
 }
 
@@ -420,7 +474,7 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
 	ret = tls->sft->DecryptMessage(&(tls->hctxt), &sbddec, 0, NULL);
 
 	if (ret == SEC_E_OK) {
-	    memcpy(tls->readybuffer, sbdec[1].pvBuffer, sbdec[1].cbBuffer);
+	    memcpy(tls->readybuffer, sbdec[1].pvBuffer, sbdec[1].cbBuffer); 
 	    tls->readybufferpos = 0;
 	    tls->readybufferlen = sbdec[1].cbBuffer;
 	    /* have we got some data left over?  If so, copy it to the start
@@ -459,9 +513,8 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
     return -1;
 }
 
-static int tls_clear_pending_write(tls_t *tls)
+int tls_clear_pending_write(tls_t *tls)
 {
-    /* clear pending writes first */
     if (tls->sendbufferpos < tls->sendbufferlen)
     {
 	int bytes;
@@ -551,7 +604,7 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 
 	ret = tls_clear_pending_write(tls);
 
-	if (ret == -1) {
+	if (ret == -1 && !tls_is_recoverable(tls_error(tls))) {
 	    return -1;
 	} 
 	
@@ -563,7 +616,7 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 	    remain = 0;
 	}
 
-	if (ret == 0) {
+	if (ret == 0 || (ret == -1 && tls_is_recoverable(tls_error(tls)))) {
 	    return sent;
 	}
 
