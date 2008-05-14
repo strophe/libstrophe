@@ -171,6 +171,8 @@ struct _xmpp_conn_t {
 
     char *lang;
     char *domain;
+    char *connectdomain;
+    char *connectport;
     char *jid;
     char *pass;
     char *stream_id;

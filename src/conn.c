@@ -67,6 +67,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	conn->stream_id = NULL;
 
 	conn->tls_support = 0;
+	conn->tls_failed = 0;
 	conn->sasl_support = 0;
 
 	conn->bind_required = 0;
@@ -239,6 +240,8 @@ void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass)
 
 int xmpp_connect_client(xmpp_conn_t * const conn, 
 			  const char * const domain,
+			  const char * const altdomain,
+			  unsigned short altport,
 			  xmpp_conn_handler callback,
 			  void * const userdata)
 {
@@ -254,9 +257,16 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     }
     if (!conn->domain) return -1;
 
-    sock_srv_lookup("xmpp-client", "tcp", conn->domain, connectdomain, 2048, &connectport);
+    if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain, connectdomain, 2048, &connectport))
+    {
+	    if (altdomain)
+	    {
+		    strcpy(connectdomain, altdomain);
+		    connectport = altport;
+	    }
+    }
     conn->sock = sock_connect(connectdomain, connectport);
-    if (conn->sock < 0) return -1;
+    if (conn->sock == -1) return -1;
 
     /* setup handler */
     conn->conn_handler = callback;
