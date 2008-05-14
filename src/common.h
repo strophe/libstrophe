@@ -160,7 +160,8 @@ struct _xmpp_conn_t {
     sock_t sock;
     tls_t *tls;
 
-    int tls_support; 
+    int tls_support;
+    int tls_failed; /* set when tls fails, so we don't try again */
     int sasl_support; /* if true, field is a bitfield of supported 
 			 mechanisms */ 
 

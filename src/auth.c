@@ -206,8 +206,6 @@ static int _handle_features(xmpp_conn_t * const conn,
 	}
     }
 
-    /* TODO: Implement TLS */
-
     _auth(conn);
  
     return 0;
@@ -240,19 +238,22 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
     if (strcmp(name, "proceed") == 0) {
         xmpp_debug(conn->ctx, "xmpp", "proceeding with TLS");
 
-	parser_prepare_reset(conn, _handle_open_tls);
-
 	conn->tls = tls_new(conn->ctx, conn->sock);
 
 	if (!tls_start(conn->tls))
 	{
-	    xmpp_debug(conn->ctx, "xmpp", "Couldn't start TLS!");
+	    xmpp_debug(conn->ctx, "xmpp", "Couldn't start TLS! error %d", tls_error(conn->tls));
 	    tls_free(conn->tls);
 	    conn->tls = NULL;
+	    conn->tls_failed = 1;
+	
+	    /* failed tls spoils the connection, so disconnect */
 	    xmpp_disconnect(conn);
 	}
 	else
 	{
+	    parser_prepare_reset(conn, _handle_open_tls);
+
 	    conn_open_stream(conn);
 	}
     }
@@ -473,6 +474,20 @@ static void _auth(xmpp_conn_t * const conn)
 
     if (conn->tls_support)
     {
+	tls_t *tls = tls_new(conn->ctx, conn->sock);
+
+	/* If we couldn't init tls, it isn't there, so go on */
+	if (!tls)
+	{
+	    conn->tls_support = 0;
+	    _auth(conn);
+	    return;
+	}
+	else
+	{
+	    tls_free(tls);
+	}
+
 	auth = _make_starttls(conn);
 
 	if (!auth) {
