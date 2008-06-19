@@ -1,14 +1,10 @@
-This is libstrophe, our experimental XMPP C client library.
+This is strophe, our XMPP client library.
 
 Our goals are:
 
-    (a) usable quickly
-    (b) well documented
-    (c) reliable
-    (d) not suck
-
-And to implement the complete XMPP spec, but not the historical Jabber 
-bits.
+    * usable quickly
+    * well documented
+    * reliable
 
 == Build Instructions ==
 

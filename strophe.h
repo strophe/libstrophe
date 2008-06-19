@@ -1,7 +1,8 @@
 /* strophe.h
-** libstrophe XMPP client library API
+** strophe XMPP client library C API
 **
-** Copyright (C) 2005 OGG, LLC. All rights reserved.
+** Copyright (C) 2005-2008 OGG, LLC.
+** Please see LICENSE.txt for details.
 */
 
 #ifndef __LIBSTROPHE_STROPHE_H__
