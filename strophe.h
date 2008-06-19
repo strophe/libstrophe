@@ -152,10 +152,12 @@ void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
 const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
 void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);
 
-int xmpp_connect_client(xmpp_conn_t * const conn,
-			const char * const domain,
-			xmpp_conn_handler callback,
-			void * const userdata);
+int xmpp_connect_client(xmpp_conn_t * const conn, 
+			  const char * const domain,
+			  const char * const altdomain,
+			  unsigned short altport,
+			  xmpp_conn_handler callback,
+			  void * const userdata);
 
 /*
 int xmpp_connect_component(conn, name)
