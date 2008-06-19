@@ -1,8 +1,9 @@
 # -*- Mode: python -*-
 # SCons build specification
 # see http://www.scons.org if you do not have this tool
-
-# Copyright (C) 2005 OGG, LCC. All rights reserved.
+#
+# Copyright (C) 2005-2008 OGG, LLC. All rights reserved.
+#
 #  This software is provided AS-IS with no warranty, either express or
 #  implied.
 #

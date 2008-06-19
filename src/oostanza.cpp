@@ -1,3 +1,17 @@
+/* oostanza.cpp
+** strophe XMPP client library -- C++ context implementation
+** 
+** Copyright (C) 2005-2008 OGG, LLC. All rights reserved.
+**
+**  This software is provided AS-IS with no warranty, either express
+**  or implied.
+**
+**  This software is distributed under license and may not be copied,
+**  modified or distributed except as expressly authorized under the
+**  terms of the license contained in the file LICENSE.txt in this
+**  distribution.
+*/
+
 #include "strophe.h"
 #include "strophepp.h"
 

@@ -1,7 +1,7 @@
 /* thread.h
-** XMPP client library -- thread abstraction header
+** strophe XMPP client library -- thread abstraction header
 **
-** Copyright (C) 2005 OGG, LLC. All rights reserved.
+** Copyright (C) 2005-2008 OGG, LLC. All rights reserved.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.

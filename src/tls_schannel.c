@@ -1,7 +1,7 @@
-/* tls.c
-** libstrophe XMPP client library -- TLS abstraction schannel impl.
+/* tls_schannel.c
+** strophe XMPP client library -- TLS abstraction schannel impl.
 **
-** Copyright (C) 2005 OGG, LCC. All rights reserved.
+** Copyright (C) 2005-2008 OGG, LLC. All rights reserved.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
