@@ -1,3 +1,7 @@
+/** @file
+ *  SHA-1 hash.
+ */
+
 /*
 SHA-1 in C
 By Steve Reid <sreid@sea-to-sky.net>

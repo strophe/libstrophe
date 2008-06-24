@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  TLS implementation with OpenSSL.
+ */
+
 #include <openssl/ssl.h>
 #include <openssl/applink.c>
 

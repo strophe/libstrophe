@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file 
+ *  Authentication function and handlers.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,11 +28,32 @@
 #define strcasecmp stricmp
 #endif
 
-/* FIXME: these should be configurable */
+/* TODO: these should configurable at runtime on a per connection basis  */
+
+#ifndef FEATURES_TIMEOUT
+/** @def FEATURES_TIMEOUT
+ *  Time to wait for &lt;stream:features/&gt; stanza.
+ */
 #define FEATURES_TIMEOUT 15000 /* 15 seconds */
+#endif
+#ifndef BIND_TIMEOUT
+/** @def BIND_TIMEOUT
+ *  Time to wait for &lt;bind/&gt; stanza reply.
+ */
 #define BIND_TIMEOUT 15000 /* 15 seconds */
+#endif
+#ifndef SESSION_TIMEOUT
+/** @def SESSION_TIMEOUT
+ *  Time to wait for &lt;session/&gt; stanza reply.
+ */
 #define SESSION_TIMEOUT 15000 /* 15 seconds */
+#endif
+#ifndef LEGACY_TIMEOUT
+/** @def LEGACY_TIMEOUT
+ *  Time to wait for legacy authentication to complete.
+ */
 #define LEGACY_TIMEOUT 15000 /* 15 seconds */
+#endif
 
 static void _auth(xmpp_conn_t * const conn);
 static void _handle_open_tls(xmpp_conn_t * const conn);
@@ -65,7 +90,6 @@ static int _handle_missing_session(xmpp_conn_t * const conn,
 				   void * const userdata);
 
 /* stream:error handler */
-
 static int _handle_error(xmpp_conn_t * const conn,
 			 xmpp_stanza_t * const stanza,
 			 void * const userdata)
@@ -160,7 +184,6 @@ static int _handle_error(xmpp_conn_t * const conn,
 }
 
 /* stream:features handlers */
-
 static int _handle_missing_features(xmpp_conn_t * const conn,
 				    void * const userdata)
 {
@@ -466,7 +489,8 @@ static xmpp_stanza_t *_make_sasl_auth(xmpp_conn_t * const conn,
 /* authenticate the connection 
  * this may get called multiple times.  if any auth method fails, 
  * this will get called again until one auth method succeeds or every
- * method fails */
+ * method fails 
+ */
 static void _auth(xmpp_conn_t * const conn)
 {
     xmpp_stanza_t *auth, *authdata, *query, *child, *iq;
@@ -503,8 +527,7 @@ static void _auth(xmpp_conn_t * const conn)
 
 	/* TLS was tried, unset flag */
 	conn->tls_support = 0;
-    }
-    else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
+    } else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
 	auth = _make_sasl_auth(conn, "DIGEST-MD5");
 	if (!auth) {
 	    disconnect_mem_error(conn);
@@ -661,7 +684,15 @@ static void _auth(xmpp_conn_t * const conn)
 }
 
 
-/* this is called on initial stream open */
+/** Set up handlers at stream start.
+ *  This function is called internally to Strophe for handling the opening
+ *  of an XMPP stream.  It's called by the parser when a stream is opened
+ *  or reset, and adds the initial handlers for <stream:error/> and 
+ *  <stream:features/>.  This function is not intended for use outside
+ *  of Strophe.
+ *
+ *  @param conn a Strophe connection object
+ */
 void auth_handle_open(xmpp_conn_t * const conn)
 {
     /* reset all timed handlers */

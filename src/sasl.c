@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  SASL authentication.
+ */
+
 #include <string.h>
 
 #include "strophe.h"

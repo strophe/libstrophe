@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  TLS dummy implementation.
+ */
+
 #include "common.h"
 #include "tls.h"
 #include "sock.h"

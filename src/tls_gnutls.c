@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  TLS implementation with GNUTLS
+ */
+
 #include <gnutls/gnutls.h>
 
 #include "common.h"

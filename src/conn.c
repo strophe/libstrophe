@@ -12,6 +12,13 @@
 **  distribution.
 */
 
+/** @file 
+ *  Connection management.
+ */
+
+/** @defgroup Connections Connection management
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,14 +27,38 @@
 #include "common.h"
 #include "util.h"
 
+#ifndef DEFAULT_SEND_QUEUE_MAX
+/** @def DEFAULT_SEND_QUEUE_MAX
+ *  The default maximum send queue size.  This is currently unused.
+ */
 #define DEFAULT_SEND_QUEUE_MAX 64
+#endif
+#ifndef DISCONNECT_TIMEOUT
+/** @def DISCONNECT_TIMEOUT 
+ *  The time to wait (in milliseconds) for graceful disconnection to
+ *  complete before the connection is reset.  The default is 2 seconds.
+ */
 #define DISCONNECT_TIMEOUT 2000 /* 2 seconds */
+#endif
+#ifndef CONNECT_TIMEOUT
+/** @def CONNECT_TIMEOUT
+ *  The time to wait (in milliseconds) for a connection attempt to succeed 
+ * or error.  The default is 5 seconds.
+ */
 #define CONNECT_TIMEOUT 5000 /* 5 seconds */
+#endif
 
 static int _disconnect_cleanup(xmpp_conn_t * const conn, 
 			       void * const userdata);
 
-
+/** Create a new Strophe connection object.
+ *
+ *  @param ctx a Strophe context object
+ *
+ *  @return a Strophe connection object or NULL on an error
+ *
+ *  @ingroup Connections
+ */
 xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 {
     xmpp_conn_t *conn = NULL;
@@ -111,12 +142,31 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
     return conn;
 }
 
+/** Clone a Strophe connection object.
+ *  
+ *  @param conn a Strophe connection object
+ *
+ *  @return the same conn object passed in with its reference count
+ *      incremented by 1
+ *
+ *  @ingroup Connections
+ */
 xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn)
 {
     conn->ref++;
     return conn;
 }
 
+/** Release a Strophe connection object.
+ *  Decrement the reference count by one for a connection, freeing the 
+ *  connection object if the count reaches 0.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return TRUE if the connection object was freed and FALSE otherwise
+ *
+ *  @ingroup Connections
+ */
 int xmpp_conn_release(xmpp_conn_t * const conn)
 {
     xmpp_ctx_t *ctx;
@@ -212,14 +262,28 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
     return released;
 }
 
+/** Get the JID which is or will be bound to the connection.
+ *  
+ *  @param conn a Strophe connection object
+ *
+ *  @return a string containing the full JID or NULL if it has not been set
+ *
+ *  @ingroup Connections
+ */
 const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn)
 {
     return conn->jid;
 }
 
-/* set the jid of the user or the component name.  in the first case,
- * this can be a full jid, or a bare jid.  in the second case, this will
- * probably be a domain only.
+/** Set the JID of the user that will be bound to the connection.
+ *  If any JID was previously set, it will be discarded.  This should not be 
+ *  be used after a connection is bound.  The function will make a copy of
+ *  the JID string.
+ *
+ *  @param conn a Strophe connection object
+ *  @param jid a full or bare JID
+ *
+ *  @ingroup Connections
  */
 void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid)
 {
@@ -227,17 +291,55 @@ void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid)
     conn->jid = xmpp_strdup(conn->ctx, jid);
 }
 
+/** Get the password used for authentication of a connection.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return a string containing the password or NULL if it has not been set
+ *
+ *  @ingroup Connections
+ */
 const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn)
 {
     return conn->pass;
 }
 
+/** Set the password used to authenticate the connection.
+ *  If any password was previously set, it will be discarded.  The function
+ *  will make a copy of the password string.
+ * 
+ *  @param conn a Strophe connection object
+ *  @param pass the password
+ *
+ *  @ingroup Connections
+ */
 void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass)
 {
     if (conn->pass) xmpp_free(conn->ctx, conn->pass);
     conn->pass = xmpp_strdup(conn->ctx, pass);
 }
 
+/** Initiate a connection to the XMPP server.
+ *  This function returns immediately after starting the connection
+ *  process to the XMPP server, and notifiations of connection state changes
+ *  will be sent to the callback function.  The domain and port to connect to
+ *  are usually determined by an SRV lookup for the xmpp-client service at
+ *  the domain specified in the JID.  If SRV lookup fails, altdomain and 
+ *  altport will be used instead if specified.
+ *
+ *  @param conn a Strophe connection object
+ *  @param domain a string with the domain name to connect to.  If this is
+ *      NULL then the domain is taken from the JID.
+ *  @param altdomain a string with domain to use if SRV lookup fails
+ *  @param altport an integer port number to use if SRV lookup fails
+ *  @param callback a xmpp_conn_handler callback function that will receive
+ *      notifications of connection status
+ *  @param userdata an opaque data pointer that will be passed to the callback
+ *
+ *  @return 0 on success and -1 on an error
+ *
+ *  @ingroup Connections
+ */
 int xmpp_connect_client(xmpp_conn_t * const conn, 
 			  const char * const domain,
 			  const char * const altdomain,
@@ -284,9 +386,12 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     return 0;
 }
 
-/* this function is only called by the end tag handler.  it is
- * the only place where a conn_disconnect would be called during a clean
- * disconnect sequence */
+/** Cleanly disconnect the connection.
+ *  This function is only called by the stream parser when </stream:stream>
+ *  is received, and it not intended to be called by code outside of Strophe.
+ *
+ *  @param conn a Strophe connection object
+ */
 void conn_disconnect_clean(xmpp_conn_t * const conn)
 {
     /* remove the timed handler */
@@ -295,6 +400,12 @@ void conn_disconnect_clean(xmpp_conn_t * const conn)
     conn_disconnect(conn);
 }
 
+/** Disconnect from the XMPP server.
+ *  This function immediately disconnects from the XMPP server, and should
+ *  not be used outside of the Strophe library.
+ *
+ *  @param conn a Strophe connection object
+ */
 void conn_disconnect(xmpp_conn_t * const conn) 
 {
     xmpp_debug(conn->ctx, "xmpp", "Closing socket.");
@@ -323,9 +434,15 @@ static int _disconnect_cleanup(xmpp_conn_t * const conn,
     return 0;
 }
 
-/* terminates the XMPP stream, closing the underlying socket,
- * and calls the conn_handler.  this function returns immediately
- * without calling the handler if the connection is not active */
+/** Initiate termination of the connection to the XMPP server.
+ *  This function starts the disconnection sequence by sending
+ *  </stream:stream> to the XMPP server.  This function will do nothing
+ *  if the connection state is CONNECTING or CONNECTED.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @ingroup Connections
+ */
 void xmpp_disconnect(xmpp_conn_t * const conn)
 {
     if (conn->state != XMPP_STATE_CONNECTING &&
@@ -340,7 +457,17 @@ void xmpp_disconnect(xmpp_conn_t * const conn)
 		      DISCONNECT_TIMEOUT, NULL);
 }
 
-/* convinience function for sending data to a connection */
+/** Send a raw string to the XMPP server.
+ *  This function is a convenience function to send raw string data to the 
+ *  XMPP server.  It is used by Strophe to send short messages instead of
+ *  building up an XML stanza with DOM methods.  This should be used with care
+ *  as it does not validate the data; invalid data may result in immediate
+ *  stream termination by the XMPP server.
+ *
+ *  @param conn a Strophe connection object
+ *  @param fmt a printf-style format string followed by a variable list of
+ *      arguments to format
+ */
 void xmpp_send_raw_string(xmpp_conn_t * const conn, 
 			  const char * const fmt, ...)
 {
@@ -379,7 +506,16 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
     }
 }
 
-/* adds data to the send queue for a connection */
+/** Send raw bytes to the XMPP server.
+ *  This function is a convenience function to send raw bytes to the 
+ *  XMPP server.  It is usedly primarly by xmpp_send_raw_string.  This 
+ *  function should be used with care as it does not validate the bytes and
+ *  invalid data may result in stream termination by the XMPP server.
+ *
+ *  @param conn a Strophe connection object
+ *  @param data a buffer of raw bytes
+ *  @param len the length of the data in the buffer
+ */
 void xmpp_send_raw(xmpp_conn_t * const conn,
 		   const char * const data, const size_t len)
 {
@@ -414,6 +550,15 @@ void xmpp_send_raw(xmpp_conn_t * const conn,
     conn->send_queue_len++;
 }
 
+/** Send an XML stanza to the XMPP server.
+ *  This is the main way to send data to the XMPP server.  The function will
+ *  terminate without action if the connection state is not CONNECTED.
+ *
+ *  @param conn a Strophe connection object
+ *  @param stanza a Strophe stanza object
+ *
+ *  @ingroup Connections
+ */
 void xmpp_send(xmpp_conn_t * const conn,
 	       xmpp_stanza_t * const stanza)
 {
@@ -430,6 +575,12 @@ void xmpp_send(xmpp_conn_t * const conn,
     }
 }
 
+/** Send the opening &lt;stream:stream&gt; tag to the server.
+ *  This function is used by Strophe to begin an XMPP stream.  It should
+ *  not be used outside of the library.
+ *
+ *  @param conn a Strophe connection object
+ */
 void conn_open_stream(xmpp_conn_t * const conn)
 {
     xmpp_send_raw_string(conn, 

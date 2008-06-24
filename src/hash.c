@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Hash tables.
+ */
+
 #include <stdlib.h>
 #include <string.h>
 

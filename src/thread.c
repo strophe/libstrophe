@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Thread absraction.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 

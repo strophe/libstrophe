@@ -21,6 +21,10 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
+/** @file
+ *  MD5 hash.
+ */
+
 #include <string.h> /* memcpy(), memset() */
 #include "md5.h"
 

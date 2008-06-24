@@ -55,6 +55,10 @@
  *
  **************************************************************/
 
+/** @file
+ *  A snprintf implementation.
+ */
+
 /* JAM: we don't need this - #include "config.h" */
 
 /* JAM: changed declarations to xmpp_snprintf and xmpp_vsnprintf to

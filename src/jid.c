@@ -12,12 +12,25 @@
 **  distribution.
 */
 
+/** @file
+ *  JID creation and parsing.
+ */
+
 #include <string.h>
 
 #include "strophe.h"
 #include "common.h"
 
-/** join jid component parts to form a new jid string */
+/** Create a JID string from component parts node, domain, and resource.
+ *
+ *  @param ctx the Strophe context object
+ *  @param node a string representing the node
+ *  @param domain a string representing the domain.  Required.
+ *  @param resource a string representing the resource
+ *
+ *  @return an allocated string with the full JID or NULL if no domain
+ *      is specified
+ */
 char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
 				    const char *domain,
 				    const char *resource)
@@ -52,7 +65,13 @@ char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
     return result;
 }
 
-/** return a bare jid */
+/** Create a bare JID from a JID.
+ *  
+ *  @param ctx the Strophe context object
+ *  @param jid the JID
+ *
+ *  @return an allocated string with the bare JID or NULL on an error
+ */
 char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid)
 {
     char *result;
@@ -70,7 +89,14 @@ char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid)
     return result;
 }
 
-/** return the node portion of a jid */
+/** Create a node string from a JID.
+ *  
+ *  @param ctx a Strophe context object
+ *  @param jid the JID
+ *
+ *  @return an allocated string with the node or NULL if no node is found
+ *      or an error occurs
+ */
 char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid)
 {
     char *result = NULL;
@@ -88,7 +114,13 @@ char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid)
     return result;
 }
 
-/** return the domain portion of a jid */
+/** Create a domain string from a JID.
+ *
+ *  @param ctx the Strophe context object
+ *  @param jid the JID
+ *
+ *  @return an allocated string with the domain or NULL on an error
+ */
 char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
 {
     char *result = NULL;
@@ -116,7 +148,14 @@ char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
     return result;
 }
 
-/** return the node portion of a jid */
+/** Create a resource string from a JID.
+ *
+ *  @param ctx a Strophe context object
+ *  @param jid the JID
+ *
+ *  @return an allocated string with the resource or NULL if no resource 
+ *      is found or an error occurs
+ */
 char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid)
 {
     char *result = NULL;

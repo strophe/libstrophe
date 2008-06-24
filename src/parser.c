@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  XML parser handlers.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

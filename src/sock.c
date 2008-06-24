@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Socket abstraction.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>

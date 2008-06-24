@@ -12,6 +12,27 @@
 **  distribution.
 */
 
+/** @file
+ *  Event loop and management.
+ */
+
+/** @defgroup EventLoop Event loop
+ *  These functions manage the Strophe event loop.  
+ *  
+ *  Simple tools can use xmpp_run() and xmpp_stop() to manage the life
+ *  cycle of the program.  A common idiom is to set up a few initial
+ *  event handers, call xmpp_run(), and then respond and react to
+ *  events as they come in.  At some point, one of the handlers will
+ *  call xmpp_stop() to quit the event loop which leads to the program
+ *  terminating.
+ * 
+ *  More complex programs will have their own event loops, and should
+ *  ensure that xmpp_run_once() is called regularly from there.  For
+ *  example, a GUI program will already include an event loop to
+ *  process UI events from users, and xmpp_run_once() would be called
+ *  from an idle function.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,10 +50,27 @@
 #include "strophe.h"
 #include "common.h"
 
+#ifndef DEFAULT_TIMEOUT
+/** @def DEFAULT_TIMEOUT
+ *  The default timeout in milliseconds for the event loop.
+ *  This is set to 1 millisecond.
+ */
 #define DEFAULT_TIMEOUT 1
+#endif
 
-/* send data and check all connections for their events 
- * and call event handlers.  timeout is in milliseconds */
+/** Run the event loop once.
+ *  This function will run send any data that has been queued by
+ *  xmpp_send and related functions and run through the Strophe even
+ *  loop a single time, and will not wait more than timeout
+ *  milliseconds for events.  This is provided to support integration
+ *  with event loops outside the library, and if used, should be
+ *  called regularly to achieve low latency event handling.
+ *
+ *  @param ctx a Strophe context object
+ *  @param timeout time to wait for events in milliseconds
+ *
+ *  @ingroup EventLoop
+ */
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 {
     xmpp_connlist_t *connitem;
@@ -71,6 +109,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	    }
 	}
 
+	/* write all data from the send queue to the socket */
 	sq = conn->send_queue_head;
 	while (sq) {
 	    towrite = sq->len - sq->written;
@@ -265,6 +304,14 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     handler_fire_timed(ctx);
 }
 
+/** Start the event loop.
+ *  This function continuously calls xmpp_run_once and does not return
+ *  until xmpp_stop has been called.
+ *
+ *  @param ctx a Strophe context object
+ *
+ *  @ingroup EventLoop
+ */
 void xmpp_run(xmpp_ctx_t *ctx)
 {
     if (ctx->loop_status != XMPP_LOOP_NOTSTARTED) return;
@@ -277,6 +324,14 @@ void xmpp_run(xmpp_ctx_t *ctx)
     xmpp_debug(ctx, "event", "Event loop completed.");
 }
 
+/** Stop the event loop.
+ *  This will stop the event loop after the current iteration and cause
+ *  xmpp_run to exit.
+ *
+ *  @param ctx a Strophe context object
+ *
+ *  @ingroup EventLoop
+ */
 void xmpp_stop(xmpp_ctx_t *ctx)
 {
     xmpp_debug(ctx, "event", "Stopping event loop.");
