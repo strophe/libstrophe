@@ -48,7 +48,7 @@ Sources = Split("""
   util.c
   thread.c
   snprintf.c
-  tls_schannel.c
+  tls_dummy.c
   oocontext.cpp
   oostanza.cpp
 """)

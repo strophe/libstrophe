@@ -56,7 +56,7 @@ char *sasl_plain(xmpp_ctx_t *ctx, const char *authid, const char *password) {
 	memcpy(msg+1, authid, idlen);
 	msg[1+idlen] = '\0';
 	memcpy(msg+1+idlen+1, password, passlen);
-	result = base64_encode(ctx, msg, 2 + idlen + passlen);
+	result = base64_encode(ctx, (unsigned char *)msg, 2 + idlen + passlen);
 	xmpp_free(ctx, msg);
     }
 
@@ -66,7 +66,7 @@ char *sasl_plain(xmpp_ctx_t *ctx, const char *authid, const char *password) {
 /** helpers for digest auth */
 
 /* create a new, null-terminated string from a substring */
-static char *_make_string(xmpp_ctx_t *ctx, const char *s, const int len)
+static char *_make_string(xmpp_ctx_t *ctx, const char *s, const unsigned len)
 {
     char *result;
 
@@ -98,9 +98,9 @@ static char *_make_quoted(xmpp_ctx_t *ctx, const char *s)
 static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
 {
     hash_t *result;
-    char *text;
+    unsigned char *text;
     char *key, *value;
-    char *s, *t;
+    unsigned char *s, *t;
 
     text = base64_decode(ctx, msg, strlen(msg));
     if (text == NULL) {
@@ -118,7 +118,7 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
 	    t = s;
 	    while ((*t != '=') && (*t != '\0')) t++;
 	    if (*t == '\0') break; /* bad string */
-	    key = _make_string(ctx, s, (t-s));
+	    key = _make_string(ctx, (char *)s, (t-s));
 	    if (key == NULL) break;
             /* advance our start pointer past the key */
 	    s = t + 1;
@@ -129,16 +129,16 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
 		while ((*t != *s) && (*t != '\0'))
 		    t++;
 		if (*t == *s) {
-		    value = _make_string(ctx, s+1, (t-s-2));
+		    value = _make_string(ctx, (char *)s+1, (t-s-2));
 		    s = t + 1;
 		} else {
-		    value = _make_string(ctx, s+1, (t-s-1));
+		    value = _make_string(ctx, (char *)s+1, (t-s-1));
 		    s = t;
 		}
 	    /* otherwise, accumulate a value ending in ',' or '\0' */
 	    } else {
 		while ((*t != ',') && (*t != '\0')) t++;
-		value = _make_string(ctx, s, (t-s));
+		value = _make_string(ctx, (char *)s, (t-s));
 		s = t;
 	    }
 	    if (value == NULL) {
@@ -268,21 +268,21 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
 
     /* construct MD5(A1) */
     MD5Init(&MD5);
-    MD5Update(&MD5, node, strlen(node));
-    MD5Update(&MD5, ":", 1);
-    MD5Update(&MD5, domain, strlen(domain));
-    MD5Update(&MD5, ":", 1);
-    MD5Update(&MD5, password, strlen(password));
+    MD5Update(&MD5, (unsigned char *)node, strlen(node));
+    MD5Update(&MD5, (unsigned char *)":", 1);
+    MD5Update(&MD5, (unsigned char *)domain, strlen(domain));
+    MD5Update(&MD5, (unsigned char *)":", 1);
+    MD5Update(&MD5, (unsigned char *)password, strlen(password));
     MD5Final(digest, &MD5);
 
     MD5Init(&MD5);
-    MD5Update(&MD5, digest, 16);
-    MD5Update(&MD5, ":", 1);
+    MD5Update(&MD5, (unsigned char *)digest, 16);
+    MD5Update(&MD5, (unsigned char *)":", 1);
     value = hash_get(table, "nonce");
-    MD5Update(&MD5, value, strlen(value));
-    MD5Update(&MD5, ":", 1);
+    MD5Update(&MD5, (unsigned char *)value, strlen(value));
+    MD5Update(&MD5, (unsigned char *)":", 1);
     value = hash_get(table, "cnonce");
-    MD5Update(&MD5, value, strlen(value));
+    MD5Update(&MD5, (unsigned char *)value, strlen(value));
     MD5Final(digest, &MD5);
 
     A1 = xmpp_alloc(ctx, 16);
@@ -290,9 +290,9 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
 
     /* construct MD5(A2) */
     MD5Init(&MD5);
-    MD5Update(&MD5, "AUTHENTICATE:", 13);
+    MD5Update(&MD5, (unsigned char *)"AUTHENTICATE:", 13);
     value = hash_get(table, "digest-uri");
-    MD5Update(&MD5, value, strlen(value));
+    MD5Update(&MD5, (unsigned char *)value, strlen(value));
     MD5Final(digest, &MD5);
 
     A2 = xmpp_alloc(ctx, 16);
@@ -300,26 +300,26 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
 
     /* construct response */
     MD5Init(&MD5);
-    _digest_to_hex(A1, hex);
-    MD5Update(&MD5, hex, 32);
-    MD5Update(&MD5, ":", 1);
+    _digest_to_hex((char *)A1, hex);
+    MD5Update(&MD5, (unsigned char *)hex, 32);
+    MD5Update(&MD5, (unsigned char *)":", 1);
     value = hash_get(table, "nonce");
-    MD5Update(&MD5, value, strlen(value));
-    MD5Update(&MD5, ":", 1);
-    MD5Update(&MD5, "00000001", 8);
-    MD5Update(&MD5, ":", 1);
+    MD5Update(&MD5, (unsigned char *)value, strlen(value));
+    MD5Update(&MD5, (unsigned char *)":", 1);
+    MD5Update(&MD5, (unsigned char *)"00000001", 8);
+    MD5Update(&MD5, (unsigned char *)":", 1);
     value = hash_get(table, "cnonce");
-    MD5Update(&MD5, value, strlen(value));
-    MD5Update(&MD5, ":", 1);
+    MD5Update(&MD5, (unsigned char *)value, strlen(value));
+    MD5Update(&MD5, (unsigned char *)":", 1);
     value = hash_get(table, "qop");
-    MD5Update(&MD5, value, strlen(value));
-    MD5Update(&MD5, ":", 1);
-    _digest_to_hex(A2, hex);
-    MD5Update(&MD5, hex, 32);
+    MD5Update(&MD5, (unsigned char *)value, strlen(value));
+    MD5Update(&MD5, (unsigned char *)":", 1);
+    _digest_to_hex((char *)A2, hex);
+    MD5Update(&MD5, (unsigned char *)hex, 32);
     MD5Final(digest, &MD5);
 
     response = xmpp_alloc(ctx, 32+1);
-    _digest_to_hex(digest, hex);
+    _digest_to_hex((char *)digest, hex);
     memcpy(response, hex, 32);
     response[32] = '\0';
     hash_add(table, "response", response);
@@ -345,7 +345,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     hash_release(table); /* also frees value strings */
 
     /* reuse response for the base64 encode of our result */
-    response = base64_encode(ctx, result, strlen(result));
+    response = base64_encode(ctx, (unsigned char *)result, strlen(result));
     xmpp_free(ctx, result);
 
     return response;
@@ -389,14 +389,14 @@ static const char _base64_charmap[65] = {
     '='
 };
 
-int base64_encoded_len(xmpp_ctx_t *ctx, const int len)
+int base64_encoded_len(xmpp_ctx_t *ctx, const unsigned len)
 {
     /* encoded steam is 4 bytes for every three, rounded up */
     return ((len + 2)/3) << 2;
 }
 
 char *base64_encode(xmpp_ctx_t *ctx, 
-		    const unsigned char * const buffer, const int len)
+		    const unsigned char * const buffer, const unsigned len)
 {
     int clen;
     char *cbuf, *c;
@@ -450,7 +450,7 @@ char *base64_encode(xmpp_ctx_t *ctx,
 }
 
 int base64_decoded_len(xmpp_ctx_t *ctx, 
-		       const char * const buffer, const int len)
+		       const char * const buffer, const unsigned len)
 {
     int nudge;
     int c;
@@ -474,7 +474,7 @@ int base64_decoded_len(xmpp_ctx_t *ctx,
 }
 
 unsigned char *base64_decode(xmpp_ctx_t *ctx,
-			     const char * const buffer, const int len)
+			     const char * const buffer, const unsigned len)
 {
     int dlen;
     unsigned char *dbuf, *d;

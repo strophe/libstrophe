@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Strophe public C++ API definitions.
+ */
+
 #ifndef __LIBSTROPHE_STROPHEPP_H__
 #define __LIBSTROPHE_STROPHEPP_H__
 

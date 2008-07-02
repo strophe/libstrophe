@@ -13,6 +13,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Type definitions for platforms without stdint.h.
+ */
+
 #ifndef __LIBSTROPHE_OSTYPES_H__
 #define __LIBSTROPHE_OSTYPES_H__
 

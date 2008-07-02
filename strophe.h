@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Strophe public C API definitions.
+ */
+
 #ifndef __LIBSTROPHE_STROPHE_H__
 #define __LIBSTROPHE_STROPHE_H__
 
@@ -22,35 +26,87 @@ extern "C" {
 #include <stdio.h>
 
 /* namespace defines */
+/** @def XMPP_NS_CLIENT
+ *  Namespace definition for 'jabber:client'.
+ */
 #define XMPP_NS_CLIENT "jabber:client"
+/** @def XMPP_NS_COMPONENT
+ *  Namespace definition for 'jabber:component:accept'.
+ */
 #define XMPP_NS_COMPONENT "jabber:component:accept"
+/** @def XMPP_NS_STREAMS
+ *  Namespace definition for 'http://etherx.jabber.org/streams'.
+ */
 #define XMPP_NS_STREAMS "http://etherx.jabber.org/streams"
+/** @def XMPP_NS_STREAMS_IETF
+ *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-streams'.
+ */
 #define XMPP_NS_STREAMS_IETF "urn:ietf:params:xml:ns:xmpp-streams"
+/** @def XMPP_NS_TLS
+ *  Namespace definition for 'url:ietf:params:xml:ns:xmpp-tls'.
+ */
 #define XMPP_NS_TLS "urn:ietf:params:xml:ns:xmpp-tls"
+/** @def XMPP_NS_SASL
+ *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-sasl'.
+ */
 #define XMPP_NS_SASL "urn:ietf:params:xml:ns:xmpp-sasl"
+/** @def XMPP_NS_BIND
+ *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-bind'.
+ */
 #define XMPP_NS_BIND "urn:ietf:params:xml:ns:xmpp-bind"
+/** @def XMPP_NS_SESSION
+ *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-session'.
+ */
 #define XMPP_NS_SESSION "urn:ietf:params:xml:ns:xmpp-session"
+/** @def XMPP_NS_AUTH
+ *  Namespace definition for 'jabber:iq:auth'.
+ */
 #define XMPP_NS_AUTH "jabber:iq:auth"
+/** @def XMPP_NS_DISCO_INFO
+ *  Namespace definition for 'http://jabber.org/protocol/disco#info'.
+ */
 #define XMPP_NS_DISCO_INFO "http://jabber.org/protocol/disco#info"
+/** @def XMPP_NS_DISCO_ITEMS
+ *  Namespace definition for 'http://jabber.org/protocol/disco#items'.
+ */
 #define XMPP_NS_DISCO_ITEMS "http://jabber.org/protocol/disco#items"
+/** @def XMPP_NS_ROSTER
+ *  Namespace definition for 'jabber:iq:roster'.
+ */
 #define XMPP_NS_ROSTER "jabber:iq:roster"
 
 /* error defines */
+/** @def XMPP_EOK
+ *  Success error code.
+ */
 #define XMPP_EOK 0
+/** @def XMPP_EMEM
+ *  Memory related failure error code.
+ *  
+ *  This is returned on allocation errors and signals that the host may
+ *  be out of memory.
+ */
 #define XMPP_EMEM -1
+/** @def XMPP_EINVOP
+ *  Invalid operation error code.
+ *
+ *  This error code is returned when the operation was invalid and signals
+ *  that the Strophe API is being used incorrectly.
+ */
 #define XMPP_EINVOP -2
+/** @def XMPP_EINT
+ *  Internal failure error code.
+ */
 #define XMPP_EINT -3
 
-/** initialization and shutdown **/
-
+/* initialization and shutdown */
 void xmpp_initialize(void);
 void xmpp_shutdown(void);
 
-/** version **/
-
+/* version */
 int xmpp_version_check(int major, int minor);
 
-/** run-time contexts **/
+/* run-time contexts */
 
 /* user-replaceable memory allocator */
 typedef struct _xmpp_mem_t xmpp_mem_t;
@@ -99,7 +155,7 @@ struct _xmpp_log_t {
 /* return a default logger filtering at a given level */
 xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level);
 
-/** connection **/
+/* connection */
 
 /* opaque connection object */
 typedef struct _xmpp_conn_t xmpp_conn_t;
@@ -269,20 +325,26 @@ int xmpp_stanza_set_id(xmpp_stanza_t * const stanza,
 		       const char * const id);
 int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, 
 			 const char * const type);
+
+/* unimplemented
 int xmpp_stanza_set_to();
 int xmpp_stanza_set_from();
+*/
 
-/** allocate and initialize a stanza in reply to another */
+/* allocate and initialize a stanza in reply to another */
+/* unimplemented
 xmpp_stanza_t *xmpp_stanza_reply(const xmpp_stanza_t *stanza);
+*/
 
 /* stanza subclasses */
+/* unimplemented
 void xmpp_message_new();
 void xmpp_message_get_body();
 void xmpp_message_set_body();
 
 void xmpp_iq_new();
 void xmpp_presence_new();
-
+*/
 
 /** event loop **/
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);

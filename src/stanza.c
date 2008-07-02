@@ -13,7 +13,7 @@
 */
 
 /** @file
- *  XMPP stanza creation and manipulation.
+ *  Stanza creation and manipulation.
  */
 
 /** @defgroup Stanza Stanza creation and manipulation

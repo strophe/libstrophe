@@ -44,7 +44,7 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 
 void tls_free(tls_t *tls)
 {
-    return
+    return;
 }
 
 int tls_set_credentials(tls_t *tls, const char *cafilename)
@@ -76,4 +76,14 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
 int tls_write(tls_t *tls, const void * const buff, const size_t len)
 {
     return -1;
+}
+
+int tls_clear_pending_write(tls_t *tls)
+{
+    return -1;
+}
+
+int tls_is_recoverable(int error)
+{
+    return 0;
 }

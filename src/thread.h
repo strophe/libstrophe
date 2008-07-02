@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Threading abstraction API.
+ */
+
 #ifndef __LIBSTROPHE_THREAD_H__
 #define __LIBSTROPHE_THREAD_H__
 

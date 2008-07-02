@@ -1,6 +1,10 @@
 /* public api for steve reid's public domain SHA-1 implementation */
 /* this file is in the public domain */
 
+/** @file
+ *  SHA-1 hash API.
+ */
+
 #ifndef __SHA1_H
 #define __SHA1_H
 

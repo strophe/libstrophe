@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     xmpp_conn_set_pass(conn, argv[2]);
 
     /* initiate connection */
-    xmpp_connect_client(conn, argv[3], conn_handler, ctx);
+    xmpp_connect_client(conn, argv[3], NULL, 0, conn_handler, ctx);
 
     /* start the event loop */
     xmpp_run(ctx);

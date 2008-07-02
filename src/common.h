@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Internally used functions and structures.
+ */
+
 #ifndef __LIBSTROPHE_COMMON_H__
 #define __LIBSTROPHE_COMMON_H__
 

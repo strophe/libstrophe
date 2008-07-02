@@ -17,6 +17,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -161,7 +162,7 @@ int sock_is_recoverable(const int error)
 int sock_connect_error(const sock_t sock)
 {
     struct sockaddr sa;
-    int len;
+    unsigned len;
     char temp;
 
     sa.sa_family = AF_INET;
@@ -285,13 +286,14 @@ void netbuf_get_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned s
 	*offset += 2;
 }
 
-void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset, char *name)
+void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset, 
+			    char *name)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
 	unsigned char *wordstart, *wordend;
 
-	wordstart = name;
+	wordstart = (unsigned char *)name;
 	
 	while (*wordstart)
 	{
@@ -388,7 +390,6 @@ void netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char **
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
-	char *p2;
 	int *curroffset = offset;
 
 	*name = malloc(sizeof(**name) * (calc_domain_name_size(buf, buflen, *offset) + 1));
@@ -417,7 +418,7 @@ void netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char **
 				strcat(*name, ".");
 			}
 
-			strncat(*name, p + 1, *p);
+			strncat(*name, (char *)p + 1, *p);
 			p += *p + 1;
 		}
 	}
@@ -597,7 +598,6 @@ void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *off
 
 char **SeparateStringByDots(char *string)
 {
-	FILE *fp;
 	char **result;
 	char *p = string;
 	char **ps;
@@ -947,8 +947,6 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
 		if (offset > 0)
 		{
-			FILE *fp;
-
 			int len = offset;
 			int i;
 			struct dnsquery_header header;

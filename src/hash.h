@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Hash table API.
+ */
+
 #ifndef __LIBSTROPHE_HASH_H__
 #define __LIBSTROPHE_HASH_H__
 

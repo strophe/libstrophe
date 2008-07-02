@@ -12,6 +12,10 @@
 **  distribution.
 */
 
+/** @file
+ *  Socket abstraction API.
+ */
+
 #ifndef __LIBSTROPHE_SOCK_H__
 #define __LIBSTROPHE_SOCK_H__
 

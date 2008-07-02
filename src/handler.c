@@ -32,6 +32,13 @@
 #include "strophe.h"
 #include "common.h"
 
+/* do any of the immediate children have namespaces that match? */
+static int _match_children(xmpp_stanza_t * const stanza,
+			   const char * const ns)
+{
+    return 0;
+}
+
 /** Fire off all stanza handlers that match.
  *  This function is called internally by the event loop whenever stanzas
  *  are received from the XMPP server.
@@ -99,7 +106,8 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
 	    continue;
 	}
 
-	if ((!item->ns || (ns && strcmp(ns, item->ns) == 0)) &&
+	if ((!item->ns || (ns && strcmp(ns, item->ns) == 0) ||
+	     _match_children(stanza, item->ns)) &&
 	    (!item->name || (name && strcmp(name, item->name) == 0)) &&
 	    (!item->type || (type && strcmp(type, item->type) == 0)))
 	    if (!((xmpp_handler)(item->handler))(conn, stanza, item->userdata)) {
