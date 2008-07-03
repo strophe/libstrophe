@@ -209,19 +209,9 @@ struct dnsquery_header
 
 struct dnsquery_question
 {
-	char *qname;
+	char qname[1024];
 	unsigned short qtype;
 	unsigned short qclass;
-};
-
-struct dnsquery_resourcerecord
-{
-	char *name;
-	unsigned short type;
-	unsigned short _class;
-	unsigned int ttl;
-	unsigned short rdlength;
-	void *rdata;
 };
 
 struct dnsquery_srvrdata
@@ -229,8 +219,19 @@ struct dnsquery_srvrdata
 	unsigned short priority;
 	unsigned short weight;
 	unsigned short port;
-	char *target;
+	char target[1024];
 };
+
+struct dnsquery_resourcerecord
+{
+	char name[1024];
+	unsigned short type;
+	unsigned short _class;
+	unsigned int ttl;
+	unsigned short rdlength;
+	struct dnsquery_srvrdata rdata;
+};
+
 
 void netbuf_add_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int num)
 {
@@ -327,34 +328,6 @@ void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset,
 	*p++ = '\0';
 
 	*offset += p - start;
-#if 0
-	unsigned char *start = buf + *offset;
-	unsigned char *p = start;
-
-	while (*labellist)
-	{
-		int len = strlen(*labellist);
-		char *p2 = *labellist;
-
-		if (len > 0x3F)
-		{
-			len = 0x3F;
-		}
-
-		*p++ = len & 0xFF;
-		while (len)
-		{
-			*p++ = *p2++;
-			len--;
-		}
-
-		labellist++;
-	}
-
-	*p++ = '\0';
-
-	*offset += p - start;
-#endif
 }
 
 int calc_domain_name_size(unsigned char *buf, int buflen, int offset)
@@ -386,15 +359,42 @@ int calc_domain_name_size(unsigned char *buf, int buflen, int offset)
 	return len;
 }
 
-void netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char **name)
+int netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char *namebuf, int namebuflen)
 {
 	unsigned char *start = buf + *offset;
-	unsigned char *p = start;
+	unsigned char *p, *p2;
 	int *curroffset = offset;
+	int len = 0;
 
-	*name = malloc(sizeof(**name) * (calc_domain_name_size(buf, buflen, *offset) + 1));
-	**name = '\0';
+	*namebuf = '\0';
 
+	/* measure length */
+	p = start;
+	while (*p)
+	{
+		if ((*p & 0xC0) == 0xC0)
+		{
+			int newoffset = 0;
+			newoffset |= (*p++ & 0x3F) << 8;
+			newoffset |= *p++;
+
+			p = buf + newoffset;
+		}
+		else
+		{
+			len += *p;
+			p += *p + 1;
+		}
+	}
+
+	if (namebuflen < len)
+	{
+		return len;
+	}
+
+	/* actually copy in name */
+	p = start;
+	p2 = namebuf;
 	while (*p)
 	{
 		if ((*p & 0xC0) == 0xC0)
@@ -413,13 +413,19 @@ void netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char **
 		}
 		else
 		{
-			if (**name != '\0')
+			int i, partlen;
+
+			if (*namebuf != '\0')
 			{
-				strcat(*name, ".");
+				*p2++ = '.';
 			}
 
-			strncat(*name, (char *)p + 1, *p);
-			p += *p + 1;
+			partlen = *p++;
+			
+			for (i=0; i < partlen; i++)
+			{
+                                *p2++ = *p++;
+			}
 		}
 	}
 
@@ -430,77 +436,9 @@ void netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char **
 		curroffset = NULL;
 	}
 
-#if 0
-	unsigned char *start = buf + *offset;
-	unsigned char *p = start;
-	char **labelp;
-	int numlabels = 1;
-	int tracking = 1;
+	*p2 = '\0';
 
-	/* check if this is a reference */
-	if ((*p & 0xC0) == 0xC0)
-	{
-		/* it is, parse the old reference */
-		int newoffset = 0;
-
-		newoffset |= (*p++ & 0x3F) << 8;
-		newoffset |= (*p++);
-
-		netbuf_get_label_list(buf, buflen, &newoffset, labellist);
-		*offset += 2;
-		return;
-	}
-
-	/* count the number of labels we need */
-	while (*p && )
-	{
-		if ((*p & 0xC0) == 0xC0)
-		{
-			p += 2;
-		}
-		else
-		{
-                        p += *p;
-		}
-		numlabels++;
-	}
-
-	*labellist = malloc(sizeof(**labellist) + 1);
-	labelp = *labellist;
-
-	p = start;
-
-	while (*p)
-	{
-		if ((*p & 0xC0) == 0xC0)
-		{
-		}
-		else
-		{
-			int len = *p++;
-			unsigned char *p2;
-
-			*labelp = malloc(len + 1);
-			p2 = *labelp;
-
-			while (len)
-			{
-				*p2++ = *p++;
-				len--;
-			}
-
-			*p2++ = '\0';
-
-			labelp++;
-		}
-	}
-
-	*labelp = NULL;
-
-	p++;
-
-	*offset += p - start;
-#endif
+	return 0;
 }
 
 void netbuf_add_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
@@ -553,7 +491,6 @@ void netbuf_get_dnsquery_header(unsigned char *buf, int buflen, int *offset, str
 
 void netbuf_add_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
 {
-	/*netbuf_add_label_list(buf, buflen, offset, question->qname);*/
 	netbuf_add_domain_name(buf, buflen, offset, question->qname);
 	netbuf_add_16bitnum(buf, buflen, offset, question->qtype);
 	netbuf_add_16bitnum(buf, buflen, offset, question->qclass);
@@ -561,8 +498,7 @@ void netbuf_add_dnsquery_question(unsigned char *buf, int buflen, int *offset, s
 
 void netbuf_get_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
 {
-	/*netbuf_get_label_list(buf, buflen, offset, &(question->qname));*/
-	netbuf_get_domain_name(buf, buflen, offset, &(question->qname));
+	netbuf_get_domain_name(buf, buflen, offset, question->qname, 1024);
 	netbuf_get_16bitnum(buf, buflen, offset, &(question->qtype));
 	netbuf_get_16bitnum(buf, buflen, offset, &(question->qclass));
 }
@@ -572,13 +508,12 @@ void netbuf_get_dnsquery_srvrdata(unsigned char *buf, int buflen, int *offset, s
 	netbuf_get_16bitnum(buf, buflen, offset, &(srvrdata->priority));
 	netbuf_get_16bitnum(buf, buflen, offset, &(srvrdata->weight));
 	netbuf_get_16bitnum(buf, buflen, offset, &(srvrdata->port));
-	netbuf_get_domain_name(buf, buflen, offset, &(srvrdata->target));
+	netbuf_get_domain_name(buf, buflen, offset, srvrdata->target, 1024);
 }
 
 void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *offset, struct dnsquery_resourcerecord *rr)
 {
-	/*netbuf_get_label_list(buf, buflen, offset, &(rr->name));*/
-	netbuf_get_domain_name(buf, buflen, offset, &(rr->name));
+	netbuf_get_domain_name(buf, buflen, offset, rr->name, 1024);
 	netbuf_get_16bitnum(buf, buflen, offset, &(rr->type));
 	netbuf_get_16bitnum(buf, buflen, offset, &(rr->_class));
 	netbuf_get_32bitnum(buf, buflen, offset, &(rr->ttl));
@@ -586,68 +521,11 @@ void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *off
 	if (rr->type == 33) /* SRV */
 	{
 		int newoffset = *offset;
-		rr->rdata = malloc(sizeof(struct dnsquery_srvrdata));
-		netbuf_get_dnsquery_srvrdata(buf, buflen, &newoffset, rr->rdata);
-	}
-	else
-	{
-                rr->rdata = buf + *offset;
+		netbuf_get_dnsquery_srvrdata(buf, buflen, &newoffset, &(rr->rdata));
 	}
 	*offset += rr->rdlength;
 }
 
-char **SeparateStringByDots(char *string)
-{
-	char **result;
-	char *p = string;
-	char **ps;
-
-	int numstrings = 1;
-	while (*p)
-	{
-		if (*p++ == '.')
-		{
-			numstrings++;
-		}
-	}
-
-	p = string;
-
-	result = malloc(sizeof(*result) * numstrings);
-	ps = result;
-
-	while (*p)
-	{
-		char *p2 = p;
-
-		while (*p2 && *p2 != '.')
-		{
-			p2++;
-		}
-
-		*ps = malloc(sizeof(*ps) * ((int)(p2 - p) + 1));
-
-		p2 = *ps;
-
-		while (*p && *p != '.')
-		{
-			*p2++ = *p++;
-		}
-
-		*p2 = '\0';
-
-		ps++;
-
-		if (*p == '.')
-		{
-			p++;
-		}
-	}
-
-	*ps = NULL;
-
-	return result;
-}
 
 int sock_srv_lookup(const char *service, const char *proto, const char *domain, char *resulttarget, int resulttargetlength, int *resultport)
 {
@@ -705,14 +583,13 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 	unsigned char buf[65536];
 	struct dnsquery_header header;
 	struct dnsquery_question question;
-	unsigned char *p, **qname;
 	int offset = 0;
 	int addrlen;
 	sock_t sock;
 	struct sockaddr_in dnsaddr;
 	char dnsserverips[16][256];
 	int numdnsservers = 0;
-	int i, j;
+	int j;
 
 	/* Try getting the DNS server ips from GetNetworkParams() in iphlpapi first */
 	if (!numdnsservers)
@@ -729,23 +606,20 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 				FIXED_INFO *fi;
 				ULONG len;
 				DWORD error;
-				len = 0;
+				char buffer[65535];
 
-				/* get the size and malloc it */
-				if ((error = pGetNetworkParams(NULL, &len)) == ERROR_BUFFER_OVERFLOW)
+				len = 65535;
+				fi = buffer;
+
+				if ((error = pGetNetworkParams(fi, &len)) == ERROR_SUCCESS)
 				{
-					fi = malloc(len);
-                                        if ((error = pGetNetworkParams(fi, &len)) == ERROR_SUCCESS)
-					{
-						IP_ADDR_STRING *pias = &(fi->DnsServerList);
+					IP_ADDR_STRING *pias = &(fi->DnsServerList);
 
-						while (pias && numdnsservers < 16)
-						{
-                                                        strcpy(dnsserverips[numdnsservers++], pias->IpAddress.String);
-							pias = pias->Next;
-						}
+					while (pias && numdnsservers < 16)
+					{
+                                                strcpy(dnsserverips[numdnsservers++], pias->IpAddress.String);
+						pias = pias->Next;
 					}
-					free(fi);
 				}
 			}
 		}
@@ -815,7 +689,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
 		if (error == ERROR_SUCCESS)
 		{
-			int i;
+			unsigned int i;
 			DWORD numinterfaces = 0;
 
 			RegQueryInfoKey(searchlist, NULL, NULL, NULL, &numinterfaces, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -900,7 +774,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 		netbuf_add_dnsquery_header(buf, 65536, &offset, &header);
 
 		memset(&question, 0, sizeof(question));
-		question.qname = fulldomain;
+		strncpy(question.qname, fulldomain, 1024);
 		question.qtype = 33; /* SRV */
 		question.qclass = 1; /* INTERNET! */
 
@@ -967,7 +841,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
 				if (rr.type == 33)
 				{
-					struct dnsquery_srvrdata *srvrdata = rr.rdata;
+					struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
 					snprintf(resulttarget, resulttargetlength, srvrdata->target);
 					*resultport = srvrdata->port;
