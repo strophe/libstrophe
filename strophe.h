@@ -293,6 +293,8 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza,
 xmpp_stanza_t *xmpp_stanza_get_children(xmpp_stanza_t * const stanza);
 xmpp_stanza_t *xmpp_stanza_get_child_by_name(xmpp_stanza_t * const stanza, 
 					     const char * const name);
+xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t * const stanza,
+					   const char * const ns);
 xmpp_stanza_t *xmpp_stanza_get_next(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
 				const char * const name);

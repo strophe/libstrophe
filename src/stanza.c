@@ -706,6 +706,32 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_name(xmpp_stanza_t * const stanza,
     return child;
 }
 
+/** Get the first child of a stanza with a given namespace.
+ *  This function searches all the immediate children of a stanza for a child
+ *  stanza that matches the namespace provided.  The first matching child
+ *  is returned.
+ * 
+ *  @param stanza a Strophe stanza object
+ *  @param ns a string with the namespace to match
+ *
+ *  @return the matching child stanza object or NULL if no match was found
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t * const stanza,
+					   const char * const ns)
+{
+    xmpp_stanza_t *child;
+
+    for (child = stanza->children; child; child = child->next) {
+	if (xmpp_stanza_get_ns(child) &&
+	    strcmp(ns, xmpp_stanza_get_ns(child)) == 0)
+	    break;
+    }
+    
+    return child;
+}
+
 /** Get the list of children.
  *  This function returns the first child of the stanza object.  The rest
  *  of the children can be obtained by calling xmpp_stanza_get_next() to

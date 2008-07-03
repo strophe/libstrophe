@@ -127,7 +127,7 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
 	}
 
 	if ((!item->ns || (ns && strcmp(ns, item->ns) == 0) ||
-	     _match_children(stanza, item->ns)) &&
+	     xmpp_stanza_get_child_by_ns(stanza, item->ns)) &&
 	    (!item->name || (name && strcmp(name, item->name) == 0)) &&
 	    (!item->type || (type && strcmp(type, item->type) == 0)))
 	    if (!((xmpp_handler)(item->handler))(conn, stanza, item->userdata)) {
