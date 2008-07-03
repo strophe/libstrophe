@@ -36,7 +36,27 @@
 static int _match_children(xmpp_stanza_t * const stanza,
 			   const char * const ns)
 {
-    return 0;
+    xmpp_stanza_t *child;
+    int matched = 0;
+    char *childns;
+
+    child = xmpp_stanza_get_children(stanza);
+    while (child) {
+	childns = xmpp_stanza_get_ns(child);
+	if (!childns) {
+	    child = xmpp_stanza_get_next(child);
+	    continue;
+	}
+
+	if (strcmp(ns, childns) == 0) {
+	    matched = 1;
+	    break;
+	}
+
+	child = xmpp_stanza_get_next(child);
+    }
+
+    return matched;
 }
 
 /** Fire off all stanza handlers that match.
