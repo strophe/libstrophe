@@ -328,10 +328,10 @@ void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass)
  *  altport will be used instead if specified.
  *
  *  @param conn a Strophe connection object
- *  @param domain a string with the domain name to connect to.  If this is
- *      NULL then the domain is taken from the JID.
- *  @param altdomain a string with domain to use if SRV lookup fails
- *  @param altport an integer port number to use if SRV lookup fails
+ *  @param altdomain a string with domain to use if SRV lookup fails.  If this
+ *      is NULL, the domain from the JID will be used.
+ *  @param altport an integer port number to use if SRV lookup fails.  If this
+ *      is 0, the default port (5222) will be assumed.
  *  @param callback a xmpp_conn_handler callback function that will receive
  *      notifications of connection status
  *  @param userdata an opaque data pointer that will be passed to the callback
@@ -341,7 +341,6 @@ void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass)
  *  @ingroup Connections
  */
 int xmpp_connect_client(xmpp_conn_t * const conn, 
-			  const char * const domain,
 			  const char * const altdomain,
 			  unsigned short altport,
 			  xmpp_conn_handler callback,
@@ -349,25 +348,20 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 {
     char connectdomain[2048];
     int connectport;
+    char *domain;
 
     conn->type = XMPP_CLIENT;
 
-    if (domain) {
-        conn->domain = xmpp_strdup(conn->ctx, domain);
-    } else {
-        conn->domain = xmpp_jid_domain(conn->ctx, conn->jid);
-    }
+    conn->domain = xmpp_jid_domain(conn->ctx, conn->jid);
     if (!conn->domain) return -1;
 
     if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain, connectdomain, 2048, &connectport))
     {
 	    xmpp_debug(conn->ctx, "xmpp", "SRV lookup failed.");
-	    if (altdomain)
-	    {
-		    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d", altdomain, altport);
-		    strcpy(connectdomain, altdomain);
-		    connectport = altport;
-	    }
+	    if (!altdomain) domain = conn->domain;
+	    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d", altdomain, altport);
+	    strcpy(connectdomain, domain);
+	    connectport = altport ? altport : 5222;
     }
     conn->sock = sock_connect(connectdomain, connectport);
     if (conn->sock == -1) return -1;

@@ -40,22 +40,15 @@ int main(int argc, char **argv)
     xmpp_conn_t *conn;
     xmpp_log_t *log;
     char *jid, *pass;
-    char *server;
 
-    /* take a jid and password on the command line,
-       with optional server to connect to */
-    if ((argc < 3) || (argc > 4)) {
-	fprintf(stderr, "Usage: basic <jid> <pass> [<server>]\n\n");
+    /* take a jid and password on the command line */
+    if (argc != 3) {
+	fprintf(stderr, "Usage: basic <jid> <pass>\n\n");
 	return 1;
     }
     
     jid = argv[1];
     pass = argv[2];
-    server = NULL;
-    /* Normally we pass NULL for the connection domain, in which case
-       the library derives the target host from the jid, but we can
-       override this for testing. */
-    if (argc >= 4) server = argv[3];
     
     /* init library */
     xmpp_initialize();
@@ -72,7 +65,7 @@ int main(int argc, char **argv)
     xmpp_conn_set_pass(conn, pass);
 
     /* initiate connection */
-    xmpp_connect_client(conn, server, NULL, 0, conn_handler, ctx);
+    xmpp_connect_client(conn, NULL, 0, conn_handler, ctx);
 
     /* enter the event loop - 
        our connect handler will trigger an exit */

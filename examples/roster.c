@@ -98,8 +98,8 @@ int main(int argc, char **argv)
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
 
-    if (argc != 4) {
-	fprintf(stderr, "Usage: roster <jid> <pass> <server>\n\n");
+    if (argc != 3) {
+	fprintf(stderr, "Usage: roster <jid> <pass>\n\n");
 	return 1;
     }
 
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     xmpp_conn_set_pass(conn, argv[2]);
 
     /* initiate connection */
-    xmpp_connect_client(conn, argv[3], NULL, 0, conn_handler, ctx);
+    xmpp_connect_client(conn, NULL, 0, conn_handler, ctx);
 
     /* start the event loop */
     xmpp_run(ctx);
