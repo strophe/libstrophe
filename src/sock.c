@@ -34,6 +34,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 #endif
 
 #include "sock.h"
@@ -859,6 +861,47 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
     }
 
 #else
+    if (!set)
+    {
+        char buf[65535];
+	int len;
+
+	if ((len = res_query(fulldomain, C_IN, T_SRV, buf, 65535)) > 0)
+	{
+		int offset;
+		int i;
+		struct dnsquery_header header;
+		struct dnsquery_question question;
+		struct dnsquery_resourcerecord rr;
+
+		offset = 0;
+		netbuf_get_dnsquery_header(buf, 65536, &offset, &header);
+
+		for (i = 0; i < header.qdcount; i++)
+		{
+			netbuf_get_dnsquery_question(buf, 65536, &offset, &question);
+		}
+
+		for (i = 0; i < header.ancount; i++)
+		{
+			netbuf_get_dnsquery_resourcerecord(buf, 65536, &offset, &rr);
+
+			if (rr.type == 33)
+			{
+				struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
+
+				snprintf(resulttarget, resulttargetlength, srvrdata->target);
+				*resultport = srvrdata->port;
+				set = 1;
+			}
+		}
+
+		for (i = 0; i < header.ancount; i++)
+		{
+			netbuf_get_dnsquery_resourcerecord(buf, 65536, &offset, &rr);
+		}	    
+	}
+    }
 #endif
 
     if (!set)

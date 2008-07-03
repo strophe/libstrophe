@@ -102,6 +102,8 @@ exenv.Append(LIBS=["strophe", "expat"])
 exenv.Append(LIBPATH=["."])
 if exenv["PLATFORM"] == "win32":
   exenv.Append(LIBS=["ws2_32", "winmm"])
+if exenv["PLATFORM"] != "win32":
+  exenv.Append(LIBS=["resolv"])
 for e in path("examples", Examples):
   example = exenv.Program(e)
   Default(example)
