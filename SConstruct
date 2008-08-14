@@ -76,7 +76,7 @@ if env['CC'] == 'gcc':
 if env['CC'] == 'cl':
   env.Append(CCFLAGS=["/MDd", "/ZI"])
   
-expatenv = env.Copy()
+expatenv = env.Clone()
 # feature defs
 expatenv.Append(CCFLAGS=" -DXML_DTD")
 expatenv.Append(CCFLAGS=" -DXML_NS")
@@ -89,14 +89,14 @@ expatenv.Append(CCFLAGS=" -DHAVE_UNISTD")
 expat = expatenv.Library('expat', path(join('expat', 'lib'), ExpatSources))
 Default(expat)
 
-stropheenv = env.Copy()
+stropheenv = env.Clone()
 stropheenv.Append(CCFLAGS=" -DXML_STATIC")
 stropheenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
 
 strophe = stropheenv.Library('strophe', path("src", Sources))
 Default(strophe)
 
-exenv = env.Copy()
+exenv = env.Clone()
 exenv.Append(CPPPATH=['.'])
 exenv.Append(LIBS=["strophe", "expat"])
 exenv.Append(LIBPATH=["."])
@@ -138,7 +138,7 @@ def testcase_runner(target, source, env):
   result = unittest.TextTestRunner(verbosity=2).run(suite)
   env.Execute(Touch(str(target[0])))
 
-testenv = env.Copy()
+testenv = env.Clone()
 testenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
 testenv.Append(LIBS=['strophe', 'expat'])
 if testenv["PLATFORM"] == "win32":
