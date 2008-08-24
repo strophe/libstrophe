@@ -66,7 +66,7 @@ static int _handle_legacy(xmpp_conn_t * const conn,
 static int _handle_features_sasl(xmpp_conn_t * const conn,
 				 xmpp_stanza_t * const stanza,
 				 void * const userdata);
-static int _handle_digestmd5_default(xmpp_conn_t * const conn,
+static int _handle_sasl_result(xmpp_conn_t * const conn,
 			xmpp_stanza_t * const stanza,
 			void * const userdata);
 static int _handle_digestmd5_challenge(xmpp_conn_t * const conn,
@@ -223,6 +223,8 @@ static int _handle_features(xmpp_conn_t * const conn,
 		    conn->sasl_support |= SASL_MASK_PLAIN;
 		else if (strcasecmp(text, "DIGEST-MD5") == 0)
 		    conn->sasl_support |= SASL_MASK_DIGESTMD5;
+		else if (strcasecmp(text, "ANONYMOUS") == 0)
+		    conn->sasl_support |= SASL_MASK_ANONYMOUS;
 
 		xmpp_free(conn->ctx, text);
 	    }
@@ -284,49 +286,39 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
     return 0;
 }
 
-
-static int _handle_digestmd5_default(xmpp_conn_t * const conn,
-			      xmpp_stanza_t * const stanza,
-			      void * const userdata)
+static int _handle_sasl_result(xmpp_conn_t * const conn,
+			       xmpp_stanza_t * const stanza,
+			       void * const userdata)
 {
     char *name;
-    int ret = 1;
 
     name = xmpp_stanza_get_name(stanza);
-    xmpp_debug(conn->ctx, "xmpp",
-	"handle digest-md5 (default) called for %s", name);
 
+    /* the server should send a <success> or <failure> stanza */
     if (strcmp(name, "failure") == 0) {
-	/* TODO: handle errors */
-	xmpp_debug(conn->ctx, "xmpp", "SASL DIGEST-MD5 auth failed!");
+	xmpp_debug(conn->ctx, "xmpp", "SASL %s auth failed", 
+		   (char *)userdata);
+	
 	/* fall back to next auth method */
 	_auth(conn);
-
-	/* remove handler */
-	ret = 0;
     } else if (strcmp(name, "success") == 0) {
-	/* SASL DIGEST-MD5 auth successful, we need to restart the stream */
-	xmpp_debug(conn->ctx, "xmpp", "SASL DIGEST-MD5 auth successful");
+	/* SASL PLAIN auth successful, we need to restart the stream */
+	xmpp_debug(conn->ctx, "xmpp", "SASL %s auth successful", 
+		   (char *)userdata);
 
 	/* reset parser */
 	parser_prepare_reset(conn, _handle_open_sasl);
 
 	/* send stream tag */
 	conn_open_stream(conn);
-
-	/* remove handler */
-	ret = 0;
     } else {
 	/* got unexpected reply */
-	xmpp_error(conn->ctx, "xmpp", "Got unexpected reply to SASL "
-		   "DIGEST-MD5 authentication.");
+	xmpp_error(conn->ctx, "xmpp", "Got unexpected reply to SASL %s"\
+		   "authentication.", (char *)userdata);
 	xmpp_disconnect(conn);
-
-	/* remove handler */
-	ret = 0;
     }
 
-    return ret;
+    return 0;
 }
 
 /* handle the challenge phase of digest auth */
@@ -379,7 +371,7 @@ static int _handle_digestmd5_challenge(xmpp_conn_t * const conn,
 	xmpp_stanza_release(auth);
 
     } else {
-	return _handle_digestmd5_default(conn, stanza, userdata);
+	return _handle_sasl_result(conn, stanza, "DIGEST-MD5");
     }
 
     /* remove ourselves */
@@ -411,49 +403,10 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t * const conn,
 	xmpp_send(conn, auth);
 	xmpp_stanza_release(auth);
     } else {
-	return _handle_digestmd5_default(conn, stanza, userdata);
+	return _handle_sasl_result(conn, stanza, "DIGEST-MD5");
     }
 
     return 1;
-}
-
-static int _handle_plain(xmpp_conn_t * const conn,
-			  xmpp_stanza_t * const stanza,
-			  void * const userdata)
-{
-    char *name;
-    int ret = 1;
-
-    name = xmpp_stanza_get_name(stanza);
-    xmpp_debug(conn->ctx, "xmpp", "handle plain called for %s", name);
-
-    /* the server should send a <success> or <failure> stanza */
-    if (strcmp(name, "failure") == 0) {
-	/* TODO: handle errors */
-
-	/* fall back to next auth method */
-	_auth(conn);
-    } else if (strcmp(name, "success") == 0) {
-	/* SASL PLAIN auth successful, we need to restart the stream */
-	xmpp_debug(conn->ctx, "xmpp", "SASL PLAIN auth successful");
-
-	/* reset parser */
-	parser_prepare_reset(conn, _handle_open_sasl);
-
-	/* remove this handler */
-	ret = 0;
-
-	/* send stream tag */
-	conn_open_stream(conn);
-    } else {
-	/* got unexpected reply */
-	xmpp_error(conn->ctx, "xmpp", "Got unexpected reply to SASL PLAIN "\
-		   "authentication.");
-	xmpp_disconnect(conn);
-	ret = 0;
-    }
-
-    return ret;
 }
 
 static xmpp_stanza_t *_make_starttls(xmpp_conn_t * const conn)
@@ -495,6 +448,16 @@ static void _auth(xmpp_conn_t * const conn)
 {
     xmpp_stanza_t *auth, *authdata, *query, *child, *iq;
     char *str, *authid;
+    int anonjid;
+
+    /* if there is no node in conn->jid, we assume anonymous connect */
+    str = xmpp_jid_node(conn->ctx, conn->jid);
+    if (str == NULL) {
+	anonjid = 1;
+    } else {
+	xmpp_free(conn->ctx, str);
+	anonjid = 0;
+    }
 
     if (conn->tls_support)
     {
@@ -527,6 +490,26 @@ static void _auth(xmpp_conn_t * const conn)
 
 	/* TLS was tried, unset flag */
 	conn->tls_support = 0;
+    } else if (anonjid && conn->sasl_support & SASL_MASK_ANONYMOUS) {
+	/* some crap here */
+	auth = _make_sasl_auth(conn, "ANONYMOUS");
+	if (!auth) {
+	    disconnect_mem_error(conn);
+	    return;
+	}
+
+	handler_add(conn, _handle_sasl_result, XMPP_NS_SASL,
+	            NULL, NULL, "ANONYMOUS");
+
+	xmpp_send(conn, auth);
+	xmpp_stanza_release(auth);
+
+	/* SASL ANONYMOUS was tried, unset flag */
+	conn->sasl_support &= ~SASL_MASK_ANONYMOUS;
+    } else if (anonjid) {
+	xmpp_error(conn->ctx, "auth", 
+		   "No node in JID, and SASL ANONYMOUS unsupported.");
+	xmpp_disconnect(conn);
     } else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
 	auth = _make_sasl_auth(conn, "DIGEST-MD5");
 	if (!auth) {
@@ -570,8 +553,8 @@ static void _auth(xmpp_conn_t * const conn)
 	xmpp_stanza_add_child(auth, authdata);
 	xmpp_stanza_release(authdata);
 
-	handler_add(conn, _handle_plain,
-		    XMPP_NS_SASL, NULL, NULL, NULL);
+	handler_add(conn, _handle_sasl_result,
+		    XMPP_NS_SASL, NULL, NULL, "PLAIN");
 
 	xmpp_send(conn, auth);
 	xmpp_stanza_release(auth);
@@ -996,3 +979,4 @@ static int _handle_missing_legacy(xmpp_conn_t * const conn,
     xmpp_disconnect(conn);
     return 0;
 }
+
