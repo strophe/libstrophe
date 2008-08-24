@@ -277,8 +277,9 @@ const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn)
 
 /** Set the JID of the user that will be bound to the connection.
  *  If any JID was previously set, it will be discarded.  This should not be 
- *  be used after a connection is bound.  The function will make a copy of
- *  the JID string.
+ *  be used after a connection is created.  The function will make a copy of
+ *  the JID string.  If the supllied JID is missing the node, SASL
+ *  ANONYMOUS authentication will be used.
  *
  *  @param conn a Strophe connection object
  *  @param jid a full or bare JID
