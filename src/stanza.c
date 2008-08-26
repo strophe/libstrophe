@@ -187,6 +187,32 @@ int xmpp_stanza_release(xmpp_stanza_t * const stanza)
     return released;
 }
 
+/** Determine if a stanza is a text node.
+ *  
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return TRUE if the stanza is a text node, FALSE otherwise
+ * 
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_is_text(xmpp_stanza_t * const stanza)
+{
+    return (stanza && stanza->type == XMPP_STANZA_TEXT);
+}
+
+/** Determine if a stanza is a tag node.
+ *  
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return TRUE if the stanza is a tag node, FALSE otherwise
+ * 
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_is_tag(xmpp_stanza_t * const stanza)
+{
+    return (stanza && stanza->type == XMPP_STANZA_TAG);
+}
+
 /* small helper function */
 static inline void _render_update(int *written, const int length,
 			   const int lastwrite,
