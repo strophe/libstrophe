@@ -778,10 +778,19 @@ char *xmpp_stanza_get_text(xmpp_stanza_t * const stanza)
     xmpp_stanza_t *child;
     char *text;
 
+    if (stanza->type == XMPP_STANZA_TEXT) {
+	if (stanza->data)
+	    return xmpp_strdup(stanza->ctx, stanza->data);
+	else
+	    return NULL;
+    }
+
     len = 0;
     for (child = stanza->children; child; child = child->next)
 	if (child->type == XMPP_STANZA_TEXT)
 	    len += strlen(child->data);
+
+    if (len == 0) return NULL;
 
     text = (char *)xmpp_alloc(stanza->ctx, len + 1);
     if (!text) return NULL;
@@ -797,6 +806,26 @@ char *xmpp_stanza_get_text(xmpp_stanza_t * const stanza)
     text[len] = 0;
 
     return text;
+}
+
+/** Get the text data pointer for a text stanza.
+ *  This function copies returns the raw pointer to the text data in the
+ *  stanza.  This should only be used in very special cases where the 
+ *  caller needs to translate the datatype as this will save a double
+ *  allocation.  The caller should not hold onto this pointer, and is
+ *  responsible for allocating a copy if it needs one.
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return an string pointer to the data or NULL
+ *
+ *  @ingroup Stanza
+ */
+char *xmpp_stanza_get_text_ptr(xmpp_stanza_t * const stanza)
+{
+    if (stanza->type == XMPP_STANZA_TEXT)
+	return stanza->data;
+    return NULL;
 }
 
 /** Set the 'id' attribute of a stanza.
