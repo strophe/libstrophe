@@ -78,6 +78,11 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
     return -1;
 }
 
+int tls_clear_pending_write(tls_t *tls)
+{
+    return -1;
+}
+
 int tls_is_recoverable(int error)
 {
     return 0;

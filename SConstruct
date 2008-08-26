@@ -48,7 +48,7 @@ Sources = Split("""
   util.c
   thread.c
   snprintf.c
-  tls_gnutls.c
+  tls_dummy.c
   oocontext.cpp
   oostanza.cpp
 """)
@@ -98,7 +98,7 @@ Default(strophe)
 
 exenv = env.Clone()
 exenv.Append(CPPPATH=['.'])
-exenv.Append(LIBS=["strophe", "expat", "gnutls"])
+exenv.Append(LIBS=["strophe", "expat"])
 exenv.Append(LIBPATH=["."])
 if exenv["PLATFORM"] == "win32":
   exenv.Append(LIBS=["ws2_32", "winmm"])

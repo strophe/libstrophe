@@ -24,7 +24,6 @@
 
 struct _tls {
     xmpp_ctx_t *ctx; /* do we need this? */
-    int error;
     sock_t sock;
     gnutls_session_t session;
     gnutls_certificate_credentials_t cred;
@@ -54,7 +53,6 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 
     if (tls) {
 	tls->ctx = ctx;
-	tls->error = 0;
 	tls->sock = sock;
 	gnutls_init(&tls->session, GNUTLS_CLIENT);
 
@@ -65,7 +63,7 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 
 	/* fixme: this may require setting a callback on win32? */
 	gnutls_transport_set_ptr(tls->session, 
-				 (gnutls_transport_ptr_t)sock);
+		(gnutls_transport_ptr_t)sock);
     }
 
     return tls;
@@ -95,14 +93,7 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
 
 int tls_start(tls_t *tls)
 {
-    int ret;
-    xmpp_debug(tls->ctx, "TLS", "tls starting");
-    ret = gnutls_handshake(tls->session);
-    if (ret < 0) {
-	tls->error = ret;
-	return 0;
-    }
-    return 1;
+    return gnutls_handshake(tls->session);
 }
 
 int tls_stop(tls_t *tls)
@@ -110,13 +101,17 @@ int tls_stop(tls_t *tls)
     return gnutls_bye(tls->session, GNUTLS_SHUT_RDWR);
 }
 
+int tls_error(tls_t *tls)
+{
+    /* todo: some kind of error polling/dump */
+    return 0;
+}
+
 int tls_read(tls_t *tls, void * const buff, const size_t len)
 {
     int ret;
 
-    xmpp_debug(tls->ctx, "TLS", "tls_read called");
     ret = gnutls_record_recv(tls->session, buff, len);
-    xmpp_debug(tls->ctx, "TLS", "tls_read returned %d", ret);
 
     return ret;
 }
@@ -130,17 +125,3 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
     return ret;
 }
 
-int tls_clear_pending_write(tls_t *tls)
-{
-    return 0;
-}
-
-int tls_error(tls_t *tls)
-{
-    return tls->error;
-}
-
-int tls_is_recoverable(int error)
-{
-    return sock_is_recoverable(error);
-}
