@@ -189,11 +189,6 @@ int tls_stop(tls_t *tls)
     return 1;
 }
 
-int tls_error(tls_t *tls)
-{
-    return tls->lasterror;
-}
-
 int tls_is_recoverable(int error)
 {
     return (error == SSL_ERROR_NONE || error == SSL_ERROR_WANT_READ

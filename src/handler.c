@@ -89,12 +89,14 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
     while (item) {
 	/* skip newly added handlers */
 	if (!item->enabled) {
+	    prev = item;
 	    item = item->next;
 	    continue;
 	}
 
 	/* don't call user handlers until authentication succeeds */
 	if (item->user_handler && !conn->authenticated) {
+	    prev = item;
 	    item = item->next;
 	    continue;
 	}
