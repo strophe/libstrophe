@@ -215,6 +215,7 @@ const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn);
 void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
 const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
 void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);
+xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn);
 
 int xmpp_connect_client(xmpp_conn_t * const conn, 
 			  const char * const altdomain,
@@ -325,8 +326,6 @@ int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
 /* common stanza helpers */
 char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
-int xmpp_stanza_get_to();
-int xmpp_stanza_get_from();
 int xmpp_stanza_set_id(xmpp_stanza_t * const stanza, 
 		       const char * const id);
 int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, 

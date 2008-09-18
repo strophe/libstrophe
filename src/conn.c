@@ -320,6 +320,18 @@ void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass)
     conn->pass = xmpp_strdup(conn->ctx, pass);
 }
 
+/** Get the strophe context that the connection is associated with.
+*  @param conn a Strophe connection object
+* 
+*  @return a Strophe context
+* 
+*  @ingroup Connections
+*/
+xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn)
+{
+	return conn->ctx;
+}
+
 /** Initiate a connection to the XMPP server.
  *  This function returns immediately after starting the connection
  *  process to the XMPP server, and notifiations of connection state changes
@@ -359,7 +371,10 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain, connectdomain, 2048, &connectport))
     {
 	    xmpp_debug(conn->ctx, "xmpp", "SRV lookup failed.");
-	    if (!altdomain) domain = conn->domain;
+	    if (!altdomain)
+		    domain = conn->domain;
+	    else
+		    domain = altdomain;
 	    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d", altdomain, altport);
 	    strcpy(connectdomain, domain);
 	    connectport = altport ? altport : 5222;
