@@ -62,8 +62,7 @@ xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx)
 }
 
 /** Clone a stanza object.
- *  This function increments the reference count of the stanza and all its 
- *  children.
+ *  This function increments the reference count of the stanza object.
  *  
  *  @param stanza a Strophe stanza object
  *
@@ -76,10 +75,6 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
     xmpp_stanza_t *child;
 
     stanza->ref++;
-
-    /* clone all children */
-    for (child = stanza->children; child; child = child->next)
-	xmpp_stanza_clone(child);
 
     return stanza;
 }
@@ -152,8 +147,8 @@ copy_error:
 }
 
 /** Release a stanza object and all of its children.
- *  This function releases a stanza object and all of its children, which may
- *  cause the object to be freed.
+ *  This function releases a stanza object and potentially all of its 
+ *  children, which may cause the object(s) to be freed.
  *
  *  @param stanza a Strophe stanza object
  *
@@ -166,18 +161,18 @@ int xmpp_stanza_release(xmpp_stanza_t * const stanza)
     int released = 0;
     xmpp_stanza_t *child, *tchild;
 
-    /* release all children */
-    child = stanza->children;
-    while (child) {
-	tchild = child;
-	child = child->next;
-	xmpp_stanza_release(tchild);
-    }
-
     /* release stanza */
     if (stanza->ref > 1)
 	stanza->ref--;
     else {
+	/* release all children */
+	child = stanza->children;
+	while (child) {
+	    tchild = child;
+	    child = child->next;
+	    xmpp_stanza_release(tchild);
+	}
+
 	if (stanza->attributes) hash_release(stanza->attributes);
 	if (stanza->data) xmpp_free(stanza->ctx, stanza->data);
 	xmpp_free(stanza->ctx, stanza);
