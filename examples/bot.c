@@ -1,4 +1,4 @@
-/* basic.c
+/* bot.c
 ** libstrophe XMPP client library -- basic usage example
 **
 ** Copyright (C) 2005 OGG, LCC. All rights reserved.
@@ -74,6 +74,7 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	
 	if(!xmpp_stanza_get_child_by_name(stanza, "body")) return 1;
+	if(!strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
 	
 	intext = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "body"));
 	
