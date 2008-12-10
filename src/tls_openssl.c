@@ -16,8 +16,16 @@
  *  TLS implementation with OpenSSL.
  */
 
+#include <string.h>
+
+#ifndef _WIN32
+#include <sys/select.h>
+#else
+#include <winsock2.h>
+#endif
+
 #include <openssl/ssl.h>
-#include <openssl/applink.c>
+#include <openssl/rand.h>
 
 #include "common.h"
 #include "tls.h"
@@ -33,24 +41,8 @@ struct _tls {
 
 void tls_initialize(void)
 {
-#ifdef _WIN32
-    RAND_screen ();
-#else
-    {
-        char filename[512];
-	char *file;
-	
-	filename[0] = '\0';
-	file = RAND_file_name(filename, 512);
-
-	if (file && strlen(file) != 0) {
-	    RAND_load_file(filename, /*It's over */9000);
-	}
-    }
-#endif
     SSL_library_init();
     SSL_load_error_strings();
-    return;
 }
 
 void tls_shutdown(void)
@@ -58,44 +50,9 @@ void tls_shutdown(void)
     return;
 }
 
-void tls_logerror(tls_t *tls)
+int tls_error(tls_t *tls)
 {
-    char *texterror = NULL;
-
-    switch(tls->lasterror) {
-	case SSL_ERROR_NONE:
-	    texterror = "No error.";
-	    break;
-	case SSL_ERROR_ZERO_RETURN:
-	    texterror = "Connection closed.";
-	    break;
-	case SSL_ERROR_WANT_READ:
-	    texterror = "Data waiting to read.";
-	    break;
-	case SSL_ERROR_WANT_WRITE:
-	    texterror = "Data waiting to write.";
-	    break;
-	case SSL_ERROR_WANT_CONNECT:
-	    texterror = "Not yet connected.";
-	    break;
-	case SSL_ERROR_WANT_ACCEPT:
-	    texterror = "Not yet accepted.";
-	    break;
-	case SSL_ERROR_WANT_X509_LOOKUP:
-	    texterror = "No certification.";
-	    break;
-	case SSL_ERROR_SYSCALL:
-	    texterror = "I/O error.";
-	    break;
-	case SSL_ERROR_SSL:
-	    texterror = "SSL library internal error";
-	    break;
-	default:
-	    texterror = "Unknown error";
-	    break;
-    }
-
-    xmpp_debug(tls->ctx, "xmpp", "SSL error: %s", texterror);
+    return tls->lasterror;
 }
 
 tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
@@ -166,7 +123,6 @@ int tls_start(tls_t *tls)
 
     if (ret <= 0) {
 	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	tls_logerror(tls);
 	return 0;
     }
 
@@ -182,16 +138,10 @@ int tls_stop(tls_t *tls)
 
     if (ret <= 0) {
 	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	tls_logerror(tls);
 	return 0;
     }
 
     return 1;
-}
-
-int tls_error(tls_t *tls)
-{
-    return tls->lasterror;
 }
 
 int tls_is_recoverable(int error)
@@ -208,7 +158,6 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
 
     if (ret <= 0) {
 	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	tls_logerror(tls);
     }
 
     return ret;
@@ -220,8 +169,12 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 
     if (ret <= 0) {
 	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	tls_logerror(tls);
     }
 
     return ret;
+}
+
+int tls_clear_pending_write(tls_t *tls)
+{
+    return 0;
 }

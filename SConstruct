@@ -17,6 +17,9 @@
 
 # invoke with 'scons' to build the library
 
+# change this to one of openssl or schannel if you want TLS support
+TLS_PLUGIN = 'dummy'
+
 LIBSTROPHE_VERSION_MAJOR=0
 LIBSTROPHE_VERSION_MINOR=7
 
@@ -48,10 +51,9 @@ Sources = Split("""
   util.c
   thread.c
   snprintf.c
-  tls_dummy.c
-  oocontext.cpp
-  oostanza.cpp
 """)
+
+Sources += ' tls_%s.c' % TLS_PLUGIN
 
 Headers = Split("""
   strophe.h
@@ -99,6 +101,8 @@ Default(strophe)
 exenv = env.Clone()
 exenv.Append(CPPPATH=['.'])
 exenv.Append(LIBS=["strophe", "expat"])
+if TLS_PLUGIN == 'openssl':
+  exenv.Append(LIBS=["ssl"])
 exenv.Append(LIBPATH=["."])
 if exenv["PLATFORM"] == "win32":
   exenv.Append(LIBS=["ws2_32", "winmm"])
@@ -140,9 +144,13 @@ def testcase_runner(target, source, env):
 
 testenv = env.Clone()
 testenv.Append(CPPPATH=['.', 'src', join('expat','lib')])
-testenv.Append(LIBS=['strophe', 'expat'])
+testenv.Append(LIBS=["strophe", "expat"])
+if TLS_PLUGIN == 'openssl':
+  testenv.Append(LIBS=["ssl"])
 if testenv["PLATFORM"] == "win32":
   testenv.Append(LIBS=["winmm", "ws2_32"])
+if testenv["PLATFORM"] != "win32":
+  testenv.Append(LIBS=["resolv"])
 testenv.Append(LIBPATH=['.'])
 
 import SCons.Node
