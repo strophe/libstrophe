@@ -53,7 +53,7 @@ Sources = Split("""
   snprintf.c
 """)
 
-Sources += ' tls_%s.c' % TLS_PLUGIN
+Sources.append('tls_%s.c' % TLS_PLUGIN)
 
 Headers = Split("""
   strophe.h
