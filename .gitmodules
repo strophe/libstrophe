@@ -1,0 +1,3 @@
+[submodule "expat"]
+	path = expat
+	url = stzpub:expat
