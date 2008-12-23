@@ -1,1 +1,7 @@
 .sconsign*
+src/*.o
+examples/*.o
+*.a
+examples/basic
+examples/active
+examples/roster
