@@ -286,6 +286,10 @@ xmpp_stanza_t * xmpp_stanza_copy(const xmpp_stanza_t * const stanza);
 /** free a stanza object and it's contents */
 int xmpp_stanza_release(xmpp_stanza_t * const stanza);
 
+/** free some blocks returned by other APIs, for example the
+    buffer you get from xmpp_stanza_to_text **/
+void xmpp_free(const xmpp_ctx_t * const ctx, void *p);
+
 int xmpp_stanza_is_text(xmpp_stanza_t * const stanza);
 int xmpp_stanza_is_tag(xmpp_stanza_t * const stanza);
 

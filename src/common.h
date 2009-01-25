@@ -58,7 +58,6 @@ struct _xmpp_ctx_t {
 
 /* convenience functions for accessing the context */
 void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size);
-void xmpp_free(const xmpp_ctx_t * const ctx, void *p);
 void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p, 
 		   const size_t size);
 char *xmpp_strdup(const xmpp_ctx_t * const ctx, const char * const s);
