@@ -231,6 +231,11 @@ void xmpp_disconnect(xmpp_conn_t * const conn);
 void xmpp_send(xmpp_conn_t * const conn,
 	       xmpp_stanza_t * const stanza);
 
+void xmpp_send_raw_string(xmpp_conn_t * const conn, 
+			  const char * const fmt, ...);
+void xmpp_send_raw(xmpp_conn_t * const conn, 
+		   const char * const data, const size_t len);
+
 
 /* handlers */
 

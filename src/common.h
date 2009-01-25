@@ -218,11 +218,6 @@ void conn_disconnect(xmpp_conn_t * const conn);
 void conn_disconnect_clean(xmpp_conn_t * const conn);
 void conn_open_stream(xmpp_conn_t * const conn);
 
-void xmpp_send_raw_string(xmpp_conn_t * const conn, 
-			  const char * const fmt, ...);
-void xmpp_send_raw(xmpp_conn_t * const conn, 
-		   const char * const data, const size_t len);
-
 
 typedef enum {
     XMPP_STANZA_UNKNOWN,
