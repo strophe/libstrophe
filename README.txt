@@ -16,7 +16,7 @@ Once scons is installed, invoke 'scons' in the top-level
 directory to build the library. This will create a static
 library (also in the top-level) directory which can be
 linked into other programs. The public api is defined
-in <xmpp.h> which is also in the top-level directory.
+in <strophe.h> which is also in the top-level directory.
 
 Invoke 'scons test' in the top-level directory to execute
 the unit and self tests.
