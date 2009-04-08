@@ -400,6 +400,8 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 	    connectport = altport ? altport : 5222;
     }
     conn->sock = sock_connect(connectdomain, connectport);
+    xmpp_debug(conn->ctx, "xmpp", "sock_connect to %s:%d returned %d",
+               connectdomain, connectport, conn->sock);
     if (conn->sock == -1) return -1;
 
     /* setup handler */
