@@ -29,6 +29,7 @@
 int version_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {
 	xmpp_stanza_t *reply, *query, *name, *version, *text;
+	char *ns;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	printf("Received version request from %s\n", xmpp_stanza_get_attribute(stanza, "from"));
 	
@@ -40,7 +41,10 @@ int version_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	
 	query = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(query, "query");
-	xmpp_stanza_set_ns(query, xmpp_stanza_get_ns(xmpp_stanza_get_children(stanza)));
+    ns = xmpp_stanza_get_ns(xmpp_stanza_get_children(stanza));
+    if (ns) {
+        xmpp_stanza_set_ns(query, ns);
+    }
 
 	name = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(name, "name");
