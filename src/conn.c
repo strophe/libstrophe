@@ -383,14 +383,19 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     conn->domain = xmpp_jid_domain(conn->ctx, conn->jid);
     if (!conn->domain) return -1;
 
-    if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain, connectdomain, 2048, &connectport))
-    {
+    if (altdomain) {
+        xmpp_debug(conn->ctx, "xmpp", "Connecting via altdomain.");
+        strcpy(connectdomain, altdomain);
+        connectport = altport ? altport : 5222;
+    } else if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain,
+                                connectdomain, 2048, &connectport)) {
 	    xmpp_debug(conn->ctx, "xmpp", "SRV lookup failed.");
 	    if (!altdomain)
 		    domain = conn->domain;
 	    else
 		    domain = altdomain;
-	    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d", altdomain, altport);
+	    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d",
+                   altdomain, altport);
 	    strcpy(connectdomain, domain);
 	    connectport = altport ? altport : 5222;
     }
