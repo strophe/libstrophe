@@ -18,3 +18,4 @@ tests/*.o
 examples/basic
 examples/active
 examples/roster
+examples/bot
