@@ -208,9 +208,11 @@ static int _handle_features(xmpp_conn_t * const conn,
     xmpp_timed_handler_delete(conn, _handle_missing_features);
 
     /* check for TLS */
-    child = xmpp_stanza_get_child_by_name(stanza, "starttls");
-    if (child && (strcmp(xmpp_stanza_get_ns(child), XMPP_NS_TLS) == 0))
-	conn->tls_support = 1;
+    if (!conn->secured) {
+        child = xmpp_stanza_get_child_by_name(stanza, "starttls");
+        if (child && (strcmp(xmpp_stanza_get_ns(child), XMPP_NS_TLS) == 0))
+            conn->tls_support = 1;
+    }
 
     /* check for SASL */
     child = xmpp_stanza_get_child_by_name(stanza, "mechanisms");
@@ -277,7 +279,8 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
 	}
 	else
 	{
-	    parser_prepare_reset(conn, _handle_open_tls);
+            conn->secured = 1;
+            conn_prepare_reset(conn, auth_handle_open);
 
 	    conn_open_stream(conn);
 	}
@@ -307,7 +310,7 @@ static int _handle_sasl_result(xmpp_conn_t * const conn,
 		   (char *)userdata);
 
 	/* reset parser */
-	parser_prepare_reset(conn, _handle_open_sasl);
+	conn_prepare_reset(conn, _handle_open_sasl);
 
 	/* send stream tag */
 	conn_open_stream(conn);
@@ -691,16 +694,6 @@ void auth_handle_open(xmpp_conn_t * const conn)
     handler_add_timed(conn, _handle_missing_features,
 		      FEATURES_TIMEOUT, NULL);
 }
-
-/* called when stream:stream tag received after TLS connection */
-static void _handle_open_tls(xmpp_conn_t * const conn)
-{
-    xmpp_debug(conn->ctx, "xmpp", "TLS successful, proceeding with SASL");
-
-    /* go straight to SASL auth */
-    _auth(conn);
-}
-
 
 /* called when stream:stream tag received after SASL auth */
 static void _handle_open_sasl(xmpp_conn_t * const conn)

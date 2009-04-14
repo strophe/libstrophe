@@ -47,8 +47,9 @@
 #define ECONNABORTED WSAECONNABORTED
 #endif
 
-#include "strophe.h"
+#include <strophe.h>
 #include "common.h"
+#include "parser.h"
 
 #ifndef DEFAULT_TIMEOUT
 /** @def DEFAULT_TIMEOUT
@@ -168,7 +169,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     /* reset parsers if needed */
     for (connitem = ctx->connlist; connitem; connitem = connitem->next) {
 	if (connitem->conn->reset_parser)
-	    parser_reset(connitem->conn);
+	    conn_parser_reset(connitem->conn);
     }
 
 
@@ -267,7 +268,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		}
 
 		if (ret > 0) {
-		    ret = XML_Parse(conn->parser, buf, ret, 0);
+		    ret = parser_feed(conn->parser, buf, ret);
 		    if (!ret) {
 			/* parse error, we need to shut down */
 			/* FIXME */

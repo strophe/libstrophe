@@ -23,9 +23,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "strophe.h"
+#include <strophe.h>
+
 #include "common.h"
 #include "util.h"
+#include "parser.h"
 
 #ifndef DEFAULT_SEND_QUEUE_MAX
 /** @def DEFAULT_SEND_QUEUE_MAX
@@ -50,6 +52,13 @@
 
 static int _disconnect_cleanup(xmpp_conn_t * const conn, 
 			       void * const userdata);
+
+static void _handle_stream_start(char *name, char **attrs, 
+                                 void * const userdata);
+static void _handle_stream_end(char *name,
+                               void * const userdata);
+static void _handle_stream_stanza(xmpp_stanza_t *stanza,
+                                  void * const userdata);
 
 /** Create a new Strophe connection object.
  *
@@ -100,13 +109,18 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	conn->tls_support = 0;
 	conn->tls_failed = 0;
 	conn->sasl_support = 0;
+        conn->secured = 0;
 
 	conn->bind_required = 0;
 	conn->session_required = 0;
 
-	conn->parser = NULL;
-	conn->stanza = NULL;
-	parser_prepare_reset(conn, auth_handle_open);
+	conn->parser = parser_new(conn->ctx, 
+                                  _handle_stream_start,
+                                  _handle_stream_end,
+                                  _handle_stream_stanza,
+                                  conn);
+        conn->reset_parser = 0;
+        conn_prepare_reset(conn, auth_handle_open);
 
 	conn->authenticated = 0;
 	conn->conn_handler = NULL;
@@ -127,7 +141,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	if (!item) {
 	    xmpp_error(conn->ctx, "xmpp", "failed to allocate memory");
 	    xmpp_free(conn->ctx, conn->lang);
-	    XML_ParserFree(conn->parser);
+            parser_free(conn->parser);
 	    xmpp_free(conn->ctx, conn);
 	    conn = NULL;
 	} else {
@@ -249,7 +263,7 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 	    xmpp_free(ctx, conn->stream_error);
 	}
 
-	XML_ParserFree(conn->parser);
+        parser_free(conn->parser);
 	
 	if (conn->domain) xmpp_free(ctx, conn->domain);
 	if (conn->jid) xmpp_free(ctx, conn->jid);
@@ -361,7 +375,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 {
     char connectdomain[2048];
     int connectport;
-    char *domain;
+    const char * domain;
 
     conn->type = XMPP_CLIENT;
 
@@ -432,6 +446,21 @@ void conn_disconnect(xmpp_conn_t * const conn)
     /* fire off connection handler */
     conn->conn_handler(conn, XMPP_CONN_DISCONNECT, conn->error,
 		       conn->stream_error, conn->userdata);
+}
+
+/* prepares a parser reset.  this is called from handlers. we can't
+ * reset the parser immediately as it is not re-entrant. */
+void conn_prepare_reset(xmpp_conn_t * const conn, xmpp_open_handler handler)
+{
+    conn->reset_parser = 1;
+    conn->open_handler = handler;
+}
+
+/* reset the parser */
+void conn_parser_reset(xmpp_conn_t * const conn)
+{
+    conn->reset_parser = 0;
+    parser_reset(conn->parser);
 }
 
 /* timed handler for cleanup if normal disconnect procedure takes too long */
@@ -606,4 +635,98 @@ void conn_open_stream(xmpp_conn_t * const conn)
 			 conn->lang,
 			 conn->type == XMPP_CLIENT ? XMPP_NS_CLIENT : XMPP_NS_COMPONENT,
 			 XMPP_NS_STREAMS);
+}
+
+static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
+{
+    char buf[4096];
+    size_t len, pos;
+    int i;
+    
+    if (!attrs) return;
+
+    pos = 0;
+    len = xmpp_snprintf(buf, 4096, "<stream:stream");
+    if (len < 0) return;
+    
+    pos += len;
+    
+    for (i = 0; attrs[i]; i += 2) {
+        len = xmpp_snprintf(&buf[pos], 4096 - pos, " %s='%s'",
+                            attrs[i], attrs[i+1]);
+        if (len < 0) return;
+        pos += len;
+    }
+
+    len = xmpp_snprintf(&buf[pos], 4096 - pos, ">");
+    if (len < 0) return;
+
+    xmpp_debug(conn->ctx, "xmpp", "RECV: %s", buf);
+}
+
+static char *_get_stream_attribute(char **attrs, char *name)
+{
+    int i;
+
+    if (!attrs) return NULL;
+
+    for (i = 0; attrs[i]; i += 2)
+        if (strcmp(name, attrs[i]) == 0)
+            return attrs[i+1];
+
+    return NULL;
+}
+
+static void _handle_stream_start(char *name, char **attrs, 
+                                 void * const userdata)
+{
+    xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
+    char *id;
+
+    if (strcmp(name, "stream:stream") != 0) {
+        printf("name = %s\n", name);
+        xmpp_error(conn->ctx, "conn", "Server did not open valid stream.");
+        conn_disconnect(conn);
+    } else {
+        _log_open_tag(conn, attrs);
+        
+        if (conn->stream_id) xmpp_free(conn->ctx, conn->stream_id);
+
+        id = _get_stream_attribute(attrs, "id");
+        if (id)
+            conn->stream_id = xmpp_strdup(conn->ctx, id);
+
+        if (!conn->stream_id) {
+            xmpp_error(conn->ctx, "conn", "Memory allocation failed.");
+            conn_disconnect(conn);
+        }
+    }
+    
+    /* call stream open handler */
+    conn->open_handler(conn);
+}
+
+static void _handle_stream_end(char *name,
+                               void * const userdata)
+{
+    xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
+
+    /* stream is over */
+    xmpp_debug(conn->ctx, "xmpp", "RECV: </stream:stream>");
+    conn_disconnect_clean(conn);
+}
+
+static void _handle_stream_stanza(xmpp_stanza_t *stanza,
+                                  void * const userdata)
+{
+    xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
+    char *buf;
+    size_t len;
+
+    if (xmpp_stanza_to_text(stanza, &buf, &len) == 0) {
+        xmpp_debug(conn->ctx, "xmpp", "RECV: %s", buf);
+        xmpp_free(conn->ctx, buf);
+    }
+
+    handler_fire_stanza(conn, stanza);
 }

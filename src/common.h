@@ -31,8 +31,7 @@
 #include "tls.h"
 #include "hash.h"
 #include "util.h"
-
-#include "expat.h"
+#include "parser.h"
 
 /** run-time context **/
 
@@ -167,6 +166,7 @@ struct _xmpp_conn_t {
     int tls_failed; /* set when tls fails, so we don't try again */
     int sasl_support; /* if true, field is a bitfield of supported 
 			 mechanisms */ 
+    int secured; /* set when stream is secured with TLS */
 
     /* if server returns <bind/> or <session/> we must do them */
     int bind_required;
@@ -189,9 +189,7 @@ struct _xmpp_conn_t {
 
     /* xml parser */
     int reset_parser;
-    XML_Parser parser;
-    int depth;
-    xmpp_stanza_t *stanza;
+    parser_t *parser;
 
     /* timeouts */
     unsigned int connect_timeout;
@@ -217,6 +215,8 @@ struct _xmpp_conn_t {
 void conn_disconnect(xmpp_conn_t * const conn);
 void conn_disconnect_clean(xmpp_conn_t * const conn);
 void conn_open_stream(xmpp_conn_t * const conn);
+void conn_prepare_reset(xmpp_conn_t * const conn, xmpp_open_handler handler);
+void conn_parser_reset(xmpp_conn_t * const conn);
 
 
 typedef enum {
@@ -240,19 +240,6 @@ struct _xmpp_stanza_t {
 
     hash_t *attributes;
 };
-
-int xmpp_stanza_set_attributes(xmpp_stanza_t * const  stanza,
-			       const char * const * const attr);
-
-/* parser functions */
-void parser_handle_start(void *userdata,
-			 const XML_Char *name,
-			 const XML_Char **attr);
-void parser_handle_character(void *userdata, const XML_Char *s, int len);
-void parser_handle_end(void *userdata, const XML_Char *name);
-void parser_prepare_reset(xmpp_conn_t * const conn, 
-			  xmpp_open_handler handler);
-int parser_reset(xmpp_conn_t * const conn);
 
 /* handler management */
 void handler_fire_stanza(xmpp_conn_t * const conn,

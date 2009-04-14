@@ -14,6 +14,7 @@ autom4te.cache
 src/*.o
 examples/*.o
 tests/*.o
+tests/check_parser
 *.a
 examples/basic
 examples/active
