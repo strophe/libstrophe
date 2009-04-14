@@ -114,7 +114,7 @@ static void _end_element(void *userdata, const xmlChar *name)
 	    parser->stanza = parser->stanza->parent;
 	} else {
             if (parser->stanzacb)
-                parser->stanzacb(xmpp_stanza_clone(parser->stanza),
+                parser->stanzacb(parser->stanza,
                                  parser->userdata);
             xmpp_stanza_release(parser->stanza);
             parser->stanza = NULL;
