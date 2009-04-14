@@ -112,6 +112,9 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
 		    prev->next = item->next;
 		else
 		    conn->handlers = item->next;
+                if (item->ns) xmpp_free(conn->ctx, item->ns);
+                if (item->name) xmpp_free(conn->ctx, item->name);
+                if (item->type) xmpp_free(conn->ctx, item->type);
 		xmpp_free(conn->ctx, item);
 		item = NULL;
 	    }
