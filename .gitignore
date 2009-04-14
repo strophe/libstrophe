@@ -16,7 +16,16 @@ examples/*.o
 tests/*.o
 tests/check_parser
 *.a
+TAGS
 examples/basic
 examples/active
 examples/roster
 examples/bot
+test_stamp
+tests/*.o
+tests/test_base64
+tests/test_ctx
+tests/test_hash
+tests/test_jid
+tests/test_sasl
+tests/test_sock

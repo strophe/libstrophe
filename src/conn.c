@@ -269,6 +269,7 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 	if (conn->jid) xmpp_free(ctx, conn->jid);
 	if (conn->pass) xmpp_free(ctx, conn->pass);
 	if (conn->stream_id) xmpp_free(ctx, conn->stream_id);
+	if (conn->lang) xmpp_free(ctx, conn->lang);
 	xmpp_free(ctx, conn);
 	released = 1;
     }
@@ -382,18 +383,25 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     conn->domain = xmpp_jid_domain(conn->ctx, conn->jid);
     if (!conn->domain) return -1;
 
-    if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain, connectdomain, 2048, &connectport))
-    {
+    if (altdomain) {
+        xmpp_debug(conn->ctx, "xmpp", "Connecting via altdomain.");
+        strcpy(connectdomain, altdomain);
+        connectport = altport ? altport : 5222;
+    } else if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain,
+                                connectdomain, 2048, &connectport)) {
 	    xmpp_debug(conn->ctx, "xmpp", "SRV lookup failed.");
 	    if (!altdomain)
 		    domain = conn->domain;
 	    else
 		    domain = altdomain;
-	    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d", altdomain, altport);
+	    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d",
+                   altdomain, altport);
 	    strcpy(connectdomain, domain);
 	    connectport = altport ? altport : 5222;
     }
     conn->sock = sock_connect(connectdomain, connectport);
+    xmpp_debug(conn->ctx, "xmpp", "sock_connect to %s:%d returned %d",
+               connectdomain, connectport, conn->sock);
     if (conn->sock == -1) return -1;
 
     /* setup handler */
