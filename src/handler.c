@@ -66,6 +66,7 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
 		    hash_drop(conn->id_handlers, id);
 		    hash_add(conn->id_handlers, id, next);
 		}
+                xmpp_free(conn->ctx, item->id);
 		xmpp_free(conn->ctx, item);
 		item = NULL;
 	    }
