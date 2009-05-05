@@ -84,6 +84,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     int towrite;
     char buf[4096];
     uint64_t next;
+    long usec;
 
     if (ctx->loop_status == XMPP_LOOP_QUIT) return;
     ctx->loop_status = XMPP_LOOP_RUNNING;
@@ -178,8 +179,9 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
        to be called */
     next = handler_fire_timed(ctx);
 
-    tv.tv_sec = 0;
-    tv.tv_usec = ((next < timeout) ? next : timeout) * 1000;
+    usec = ((next < timeout) ? next : timeout) * 1000;
+    tv.tv_sec = usec / 1000000;
+    tv.tv_usec = usec % 1000000;
 
     FD_ZERO(&rfds); 
     FD_ZERO(&wfds);
