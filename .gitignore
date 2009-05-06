@@ -16,6 +16,7 @@ examples/*.o
 tests/*.o
 tests/check_parser
 *.a
+docs/html
 TAGS
 examples/basic
 examples/active
