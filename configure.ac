@@ -33,6 +33,7 @@ else
 fi
 
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
+AC_SEARCH_LIBS([socket], [socket])
 
 AM_CONDITIONAL([BUILD_EXPAT], [test x$with_parser = xbuiltin])
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
