@@ -212,6 +212,7 @@ xmpp_conn_t * xmpp_conn_clone(xmpp_conn_t * const conn);
 int xmpp_conn_release(xmpp_conn_t * const conn);
 
 const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn);
+const char *xmpp_conn_get_bound_jid(const xmpp_conn_t * const conn);
 void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
 const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
 void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);

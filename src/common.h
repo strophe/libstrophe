@@ -178,6 +178,7 @@ struct _xmpp_conn_t {
     char *connectport;
     char *jid;
     char *pass;
+    char *bound_jid;
     char *stream_id;
 
     /* send queue and parameters */

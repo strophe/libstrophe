@@ -105,6 +105,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	conn->jid = NULL;
 	conn->pass = NULL;
 	conn->stream_id = NULL;
+        conn->bound_jid = NULL;
 
 	conn->tls_support = 0;
 	conn->tls_failed = 0;
@@ -267,6 +268,7 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 	
 	if (conn->domain) xmpp_free(ctx, conn->domain);
 	if (conn->jid) xmpp_free(ctx, conn->jid);
+    if (conn->bound_jid) xmpp_free(ctx, conn->bound_jid);
 	if (conn->pass) xmpp_free(ctx, conn->pass);
 	if (conn->stream_id) xmpp_free(ctx, conn->stream_id);
 	if (conn->lang) xmpp_free(ctx, conn->lang);
@@ -288,6 +290,24 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn)
 {
     return conn->jid;
+}
+
+/**
+ * Get the JID discovered during binding time.
+ *
+ * This JID will contain the resource used by the current connection.
+ * This is useful in the case where a resource was not specified for
+ * binding.
+ *
+ * @param conn a Strophe connection object.
+ *
+ * @return a string containing the full JID or NULL if it's not been discovered
+ *
+ * @ingroup Connections
+ */
+const char *xmpp_conn_get_bound_jid(const xmpp_conn_t * const conn)
+{
+    return conn->bound_jid;
 }
 
 /** Set the JID of the user that will be bound to the connection.

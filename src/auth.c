@@ -833,8 +833,16 @@ static int _handle_bind(xmpp_conn_t * const conn,
 	xmpp_error(conn->ctx, "xmpp", "Binding failed.");
 	xmpp_disconnect(conn);
     } else if (type && strcmp(type, "result") == 0) {
-	/* TODO: extract resource if present */
+        xmpp_stanza_t *binding = xmpp_stanza_get_child_by_name(stanza, "bind");
 	xmpp_debug(conn->ctx, "xmpp", "Bind successful.");
+
+        if (binding) {
+            xmpp_stanza_t *jid_stanza = xmpp_stanza_get_child_by_name(binding,
+                                                                      "jid");
+            if (jid_stanza) {
+                conn->bound_jid = xmpp_stanza_get_text(jid_stanza);
+            }
+        }
 
 	/* establish a session if required */
 	if (conn->session_required) {
