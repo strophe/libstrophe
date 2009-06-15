@@ -1,7 +1,7 @@
 /* sock.c
 ** strophe XMPP client library -- socket abstraction implementation
 **
-** Copyright (C) 2005-2008 OGG, LLC. All rights reserved.
+** Copyright (C) 2005-2009 Collecta, Inc. 
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.

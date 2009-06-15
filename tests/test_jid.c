@@ -1,7 +1,7 @@
 /* test_base64.c
 ** libstrophe XMPP client library -- test routines for the jid utils
 **
-** Copyright (C) 2005 OGG, LCC. All rights reserved.
+** Copyright (C) 2005-2009 Collecta, Inc. 
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.

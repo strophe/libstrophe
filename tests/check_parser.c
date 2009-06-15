@@ -1,7 +1,7 @@
 /* check_parser.h
 ** strophe XMPP client library -- parser tests
 **
-** Copyright (C) 2005-2009 Stanziq, Inc. All rights reserved.
+** Copyright (C) 2005-2009 Collecta, Inc. 
 **
 **  This software is provided AS-IS with no warranty, either express or
 **  implied.

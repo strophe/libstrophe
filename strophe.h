@@ -1,7 +1,7 @@
 /* strophe.h
 ** strophe XMPP client library C API
 **
-** Copyright (C) 2005-2008 OGG, LLC.
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express or
 **  implied.

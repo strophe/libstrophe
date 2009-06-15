@@ -1,7 +1,7 @@
 /* roster.c
 ** libstrophe XMPP client library -- handler example
 **
-** Copyright (C) 2005 OGG, LCC. All rights reserved.
+** Copyright (C) 2005-2009 Collecta, Inc. 
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
