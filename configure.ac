@@ -3,6 +3,7 @@ AM_INIT_AUTOMAKE
 
 AC_PROG_CC
 AC_PROG_RANLIB
+AM_PROG_CC_C_O
 
 AC_CHECK_HEADER(openssl/ssl.h, [], [AC_MSG_ERROR([couldn't find openssl headers, openssl required])])
 PKG_CHECK_MODULES([check], [check >= 0.9.4])
