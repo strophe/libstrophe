@@ -19,7 +19,6 @@ lib_LIBRARIES = libstrophe.a
 endif
 
 libstrophe_a_CFLAGS=$(STROPHE_FLAGS) $(PARSER_CFLAGS)
-libstrophe_a_include_HEADERS = strophe.h
 libstrophe_a_SOURCES = src/auth.c src/conn.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c \
 	src/jid.c src/md5.c src/sasl.c src/sha1.c \
