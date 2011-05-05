@@ -6,6 +6,17 @@ Our goals are:
     * well documented
     * reliable
 
+== GIT Instructions ==
+
+By default, libstrophe has a dependency on the XML parsing
+library expat.  Expat is included as a submodule of this
+repository.  After cloning this repository, you will need
+to run the following to acquire the expat submodule:
+
+$ git submodule init
+
+$ git submodule update
+
 == Build Instructions ==
 
 From the top-level directory, run the following commands
