@@ -202,5 +202,11 @@ int parser_reset(parser_t *parser)
 /* feed a chunk of data to the parser */
 int parser_feed(parser_t *parser, char *chunk, int len)
 {
-    return xmlParseChunk(parser->xmlctx, chunk, len, 0);
+     /* xmlParseChunk API returns 0 on success which is opposite logic to
+       the status returned by parser_feed */
+    if(!xmlParseChunk(parser->xmlctx, chunk, len, 0)) {
+        return 1;
+    } else {
+        return 0;
+    }
 }

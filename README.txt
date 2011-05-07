@@ -6,20 +6,37 @@ Our goals are:
     * well documented
     * reliable
 
+== GIT Instructions ==
+
+By default, libstrophe has a dependency on the XML parsing
+library expat.  Expat is included as a submodule of this
+repository.  After cloning this repository, you will need
+to run the following to acquire the expat submodule:
+
+$ git submodule init
+
+$ git submodule update
+
 == Build Instructions ==
 
-We use the 'scons' tool to build the library, unit tests, 
-documentation and examples. You'll need to obtain a copy
-from http://www.scons.org/ or from your system distributor.
+From the top-level directory, run the following commands
 
-Once scons is installed, invoke 'scons' in the top-level
-directory to build the library. This will create a static
-library (also in the top-level) directory which can be
-linked into other programs. The public api is defined
-in <strophe.h> which is also in the top-level directory.
+NOTE: By default libstrophe uses expat as it's XML parser.
+You may pass in --with-libxml2 with the ./configure command
+to switch to using libxml2 as your XML parser.
 
-Invoke 'scons test' in the top-level directory to execute
-the unit and self tests.
+$ ./bootstrap.sh
+
+$ ./configure
+or
+$ ./configure --with-libxml2
+
+$ make
+
+This will create a static library, also in the top-level
+directory, which can be linked into other programs. The 
+public api is defined in <strophe.h> which is also in the
+top-level directory.
 
 The examples/ directory contains some examples of how to
 use the library; these may be helpful in addition to the
