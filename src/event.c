@@ -85,6 +85,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     char buf[4096];
     uint64_t next;
     long usec;
+    int tls_read_bytes = 0;
 
     if (ctx->loop_status == XMPP_LOOP_QUIT) return;
     ctx->loop_status = XMPP_LOOP_RUNNING;
@@ -215,6 +216,11 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	    break;
 	}
 	
+	/* Check if there is something in the SSL buffer. */
+	if (conn->tls) {
+	    tls_read_bytes += tls_pending(conn->tls);
+	}
+	
 	if (conn->sock > max) max = conn->sock;
 
 	connitem = connitem->next;
@@ -232,8 +238,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     }
     
     /* no events happened */
-    if (ret == 0) return;
-    
+    if (ret == 0 && tls_read_bytes == 0) return;
+
     /* process events */
     connitem = ctx->connlist;
     while (connitem) {
@@ -262,7 +268,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 
 	    break;
 	case XMPP_STATE_CONNECTED:
-	    if (FD_ISSET(conn->sock, &rfds)) {
+	    if (FD_ISSET(conn->sock, &rfds) || (conn->tls && tls_pending(conn->tls))) {
 		if (conn->tls) {
 		    ret = tls_read(conn->tls, buf, 4096);
 		} else {
