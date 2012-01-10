@@ -398,6 +398,22 @@ int tls_is_recoverable(int error)
 	    || error == WSAEINPROGRESS);
 }
 
+int tls_pending(tls_t *tls) {
+	// There are 3 cases:
+	// - there is data in ready buffer, so it is by default pending
+	// - there is data in recv buffer. If it is not decrypted yet, means it 
+	// was incomplete. This should be processed again only if there is data
+	// on the physical connection
+	// - there is data on the physical connection. This case is treated
+	// outside the tls (in event.c)
+
+    if (tls->readybufferpos < tls->readybufferlen) {
+		return tls->readybufferlen - tls->readybufferpos;
+	}
+
+	return 0;
+}
+
 int tls_read(tls_t *tls, void * const buff, const size_t len)
 {
     int bytes;
