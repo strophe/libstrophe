@@ -17,6 +17,8 @@ examples/*.o
 tests/*.o
 tests/check_parser
 *.a
+*.tar.gz
+*.zip
 docs/html
 TAGS
 examples/basic

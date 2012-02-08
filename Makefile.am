@@ -16,13 +16,20 @@ libstrophe_a_SOURCES = src/auth.c src/conn.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c \
 	src/jid.c src/md5.c src/sasl.c src/sha1.c \
 	src/snprintf.c src/sock.c src/stanza.c src/thread.c \
-	src/tls_openssl.c src/util.c
+	src/tls_openssl.c src/util.c \
+	src/common.h src/hash.h src/md5.h src/ostypes.h src/parser.h \
+	src/sasl.h src/sha1.h src/sock.h src/thread.h src/tls.h src/util.h
+
 if PARSER_EXPAT
 libstrophe_a_SOURCES += src/parser_expat.c
 else
 libstrophe_a_SOURCES += src/parser_libxml2.c
 endif
 
+include_HEADERS = strophe.h
+noinst_HEADERS = strophepp.h
+
+EXTRA_DIST = docs
 
 ## Examples
 noinst_PROGRAMS = examples/active examples/roster examples/basic examples/bot
@@ -43,7 +50,7 @@ examples_bot_LDADD = $(STROPHE_LIBS)
 ## Tests
 TESTS = tests/check_parser
 check_PROGRAMS = tests/check_parser
-tests_check_parser_SOURCES = tests/check_parser.c
+tests_check_parser_SOURCES = tests/check_parser.c tests/test.h
 tests_check_parser_CFLAGS = @check_CFLAGS@ $(PARSER_CFLAGS) $(STROPHE_FLAGS) \
 	-I$(top_srcdir)/src
 tests_check_parser_LDADD = @check_LIBS@ $(STROPHE_LIBS)
