@@ -72,8 +72,6 @@ xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx)
  */
 xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
 {
-    xmpp_stanza_t *child;
-
     stanza->ref++;
 
     return stanza;
