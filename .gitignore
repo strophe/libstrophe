@@ -3,6 +3,7 @@ Makefile.in
 configure
 install-sh
 missing
+compile
 aclocal.m4
 config.log
 config.status
