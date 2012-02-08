@@ -788,7 +788,9 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 	    }
 	    xmpp_stanza_set_text(text, resource);
 	    xmpp_stanza_add_child(res, text);
+            xmpp_stanza_release(text);
 	    xmpp_stanza_add_child(bind, res);
+            xmpp_stanza_release(res);
 	    xmpp_free(conn->ctx, resource);
 	}
 
