@@ -1,4 +1,4 @@
-AC_INIT([libstrophe], [trunk], [jack@metajack.im])
+AC_INIT([libstrophe], [0.8-snapshot], [jack@metajack.im])
 AM_INIT_AUTOMAKE
 
 AC_PROG_CC
