@@ -37,6 +37,7 @@ int tls_stop(tls_t *tls);
 
 int tls_error(tls_t *tls);
 
+int tls_pending(tls_t *tls);
 int tls_read(tls_t *tls, void * const buff, const size_t len);
 int tls_write(tls_t *tls, const void * const buff, const size_t len);
 

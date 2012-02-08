@@ -68,6 +68,11 @@ int tls_error(tls_t *tls)
     return 0;
 }
 
+int tls_pending(tls_t *tls)
+{
+    return 0;
+}
+
 int tls_read(tls_t *tls, void * const buff, const size_t len)
 {
     return -1;

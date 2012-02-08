@@ -152,6 +152,11 @@ int tls_is_recoverable(int error)
 	    || error == SSL_ERROR_WANT_ACCEPT);
 }
 
+int tls_pending(tls_t *tls)
+{
+    return SSL_pending(tls->ssl);
+}
+
 int tls_read(tls_t *tls, void * const buff, const size_t len)
 {
     int ret = SSL_read(tls->ssl, buff, len);
