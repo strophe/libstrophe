@@ -260,6 +260,7 @@ void xmpp_log(const xmpp_ctx_t * const ctx,
 	if (!buf) {
 	    buf = NULL;
 	    xmpp_error(ctx, "log", "Failed allocating memory for log message.");
+            va_end(copy);
 	    return;
 	}
 	oldret = ret;
