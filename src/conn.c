@@ -80,6 +80,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	conn->ctx = ctx;
 
 	conn->type = XMPP_UNKNOWN;
+        conn->state = XMPP_STATE_DISCONNECTED;
 	conn->sock = -1;
 	conn->tls = NULL;
 	conn->timeout_stamp = 0;
