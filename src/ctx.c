@@ -256,7 +256,6 @@ void xmpp_log(const xmpp_ctx_t * const ctx,
     va_copy(copy, ap);
     ret = xmpp_vsnprintf(buf, 1023, fmt, ap);
     if (ret > 1023) {
-	va_copy(ap, copy);
 	buf = (char *)xmpp_alloc(ctx, ret + 1);
 	if (!buf) {
 	    buf = NULL;
@@ -264,11 +263,13 @@ void xmpp_log(const xmpp_ctx_t * const ctx,
 	    return;
 	}
 	oldret = ret;
-	ret = xmpp_vsnprintf(buf, ret + 1, fmt, ap);
+	ret = xmpp_vsnprintf(buf, ret + 1, fmt, copy);
 	if (ret > oldret) {
 	    xmpp_error(ctx, "log", "Unexpected error");
 	    return;
 	}
+    } else {
+        va_end(copy);
     }
 
     if (ctx->log->handler)
