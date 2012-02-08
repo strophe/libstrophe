@@ -475,6 +475,9 @@ void xmpp_handler_delete(xmpp_conn_t * const conn,
  *  to fire handlers as close to the period times as it can, but accuracy
  *  will vary depending on the resolution of the event loop.
  *   
+ *  If the handler function returns true, it will be kept, and if it
+ *  returns false, it will be deleted from the list of handlers.
+ *
  *  @param conn a Strophe connection object
  *  @param handler a function pointer to a timed handler
  *  @param period the time in milliseconds between firings
@@ -512,6 +515,9 @@ void handler_add_timed(xmpp_conn_t * const conn,
  *  This function adds a stanza handler for an &lt;iq/&gt; stanza of
  *  type 'result' or 'error' with a specific id attribute.  This can
  *  be used to handle responses to specific &lt;iq/&gt;s.
+ *
+ *  If the handler function returns true, it will be kept, and if it
+ *  returns false, it will be deleted from the list of handlers.
  *
  *  @param conn a Strophe connection object
  *  @param handler a function pointer to a stanza handler
@@ -554,6 +560,9 @@ void handler_add_id(xmpp_conn_t * const conn,
  *  level stanza or any of it's immediate children (this allows you do
  *  handle specific &lt;iq/&gt; stanzas based on the &lt;query/&gt;
  *  child namespace.
+ *
+ *  If the handler function returns true, it will be kept, and if it
+ *  returns false, it will be deleted from the list of handlers.
  *
  *  @param conn a Strophe connection object
  *  @param handler a function pointer to a stanza handler
