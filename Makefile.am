@@ -5,8 +5,10 @@ CFLAGS = -g -Wall
 PARSER_CFLAGS=@PARSER_CFLAGS@
 PARSER_LIBS=@PARSER_LIBS@
 
+SSL_LIBS = -lssl -lcrypto -lz
+
 STROPHE_FLAGS = -I$(top_srcdir)
-STROPHE_LIBS = libstrophe.a $(PARSER_LIBS) -lssl -lresolv
+STROPHE_LIBS = libstrophe.a $(PARSER_LIBS) $(SSL_LIBS)
 
 ## Main build targets
 lib_LIBRARIES = libstrophe.a
