@@ -35,7 +35,6 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <arpa/nameser.h>
-#include <arpa/nameser_compat.h>
 #include <resolv.h>
 #endif
 
@@ -866,7 +865,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
         unsigned char buf[65535];
 	int len;
 	
-	if ((len = res_query(fulldomain, C_IN, T_SRV, buf, 65535)) > 0) {
+	if ((len = res_query(fulldomain, ns_c_in, ns_t_srv, buf, 65535)) > 0) {
 	    int offset;
 	    int i;
 	    struct dnsquery_header header;
