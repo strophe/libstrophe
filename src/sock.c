@@ -561,7 +561,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
 		    while (current) {
 			if (current->wType == DNS_TYPE_SRV) {
-			    snprintf(resulttarget, resulttargetlength, current->Data.Srv.pNameTarget);
+			    snprintf(resulttarget, resulttargetlength, "%s", current->Data.Srv.pNameTarget);
 			    *resultport = current->Data.Srv.wPort;
 			    set = 1;
 
@@ -845,7 +845,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 				{
 					struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
-					snprintf(resulttarget, resulttargetlength, srvrdata->target);
+					snprintf(resulttarget, resulttargetlength, "%s", srvrdata->target);
 					*resultport = srvrdata->port;
 					set = 1;
 				}
@@ -885,7 +885,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 		if (rr.type == 33) {
 		    struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
-		    snprintf(resulttarget, resulttargetlength, 
+		    snprintf(resulttarget, resulttargetlength, "%s",
 			     srvrdata->target);
 		    *resultport = srvrdata->port;
 		    set = 1;
@@ -901,7 +901,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
     if (!set)
     {
-	snprintf(resulttarget, resulttargetlength, domain);
+	snprintf(resulttarget, resulttargetlength, "%s", domain);
 	*resultport = 5222;
 	return 0;
     }
