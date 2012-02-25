@@ -35,8 +35,7 @@ fi
 
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
 AC_SEARCH_LIBS([socket], [socket])
-AC_SEARCH_LIBS([res_9_query], [resolv])
-AC_CHECK_HEADERS([arpa/nameser_compat.h])
+AC_LINK_IFELSE([AC_LANG_CALL([#include <resolv.h>], [res_query])], [], [LIBS="$LIBS -lresolv"])AC_CHECK_HEADERS([arpa/nameser_compat.h])
 
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AC_SUBST(PARSER_NAME)                              
