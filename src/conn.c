@@ -109,6 +109,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
         conn->bound_jid = NULL;
 
 	conn->tls_support = 0;
+	conn->tls_disabled = 0;
 	conn->tls_failed = 0;
 	conn->sasl_support = 0;
         conn->secured = 0;
@@ -664,6 +665,17 @@ void conn_open_stream(xmpp_conn_t * const conn)
 			 conn->lang,
 			 conn->type == XMPP_CLIENT ? XMPP_NS_CLIENT : XMPP_NS_COMPONENT,
 			 XMPP_NS_STREAMS);
+}
+
+/** Disable TLS for this connection, called by users of the library.
+ *  Occasionally a server will be misconfigured to send the starttls
+ *  feature, but wil not support the handshake.
+ *
+ *  @param conn a Strophe connection object
+ */
+void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
+{
+    conn->tls_disabled = 1;
 }
 
 static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
