@@ -109,7 +109,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
         conn->bound_jid = NULL;
 
 	conn->tls_support = 0;
-    conn->tls_disabled = 0;
+	conn->tls_disabled = 0;
 	conn->tls_failed = 0;
 	conn->sasl_support = 0;
         conn->secured = 0;
