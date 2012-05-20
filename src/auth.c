@@ -209,9 +209,13 @@ static int _handle_features(xmpp_conn_t * const conn,
 
     /* check for TLS */
     if (!conn->secured) {
-        child = xmpp_stanza_get_child_by_name(stanza, "starttls");
-        if (child && (strcmp(xmpp_stanza_get_ns(child), XMPP_NS_TLS) == 0))
-            conn->tls_support = 1;
+        if (!conn->tls_disabled) {
+            child = xmpp_stanza_get_child_by_name(stanza, "starttls");
+            if (child && (strcmp(xmpp_stanza_get_ns(child), XMPP_NS_TLS) == 0))
+                conn->tls_support = 1;
+        } else {
+            conn->tls_disabled = 0;
+        }
     }
 
     /* check for SASL */
