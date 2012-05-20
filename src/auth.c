@@ -214,7 +214,7 @@ static int _handle_features(xmpp_conn_t * const conn,
             if (child && (strcmp(xmpp_stanza_get_ns(child), XMPP_NS_TLS) == 0))
                 conn->tls_support = 1;
         } else {
-            conn->tls_disabled = 0;
+            conn->tls_support = 0;
         }
     }
 
