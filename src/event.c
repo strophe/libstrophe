@@ -147,6 +147,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
             xmpp_free(ctx, sq->data);
             tsq = sq;
             sq = sq->next;
+            conn->send_queue_len--;
             xmpp_free(ctx, tsq);
 
             /* pop the top item */
