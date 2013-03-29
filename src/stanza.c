@@ -206,6 +206,64 @@ int xmpp_stanza_is_tag(xmpp_stanza_t * const stanza)
     return (stanza && stanza->type == XMPP_STANZA_TAG);
 }
 
+/* Escape a string with for use in a XML text node or attribute. Assumes that
+ * the input string is encoded in UTF-8. On sucess, returns a pointer to a
+ * buffer with the resulting data which must be xmpp_free()'d by the caller.
+ * On failure, returns NULL.
+ */
+
+static char *_escape_xml(xmpp_ctx_t * const ctx, char *text)
+{
+    size_t len = 0;
+    char *src;
+    char *dst;
+    char *buf;
+    for (src = text; *src != '\0'; src++) {
+        switch (*src) {
+            case '<':   /* "&lt;" */
+            case '>':   /* "&gt;" */
+                len += 4;
+                break;
+            case '&':   /* "&amp;" */
+                len += 5;
+                break;
+            case '"':
+                len += 6; /*"&quot;" */
+                break;
+            default:
+                len++;
+        }
+    }
+    if ((buf = xmpp_alloc(ctx, (len+1) * sizeof(char))) == NULL)
+        return NULL;    /* Error */
+    dst = buf;
+    for (src = text; *src != '\0'; src++) {
+        switch (*src) {
+            case '<':
+                strcpy(dst, "&lt;");
+                dst += 4;
+                break;
+            case '>':
+                strcpy(dst, "&gt;");
+                dst += 4;
+                break;
+            case '&':
+                strcpy(dst, "&amp;");
+                dst += 5;
+                break;
+            case '"':
+                strcpy(dst, "&quot;");
+                dst += 6;
+                break;
+            default:
+                *dst = *src;
+                dst++;
+        }
+    }
+    *dst = '\0';
+    return buf;
+}
+
 /* small helper function */
 static inline void _render_update(int *written, const int length,
 			   const int lastwrite,
@@ -236,6 +294,7 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
     xmpp_stanza_t *child;
     hash_iterator_t *iter;
     const char *key;
+    char *tmp;
 
     written = 0;
 
@@ -244,7 +303,10 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
     if (stanza->type == XMPP_STANZA_TEXT) {
 	if (!stanza->data) return XMPP_EINVOP;
 
-	ret = xmpp_snprintf(ptr, left, "%s", stanza->data);
+	tmp = _escape_xml(stanza->ctx, stanza->data);
+	if (tmp == NULL) return XMPP_EMEM;
+	ret = xmpp_snprintf(ptr, left, "%s", tmp);
+	xmpp_free(stanza->ctx, tmp);
 	if (ret < 0) return XMPP_EMEM;
 	_render_update(&written, buflen, ret, &left, &ptr);
     } else { /* stanza->type == XMPP_STANZA_TAG */
@@ -258,8 +320,11 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
 	if (stanza->attributes && hash_num_keys(stanza->attributes) > 0) {
 	    iter = hash_iter_new(stanza->attributes);
 	    while ((key = hash_iter_next(iter))) {
-		ret = xmpp_snprintf(ptr, left, " %s=\"%s\"", key,
-			       (char *)hash_get(stanza->attributes, key));
+		tmp = _escape_xml(stanza->ctx,
+		    (char *)hash_get(stanza->attributes, key));
+		if (tmp == NULL) return XMPP_EMEM;
+		ret = xmpp_snprintf(ptr, left, " %s=\"%s\"", key, tmp);
+		xmpp_free(stanza->ctx, tmp);
 		if (ret < 0) return XMPP_EMEM;
 		_render_update(&written, buflen, ret, &left, &ptr);
 	    }
