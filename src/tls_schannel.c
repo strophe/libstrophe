@@ -456,7 +456,7 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
 		      tls->recvbuffermaxlen - tls->recvbufferpos);
 			  
     if (bytes == 0) {
-        tls->lasterror = WSAETIMEDOUT;
+		tls->lasterror = WSAECONNRESET;
         return -1;
     }				  
 
