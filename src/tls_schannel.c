@@ -454,6 +454,11 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
     /* next, top up our recv buffer */
     bytes = sock_read(tls->sock, tls->recvbuffer + tls->recvbufferpos,
 		      tls->recvbuffermaxlen - tls->recvbufferpos);
+			  
+    if (bytes == 0) {
+        tls->lasterror = WSAECONNRESET;
+        return -1;
+    }				  
 
     if (bytes == -1) {
 	if (!tls_is_recoverable(sock_error())) {
