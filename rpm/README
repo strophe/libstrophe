@@ -1,0 +1,31 @@
+1. Setup
+
+yum install gcc make expat-devel libstrophe
+
+Fedora:
+
+yum install fedora-packager
+cd ~
+rpmdev-setuptree
+
+CentOS:
+
+mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+Then make a tarball of sources:
+
+tar czf libstrophe_git.tar.gz libstrophe
+
+2. Build
+
+cp libstrophe.spec ~/rpmbuild/SPECS
+cp libstrophe_git.tar.gz ~/rpmbuild/SOURCES
+rpmbuild -bb ~/rpmbuild/SPECS/libstrophe.spec
+
+3. Install
+
+yum localinstall ~/rpmbuild/RPMS/<arch>/libstrophe-1.1<dist>.<arch>.rpm
+
+Or, if localinstall is not recognised:
+
+rpm -i ~/rpmbuild/RPMS/<arch>/libstrophe-1.1<dist>.<arch>.rpm
