@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_configure:
+	./bootstrap.sh
+	./configure
+
+override_dh_auto_install:
+	$(MAKE) DESTDIR=$$(pwd)/debian/libstrophe-git prefix=/usr install

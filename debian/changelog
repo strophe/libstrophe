@@ -1,0 +1,5 @@
+libstrophe-git (20130531) UNRELEASED; urgency=low
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Florent Peterschmitt <florent@peterschmitt.fr>  Fri, 31 May 2013 10:33:07 +0200
