@@ -9,4 +9,4 @@ Package:           libstrophe-git
 Provides:          libstrophe
 Depends:           ${shlibs:Depends}, ${misc:Depends}, libexpat1
 Description:       A simple, lightweight C library for writing XMPP clients
-Architecture:      any
+Architecture:      all
