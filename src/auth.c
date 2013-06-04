@@ -75,6 +75,9 @@ static int _handle_digestmd5_challenge(xmpp_conn_t * const conn,
 static int _handle_digestmd5_rspauth(xmpp_conn_t * const conn,
 			xmpp_stanza_t * const stanza,
 			void * const userdata);
+static int _handle_scramsha1_challenge(xmpp_conn_t * const conn,
+			xmpp_stanza_t * const stanza,
+			void * const userdata);
 
 static int _handle_missing_features_sasl(xmpp_conn_t * const conn,
 					 void * const userdata);
@@ -229,6 +232,8 @@ static int _handle_features(xmpp_conn_t * const conn,
 		    conn->sasl_support |= SASL_MASK_PLAIN;
 		else if (strcasecmp(text, "DIGEST-MD5") == 0)
 		    conn->sasl_support |= SASL_MASK_DIGESTMD5;
+                else if (strcasecmp(text, "SCRAM-SHA-1") == 0)
+                    conn->sasl_support |= SASL_MASK_SCRAMSHA1;
 		else if (strcasecmp(text, "ANONYMOUS") == 0)
 		    conn->sasl_support |= SASL_MASK_ANONYMOUS;
 
@@ -416,6 +421,73 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t * const conn,
     return 1;
 }
 
+/* handle the challenge phase of digest auth */
+static int _handle_scramsha1_challenge(xmpp_conn_t * const conn,
+			      xmpp_stanza_t * const stanza,
+			      void * const userdata)
+{
+    char *text;
+    char *response;
+    xmpp_stanza_t *auth, *authdata;
+    char *name;
+    char *challenge;
+
+    name = xmpp_stanza_get_name(stanza);
+    xmpp_debug(conn->ctx, "xmpp",
+               "handle SCRAM-SHA-1 (challenge) called for %s", name);
+
+    if (strcmp(name, "challenge") == 0) {
+        text = xmpp_stanza_get_text(stanza);
+
+        challenge = (char *)base64_decode(conn->ctx, text, strlen(text));
+        if (!challenge) {
+            disconnect_mem_error(conn);
+            return 0;
+        }
+
+        response = sasl_scram_sha1(conn->ctx, challenge, (char *)userdata,
+                                   conn->jid, conn->pass);
+        if (!response) {
+            xmpp_free(conn->ctx, challenge);
+            disconnect_mem_error(conn);
+            return 0;
+        }
+
+        xmpp_free(conn->ctx, challenge);
+
+        auth = xmpp_stanza_new(conn->ctx);
+        if (!auth) {
+            xmpp_free(conn->ctx, response);
+            disconnect_mem_error(conn);
+            return 0;
+        }
+        xmpp_stanza_set_name(auth, "response");
+        xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
+
+        authdata = xmpp_stanza_new(conn->ctx);
+        if (!authdata) {
+            xmpp_free(conn->ctx, response);
+            xmpp_stanza_release(auth);
+            disconnect_mem_error(conn);
+            return 0;
+        }
+
+        xmpp_stanza_set_text(authdata, response);
+        xmpp_free(conn->ctx, response);
+
+        xmpp_stanza_add_child(auth, authdata);
+        xmpp_stanza_release(authdata);
+
+        xmpp_send(conn, auth);
+        xmpp_stanza_release(auth);
+
+    } else {
+        return _handle_sasl_result(conn, stanza, "SCRAM-SHA-1");
+    }
+
+    return 1;
+}
+
 static xmpp_stanza_t *_make_starttls(xmpp_conn_t * const conn)
 {
     xmpp_stanza_t *starttls;
@@ -455,6 +527,9 @@ static void _auth(xmpp_conn_t * const conn)
 {
     xmpp_stanza_t *auth, *authdata, *query, *child, *iq;
     char *str, *authid;
+    char *scram_init, *scram_b64;
+    char *node;
+    size_t scram_init_len;
     int anonjid;
 
     /* if there is no node in conn->jid, we assume anonymous connect */
@@ -517,6 +592,61 @@ static void _auth(xmpp_conn_t * const conn)
 	xmpp_error(conn->ctx, "auth", 
 		   "No node in JID, and SASL ANONYMOUS unsupported.");
 	xmpp_disconnect(conn);
+    } else if (conn->sasl_support & SASL_MASK_SCRAMSHA1) {
+        auth = _make_sasl_auth(conn, "SCRAM-SHA-1");
+        if (!auth) {
+            disconnect_mem_error(conn);
+            return;
+        }
+
+        node = xmpp_jid_node(conn->ctx, conn->jid);
+        if (!node) {
+            xmpp_stanza_release(auth);
+            disconnect_mem_error(conn);
+            return;
+        }
+
+/* TODO: refactoring */
+#define SCRAM_INIT_MESSAGE "n,,n=%s,r=oMsTAAwAAAAMAAAANP0TAAAAAABPU0AA"
+        scram_init_len = sizeof(SCRAM_INIT_MESSAGE) + strlen(node) - 2;
+        scram_init = xmpp_alloc(conn->ctx, scram_init_len);
+        if (!scram_init) {
+            xmpp_stanza_release(auth);
+            disconnect_mem_error(conn);
+            return;
+        }
+        xmpp_snprintf(scram_init, scram_init_len, SCRAM_INIT_MESSAGE, node);
+        xmpp_free(conn->ctx, node);
+        scram_b64 = (char *)base64_encode(conn->ctx, (unsigned char *)scram_init,
+                                          strlen(scram_init));
+        if (!scram_b64) {
+            xmpp_free(conn->ctx, scram_init);
+            xmpp_stanza_release(auth);
+            disconnect_mem_error(conn);
+            return;
+        }
+
+        authdata = xmpp_stanza_new(conn->ctx);
+        if (!authdata) {
+            xmpp_free(conn->ctx, scram_b64);
+            xmpp_free(conn->ctx, scram_init);
+            xmpp_stanza_release(auth);
+            disconnect_mem_error(conn);
+            return;
+        }
+        xmpp_stanza_set_text(authdata, scram_b64);
+        xmpp_free(conn->ctx, scram_b64);
+        xmpp_stanza_add_child(auth, authdata);
+        xmpp_stanza_release(authdata);
+
+        handler_add(conn, _handle_scramsha1_challenge,
+                    XMPP_NS_SASL, NULL, NULL, (void *)scram_init);
+
+        xmpp_send(conn, auth);
+        xmpp_stanza_release(auth);
+
+        /* SASL SCRAM-SHA-1 was tried, unset flag */
+        conn->sasl_support &= ~SASL_MASK_SCRAMSHA1;
     } else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
 	auth = _make_sasl_auth(conn, "DIGEST-MD5");
 	if (!auth) {
