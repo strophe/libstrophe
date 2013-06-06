@@ -444,7 +444,10 @@ char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
         goto out_response;
     }
 
-    /* TODO: buffer overflow */
+    if (strlen(response) + strlen(sign_b64) + 3 + 1 > response_len) {
+        xmpp_free(ctx, sign_b64);
+        goto out_response;
+    }
     strcat(response, ",p=");
     strcat(response, sign_b64);
     xmpp_free(ctx, sign_b64);

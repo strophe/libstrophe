@@ -78,6 +78,7 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t * const conn,
 static int _handle_scramsha1_challenge(xmpp_conn_t * const conn,
 			xmpp_stanza_t * const stanza,
 			void * const userdata);
+static char *_make_scram_sha1_init_msg(xmpp_conn_t * const conn);
 
 static int _handle_missing_features_sasl(xmpp_conn_t * const conn,
 					 void * const userdata);
@@ -488,6 +489,30 @@ static int _handle_scramsha1_challenge(xmpp_conn_t * const conn,
     return 1;
 }
 
+static char *_make_scram_sha1_init_msg(xmpp_conn_t * const conn)
+{
+    size_t message_len;
+    char *node;
+    char *message;
+    char *nonce;
+
+    node = xmpp_jid_node(conn->ctx, conn->jid);
+    if (!node) {
+	return NULL;
+    }
+
+    nonce = "bGlic3Ryb3BoZQo=";
+    message_len = strlen(node) + strlen(nonce) + 8 + 1;
+    message = xmpp_alloc(conn->ctx, message_len);
+    if (!message) {
+	return NULL;
+    }
+    xmpp_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
+    xmpp_free(conn->ctx, node);
+
+    return message;
+}
+
 static xmpp_stanza_t *_make_starttls(xmpp_conn_t * const conn)
 {
     xmpp_stanza_t *starttls;
@@ -527,9 +552,7 @@ static void _auth(xmpp_conn_t * const conn)
 {
     xmpp_stanza_t *auth, *authdata, *query, *child, *iq;
     char *str, *authid;
-    char *scram_init, *scram_b64;
-    char *node;
-    size_t scram_init_len;
+    char *scram_init;
     int anonjid;
 
     /* if there is no node in conn->jid, we assume anonymous connect */
@@ -599,27 +622,17 @@ static void _auth(xmpp_conn_t * const conn)
             return;
         }
 
-        node = xmpp_jid_node(conn->ctx, conn->jid);
-        if (!node) {
-            xmpp_stanza_release(auth);
-            disconnect_mem_error(conn);
-            return;
-        }
-
-/* TODO: refactoring */
-#define SCRAM_INIT_MESSAGE "n,,n=%s,r=oMsTAAwAAAAMAAAANP0TAAAAAABPU0AA"
-        scram_init_len = sizeof(SCRAM_INIT_MESSAGE) + strlen(node) - 2;
-        scram_init = xmpp_alloc(conn->ctx, scram_init_len);
+        /* don't free scram_init on success */
+        scram_init = _make_scram_sha1_init_msg(conn);
         if (!scram_init) {
             xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
             return;
         }
-        xmpp_snprintf(scram_init, scram_init_len, SCRAM_INIT_MESSAGE, node);
-        xmpp_free(conn->ctx, node);
-        scram_b64 = (char *)base64_encode(conn->ctx, (unsigned char *)scram_init,
-                                          strlen(scram_init));
-        if (!scram_b64) {
+
+        str = (char *)base64_encode(conn->ctx, (unsigned char *)scram_init,
+                                    strlen(scram_init));
+        if (!str) {
             xmpp_free(conn->ctx, scram_init);
             xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
@@ -628,14 +641,14 @@ static void _auth(xmpp_conn_t * const conn)
 
         authdata = xmpp_stanza_new(conn->ctx);
         if (!authdata) {
-            xmpp_free(conn->ctx, scram_b64);
+            xmpp_free(conn->ctx, str);
             xmpp_free(conn->ctx, scram_init);
             xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
             return;
         }
-        xmpp_stanza_set_text(authdata, scram_b64);
-        xmpp_free(conn->ctx, scram_b64);
+        xmpp_stanza_set_text(authdata, str);
+        xmpp_free(conn->ctx, str);
         xmpp_stanza_add_child(auth, authdata);
         xmpp_stanza_release(authdata);
 
