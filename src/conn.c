@@ -29,6 +29,8 @@
 #include "util.h"
 #include "parser.h"
 
+#include "thread.h"
+
 #ifndef DEFAULT_SEND_QUEUE_MAX
 /** @def DEFAULT_SEND_QUEUE_MAX
  *  The default maximum send queue size.  This is currently unused.
@@ -93,6 +95,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 	conn->send_queue_len = 0;
 	conn->send_queue_head = NULL;
 	conn->send_queue_tail = NULL;
+	conn->sq_mutex = mutex_create (ctx);
 
 	/* default timeouts */
 	conn->connect_timeout = CONNECT_TIMEOUT;
@@ -274,6 +277,11 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 	if (conn->pass) xmpp_free(ctx, conn->pass);
 	if (conn->stream_id) xmpp_free(ctx, conn->stream_id);
 	if (conn->lang) xmpp_free(ctx, conn->lang);
+
+	// send queue mutex
+	mutex_destroy (conn->sq_mutex);
+	conn->sq_mutex = NULL;
+
 	xmpp_free(ctx, conn);
 	released = 1;
     }
@@ -608,6 +616,8 @@ void xmpp_send_raw(xmpp_conn_t * const conn,
     item->next = NULL;
     item->written = 0;
 
+    mutex_lock (conn->sq_mutex);
+
     /* add item to the send queue */
     if (!conn->send_queue_tail) {
 	/* first item, set head and tail */
@@ -619,6 +629,8 @@ void xmpp_send_raw(xmpp_conn_t * const conn,
 	conn->send_queue_tail = item;
     }
     conn->send_queue_len++;
+
+    mutex_unlock (conn->sq_mutex);
 }
 
 /** Send an XML stanza to the XMPP server.
