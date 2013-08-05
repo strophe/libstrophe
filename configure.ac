@@ -43,9 +43,29 @@ fi
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
 AC_SEARCH_LIBS([socket], [socket])
 
-AC_LINK_IFELSE([AC_LANG_CALL([#include <resolv.h>], [res_query])], [],[LIBS="$LIBS -lresolv"])
+AC_ARG_WITH([cares],
+			[AS_HELP_STRING([--with-cares], [use c-ares DNS resolving library])],
+			[with_cares=check],
+			[])
 
-AC_CHECK_HEADERS([arpa/nameser_compat.h])
+if test "x$with_cares" = xcheck; then
+	AC_CHECK_LIB([cares], [ares_init],
+		# found
+		[
+			AC_SUBST([CARES_LIBS], ["-lcares"])
+			AC_DEFINE([HAVE_CARES])
+		],
+		# not found
+		[AC_MSG_ERROR([could not find c-ares library])]
+	)
+else
+	AC_LINK_IFELSE([AC_LANG_CALL([#include <resolv.h>], [res_query])],
+		[],
+		[LIBS="$LIBS -lresolv"]
+	)
+	AC_CHECK_HEADERS([arpa/nameser_compat.h])
+fi
+
 
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AC_SUBST(PARSER_NAME)

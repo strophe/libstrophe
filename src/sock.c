@@ -34,11 +34,25 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include <arpa/nameser.h>
-#ifdef HAVE_ARPA_NAMESER_COMPAT_H
-#include <arpa/nameser_compat.h>
-#endif
-#include <resolv.h>
+#ifdef HAVE_CARES
+	#define C_IN  1
+	#define T_SRV 33
+	#include "ares.h"
+
+	struct sock_srv_lookup_result {
+		int   status;
+		char *domain;
+		int   maxlen;
+
+		int  *port;
+	};
+#else
+	#include <arpa/nameser.h>
+	#ifdef HAVE_ARPA_NAMESER_COMPAT_H
+		#include <arpa/nameser_compat.h>
+	#endif
+		#include <resolv.h>
+	#endif
 #endif
 
 #include "sock.h"
@@ -49,12 +63,20 @@ void sock_initialize(void)
     WSADATA wsad;
     WSAStartup(0x0101, &wsad);
 #endif
+
+#ifdef HAVE_CARES
+	ares_library_init(ARES_LIB_INIT_ALL);
+#endif
 }
 
 void sock_shutdown(void)
 {
 #ifdef _WIN32
     WSACleanup();
+#endif
+
+#ifdef HAVE_CARES
+	ares_library_cleanup();
 #endif
 }
 
@@ -532,6 +554,26 @@ void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *off
 }
 
 
+#ifdef HAVE_CARES
+void ares_srv_lookup_callback(void *arg, int status, int timeouts,
+                              unsigned char *buf, int len)
+{
+	struct sock_srv_lookup_result *res = arg;
+
+	res->status = status;
+	if(status != ARES_SUCCESS)
+		return;
+
+	struct ares_srv_reply *srv;
+	ares_parse_srv_reply(buf, len, &srv);
+
+	*(res->port) = srv->port;
+	snprintf(res->domain, res->maxlen, srv->host);
+
+	ares_free_data(srv);
+}
+#endif
+
 int sock_srv_lookup(const char *service, const char *proto, const char *domain, char *resulttarget, int resulttargetlength, int *resultport)
 {
     int set = 0;
@@ -863,6 +905,34 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
     }
 
+#elif defined(HAVE_CARES)
+	ares_channel chan;
+	struct sock_srv_lookup_result res = {
+		.domain = resulttarget,
+		.maxlen = resulttargetlength,
+		.port   = resultport
+	};
+
+	int status = ares_init(&chan);
+	ares_query(chan, fulldomain, C_IN, T_SRV, ares_srv_lookup_callback, &res);
+
+	// wait for completion
+	for (;;) {
+		fd_set rfds, wfds;
+		int nfds = ares_fds(chan, &rfds, &wfds);
+		if(nfds == 0)
+			break;
+
+		struct timeval *tvp, tv;
+		tvp = ares_timeout(chan, NULL, &tv);
+		select(nfds, &rfds, &wfds, NULL, tvp);
+		ares_process(chan, &rfds, &wfds);
+	}
+
+	ares_destroy(chan);
+
+	if(res.status == ARES_SUCCESS)
+		set=1;
 #else
     if (!set) {
         unsigned char buf[65535];
