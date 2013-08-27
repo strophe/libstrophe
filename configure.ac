@@ -49,12 +49,9 @@ AC_ARG_WITH([cares],
 			[])
 
 if test "x$with_cares" = xcheck; then
-	AC_CHECK_LIB([cares], [ares_init],
-		# found
-		[
-			AC_SUBST([CARES_LIBS], ["-lcares"])
-			AC_DEFINE([HAVE_CARES])
-		],
+	PKG_CHECK_MODULES([cares], [libcares],
+		# found
+		[AC_DEFINE([HAVE_CARES])],
 		# not found
 		[AC_MSG_ERROR([could not find c-ares library])]
 	)
