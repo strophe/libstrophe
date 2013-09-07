@@ -46,7 +46,7 @@ static void _set_attributes(xmpp_stanza_t *stanza, const xmlChar **attrs)
     if (!attrs) return;
 
     for (i = 0; attrs[i]; i += 2) {
-        xmpp_stanza_set_attribute(stanza, attrs[i], attrs[i+1]);
+        xmpp_stanza_set_attribute(stanza, (const char *)attrs[i], (const char *)attrs[i+1]);
     }
 }
 
