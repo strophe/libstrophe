@@ -225,9 +225,10 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 			  xmpp_conn_handler callback,
 			  void * const userdata);
 
-/*
-int xmpp_connect_component(conn, name)
-*/
+int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
+                           unsigned short port, xmpp_conn_handler callback,
+                           void * const userdata);
+
 void xmpp_disconnect(xmpp_conn_t * const conn);
 
 void xmpp_send(xmpp_conn_t * const conn,
