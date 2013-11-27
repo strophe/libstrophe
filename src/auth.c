@@ -1052,7 +1052,6 @@ int _handle_component_auth(xmpp_conn_t * const conn)
     return 0;
 }
 
-
 int _handle_component_hs_response(xmpp_conn_t * const conn,
             xmpp_stanza_t * const stanza,
             void * const userdata)
