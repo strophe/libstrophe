@@ -20,6 +20,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Added by Milan Kubik. <email@kubikmilan.sk>
+ * Needed for component handshake handler (xep-0114) to compute SHA1 digest. */
+#include <openssl/evp.h>
+
 #include "strophe.h"
 #include "common.h"
 #include "sasl.h"
@@ -58,6 +62,12 @@
 static void _auth(xmpp_conn_t * const conn);
 static void _handle_open_tls(xmpp_conn_t * const conn);
 static void _handle_open_sasl(xmpp_conn_t * const conn);
+
+static int _handle_component_auth(xmpp_conn_t * const conn);
+static int _handle_component_hs_response(xmpp_conn_t * const conn,
+            xmpp_stanza_t * const stanza,
+            void * const userdata);
+
 static int _handle_missing_legacy(xmpp_conn_t * const conn,
 				  void * const userdata);
 static int _handle_legacy(xmpp_conn_t * const conn,
@@ -987,3 +997,91 @@ static int _handle_missing_legacy(xmpp_conn_t * const conn,
     return 0;
 }
 
+void auth_handle_component_open(xmpp_conn_t * const conn)
+{
+    /* Handler for component accept */
+
+    _handle_component_auth(conn);
+
+    handler_add(conn, _handle_component_hs_response, NULL,
+                "handshake", NULL, NULL);
+}
+
+/* Will compute SHA1 and authenticate the component to the server */
+int _handle_component_auth(xmpp_conn_t * const conn)
+{
+    unsigned char md_value[EVP_MAX_MD_SIZE];
+    EVP_MD_CTX *mdctx;
+    const EVP_MD *md;
+    char *digest;
+    unsigned int md_len, i;
+
+    /* Feed the session id and passphrase to the algorithm.
+     * We need to compute SHA1(session_id + passphrase)
+     */
+    md = EVP_get_digestbyname("sha1");
+    mdctx = EVP_MD_CTX_create();
+    EVP_DigestInit_ex(mdctx, md, NULL);
+
+    /* Feed in the data. */
+    EVP_DigestUpdate(mdctx, conn->stream_id, strlen(conn->stream_id));
+    EVP_DigestUpdate(mdctx, conn->pass, strlen(conn->pass));
+    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+    EVP_MD_CTX_destroy(mdctx);
+
+    digest = malloc(2*md_len+1);
+    if (digest) {
+        memset(digest, 0, 2*md_len+1);
+        /* convert the digest into string representation */
+        for (i = 0; i < md_len; i++)
+            snprintf(digest+i*2, 3,"%02x", md_value[i]);
+
+        xmpp_debug(conn->ctx, "auth", "Digest: %s, len: %d", (char *) digest, strlen((char *)digest));
+
+        /* Send the digest to the server */
+        xmpp_send_raw_string(conn, "<handshake xmlns='%s'>%s</handshake>",
+                             XMPP_NS_COMPONENT, digest);
+        xmpp_debug(conn->ctx, "auth", "Sent component handshake to the server.");
+        free(digest);
+    } else {
+        xmpp_debug(conn->ctx, "auth", "Couldn't allocate memory for component handshake digest.");
+        xmpp_disconnect(conn);
+        return XMPP_EMEM;
+    }
+
+    return 0;
+}
+
+
+int _handle_component_hs_response(xmpp_conn_t * const conn,
+            xmpp_stanza_t * const stanza,
+            void * const userdata)
+{
+    /* Check if the received stanza is <handshake/> and set auth to true
+     * and fire connection handler.
+     */
+
+    char * name;
+
+    name = xmpp_stanza_get_name(stanza);
+
+    if (strcmp(name, "handshake") != 0) {
+        char *msg;
+        size_t msg_size;
+        xmpp_stanza_to_text(stanza, &msg, &msg_size);
+
+        xmpp_debug(conn->ctx, "auth", "Handshake failed: %s",
+                   msg);
+        xmpp_disconnect(conn);
+        free(msg);
+        return XMPP_EINT;
+    } else {
+        conn->authenticated = 1;
+        conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+    }
+
+    /* We don't need this handler anymore, return 0 so it can be deleted
+     * from the list of handlers.
+     */
+    return 0;
+}
