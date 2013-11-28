@@ -1001,10 +1001,13 @@ void auth_handle_component_open(xmpp_conn_t * const conn)
 {
     /* Handler for component accept */
 
-    _handle_component_auth(conn);
+    handler_add(conn, _handle_error,
+                NULL, "stream:error", NULL, NULL);
 
     handler_add(conn, _handle_component_hs_response, NULL,
                 "handshake", NULL, NULL);
+
+    _handle_component_auth(conn);
 }
 
 /* Will compute SHA1 and authenticate the component to the server */
