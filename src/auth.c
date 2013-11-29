@@ -58,6 +58,12 @@
  */
 #define LEGACY_TIMEOUT 15000 /* 15 seconds */
 #endif
+#ifndef HANDSHAKE_TIMEOUT
+/** @def HANDSHAKE_TIMEOUT
+ *  Time to wait for component authentication to complete
+ */
+#define HANDSHAKE_TIMEOUT 15000 /* 15 seconds */
+#endif
 
 static void _auth(xmpp_conn_t * const conn);
 static void _handle_open_tls(xmpp_conn_t * const conn);
@@ -98,6 +104,8 @@ static int _handle_session(xmpp_conn_t * const conn,
 			   void * const userdata);
 static int _handle_missing_session(xmpp_conn_t * const conn,
 				   void * const userdata);
+static int _handle_missing_handshake(xmpp_conn_t * const conn,
+                                     void * const userdata);
 
 /* stream:error handler */
 static int _handle_error(xmpp_conn_t * const conn,
@@ -999,6 +1007,9 @@ static int _handle_missing_legacy(xmpp_conn_t * const conn,
 
 void auth_handle_component_open(xmpp_conn_t * const conn)
 {
+    /* reset all timed handlers */
+    handler_reset_timed(conn, 0);
+
     /* Handler for component accept */
 
     handler_add(conn, _handle_error,
@@ -1006,6 +1017,9 @@ void auth_handle_component_open(xmpp_conn_t * const conn)
 
     handler_add(conn, _handle_component_hs_response, NULL,
                 "handshake", NULL, NULL);
+
+    handler_add_timed(conn, _handle_missing_handshake,
+                      HANDSHAKE_TIMEOUT, NULL);
 
     _handle_component_auth(conn);
 }
@@ -1065,6 +1079,8 @@ int _handle_component_hs_response(xmpp_conn_t * const conn,
 
     char * name;
 
+    xmpp_timed_handler_delete(conn, _handle_missing_handshake);
+
     name = xmpp_stanza_get_name(stanza);
 
     if (strcmp(name, "handshake") != 0) {
@@ -1085,5 +1101,12 @@ int _handle_component_hs_response(xmpp_conn_t * const conn,
     /* We don't need this handler anymore, return 0 so it can be deleted
      * from the list of handlers.
      */
+    return 0;
+}
+
+int _handle_missing_handshake(xmpp_conn_t * const conn, void * const userdata)
+{
+    xmpp_error(conn->ctx, "xmpp", "Server did not reply to handshake request.");
+    xmpp_disconnect(conn);
     return 0;
 }
