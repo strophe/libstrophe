@@ -474,7 +474,7 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
     conn->type = XMPP_COMPONENT;
     /* JID serves as an identificator here and will be used as "to" attribute
        of the stream */
-    conn->domain = conn->jid;
+    conn->domain = xmpp_strdup(conn->ctx, conn->jid);
 
     /*  The server domain, jid and password MUST be specified. */
     if (!(server && conn->jid && conn->pass)) return -1;
