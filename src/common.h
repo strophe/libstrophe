@@ -33,6 +33,11 @@
 #include "util.h"
 #include "parser.h"
 
+/** compatibility layer for Visual C++ */
+#ifndef va_copy
+#define va_copy(d,s) ((d) = (s))
+#endif
+
 /** run-time context **/
 
 typedef enum {
