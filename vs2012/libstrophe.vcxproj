@@ -83,6 +83,7 @@
     <ClCompile Include="..\src\jid.c" />
     <ClCompile Include="..\src\md5.c" />
     <ClCompile Include="..\src\parser.c" />
+    <ClCompile Include="..\src\parser_expat.c" />
     <ClCompile Include="..\src\sasl.c" />
     <ClCompile Include="..\src\sha1.c" />
     <ClCompile Include="..\src\snprintf.c" />
