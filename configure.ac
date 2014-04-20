@@ -16,7 +16,7 @@ AC_ARG_WITH([libxml2],
 if test "x$with_libxml2" != xno; then
   PKG_CHECK_MODULES([libxml2], [libxml-2.0 >= 2.7],
                     [with_libxml2=yes], [dummy=1])
-  if test "x$with_libxml2" != yes; then
+  if test "x$with_libxml2" != xyes; then
     old_CFLAGS=$CFLAGS
     CFLAGS="-I /usr/include/libxml2"
     AC_CHECK_HEADER([libxml/parser.h],
