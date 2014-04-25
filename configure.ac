@@ -1,5 +1,6 @@
-AC_INIT([libstrophe], [0.8-snapshot], [jack@metajack.im])
+AC_INIT([libstrophe], [0.8.5], [jack@metajack.im])
 AM_INIT_AUTOMAKE
+LT_INIT([dlopen])
 
 AC_PROG_CC
 AC_PROG_RANLIB

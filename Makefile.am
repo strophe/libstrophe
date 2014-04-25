@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-CFLAGS = -g -Wall
+AM_CFLAGS = -g -Wall
 
 PARSER_CFLAGS=@PARSER_CFLAGS@
 PARSER_LIBS=@PARSER_LIBS@
@@ -13,8 +13,19 @@ STROPHE_LIBS = libstrophe.a $(PARSER_LIBS) $(SSL_LIBS)
 ## Main build targets
 lib_LIBRARIES = libstrophe.a
 
+lib_LTLIBRARIES = libstrophe.la
+
+
 libstrophe_a_CFLAGS=$(STROPHE_FLAGS) $(PARSER_CFLAGS)
 libstrophe_a_SOURCES = src/auth.c src/conn.c src/ctx.c \
+	src/event.c src/handler.c src/hash.c \
+	src/jid.c src/md5.c src/sasl.c src/sha1.c \
+	src/snprintf.c src/sock.c src/stanza.c src/thread.c \
+	src/tls_openssl.c src/util.c \
+	src/common.h src/hash.h src/md5.h src/ostypes.h src/parser.h \
+	src/sasl.h src/sha1.h src/sock.h src/thread.h src/tls.h src/util.h
+
+libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c \
 	src/jid.c src/md5.c src/sasl.c src/sha1.c \
 	src/snprintf.c src/sock.c src/stanza.c src/thread.c \
