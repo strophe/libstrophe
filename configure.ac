@@ -1,9 +1,8 @@
 AC_INIT([libstrophe], [0.8.5], [jack@metajack.im])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 LT_INIT([dlopen])
 
 AC_PROG_CC
-AC_PROG_RANLIB
 AM_PROG_CC_C_O
 
 AC_CHECK_HEADER(openssl/ssl.h, [], [AC_MSG_ERROR([couldn't find openssl headers, openssl required])])
