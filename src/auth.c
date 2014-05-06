@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "strophe.h"
 #include "common.h"
@@ -489,6 +490,23 @@ static int _handle_scramsha1_challenge(xmpp_conn_t * const conn,
     return 1;
 }
 
+static char *_get_nonce(xmpp_ctx_t *ctx)
+{
+    unsigned char buffer[sizeof(clock_t) + sizeof(time_t)] = {0};
+    clock_t ticks = clock();
+    time_t t;
+
+    if (ticks != (clock_t)-1) {
+        *(clock_t *)buffer = ticks;
+    }
+    t = time((time_t *)(buffer + sizeof(clock_t)));
+    if (t == (time_t)-1) {
+        *(time_t *)(buffer + sizeof(clock_t)) = (time_t)rand();
+    }
+
+    return base64_encode(ctx, buffer, sizeof(buffer));
+}
+
 static char *_make_scram_sha1_init_msg(xmpp_conn_t * const conn)
 {
     size_t message_len;
@@ -498,17 +516,20 @@ static char *_make_scram_sha1_init_msg(xmpp_conn_t * const conn)
 
     node = xmpp_jid_node(conn->ctx, conn->jid);
     if (!node) {
-	return NULL;
+        return NULL;
     }
 
-    nonce = "bGlic3Ryb3BoZQo=";
+    nonce = _get_nonce(conn->ctx);
+    if (!nonce) {
+        return NULL;
+    }
     message_len = strlen(node) + strlen(nonce) + 8 + 1;
     message = xmpp_alloc(conn->ctx, message_len);
-    if (!message) {
-	return NULL;
+    if (message) {
+        xmpp_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
+        xmpp_free(conn->ctx, node);
     }
-    xmpp_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
-    xmpp_free(conn->ctx, node);
+    xmpp_free(conn->ctx, nonce);
 
     return message;
 }
