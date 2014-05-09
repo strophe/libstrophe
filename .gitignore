@@ -1,6 +1,10 @@
 Makefile
 Makefile.in
 configure
+libtool
+ltmain.sh
+config.guess
+config.sub
 install-sh
 missing
 compile
