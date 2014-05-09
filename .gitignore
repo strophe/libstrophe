@@ -1,4 +1,8 @@
 Makefile
+test-driver
+.libs
+src/*.lo
+*.la
 Makefile.in
 configure
 libtool

@@ -11,10 +11,7 @@ STROPHE_FLAGS = -I$(top_srcdir)
 STROPHE_LIBS = -lstrophe $(PARSER_LIBS) $(SSL_LIBS)
 
 ## Main build targets
-#lib_LIBRARIES = libstrophe.a
-
 lib_LTLIBRARIES = libstrophe.la
-
 
 libstrophe_la_CFLAGS=$(STROPHE_FLAGS) $(PARSER_CFLAGS)
 libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
