@@ -1,8 +1,13 @@
 Makefile
 Makefile.in
 configure
+install-sh
+missing
+compile
+aclocal.m4
 config.log
 config.status
+depcomp
 autom4te.cache
 .dirstamp
 .deps
@@ -10,7 +15,6 @@ autom4te.cache
 src/*.o
 examples/*.o
 tests/*.o
-test-driver
 tests/check_parser
 *.a
 *.tar.gz
