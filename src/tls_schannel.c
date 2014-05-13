@@ -255,10 +255,18 @@ int tls_start(tls_t *tls)
 					  NULL, 0, &(tls->hctxt), &sbdout,
 					  &ctxtattr, NULL);
 
+    unsigned char *p = sbin[0].pvBuffer;
+    int len = 0;
+
     while (ret == SEC_I_CONTINUE_NEEDED
-	   || ret == SEC_I_INCOMPLETE_CREDENTIALS) {
-	unsigned char *p = sbin[0].pvBuffer;
-	int len = 0, inbytes = 0;
+	   || ret == SEC_I_INCOMPLETE_CREDENTIALS
+     || ret == SEC_E_INCOMPLETE_MESSAGE) {
+	int inbytes = 0;
+
+  if (ret != SEC_E_INCOMPLETE_MESSAGE) {
+    len = 0;
+    p = sbin[0].pvBuffer;
+  }
 
 	if (sbdout.pBuffers[0].cbBuffer) {
 	    unsigned char *writebuff = sbdout.pBuffers[0].pvBuffer;
