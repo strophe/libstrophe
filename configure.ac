@@ -1,11 +1,14 @@
 AC_INIT([libstrophe], [0.8-snapshot], [jack@metajack.im])
+
+PKG_PROG_PKG_CONFIG
+
 AM_INIT_AUTOMAKE
 
 AC_PROG_CC
 AC_PROG_RANLIB
 AM_PROG_CC_C_O
 
-AC_CHECK_HEADER(openssl/ssl.h, [], [AC_MSG_ERROR([couldn't find openssl headers, openssl required])])
+PKG_CHECK_MODULES([openssl], [openssl], [], [AC_MSG_ERROR([openssl not found; openssl required])])
 PKG_CHECK_MODULES([check], [check >= 0.9.4], [], [AC_MSG_WARN([libcheck not found; unit tests will not be compilable])])
 
 AC_ARG_WITH([libxml2],
@@ -18,26 +21,26 @@ if test "x$with_libxml2" != xno; then
                     [with_libxml2=yes], [dummy=1])
   if test "x$with_libxml2" != xyes; then
     old_CFLAGS=$CFLAGS
-    CFLAGS="-I /usr/include/libxml2"
+    CFLAGS="-I${includedir}/libxml2"
     AC_CHECK_HEADER([libxml/parser.h],
-                    [with_libxml2=yes; libxml2_CFLAGS="-I /usr/include/libxml2"; libxml2_LIBS="-lxml2"],
-                    [AC_MSG_ERROR([couldn't find libxml2])])
+                    [with_libxml2=yes; libxml2_CFLAGS="-I${includedir}/libxml2"; libxml2_LIBS="-lxml2"],
+                    [AC_MSG_ERROR([libxml2 not found.])])
     CFLAGS=$old_CFLAGS
   fi
 else
-  AC_CHECK_HEADER(expat.h, [], [AC_MSG_ERROR([couldn't find expat headers; expat required])])
+  PKG_CHECK_MODULES([expat], [expat >= 2.0.0], [], [expat not found; expat required.])
 fi
 
 if test "x$with_libxml2" = xyes; then
   with_parser=libxml2
   PARSER_NAME=libxml2
-  PARSER_CFLAGS=\$\(libxml2_CFLAGS\)
-  PARSER_LIBS=\$\(libxml2_LIBS\)
+  PARSER_CFLAGS=$libxml2_CFLAGS
+  PARSER_LIBS=$libxml2_LIBS
 else
   with_parser=expat
   PARSER_NAME=expat
-  PARSER_CFLAGS=
-  PARSER_LIBS=-lexpat
+  PARSER_CFLAGS=$expat_CFLAGS
+  PARSER_LIBS=$expat_LIBS
 fi
 
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])

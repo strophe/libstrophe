@@ -5,7 +5,7 @@ CFLAGS = -g -Wall
 PARSER_CFLAGS=@PARSER_CFLAGS@
 PARSER_LIBS=@PARSER_LIBS@
 
-SSL_LIBS = -lssl -lcrypto -lz
+SSL_LIBS = @openssl_LIBS@
 
 STROPHE_FLAGS = -I$(top_srcdir)
 STROPHE_LIBS = libstrophe.a $(PARSER_LIBS) $(SSL_LIBS)
