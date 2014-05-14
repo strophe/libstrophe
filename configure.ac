@@ -9,7 +9,6 @@ AC_PROG_RANLIB
 AM_PROG_CC_C_O
 
 AC_CANONICAL_HOST
-PLATFORM="unknown"
 AS_CASE([$host_os],
   [freebsd*], [PLATFORM="freebsd"],
   [PLATFORM="nix"])
@@ -56,7 +55,6 @@ if test "x$PLATFORM" != xfreebsd; then
         AC_CHECK_LIB([resolv], [res_query], [],
             [AC_CHECK_LIB([resolv], [__res_query], [],
                 [AC_MSG_ERROR([libresolv not found; libresolv required. ])])])
-        AC_LINK_IFELSE([AC_LANG_CALL([#include <resolv.h>], [res_query])], [],[LIBS="$LIBS -lresolv"])
 else
         AC_MSG_NOTICE([skipping libresolv checks for freebsd])
 fi
