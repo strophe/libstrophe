@@ -32,6 +32,15 @@ The `examples` directory contains some examples of how to
 use the library; these may be helpful in addition to the
 API documentation
 
+To install on your system, as root (or using sudo):
+
+    make install
+
+Note, the default install path is `/usr/local/`, to specify
+another path use the `--prefix` option during configure, e.g.:
+
+    ./configure --prefix=/usr
+
 ## Requirements
 
 libstrophe requires:
@@ -40,6 +49,7 @@ libstrophe requires:
   switch
 - libresolv on UNIX systems - make sure you include -lresolv
   if you are compiling by hand. 
+- libtool
 
 In addition, if you wish to run the unit tests, you will need the
 check package.
