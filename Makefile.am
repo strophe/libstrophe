@@ -13,7 +13,7 @@ STROPHE_LIBS = -lstrophe $(PARSER_LIBS) $(SSL_LIBS)
 ## Main build targets
 lib_LTLIBRARIES = libstrophe.la
 
-libstrophe_la_CFLAGS=$(STROPHE_FLAGS) $(PARSER_CFLAGS)
+libstrophe_la_CFLAGS=$(SSL_LIBS) $(STROPHE_FLAGS) $(PARSER_CFLAGS)
 libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c \
 	src/jid.c src/md5.c src/sasl.c src/sha1.c \
