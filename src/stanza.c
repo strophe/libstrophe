@@ -398,7 +398,7 @@ int  xmpp_stanza_to_text(xmpp_stanza_t *stanza,
 	return XMPP_EMEM;
     }
 
-    ret = _render_stanza_recursive(stanza, buffer, length - 1);
+    ret = _render_stanza_recursive(stanza, buffer, length);
     if (ret < 0) return ret;
 
     if (ret > length - 1) {

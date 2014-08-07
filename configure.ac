@@ -1,11 +1,9 @@
 AC_INIT([libstrophe], [0.8-snapshot], [jack@metajack.im])
-
 PKG_PROG_PKG_CONFIG
-
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
+LT_INIT([dlopen])
 
 AC_PROG_CC
-AC_PROG_RANLIB
 AM_PROG_CC_C_O
 
 AC_CANONICAL_HOST
