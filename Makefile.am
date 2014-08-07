@@ -8,7 +8,7 @@ PARSER_LIBS=@PARSER_LIBS@
 SSL_LIBS = -lssl -lcrypto -lz
 
 STROPHE_FLAGS = -I$(top_srcdir)
-STROPHE_LIBS = -lstrophe $(PARSER_LIBS) $(SSL_LIBS)
+STROPHE_LIBS = libstrophe.la
 
 ## Main build targets
 lib_LTLIBRARIES = libstrophe.la
