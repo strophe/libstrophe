@@ -77,7 +77,7 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	
 	if(!xmpp_stanza_get_child_by_name(stanza, "body")) return 1;
-	if(!strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
+	if(xmpp_stanza_get_attribute(stanza, "type") !=NULL && !strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
 	
 	intext = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "body"));
 	
@@ -92,8 +92,8 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	xmpp_stanza_set_name(body, "body");
 	
 	replytext = malloc(strlen(" to you too!") + strlen(intext) + 1);
-	strcpy(replytext, intext);
-	strcat(replytext, " to you too!");
+	strcpy_s(replytext, strlen(intext) + 1, intext);
+	strcat_s(replytext, strlen(intext) + 1 + 12, " to you too!");
 	
 	text = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_text(text, replytext);
