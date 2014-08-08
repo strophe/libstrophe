@@ -5,6 +5,12 @@ LT_INIT([dlopen])
 AC_PROG_CC
 AM_PROG_CC_C_O
 
+AC_CANONICAL_HOST
+PLATFORM="unknown"
+AS_CASE([$host_os],
+  [freebsd*], [PLATFORM="freebsd"],
+  [PLATFORM="nix"])
+
 AC_CHECK_HEADER(openssl/ssl.h, [], [AC_MSG_ERROR([couldn't find openssl headers, openssl required])])
 PKG_CHECK_MODULES([check], [check >= 0.9.4], [], [AC_MSG_WARN([libcheck not found; unit tests will not be compilable])])
 
@@ -43,7 +49,13 @@ fi
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
 AC_SEARCH_LIBS([socket], [socket])
 
-AC_LINK_IFELSE([AC_LANG_CALL([#include <resolv.h>], [res_query])], [],[LIBS="$LIBS -lresolv"])
+if test "x$PLATFORM" != xfreebsd; then
+        AC_CHECK_LIB([resolv], [res_query], [],
+            [AC_CHECK_LIB([resolv], [__res_query], [],
+                [AC_MSG_ERROR([libresolv not found; libresolv required. ])])])
+else
+        AC_MSG_NOTICE([skipping libresolv checks for freebsd])
+fi
 
 AC_CHECK_HEADERS([arpa/nameser_compat.h])
 
