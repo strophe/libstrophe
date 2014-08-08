@@ -31,7 +31,7 @@ if test "x$with_libxml2" != xno; then
     CFLAGS=$old_CFLAGS
   fi
 else
-  PKG_CHECK_MODULES([expat], [expat >= 2.0.0], [], [expat not found; expat required.])
+  PKG_CHECK_MODULES([expat], [expat >= 2.0.0], [], [AC_MSG_ERROR([expat not found; expat required.])])
 fi
 
 if test "x$with_libxml2" = xyes; then
