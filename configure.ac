@@ -11,7 +11,9 @@ AS_CASE([$host_os],
   [freebsd*], [PLATFORM="freebsd"],
   [PLATFORM="nix"])
 
-PKG_CHECK_MODULES([openssl], [openssl], [], [AC_MSG_ERROR([openssl not found; openssl required])])
+PKG_CHECK_MODULES([openssl], [openssl], [],
+            [AC_CHECK_HEADER(openssl/ssl.h, [openssl_LIBS="-lssl"], [AC_MSG_ERROR([openssl not found; openssl required])])])
+
 PKG_CHECK_MODULES([check], [check >= 0.9.4], [], [AC_MSG_WARN([libcheck not found; unit tests will not be compilable])])
 
 AC_ARG_WITH([libxml2],
