@@ -56,10 +56,9 @@ check package.
 
 ### OS X (with Homebrew package manager)
 
-You can install the requirements with:
+You can install libstrophe with:
 
-    brew install expat
-    brew install check
+    brew install libstrophe
 
 ## Documentation
 
