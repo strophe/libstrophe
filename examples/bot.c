@@ -92,8 +92,8 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	xmpp_stanza_set_name(body, "body");
 	
 	replytext = malloc(strlen(" to you too!") + strlen(intext) + 1);
-	strcpy_s(replytext, strlen(intext) + 1, intext);
-	strcat_s(replytext, strlen(intext) + 1 + 12, " to you too!");
+	strcpy(replytext, intext);
+	strcat(replytext, " to you too!");
 	
 	text = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_text(text, replytext);
