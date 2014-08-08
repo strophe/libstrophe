@@ -1,4 +1,4 @@
-AC_INIT([libstrophe], [0.8-snapshot], [jack@metajack.im])
+AC_INIT([libstrophe], [0.8.5], [jack@metajack.im])
 PKG_PROG_PKG_CONFIG
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT([dlopen])
