@@ -1,10 +1,10 @@
 AC_INIT([libstrophe], [0.8.5], [jack@metajack.im])
-PKG_PROG_PKG_CONFIG
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT([dlopen])
 
 AC_PROG_CC
 AM_PROG_CC_C_O
+PKG_PROG_PKG_CONFIG
 
 AC_CANONICAL_HOST
 AS_CASE([$host_os],
