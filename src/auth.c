@@ -231,6 +231,12 @@ static int _handle_features(xmpp_conn_t * const conn,
 		    conn->sasl_support |= SASL_MASK_DIGESTMD5;
 		else if (strcasecmp(text, "ANONYMOUS") == 0)
 		    conn->sasl_support |= SASL_MASK_ANONYMOUS;
+    else {
+      xmpp_debug(conn->ctx, "xmpp", "mechanism not supported");
+      xmpp_disconnect(conn);
+      return 0;
+
+    }
 
 		xmpp_free(conn->ctx, text);
 	    }
