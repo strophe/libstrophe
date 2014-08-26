@@ -56,7 +56,6 @@
 #endif
 
 static void _auth(xmpp_conn_t * const conn);
-static void _handle_open_tls(xmpp_conn_t * const conn);
 static void _handle_open_sasl(xmpp_conn_t * const conn);
 static int _handle_missing_legacy(xmpp_conn_t * const conn,
 				  void * const userdata);
@@ -556,6 +555,7 @@ static void _auth(xmpp_conn_t * const conn)
 	}
 	xmpp_stanza_set_text(authdata, str);
 	xmpp_free(conn->ctx, str);
+	xmpp_free(conn->ctx, authid);
 
 	xmpp_stanza_add_child(auth, authdata);
 	xmpp_stanza_release(authdata);
