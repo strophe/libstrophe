@@ -1,6 +1,7 @@
 0.8.7
 	- SCRAM-SHA-1 authentication mechanism
 	- pkg-config support
+	- XEP-0114 support
 
 0.8.5
 	- libtoolize to generate .so
