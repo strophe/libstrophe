@@ -29,6 +29,7 @@ tests/check_parser
 *.zip
 docs/html
 TAGS
+tags
 examples/basic
 examples/active
 examples/roster
