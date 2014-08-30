@@ -552,8 +552,8 @@ unsigned char *base64_decode(xmpp_ctx_t *ctx,
 		if (hextet != 64) goto _base64_decode_error;
 		break;
 	}
+	*d = '\0';
     }
-    *d = '\0';
     return dbuf;
 
 _base64_decode_error:	
