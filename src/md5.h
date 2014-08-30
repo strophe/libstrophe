@@ -31,8 +31,6 @@ void MD5Init(struct MD5Context *context);
 void MD5Update(struct MD5Context *context, unsigned char const *buf,
 	       uint32_t len);
 void MD5Final(unsigned char digest[16], struct MD5Context *context);
-void MD5Transform(uint32_t buf[4], const unsigned char in[64],
-			struct MD5Context *ctx);
 
 #ifdef DEBUG_MD5
 void MD5DumpBytes(unsigned char *b, int len);
