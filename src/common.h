@@ -147,6 +147,7 @@ struct _xmpp_handlist_t {
 #define SASL_MASK_PLAIN 0x01
 #define SASL_MASK_DIGESTMD5 0x02
 #define SASL_MASK_ANONYMOUS 0x04
+#define SASL_MASK_SCRAMSHA1 0x08
 
 typedef void (*xmpp_open_handler)(xmpp_conn_t * const conn);
 
