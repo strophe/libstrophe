@@ -1,31 +1,33 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-CFLAGS = -g -Wall
+AM_CFLAGS = -g -Wall
 
 PARSER_CFLAGS=@PARSER_CFLAGS@
 PARSER_LIBS=@PARSER_LIBS@
 
-SSL_LIBS = -lssl -lcrypto -lz
+SSL_LIBS = @openssl_LIBS@
 
 STROPHE_FLAGS = -I$(top_srcdir)
-STROPHE_LIBS = libstrophe.a $(PARSER_LIBS) $(SSL_LIBS)
+STROPHE_LIBS = libstrophe.la
 
 ## Main build targets
-lib_LIBRARIES = libstrophe.a
+lib_LTLIBRARIES = libstrophe.la
 
-libstrophe_a_CFLAGS=$(STROPHE_FLAGS) $(PARSER_CFLAGS)
-libstrophe_a_SOURCES = src/auth.c src/conn.c src/ctx.c \
+libstrophe_la_CFLAGS=$(STROPHE_FLAGS) $(PARSER_CFLAGS)
+libstrophe_la_LDFLAGS=$(SSL_LIBS) $(PARSER_LIBS)
+libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c \
-	src/jid.c src/md5.c src/sasl.c src/sha1.c \
+	src/jid.c src/md5.c src/sasl.c src/scram.c src/sha1.c \
 	src/snprintf.c src/sock.c src/stanza.c src/thread.c \
 	src/tls_openssl.c src/util.c \
 	src/common.h src/hash.h src/md5.h src/ostypes.h src/parser.h \
-	src/sasl.h src/sha1.h src/sock.h src/thread.h src/tls.h src/util.h
+	src/sasl.h src/scram.h src/sha1.h src/sock.h src/thread.h src/tls.h \
+	src/util.h
 
 if PARSER_EXPAT
-libstrophe_a_SOURCES += src/parser_expat.c
+libstrophe_la_SOURCES += src/parser_expat.c
 else
-libstrophe_a_SOURCES += src/parser_libxml2.c
+libstrophe_la_SOURCES += src/parser_libxml2.c
 endif
 
 include_HEADERS = strophe.h

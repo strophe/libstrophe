@@ -1,6 +1,14 @@
 Makefile
+test-driver
+.libs
+src/*.lo
+*.la
 Makefile.in
 configure
+libtool
+ltmain.sh
+config.guess
+config.sub
 install-sh
 missing
 compile
@@ -21,6 +29,7 @@ tests/check_parser
 *.zip
 docs/html
 TAGS
+tags
 examples/basic
 examples/active
 examples/roster

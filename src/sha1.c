@@ -102,7 +102,7 @@ A million repetitions of "a"
 
 #include "sha1.h"
 
-void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64]);
+static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64]);
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
@@ -140,7 +140,7 @@ void SHAPrintContext(SHA1_CTX *context, char *msg){
 #endif /* VERBOSE */
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
-void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
+static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 {
     uint32_t a, b, c, d, e;
     typedef union {

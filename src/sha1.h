@@ -20,6 +20,11 @@ typedef struct {
 
 #define SHA1_DIGEST_SIZE 20
 
+/* prevent name collisions with libcrypto */
+#define SHA1_Init   xmpp_SHA1_Init
+#define SHA1_Update xmpp_SHA1_Update
+#define SHA1_Final  xmpp_SHA1_Final
+
 void SHA1_Init(SHA1_CTX* context);
 void SHA1_Update(SHA1_CTX* context, const uint8_t* data, const size_t len);
 void SHA1_Final(SHA1_CTX* context, uint8_t digest[SHA1_DIGEST_SIZE]);

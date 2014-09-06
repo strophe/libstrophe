@@ -43,6 +43,9 @@
 	(cp)[3] = ((value) >> 24) & 0xFF; \
     } while(0)
 
+static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
+			 struct MD5Context *ctx);
+
 /*
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
@@ -179,8 +182,8 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
  * reflect the addition of 16 longwords of new data.  MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
-void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
-	struct MD5Context *ctx)
+static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
+			 struct MD5Context *ctx)
 {
     register uint32_t a, b, c, d, i;
     uint32_t in[16];
