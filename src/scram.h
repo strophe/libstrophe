@@ -20,12 +20,7 @@
 #define __LIBSTROPHE_SCRAM_H__
 
 /* make sure the stdint.h types are available */
-#if _MSC_VER < 1600 /* MSVC prior to 2010 */
 #include "ostypes.h"
-#else
-#include <stdint.h>
-#endif
-
 
 #include "sha1.h"
 

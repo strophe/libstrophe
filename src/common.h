@@ -21,11 +21,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#if _MSC_VER < 1600
 #include "ostypes.h"
-#else
-#include <stdint.h>
-#endif
 
 
 #include "strophe.h"

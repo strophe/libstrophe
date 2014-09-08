@@ -19,11 +19,7 @@
 #ifndef __LIBSTROPHE_UTIL_H__
 #define __LIBSTROPHE_UTIL_H__
 
-#if _MSC_VER < 1600
 #include "ostypes.h"
-#else
-#include <stdint.h>
-#endif
 
 /* timing functions */
 uint64_t time_stamp(void);

@@ -86,11 +86,7 @@ A million repetitions of "a"
 #include <string.h>
 
 /* make sure the stdint.h types are available */
-#if _MSC_VER < 1600 /* Microsoft Visual C++ */
 #include "ostypes.h"
-#else
-#include <stdint.h>
-#endif
 
 #include "sha1.h"
 
