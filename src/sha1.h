@@ -12,6 +12,9 @@
 extern "C" {
 #endif
 
+/* make sure the stdint.h types are available */
+#include "ostypes.h"
+
 typedef struct {
     uint32_t state[5];
     uint32_t count[2];

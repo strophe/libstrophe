@@ -21,12 +21,10 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#ifndef _WIN32
-#include <stdint.h>
-#endif
 
 
 #include "strophe.h"
+#include "ostypes.h"
 #include "sock.h"
 #include "tls.h"
 #include "hash.h"

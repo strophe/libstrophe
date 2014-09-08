@@ -19,11 +19,7 @@
 #ifndef __LIBSTROPHE_UTIL_H__
 #define __LIBSTROPHE_UTIL_H__
 
-#ifndef _WIN32
-#include <stdint.h>
-#else
 #include "ostypes.h"
-#endif
 
 /* timing functions */
 uint64_t time_stamp(void);
