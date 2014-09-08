@@ -19,7 +19,8 @@
 #ifndef __LIBSTROPHE_SCRAM_H__
 #define __LIBSTROPHE_SCRAM_H__
 
-#include <stdint.h>
+/* make sure the stdint.h types are available */
+#include "ostypes.h"
 
 #include "sha1.h"
 

@@ -24,8 +24,9 @@
 #else
 #include <sys/time.h>
 #include <time.h>
-#include <stdint.h>
 #endif
+
+#include "ostypes.h"
 
 #include "strophe.h"
 #include "common.h"

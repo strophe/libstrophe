@@ -21,9 +21,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#ifndef _WIN32
-#include <stdint.h>
-#endif
+#include "ostypes.h"
 
 
 #include "strophe.h"

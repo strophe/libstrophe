@@ -11,15 +11,8 @@
 #ifndef MD5_H
 #define MD5_H
 
-/* we use the uint32_t type from stdint.h
- * if it is not available, add a typedef here:
- */
 /* make sure the stdint.h types are available */
-#if defined(_MSC_VER) /* Microsoft Visual C++ */
-  typedef unsigned int              uint32_t;
-#else
-#include <stdint.h>
-#endif
+#include "ostypes.h"
 
 struct MD5Context {
 	uint32_t buf[4];
