@@ -25,7 +25,8 @@ typedef struct {
 
 void SHA1_Init(SHA1_CTX* context);
 void SHA1_Update(SHA1_CTX* context, const uint8_t* data, const size_t len);
-void SHA1_Final(SHA1_CTX* context, uint8_t *digest);
+void SHA1_Final(SHA1_CTX* context, uint8_t* digest);
+void SHA1(const uint8_t* data, size_t len, uint8_t* digest);
 
 #ifdef __cplusplus
 }

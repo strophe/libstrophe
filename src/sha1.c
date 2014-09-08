@@ -244,7 +244,7 @@ void SHA1_Update(SHA1_CTX* context, const uint8_t* data, const size_t len)
 
 
 /* Add padding and return the message digest. */
-void SHA1_Final(SHA1_CTX* context, uint8_t *digest)
+void SHA1_Final(SHA1_CTX* context, uint8_t* digest)
 {
     uint32_t i;
     uint8_t  finalcount[8];
@@ -274,7 +274,15 @@ void SHA1_Final(SHA1_CTX* context, uint8_t *digest)
     SHA1_Transform(context->state, context->buffer);
 #endif
 }
-  
+
+void SHA1(const uint8_t* data, size_t len, uint8_t* digest)
+{
+    SHA1_CTX ctx;
+    SHA1_Init(&ctx);
+    SHA1_Update(&ctx, data, len);
+    SHA1_Final(&ctx, digest);
+}
+
 /*************************************************************/
 
 #if 0

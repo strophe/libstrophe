@@ -33,15 +33,6 @@
 static const uint8_t ipad = 0x36;
 static const uint8_t opad = 0x5C;
 
-static void SHA1(const uint8_t* data, size_t len,
-                 uint8_t * digest)
-{
-    SHA1_CTX ctx;
-    SHA1_Init(&ctx);
-    SHA1_Update(&ctx, data, len);
-    SHA1_Final(&ctx, digest);
-}
-
 static void HMAC_SHA1(const uint8_t *key, size_t key_len,
                       const uint8_t *text, size_t len,
                       uint8_t *digest)
