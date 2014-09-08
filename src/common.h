@@ -27,6 +27,7 @@
 #include "hash.h"
 #include "util.h"
 #include "parser.h"
+#include "rand.h"
 
 /** run-time context **/
 
@@ -45,6 +46,7 @@ struct _xmpp_ctx_t {
     const xmpp_mem_t *mem;
     const xmpp_log_t *log;
 
+    xmpp_rand_t *rand;
     xmpp_loop_status_t loop_status;
     xmpp_connlist_t *connlist;
 };

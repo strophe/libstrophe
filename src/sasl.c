@@ -23,6 +23,7 @@
 #include "md5.h"
 #include "sha1.h"
 #include "scram.h"
+#include "rand.h"
 
 #ifdef _WIN32
 #define strtok_r strtok_s
@@ -218,6 +219,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     struct MD5Context MD5;
     unsigned char digest[16], HA1[16], HA2[16];
     char hex[32];
+    char cnonce[13];
 
     /* our digest response is 
 	Hex( KD( HEX(MD5(A1)),
@@ -250,8 +252,8 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
 
     /* add our response fields */
     hash_add(table, "username", xmpp_strdup(ctx, node));
-    /* TODO: generate a random cnonce */
-    hash_add(table, "cnonce", xmpp_strdup(ctx, "00DEADBEEF00"));
+    xmpp_rand_nonce(ctx, cnonce, sizeof(cnonce));
+    hash_add(table, "cnonce", xmpp_strdup(ctx, cnonce));
     hash_add(table, "nc", xmpp_strdup(ctx, "00000001"));
     hash_add(table, "qop", xmpp_strdup(ctx, "auth"));
     value = xmpp_alloc(ctx, 5 + strlen(domain) + 1);
