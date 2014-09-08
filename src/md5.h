@@ -15,8 +15,8 @@
  * if it is not available, add a typedef here:
  */
 /* make sure the stdint.h types are available */
-#if defined(_MSC_VER) /* Microsoft Visual C++ */
-  typedef unsigned int              uint32_t;
+#if _MSC_VER < 1600 /* Microsoft Visual C++ */
+#include "ostypes.h"
 #else
 #include <stdint.h>
 #endif

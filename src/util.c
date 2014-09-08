@@ -24,6 +24,11 @@
 #else
 #include <sys/time.h>
 #include <time.h>
+#endif
+/* make sure the stdint.h types are available */
+#if _MSC_VER < 1600 /* MSVC prior to 2010 */
+#include "ostypes.h"
+#else
 #include <stdint.h>
 #endif
 

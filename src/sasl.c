@@ -27,19 +27,15 @@
 #include "scram.h"
 
 /* make sure the stdint.h types are available */
-#if defined(_MSC_VER) /* Microsoft Visual C++ */
-  typedef signed char             int8_t;
-  typedef short int               int16_t;
-  typedef int                     int32_t;
-  typedef __int64                 int64_t;
-
-  typedef unsigned char             uint8_t;
-  typedef unsigned short int        uint16_t;
-  typedef unsigned int              uint32_t;
-  /* no uint64_t */
+#if _MSC_VER < 1600 /* MSVC prior to 2010 */
+#include "ostypes.h"
 #else
 #include <stdint.h>
 #endif
+#ifdef _WIN32
+#define strtok_r strtok_s
+#endif
+
 
 
 /** generate authentication string for the SASL PLAIN mechanism */

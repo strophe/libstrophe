@@ -19,10 +19,10 @@
 #ifndef __LIBSTROPHE_UTIL_H__
 #define __LIBSTROPHE_UTIL_H__
 
-#ifndef _WIN32
-#include <stdint.h>
-#else
+#if _MSC_VER < 1600
 #include "ostypes.h"
+#else
+#include <stdint.h>
 #endif
 
 /* timing functions */

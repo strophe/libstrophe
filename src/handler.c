@@ -23,10 +23,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef _WIN32
-#include <stdint.h>
-#else
+#if _MSC_VER < 1600
 #include "ostypes.h"
+#else
+#include <stdint.h>
 #endif
 
 #include "strophe.h"

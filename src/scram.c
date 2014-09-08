@@ -20,7 +20,12 @@
  */
 
 #include <assert.h>
+/* make sure the stdint.h types are available */
+#if _MSC_VER < 1600 /* MSVC prior to 2010 */
+#include "ostypes.h"
+#else
 #include <stdint.h>
+#endif
 #include <string.h>
 
 #include "sha1.h"
@@ -36,7 +41,7 @@
 static const uint8_t ipad = 0x36;
 static const uint8_t opad = 0x5C;
 
-static inline void SHA1(const uint8_t* data, size_t len,
+static __inline void SHA1(const uint8_t* data, size_t len,
                         uint8_t digest[SHA1_DIGEST_SIZE])
 {
     SHA1_CTX ctx;

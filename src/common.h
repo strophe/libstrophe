@@ -21,7 +21,9 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#ifndef _WIN32
+#if _MSC_VER < 1600
+#include "ostypes.h"
+#else
 #include <stdint.h>
 #endif
 
