@@ -270,7 +270,7 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 	
 	if (conn->domain) xmpp_free(ctx, conn->domain);
 	if (conn->jid) xmpp_free(ctx, conn->jid);
-    if (conn->bound_jid) xmpp_free(ctx, conn->bound_jid);
+	if (conn->bound_jid) xmpp_free(ctx, conn->bound_jid);
 	if (conn->pass) xmpp_free(ctx, conn->pass);
 	if (conn->stream_id) xmpp_free(ctx, conn->stream_id);
 	if (conn->lang) xmpp_free(ctx, conn->lang);
