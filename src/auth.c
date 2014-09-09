@@ -432,6 +432,7 @@ static int _handle_scram_sha1_challenge(xmpp_conn_t * const conn,
     xmpp_stanza_t *auth, *authdata;
     char *name;
     char *challenge;
+    char *scram_init = (char *)userdata;
 
     name = xmpp_stanza_get_name(stanza);
     xmpp_debug(conn->ctx, "xmpp",
@@ -439,41 +440,29 @@ static int _handle_scram_sha1_challenge(xmpp_conn_t * const conn,
 
     if (strcmp(name, "challenge") == 0) {
         text = xmpp_stanza_get_text(stanza);
+        if (!text)
+            goto err;
 
         challenge = (char *)base64_decode(conn->ctx, text, strlen(text));
-        if (!challenge) {
-            disconnect_mem_error(conn);
-            return 0;
-        }
+        xmpp_free(conn->ctx, text);
+        if (!challenge)
+            goto err;
 
-        /* userdata is scram_init allocated in _auth() */
-        response = sasl_scram_sha1(conn->ctx, challenge, (char *)userdata,
+        response = sasl_scram_sha1(conn->ctx, challenge, scram_init,
                                    conn->jid, conn->pass);
-        if (!response) {
-            xmpp_free(conn->ctx, challenge);
-            disconnect_mem_error(conn);
-            return 0;
-        }
-
         xmpp_free(conn->ctx, challenge);
+        if (!response)
+            goto err;
 
         auth = xmpp_stanza_new(conn->ctx);
-        if (!auth) {
-            xmpp_free(conn->ctx, response);
-            disconnect_mem_error(conn);
-            return 0;
-        }
+        if (!auth)
+            goto err_free_response;
         xmpp_stanza_set_name(auth, "response");
         xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
 
         authdata = xmpp_stanza_new(conn->ctx);
-        if (!authdata) {
-            xmpp_free(conn->ctx, response);
-            xmpp_stanza_release(auth);
-            disconnect_mem_error(conn);
-            return 0;
-        }
-
+        if (!authdata)
+            goto err_release_auth;
         xmpp_stanza_set_text(authdata, response);
         xmpp_free(conn->ctx, response);
 
@@ -484,10 +473,20 @@ static int _handle_scram_sha1_challenge(xmpp_conn_t * const conn,
         xmpp_stanza_release(auth);
 
     } else {
+        xmpp_free(conn->ctx, scram_init);
         return _handle_sasl_result(conn, stanza, "SCRAM-SHA-1");
     }
 
     return 1;
+
+err_release_auth:
+    xmpp_stanza_release(auth);
+err_free_response:
+    xmpp_free(conn->ctx, response);
+err:
+    xmpp_free(conn->ctx, scram_init);
+    disconnect_mem_error(conn);
+    return 0;
 }
 
 static char *_get_nonce(xmpp_ctx_t *ctx)
