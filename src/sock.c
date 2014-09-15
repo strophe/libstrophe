@@ -88,29 +88,39 @@ sock_t sock_connect(const char * const host, const unsigned int port)
     snprintf(service, 6, "%u", port);
 
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_flags = AI_ADDRCONFIG;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((err = getaddrinfo(host, service, &hints, &res)) != 0)
-	return -1;
+	if ((err = getaddrinfo(host, service, &hints, &res)) != 0){
+		/* Lookup failed. */
+		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(err));
+		return -1;
+	}
 
-    ainfo = res;
-    while (ainfo) {
-	if ((sock = socket(ainfo->ai_family, ainfo->ai_socktype, 
-		   ainfo->ai_protocol)) >= 0) {
-	    sock_set_nonblocking(sock);
+	for (ainfo = res; ainfo != NULL; ainfo = ainfo->ai_next){
+		if ( (sock = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol)) < 0 )
+			continue;
 
-	    err = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
+		err =  connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
+		if (err < 0 ){
+			close(sock);
+			continue;
+		}
 
-	    if ((err == 0) || (err < 0 && _in_progress(sock_error())))
+		/* Connection has been established. */
 		break;
 	}
 
-	ainfo = ainfo->ai_next;
-    }
+	if (res) freeaddrinfo(res);
 
-    if (res) freeaddrinfo(res);
+	if (ainfo){
+		/* Success. */
+	}else{
+		/* Connect fail */
+		sock = 0;
+	}
 
     return sock;
 }
@@ -170,7 +180,7 @@ int sock_connect_error(const sock_t sock)
     unsigned len;
     char temp;
 
-    sa.sa_family = AF_INET;
+    sa.sa_family = AF_UNSPEC;
 
     len = sizeof(sa);
 
