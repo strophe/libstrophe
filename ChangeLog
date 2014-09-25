@@ -1,3 +1,5 @@
-0.8.5
- - libtoolize to generate .so
+TBA
+	- SCRAM-SHA-1 authentication mechanism
 
+0.8.5
+	- libtoolize to generate .so

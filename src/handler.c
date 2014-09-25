@@ -23,14 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef _WIN32
-#include <stdint.h>
-#else
-#include "ostypes.h"
-#endif
-
 #include "strophe.h"
 #include "common.h"
+#include "ostypes.h"
 
 /** Fire off all stanza handlers that match.
  *  This function is called internally by the event loop whenever stanzas

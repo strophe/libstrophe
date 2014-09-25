@@ -16,26 +16,19 @@
  *  SASL authentication.
  */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "strophe.h"
 #include "common.h"
+#include "ostypes.h"
 #include "sasl.h"
 #include "md5.h"
+#include "sha1.h"
+#include "scram.h"
 
-/* make sure the stdint.h types are available */
-#if defined(_MSC_VER) /* Microsoft Visual C++ */
-  typedef signed char             int8_t;
-  typedef short int               int16_t;
-  typedef int                     int32_t;
-  typedef __int64                 int64_t;
-
-  typedef unsigned char             uint8_t;
-  typedef unsigned short int        uint16_t;
-  typedef unsigned int              uint32_t;
-  /* no uint64_t */
-#else
-#include <stdint.h>
+#ifdef _WIN32
+#define strtok_r strtok_s
 #endif
 
 
@@ -360,6 +353,113 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     return response;
 }
 
+/** generate auth response string for the SASL SCRAM-SHA-1 mechanism */
+char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
+                      const char *first_bare, const char *jid,
+                      const char *password)
+{
+    uint8_t key[SHA1_DIGEST_SIZE];
+    uint8_t sign[SHA1_DIGEST_SIZE];
+    char *r = NULL;
+    char *s = NULL;
+    char *i = NULL;
+    char *sval;
+    size_t sval_len;
+    long ival;
+    char *tmp;
+    char *ptr;
+    char *saveptr = NULL;
+    char *response;
+    char *auth;
+    char *response_b64;
+    char *sign_b64;
+    char *result = NULL;
+    size_t response_len;
+    size_t auth_len;
+    int j;
+
+    tmp = xmpp_strdup(ctx, challenge);
+    if (!tmp) {
+        return NULL;
+    }
+
+    ptr = strtok_r(tmp, ",", &saveptr);
+    while (ptr) {
+        if (strncmp(ptr, "r=", 2) == 0) {
+            r = ptr;
+        } else if (strncmp(ptr, "s=", 2) == 0) {
+            s = ptr + 2;
+        } else if (strncmp(ptr, "i=", 2) == 0) {
+            i = ptr + 2;
+        }
+        ptr = strtok_r(NULL, ",", &saveptr);
+    }
+
+    if (!r || !s || !i) {
+        goto out;
+    }
+
+    sval = (char *)base64_decode(ctx, s, strlen(s));
+    if (!sval) {
+        goto out;
+    }
+    sval_len = base64_decoded_len(ctx, s, strlen(s));
+    ival = strtol(i, &saveptr, 10);
+
+    auth_len = 10 + strlen(r) + strlen(first_bare) + strlen(challenge);
+    auth = xmpp_alloc(ctx, auth_len);
+    if (!auth) {
+        goto out_sval;
+    }
+
+    response_len = 39 + strlen(r);
+    response = xmpp_alloc(ctx, response_len);
+    if (!response) {
+        goto out_auth;
+    }
+
+    xmpp_snprintf(response, response_len, "c=biws,%s", r);
+    xmpp_snprintf(auth, auth_len, "%s,%s,%s", first_bare + 3, challenge,
+                  response);
+
+    SCRAM_SHA1_ClientKey((uint8_t *)password, strlen(password),
+                         (uint8_t *)sval, sval_len, (uint32_t)ival, key);
+    SCRAM_SHA1_ClientSignature(key, (uint8_t *)auth, strlen(auth), sign);
+    for (j = 0; j < SHA1_DIGEST_SIZE; j++) {
+        sign[j] ^= key[j];
+    }
+
+    sign_b64 = base64_encode(ctx, sign, sizeof(sign));
+    if (!sign_b64) {
+        goto out_response;
+    }
+
+    if (strlen(response) + strlen(sign_b64) + 3 + 1 > response_len) {
+        xmpp_free(ctx, sign_b64);
+        goto out_response;
+    }
+    strcat(response, ",p=");
+    strcat(response, sign_b64);
+    xmpp_free(ctx, sign_b64);
+
+    response_b64 = base64_encode(ctx, (unsigned char *)response,
+                                 strlen(response));
+    if (!response_b64) {
+        goto out_response;
+    }
+    result = response_b64;
+
+out_response:
+    xmpp_free(ctx, response);
+out_auth:
+    xmpp_free(ctx, auth);
+out_sval:
+    xmpp_free(ctx, sval);
+out:
+    xmpp_free(ctx, tmp);
+    return result;
+}
+
 
 /** Base64 encoding routines. Implemented according to RFC 3548 */
 
@@ -552,8 +652,8 @@ unsigned char *base64_decode(xmpp_ctx_t *ctx,
 		if (hextet != 64) goto _base64_decode_error;
 		break;
 	}
+	*d = '\0';
     }
-    *d = '\0';
     return dbuf;
 
 _base64_decode_error:	

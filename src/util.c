@@ -24,11 +24,11 @@
 #else
 #include <sys/time.h>
 #include <time.h>
-#include <stdint.h>
 #endif
 
 #include "strophe.h"
 #include "common.h"
+#include "ostypes.h"
 #include "util.h"
 
 /** implement our own strdup that uses the ctx allocator */
