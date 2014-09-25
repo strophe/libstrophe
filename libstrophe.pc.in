@@ -1,0 +1,14 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libstrophe
+Description: A simple, lightweight C library for writing XMPP clients
+URL: http://strophe.im/libstrophe/
+Version: @VERSION@
+Requires:
+Requires.private: @PC_REQUIRES@
+Libs: -L${libdir} -lstrophe
+Libs.private: @PC_LIBS@
+Cflags: -I${includedir} @PC_CFLAGS@

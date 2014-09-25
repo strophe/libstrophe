@@ -25,6 +25,7 @@ examples/*.o
 tests/*.o
 tests/check_parser
 *.a
+*.pc
 *.tar.gz
 *.zip
 docs/html

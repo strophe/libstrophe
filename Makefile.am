@@ -36,6 +36,9 @@ endif
 include_HEADERS = strophe.h
 noinst_HEADERS = strophepp.h
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libstrophe.pc
+
 EXTRA_DIST = docs
 
 ## Examples
