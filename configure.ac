@@ -86,6 +86,14 @@ fi
 
 AC_CHECK_HEADERS([arpa/nameser_compat.h])
 
+
+m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
+        [AC_ARG_WITH([pkgconfigdir],
+                [AS_HELP_STRING([--with-pkgconfigdir],
+                        [install directory for libstrophe.pc pkg-config file])],
+                [],[with_pkgconfigdir='$(libdir)/pkgconfig'])
+        AC_SUBST([pkgconfigdir], [${with_pkgconfigdir}])])
+
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 
 AC_SUBST([PC_REQUIRES], [${PC_REQUIRES[[@]]}])
