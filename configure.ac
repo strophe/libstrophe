@@ -1,4 +1,5 @@
 AC_INIT([libstrophe], [0.8.7], [jack@metajack.im])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT([dlopen])
 
