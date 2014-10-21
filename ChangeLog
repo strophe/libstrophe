@@ -1,5 +1,6 @@
 TBA
 	- SCRAM-SHA-1 authentication mechanism
+	- pkg-config support
 
 0.8.5
 	- libtoolize to generate .so
