@@ -250,12 +250,13 @@ const char * hash_iter_next(hash_iterator_t *iter)
 {
     hash_t *table = iter->table;
     hashentry_t *entry = iter->entry;
-    int i = iter->index + 1;
+    int i = iter->index;
 
     /* advance until we find the next entry */
     if (entry != NULL) entry = entry->next;
     if (entry == NULL) {
 	/* we're off the end of list, search for a new entry */
+    i++;
 	while (i < iter->table->length) {
 	    entry = table->entries[i];
 	    if (entry != NULL) {
