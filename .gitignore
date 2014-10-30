@@ -22,8 +22,6 @@ autom4te.cache
 .sconsign*
 src/*.o
 examples/*.o
-tests/*.o
-tests/check_parser
 *.a
 *.pc
 *.tar.gz
@@ -36,7 +34,11 @@ examples/active
 examples/roster
 examples/bot
 test_stamp
+test-suite.log
 tests/*.o
+tests/*.log
+tests/*.trs
+tests/check_parser
 tests/test_base64
 tests/test_ctx
 tests/test_hash
