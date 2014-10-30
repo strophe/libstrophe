@@ -48,6 +48,10 @@
 #include <stdarg.h>
 #include <string.h>
 
+#ifdef HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+
 #include "strophe.h"
 #include "common.h"
 #include "util.h"
@@ -186,6 +190,79 @@ xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level)
 }
 
 static xmpp_log_t xmpp_default_log = { NULL, NULL };
+
+#ifdef HAVE_SYSLOG_H
+/** Log a message to syslog
+ *
+ *  @param userdata used for the ident string
+ *  @param level the level to log at
+ *  @param area the area the log message is for
+ *  @param msg the log message
+ */
+void xmpp_syslog_logger(void ** const userdata,
+			 xmpp_log_level_t level,
+			 const char * const area,
+			 const char * const msg)
+{
+
+	const char *ident = (const char *) *userdata;
+
+	/*Set syslog log level*/
+	switch (level) {
+	case XMPP_LEVEL_DEBUG:
+		level = LOG_DEBUG;
+		break;
+	case XMPP_LEVEL_INFO:
+		level = LOG_INFO;
+		break;
+	case XMPP_LEVEL_WARN:
+		level = LOG_WARNING;
+		break;
+	case XMPP_LEVEL_ERROR:
+	default:
+		level = LOG_ERR;
+		break;
+	}
+
+	syslog(level, "%s%s %s\n", (ident?ident:"libstrophe: "), area, msg);
+
+}
+
+static char *_xmpp_syslog_ident = NULL;
+static xmpp_log_t _xmpp_syslog_logger[] = {
+	{&xmpp_syslog_logger, (void *) &_xmpp_syslog_ident}
+};
+#endif //HAVE_SYSLOG_H
+
+/** Get a syslog logger.
+ *  If syslog.h is not present, xmpp_default_log is returned instead
+ *  ident can be NULL, in which case the ident string is "libstrophe: ".
+ *
+ *  @param ident A string added to the beginning of the log
+ *
+ *  @return the syslog logging structure
+ *
+ *  @ingroup Context
+ */
+
+xmpp_log_t *xmpp_get_syslog_logger( const char *ident )
+{
+#ifdef HAVE_SYSLOG_H
+	syslog(LOG_INFO, "libstrophe syslog logger started");
+	fprintf(stderr, "libstrophe logging to syslog\n");
+
+	if (_xmpp_syslog_ident)
+		free(_xmpp_syslog_ident);
+
+	if (ident) {
+		_xmpp_syslog_ident = strdup(ident);
+	}
+
+	return _xmpp_syslog_logger;
+#else
+	return &xmpp_default_log;
+#endif
+}
 
 /* convenience functions for accessing the context */
 

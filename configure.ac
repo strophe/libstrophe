@@ -86,6 +86,7 @@ else
 fi
 
 AC_CHECK_HEADERS([arpa/nameser_compat.h])
+AC_CHECK_HEADERS([syslog.h])
 
 
 m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],

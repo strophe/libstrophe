@@ -155,6 +155,9 @@ struct _xmpp_log_t {
 /* return a default logger filtering at a given level */
 xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level);
 
+/* return a syslog logger with optional identifier string */
+xmpp_log_t *xmpp_get_syslog_logger( const char * ident);
+
 /* connection */
 
 /* opaque connection object */
