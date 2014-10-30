@@ -61,10 +61,14 @@ examples_component_LDADD = $(STROPHE_LIBS)
 
 
 ## Tests
-TESTS = tests/check_parser
-check_PROGRAMS = tests/check_parser
+TESTS = tests/check_parser tests/test_rand
+check_PROGRAMS = tests/check_parser tests/test_rand
+
 tests_check_parser_SOURCES = tests/check_parser.c tests/test.h
 tests_check_parser_CFLAGS = @check_CFLAGS@ $(PARSER_CFLAGS) $(STROPHE_FLAGS) \
 	-I$(top_srcdir)/src
 tests_check_parser_LDADD = @check_LIBS@ $(STROPHE_LIBS)
 tests_check_parser_LDFLAGS = -static
+
+tests_test_rand_SOURCES = tests/test_rand.c src/sha1.c
+tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
