@@ -249,7 +249,6 @@ xmpp_log_t *xmpp_get_syslog_logger( const char *ident )
 {
 #ifdef HAVE_SYSLOG_H
 	syslog(LOG_INFO, "libstrophe syslog logger started");
-	fprintf(stderr, "libstrophe logging to syslog\n");
 
 	if (_xmpp_syslog_ident)
 		free(_xmpp_syslog_ident);
