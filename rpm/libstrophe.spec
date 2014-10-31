@@ -9,6 +9,7 @@ URL:		http://strophe.im/libstrophe/
 Source0:	libstrophe_git.tar.gz
 
 BuildRequires:	automake
+BuildRequires:	libtool
 BuildRequires:	openssl-devel
 BuildRequires:	expat-devel
 Requires:	expat
@@ -42,11 +43,14 @@ make install DESTDIR=%{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%{_libdir}/libstrophe.a
+%{_libdir}/libstrophe.so*
 %doc
 
 %files devel
 %defattr(-,root,root,-)
+%{_libdir}/libstrophe.a
+%{_libdir}/libstrophe.la
+%{_libdir}/pkgconfig/libstrophe.pc
 %{_includedir}/strophe.h
 %doc
 
