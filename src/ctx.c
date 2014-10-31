@@ -199,7 +199,7 @@ static xmpp_log_t xmpp_default_log = { NULL, NULL };
  *  @param area the area the log message is for
  *  @param msg the log message
  */
-void xmpp_syslog_logger(void ** const userdata,
+static void xmpp_syslog_logger(void ** const userdata,
 			 xmpp_log_level_t level,
 			 const char * const area,
 			 const char * const msg)
