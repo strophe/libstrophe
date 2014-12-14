@@ -36,7 +36,7 @@ noinst_HEADERS = strophepp.h
 EXTRA_DIST = docs
 
 ## Examples
-noinst_PROGRAMS = examples/active examples/roster examples/basic examples/bot
+noinst_PROGRAMS = examples/active examples/roster examples/basic examples/bot examples/component
 examples_active_SOURCES = examples/active.c
 examples_active_CFLAGS = $(STROPHE_FLAGS)
 examples_active_LDADD = $(STROPHE_LIBS) 
@@ -48,7 +48,10 @@ examples_basic_CFLAGS = $(STROPHE_FLAGS)
 examples_basic_LDADD = $(STROPHE_LIBS) 
 examples_bot_SOURCES = examples/bot.c
 examples_bot_CFLAGS = $(STROPHE_FLAGS)
-examples_bot_LDADD = $(STROPHE_LIBS) 
+examples_bot_LDADD = $(STROPHE_LIBS)
+examples_component_SOURCES = examples/component.c
+examples_component_CFLAGS = $(STROPHE_FLAGS)
+examples_component_LDADD = $(STROPHE_LIBS)
 
 
 ## Tests
