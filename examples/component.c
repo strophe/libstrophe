@@ -1,15 +1,12 @@
-/* basic.c
-** libstrophe XMPP client library -- basic usage example
+/* component.c
+** libstrophe XMPP client library -- external component (XEP-0114) example
 **
 ** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
 **
-**  This software is distributed under license and may not be copied,
-**  modified or distributed except as expressly authorized under the
-**  terms of the license contained in the file LICENSE.txt in this
-**  distribution.
+** This program is dual licensed under the MIT and GPLv3 licenses.
 */
 
 /* This example demonstrates simple connection to a server
