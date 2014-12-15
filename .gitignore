@@ -29,10 +29,11 @@ examples/*.o
 docs/html
 TAGS
 tags
-examples/basic
 examples/active
-examples/roster
+examples/basic
 examples/bot
+examples/component
+examples/roster
 test_stamp
 test-suite.log
 tests/*.o
