@@ -218,7 +218,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	    tls_read_bytes += tls_pending(conn->tls);
 	}
 	
-	if (conn->sock > max) max = conn->sock;
+	if (conn->state != XMPP_STATE_DISCONNECTED && conn->sock > max)
+	    max = conn->sock;
 
 	connitem = connitem->next;
     }
