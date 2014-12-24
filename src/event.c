@@ -37,11 +37,14 @@
 #ifndef _WIN32
 #include <sys/select.h>
 #include <errno.h>
+#include <unistd.h>
+#define _sleep(x) usleep(x*1000)
 #else
 #include <winsock2.h>
 #define ETIMEDOUT WSAETIMEDOUT
 #define ECONNRESET WSAECONNRESET
 #define ECONNABORTED WSAECONNABORTED
+#define _sleep(x) Sleep(x)
 #endif
 
 #include <strophe.h>
@@ -225,7 +228,13 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     }
 
     /* check for events */
-    ret = select(max + 1, &rfds,  &wfds, NULL, &tv);
+    if (max > 0)
+        ret = select(max + 1, &rfds,  &wfds, NULL, &tv);
+    else {
+        if (timeout > 0)
+            _sleep(timeout);
+        return;
+    }
 
     /* select errored */
     if (ret < 0) {
