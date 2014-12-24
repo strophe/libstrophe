@@ -1196,7 +1196,7 @@ int _handle_component_auth(xmpp_conn_t * const conn)
     if (digest) {
         /* convert the digest into string representation */
         for (i = 0; i < sizeof(md_value); i++)
-            snprintf(digest+i*2, 3, "%02x", md_value[i]);
+            xmpp_snprintf(digest+i*2, 3, "%02x", md_value[i]);
         digest[2*sizeof(md_value)] = '\0';
 
         xmpp_debug(conn->ctx, "auth", "Digest: %s, len: %d",
