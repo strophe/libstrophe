@@ -789,7 +789,7 @@ static void _handle_stream_start(char *name, char **attrs,
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
     char *id;
 
-    if (strcmp(name, "stream:stream") != 0) {
+    if (strcmp(name, "stream")) {
         printf("name = %s\n", name);
         xmpp_error(conn->ctx, "conn", "Server did not open valid stream.");
         conn_disconnect(conn);

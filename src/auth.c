@@ -866,11 +866,11 @@ void auth_handle_open(xmpp_conn_t * const conn)
 
     /* setup handler for stream:error */
     handler_add(conn, _handle_error,
-		NULL, "stream:error", NULL, NULL);
+		XMPP_NS_STREAMS, "error", NULL, NULL);
 
     /* setup handlers for incoming <stream:features> */
     handler_add(conn, _handle_features,
-		NULL, "stream:features", NULL, NULL);
+		XMPP_NS_STREAMS, "features", NULL, NULL);
     handler_add_timed(conn, _handle_missing_features,
 		      FEATURES_TIMEOUT, NULL);
 }
@@ -882,7 +882,7 @@ static void _handle_open_sasl(xmpp_conn_t * const conn)
 
     /* setup stream:features handlers */
     handler_add(conn, _handle_features_sasl,
-		NULL, "stream:features", NULL, NULL);
+		XMPP_NS_STREAMS, "features", NULL, NULL);
     handler_add_timed(conn, _handle_missing_features_sasl,
 		      FEATURES_TIMEOUT, NULL);
 }
@@ -1168,7 +1168,7 @@ void auth_handle_component_open(xmpp_conn_t * const conn)
     /* reset all timed handlers */
     handler_reset_timed(conn, 0);
 
-    handler_add(conn, _handle_error, NULL, "stream:error", NULL, NULL);
+    handler_add(conn, _handle_error, XMPP_NS_STREAMS, "error", NULL, NULL);
     handler_add(conn, _handle_component_hs_response, NULL,
                 "handshake", NULL, NULL);
     handler_add_timed(conn, _handle_missing_handshake, HANDSHAKE_TIMEOUT, NULL);
