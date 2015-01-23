@@ -317,6 +317,20 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
 	if (stanza->attributes && hash_num_keys(stanza->attributes) > 0) {
 	    iter = hash_iter_new(stanza->attributes);
 	    while ((key = hash_iter_next(iter))) {
+		if (!strcmp(key, "xmlns")) {
+		    /* don't output namespace if parent stanza is the same */
+		    if (stanza->parent &&
+			stanza->parent->attributes &&
+			hash_get(stanza->parent->attributes, key) &&
+			!strcmp((char*)hash_get(stanza->attributes, key),
+			    (char*)hash_get(stanza->parent->attributes, key)))
+			continue;
+		    /* or if this is the stream namespace */
+		    if (!stanza->parent &&
+			!strcmp((char*)hash_get(stanza->attributes, key),
+			    XMPP_NS_CLIENT))
+			continue;
+		}
 		tmp = _escape_xml(stanza->ctx,
 		    (char *)hash_get(stanza->attributes, key));
 		if (tmp == NULL) return XMPP_EMEM;
