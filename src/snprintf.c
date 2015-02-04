@@ -397,7 +397,7 @@ static int dopr (char *buffer, size_t maxlen, const char *format, va_list args)
       break; /* some picky compilers need this */
     }
   }
-  if (buffer != NULL)
+  if (buffer != NULL && maxlen > 0)
   {
     if (currlen < maxlen - 1) 
       buffer[currlen] = '\0';
