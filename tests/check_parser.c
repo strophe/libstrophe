@@ -34,14 +34,14 @@ END_TEST
 int cbtest_got_start = 0;
 void cbtest_handle_start(char *name, char **attrs, void *userdata)
 {
-    if (strcmp(name, "stream:stream") == 0)
+    if (strcmp(name, "stream") == 0)
         cbtest_got_start = 1;
 }
 
 int cbtest_got_end = 0;
 void cbtest_handle_end(char *name, void *userdata)
 {
-    if (strcmp(name, "stream:stream") == 0)
+    if (strcmp(name, "stream") == 0)
         cbtest_got_end = 1;
 }
 
@@ -64,9 +64,9 @@ START_TEST(callbacks)
                         cbtest_handle_end,
                         cbtest_handle_stanza, NULL);
 
-    ret = parser_feed(parser, "<stream:stream>", 15);
+    ret = parser_feed(parser, "<stream>", 8);
     ret = parser_feed(parser, "<message/>", 10);
-    parser_feed(parser, "</stream:stream>", 16);
+    parser_feed(parser, "</stream>", 9);
 
     fail_unless(cbtest_got_start == 1);
     fail_unless(cbtest_got_end == 1);
