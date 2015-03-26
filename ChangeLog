@@ -1,3 +1,6 @@
+0.8.8
+    - XML namespace support
+
 0.8.7
 	- SCRAM-SHA-1 authentication mechanism
 	- pkg-config support
