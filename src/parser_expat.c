@@ -220,6 +220,11 @@ parser_t *parser_new(xmpp_ctx_t *ctx,
     return parser;
 }
 
+char* parser_attr_name(xmpp_ctx_t *ctx, char *nsname)
+{
+    return _xml_name(ctx, nsname);
+}
+
 /* free a parser */
 void parser_free(parser_t *parser)
 {

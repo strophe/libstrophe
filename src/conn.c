@@ -748,6 +748,7 @@ static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
     size_t pos;
     int len;
     int i;
+    char *attr;
     
     if (!attrs) return;
 
@@ -756,10 +757,11 @@ static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
     if (len < 0) return;
     
     pos += len;
-    
     for (i = 0; attrs[i]; i += 2) {
+        attr = parser_attr_name(conn->ctx, attrs[i]);
         len = xmpp_snprintf(&buf[pos], 4096 - pos, " %s='%s'",
-                            attrs[i], attrs[i+1]);
+                            attr, attrs[i+1]);
+        xmpp_free(conn->ctx, attr);
         if (len < 0) return;
         pos += len;
     }
