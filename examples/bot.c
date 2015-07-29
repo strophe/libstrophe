@@ -28,14 +28,11 @@ int version_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	xmpp_stanza_t *reply, *query, *name, *version, *text;
 	char *ns;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
-	printf("Received version request from %s\n", xmpp_stanza_get_attribute(stanza, "from"));
+	printf("Received version request from %s\n", xmpp_stanza_get_from(stanza));
 	
-	reply = xmpp_stanza_new(ctx);
-	xmpp_stanza_set_name(reply, "iq");
+	reply = xmpp_stanza_reply(stanza);
 	xmpp_stanza_set_type(reply, "result");
-	xmpp_stanza_set_id(reply, xmpp_stanza_get_id(stanza));
-	xmpp_stanza_set_attribute(reply, "to", xmpp_stanza_get_attribute(stanza, "from"));
-	
+
 	query = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(query, "query");
     ns = xmpp_stanza_get_ns(xmpp_stanza_get_children(stanza));
@@ -74,17 +71,16 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	
 	if(!xmpp_stanza_get_child_by_name(stanza, "body")) return 1;
-	if(xmpp_stanza_get_attribute(stanza, "type") !=NULL && !strcmp(xmpp_stanza_get_attribute(stanza, "type"), "error")) return 1;
+	if(xmpp_stanza_get_type(stanza) !=NULL && !strcmp(xmpp_stanza_get_type(stanza), "error")) return 1;
 	
 	intext = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "body"));
 	
-	printf("Incoming message from %s: %s\n", xmpp_stanza_get_attribute(stanza, "from"), intext);
+	printf("Incoming message from %s: %s\n", xmpp_stanza_get_from(stanza), intext);
 	
-	reply = xmpp_stanza_new(ctx);
-	xmpp_stanza_set_name(reply, "message");
-	xmpp_stanza_set_type(reply, xmpp_stanza_get_type(stanza)?xmpp_stanza_get_type(stanza):"chat");
-	xmpp_stanza_set_attribute(reply, "to", xmpp_stanza_get_attribute(stanza, "from"));
-	
+	reply = xmpp_stanza_reply(stanza);
+	if (xmpp_stanza_get_type(reply) == NULL)
+	    xmpp_stanza_set_type(reply, "chat");
+
 	body = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(body, "body");
 	
