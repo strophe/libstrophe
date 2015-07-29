@@ -74,6 +74,43 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
     return stanza;
 }
 
+/*
+ * Copy the attributes of stanza src into stanza dst. Return -1 on error.
+ */
+static int _stanza_copy_attributes(xmpp_stanza_t * dst,
+                                   const xmpp_stanza_t * const src)
+{
+    hash_iterator_t *iter = NULL;
+    const char *key;
+    void *val;
+
+    dst->attributes = hash_new(src->ctx, 8, xmpp_free);
+    if (!dst->attributes)
+        return -1;
+    iter = hash_iter_new(src->attributes);
+    if (!iter)
+        goto error;
+    while ((key = hash_iter_next(iter))) {
+        val = xmpp_strdup(src->ctx,
+                          (char *)hash_get(src->attributes, key));
+        if (!val)
+            goto error;
+
+        if (hash_add(dst->attributes, key, val)) {
+            xmpp_free(src->ctx, val);
+            goto error;
+        }
+    }
+    hash_iter_release(iter);
+    return 0;
+
+error:
+    if (iter != NULL)
+        hash_iter_release(iter);
+    hash_release(dst->attributes);
+    return -1;
+}
+
 /** Copy a stanza and its children.
  *  This function copies a stanza along with all its children and returns
  *  the new stanza and children with a reference count of 1.  The returned
@@ -89,9 +126,6 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
 xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza)
 {
     xmpp_stanza_t *copy, *child, *copychild, *tail;
-    hash_iterator_t *iter;
-    const char *key;
-    void *val;
 
     copy = xmpp_stanza_new(stanza->ctx);
     if (!copy) goto copy_error;
@@ -104,19 +138,8 @@ xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza)
     }
 
     if (stanza->attributes) {
-	copy->attributes = hash_new(stanza->ctx, 8, xmpp_free);
-	if (!copy->attributes) goto copy_error;
-	iter = hash_iter_new(stanza->attributes);
-	if (!iter) { printf("DEBUG HERE\n"); goto copy_error; }
-	while ((key = hash_iter_next(iter))) {
-	    val = xmpp_strdup(stanza->ctx,
-			      (char *)hash_get(stanza->attributes, key));
-	    if (!val) goto copy_error;
-	    
-	    if (hash_add(copy->attributes, key, val))
-		goto copy_error;
-	}
-	hash_iter_release(iter);
+	if (_stanza_copy_attributes(copy, stanza) == -1)
+            goto copy_error;
     }
 
     tail = copy->children;
