@@ -136,6 +136,9 @@ static const xmpp_log_level_t _xmpp_default_logger_levels[] = {XMPP_LEVEL_DEBUG,
 							       XMPP_LEVEL_WARN,
 							       XMPP_LEVEL_ERROR};
 
+void xmpp_default_logger(void * const, const xmpp_log_level_t,
+    const char * const, const char * const);
+
 /** Log a message.
  *  The default logger writes to stderr.
  *
