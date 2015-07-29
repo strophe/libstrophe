@@ -27,6 +27,8 @@
 #define inline __inline
 #endif
 
+int _stanza_copy_attributes(xmpp_stanza_t *, const xmpp_stanza_t * const);
+
 /** Create a stanza object.
  *  This function allocates and initializes and blank stanza object.
  *  The stanza will have a reference count of one, so the caller does not
@@ -74,6 +76,37 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
     return stanza;
 }
 
+/*
+ * Copy the attributes of stanza src into stanza dst. Return -1 on error.
+ */
+int _stanza_copy_attributes(xmpp_stanza_t * dst,
+				const xmpp_stanza_t * const src)
+{
+    hash_iterator_t *iter;
+    const char *key;
+    void *val;
+
+    dst->attributes = hash_new(src->ctx, 8, xmpp_free);
+    if (!dst->attributes)
+        return -1;
+    iter = hash_iter_new(src->attributes);
+    if (!iter) {
+        printf("DEBUG HERE\n");
+        return -1;
+    }
+    while ((key = hash_iter_next(iter))) {
+        val = xmpp_strdup(src->ctx,
+            (char *)hash_get(src->attributes, key));
+        if (!val)
+        return -1;
+
+        if (hash_add(dst->attributes, key, val))
+        return -1;
+    }
+    hash_iter_release(iter);
+    return 0;
+}
+
 /** Copy a stanza and its children.
  *  This function copies a stanza along with all its children and returns
  *  the new stanza and children with a reference count of 1.  The returned
@@ -89,9 +122,6 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
 xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza)
 {
     xmpp_stanza_t *copy, *child, *copychild, *tail;
-    hash_iterator_t *iter;
-    const char *key;
-    void *val;
 
     copy = xmpp_stanza_new(stanza->ctx);
     if (!copy) goto copy_error;
@@ -104,19 +134,8 @@ xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza)
     }
 
     if (stanza->attributes) {
-	copy->attributes = hash_new(stanza->ctx, 8, xmpp_free);
-	if (!copy->attributes) goto copy_error;
-	iter = hash_iter_new(stanza->attributes);
-	if (!iter) { printf("DEBUG HERE\n"); goto copy_error; }
-	while ((key = hash_iter_next(iter))) {
-	    val = xmpp_strdup(stanza->ctx,
-			      (char *)hash_get(stanza->attributes, key));
-	    if (!val) goto copy_error;
-	    
-	    if (hash_add(copy->attributes, key, val))
-		goto copy_error;
-	}
-	hash_iter_release(iter);
+	if (_stanza_copy_attributes(copy, stanza) == -1)
+            goto copy_error;
     }
 
     tail = copy->children;
