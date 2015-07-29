@@ -342,6 +342,9 @@ int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
 				   const char * const text, 
 				   const size_t size);
 
+int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
+                              const char * const name);
+
 /* common stanza helpers */
 char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
