@@ -737,6 +737,48 @@ char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza)
     return (char *)hash_get(stanza->attributes, "type");
 }
 
+/** Get the 'to' attribute of the stanza object.
+ *  This is a convenience function equivalent to:
+ *  xmpp_stanza_get_attribute(stanza, "to");
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return a string with the 'to' attribute value
+ *
+ *  @ingroup Stanza
+ */
+char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza)
+{
+    if (stanza->type != XMPP_STANZA_TAG)
+	return NULL;
+
+    if (!stanza->attributes)
+	return NULL;
+
+    return (char *)hash_get(stanza->attributes, "to");
+}
+
+/** Get the 'from' attribute of the stanza object.
+ *  This is a convenience function equivalent to:
+ *  xmpp_stanza_get_attribute(stanza, "from");
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return a string with the 'from' attribute value
+ *
+ *  @ingroup Stanza
+ */
+char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza)
+{
+    if (stanza->type != XMPP_STANZA_TAG)
+	return NULL;
+
+    if (!stanza->attributes)
+	return NULL;
+
+    return (char *)hash_get(stanza->attributes, "from");
+}
+
 /** Get the first child of stanza with name.
  *  This function searches all the immediate children of stanza for a child
  *  stanza that matches the name.  The first matching child is returned.
@@ -917,6 +959,42 @@ int xmpp_stanza_set_type(xmpp_stanza_t * const stanza,
 			 const char * const type)
 {
     return xmpp_stanza_set_attribute(stanza, "type", type);
+}
+
+/** Set the 'to' attribute of a stanza.
+ *
+ *  This is a convenience function for:
+ *  xmpp_stanza_set_attribute(stanza, 'to', to);
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param to a string containing the 'to' value
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_set_to(xmpp_stanza_t * const stanza,
+		       const char * const to)
+{
+    return xmpp_stanza_set_attribute(stanza, "to", to);
+}
+
+/** Set the 'from' attribute of a stanza.
+ *
+ *  This is a convenience function for:
+ *  xmpp_stanza_set_attribute(stanza, 'from', from);
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param from a string containing the 'from' value
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
+		       const char * const from)
+{
+    return xmpp_stanza_set_attribute(stanza, "from", from);
 }
 
 /** Get an attribute from a stanza.

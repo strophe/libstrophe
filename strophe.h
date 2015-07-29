@@ -335,15 +335,16 @@ int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
 /* common stanza helpers */
 char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
+char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza);
+char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza);
 int xmpp_stanza_set_id(xmpp_stanza_t * const stanza, 
 		       const char * const id);
 int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, 
 			 const char * const type);
-
-/* unimplemented
-int xmpp_stanza_set_to();
-int xmpp_stanza_set_from();
-*/
+int xmpp_stanza_set_to(xmpp_stanza_t * const stanza,
+			 const char * const to);
+int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
+			 const char * const from);
 
 /* allocate and initialize a stanza in reply to another */
 /* unimplemented
