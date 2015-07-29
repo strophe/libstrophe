@@ -234,6 +234,25 @@ struct dnsquery_resourcerecord
 	struct dnsquery_srvrdata rdata;
 };
 
+void netbuf_add_32bitnum(unsigned char *, int, int *, unsigned int);
+void netbuf_add_16bitnum(unsigned char *, int, int *, unsigned short);
+void netbuf_get_32bitnum(unsigned char *, int, int *, unsigned int *);
+void netbuf_get_16bitnum(unsigned char *, int, int *, unsigned short *);
+void netbuf_add_domain_name(unsigned char *, int, int *, char *);
+int calc_domain_name_size(unsigned char *, int, int);
+int netbuf_get_domain_name(unsigned char *, int, int *, char *, int);
+void netbuf_add_dnsquery_header(unsigned char *, int, int *, \
+    struct dnsquery_header *);
+void netbuf_get_dnsquery_header(unsigned char *, int, int *, \
+    struct dnsquery_header *);
+void netbuf_add_dnsquery_question(unsigned char *, int, int *, \
+    struct dnsquery_question *);
+void netbuf_get_dnsquery_question(unsigned char *, int, int *, \
+    struct dnsquery_question *);
+void netbuf_get_dnsquery_srvrdata(unsigned char *, int, int *, \
+    struct dnsquery_srvrdata *);
+void netbuf_get_dnsquery_resourcerecord(unsigned char *, int, int *,
+    struct dnsquery_resourcerecord *);
 
 void netbuf_add_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int num)
 {
