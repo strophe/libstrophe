@@ -59,7 +59,7 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 	xmpp_stanza_set_name(iq, "iq");
 	xmpp_stanza_set_type(iq, "get");
 	xmpp_stanza_set_id(iq, "active1");
-	xmpp_stanza_set_attribute(iq, "to", "xxxxxxxxx.com");
+	xmpp_stanza_set_to(iq, "xxxxxxxxx.com");
 
 	query = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(query, "query");
