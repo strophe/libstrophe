@@ -360,9 +360,7 @@ int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
                          const char * const from);
 
 /* allocate and initialize a stanza in reply to another */
-/* unimplemented
-xmpp_stanza_t *xmpp_stanza_reply(const xmpp_stanza_t *stanza);
-*/
+xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza);
 
 /* stanza subclasses */
 /* unimplemented

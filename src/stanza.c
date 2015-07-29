@@ -1063,3 +1063,44 @@ int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
 
     return hash_drop(stanza->attributes, name);
 }
+
+/** Create a stanza object in reply to another.
+ *  This function makes a copy of a stanza object with the attribute “to” set
+ *  its original “from”.
+ *  The stanza will have a reference count of one, so the caller does not
+ *  need to clone it.
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza)
+{
+    xmpp_stanza_t *copy;
+
+    copy = xmpp_stanza_new(stanza->ctx);
+    if (!copy) goto copy_error;
+
+    copy->type = stanza->type;
+
+    if (stanza->data) {
+        copy->data = xmpp_strdup(stanza->ctx, stanza->data);
+        if (!copy->data) goto copy_error;
+    }
+
+    if (stanza->attributes) {
+        if (_stanza_copy_attributes(copy, stanza) == -1)
+            goto copy_error;
+    }
+
+    xmpp_stanza_set_to(copy, xmpp_stanza_get_from(stanza));
+    xmpp_stanza_del_attribute(copy, "from");
+
+    return copy;
+
+copy_error:
+    if (copy) xmpp_stanza_release(copy);
+    return NULL;
+}
