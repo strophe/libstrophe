@@ -1038,3 +1038,25 @@ char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
 
     return hash_get(stanza->attributes, name);
 }
+
+/** Delete an attribute from a stanza.
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param name a string containing attribute name
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
+				const char * const name)
+{
+    if (stanza->type != XMPP_STANZA_TAG)
+	return -1;
+
+    if (!stanza->attributes)
+	return -1;
+
+    return hash_drop(stanza->attributes, name);
+}
+
