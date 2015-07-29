@@ -310,6 +310,9 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t * const stanza,
 xmpp_stanza_t *xmpp_stanza_get_next(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
 				const char * const name);
+int xmpp_stanza_get_attribute_count(xmpp_stanza_t * const stanza);
+int xmpp_stanza_get_attributes(xmpp_stanza_t * const stanza,
+			       const char **attr, int attrlen);
 char * xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
 /* concatenate all child text nodes.  this function
  * returns a string that must be freed by the caller */
