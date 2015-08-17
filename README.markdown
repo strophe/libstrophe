@@ -40,6 +40,14 @@ Note, the default install path is `/usr/local/`, to specify
 another path use the `--prefix` option during configure, e.g.:
 
     ./configure --prefix=/usr
+    
+    
+### Dependencies on Ubuntu
+
+You might want to install libtool, autotools and automake on Ubuntu before running `./bootstrap`
+
+    sudo apt-get install autotools-dev automake libtool
+
 
 ## Requirements
 
