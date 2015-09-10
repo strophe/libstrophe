@@ -22,7 +22,6 @@
 #endif
 
 #include <openssl/ssl.h>
-
 #include "common.h"
 #include "tls.h"
 #include "sock.h"
@@ -51,16 +50,28 @@ int tls_error(tls_t *tls)
     return tls->lasterror;
 }
 
+static xmpp_ctx_t *xmppctx;
+
 static int
-cert_verify_cb(X509_STORE_CTX *x509ctx, void *arg)
+verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
-    xmpp_ctx_t *ctx = (xmpp_ctx_t *)arg;
-    xmpp_debug(ctx, "TLS", "CERT_VERIFY_CB called");
-    return 1;
+    if (preverify_ok) {
+        return 1;
+    } else {
+        xmpp_debug(xmppctx, "TLS", "VERIFY FAILED");
+        int err = X509_STORE_CTX_get_error(x509_ctx);
+        const char *errstr = X509_verify_cert_error_string(err);
+
+        X509 *cert X509_STORE_CTX_get_current_cert(x509_ctx);
+
+        xmpp_debug(xmppctx, "TLS", "ERROR: %d: %s", err, errstr);
+        return 1;
+    }
 }
 
 tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 {
+    xmppctx = ctx;
     tls_t *tls = xmpp_alloc(ctx, sizeof(*tls));
 
     if (tls) {
@@ -73,8 +84,7 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 
         SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
         SSL_CTX_set_mode (tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-        SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_PEER, NULL);
-        SSL_CTX_set_cert_verify_callback(tls->ssl_ctx, cert_verify_cb, ctx);
+        SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_PEER, verify_callback);
 
         tls->ssl = SSL_new(tls->ssl_ctx);
 
