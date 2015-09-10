@@ -102,9 +102,11 @@ int tls_start(tls_t *tls)
     succeeds or fails */
     while (ret < 0) {
         ret = SSL_connect(tls->ssl);
+        int err = SSL_get_error(tls->ssl, ret);
+        int recoverable = tls_is_recoverable(err);
 
-        /* wait for something to happen on the sock before looping back */
-        if (ret < 0) {
+        // continue if recoverable
+        if (recoverable) {
             fd_set fds;
             struct timeval tv;
 
@@ -115,6 +117,8 @@ int tls_start(tls_t *tls)
             FD_SET(tls->sock, &fds);
 
             select(tls->sock + 1, &fds, &fds, NULL, &tv);
+        } else {
+            ret = 1;
         }
     }
 
