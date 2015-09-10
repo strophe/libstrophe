@@ -100,11 +100,11 @@ int tls_start(tls_t *tls)
 
     /* Since we're non-blocking, loop the connect call until it
     succeeds or fails */
-    while (ret == -1) {
+    while (ret < 0) {
         ret = SSL_connect(tls->ssl);
 
         /* wait for something to happen on the sock before looping back */
-        if (ret == -1) {
+        if (ret < 0) {
             fd_set fds;
             struct timeval tv;
 
