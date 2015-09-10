@@ -1,7 +1,7 @@
 /* tls_openssl.c
 ** strophe XMPP client library -- TLS abstraction openssl impl.
 **
-** Copyright (C) 2005-008 Collecta, Inc. 
+** Copyright (C) 2005-008 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -57,25 +57,25 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 
     if (tls) {
         int ret;
-	memset(tls, 0, sizeof(*tls));
+        memset(tls, 0, sizeof(*tls));
 
-	tls->ctx = ctx;
-	tls->sock = sock;
-	tls->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+        tls->ctx = ctx;
+        tls->sock = sock;
+        tls->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
 
-	SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
-	SSL_CTX_set_mode (tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-	SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_NONE, NULL);
+        SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
+        SSL_CTX_set_mode (tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+        SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-	tls->ssl = SSL_new(tls->ssl_ctx);
+        tls->ssl = SSL_new(tls->ssl_ctx);
 
-	ret = SSL_set_fd(tls->ssl, sock);
-	if (ret <= 0) {
-	    tls->lasterror = SSL_get_error(tls->ssl, ret);
-	    tls_error(tls);
-	    tls_free(tls);
-	    tls = NULL;
-	}
+        ret = SSL_set_fd(tls->ssl, sock);
+        if (ret <= 0) {
+            tls->lasterror = SSL_get_error(tls->ssl, ret);
+            tls_error(tls);
+            tls_free(tls);
+            tls = NULL;
+        }
     }
 
     return tls;
@@ -99,32 +99,31 @@ int tls_start(tls_t *tls)
     int ret = -1;
 
     /* Since we're non-blocking, loop the connect call until it
-       succeeds or fails */
+    succeeds or fails */
     while (ret == -1) {
-	ret = SSL_connect(tls->ssl);
+        ret = SSL_connect(tls->ssl);
 
-	/* wait for something to happen on the sock before looping back */
-	if (ret == -1) {
-	    fd_set fds;
-	    struct timeval tv;
+        /* wait for something to happen on the sock before looping back */
+        if (ret == -1) {
+            fd_set fds;
+            struct timeval tv;
 
-	    tv.tv_sec = 0;
-	    tv.tv_usec = 1000;
+            tv.tv_sec = 0;
+            tv.tv_usec = 1000;
 
-	    FD_ZERO(&fds); 
-	    FD_SET(tls->sock, &fds);
-    
-	    select(tls->sock + 1, &fds, &fds, NULL, &tv);
-	}
+            FD_ZERO(&fds);
+            FD_SET(tls->sock, &fds);
+
+            select(tls->sock + 1, &fds, &fds, NULL, &tv);
+        }
     }
 
     if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	return 0;
+        tls->lasterror = SSL_get_error(tls->ssl, ret);
+        return 0;
     }
 
     return 1;
-
 }
 
 int tls_stop(tls_t *tls)
@@ -134,8 +133,8 @@ int tls_stop(tls_t *tls)
     ret = SSL_shutdown(tls->ssl);
 
     if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	return 0;
+        tls->lasterror = SSL_get_error(tls->ssl, ret);
+        return 0;
     }
 
     return 1;
@@ -144,9 +143,9 @@ int tls_stop(tls_t *tls)
 int tls_is_recoverable(int error)
 {
     return (error == SSL_ERROR_NONE || error == SSL_ERROR_WANT_READ
-	    || error == SSL_ERROR_WANT_WRITE
-	    || error == SSL_ERROR_WANT_CONNECT
-	    || error == SSL_ERROR_WANT_ACCEPT);
+        || error == SSL_ERROR_WANT_WRITE
+        || error == SSL_ERROR_WANT_CONNECT
+        || error == SSL_ERROR_WANT_ACCEPT);
 }
 
 int tls_pending(tls_t *tls)
@@ -159,7 +158,7 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
     int ret = SSL_read(tls->ssl, buff, len);
 
     if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
+        tls->lasterror = SSL_get_error(tls->ssl, ret);
     }
 
     return ret;
@@ -170,7 +169,7 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
     int ret = SSL_write(tls->ssl, buff, len);
 
     if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
+        tls->lasterror = SSL_get_error(tls->ssl, ret);
     }
 
     return ret;
