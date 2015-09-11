@@ -62,9 +62,17 @@ verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
         int err = X509_STORE_CTX_get_error(x509_ctx);
         const char *errstr = X509_verify_cert_error_string(err);
 
-        X509 *cert X509_STORE_CTX_get_current_cert(x509_ctx);
+        X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
+
+//        ASN1_INTEGER *serial_number = X509_get_serialNumber(cert);
+        X509_NAME *issuer = X509_get_issuer_name(cert);
+//        X509_NAME *subject = X509_get_subject_name(cert);
+//        EVP_PKEY *pubkey = X509_get_pubkey(cert);
+
+        char *nameline = X509_NAME_oneline(issuer, NULL, 0);
 
         xmpp_debug(xmppctx, "TLS", "ERROR: %d: %s", err, errstr);
+        xmpp_debug(xmppctx, "TLS", "ERROR ISSUER: %s", nameline);
         return 1;
     }
 }
