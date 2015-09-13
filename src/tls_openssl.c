@@ -50,29 +50,86 @@ int tls_error(tls_t *tls)
     return tls->lasterror;
 }
 
+int
+convert_ASN1TIME(ASN1_TIME *ansi_time, char* buf, size_t len)
+{
+    BIO *bio = BIO_new(BIO_s_mem());
+    int rc = ASN1_TIME_print(bio, ansi_time);
+    if (rc <= 0) {
+        BIO_free(bio);
+        return 0;
+    }
+    rc = BIO_gets(bio, buf, len);
+    if (rc <= 0) {
+        BIO_free(bio);
+        return 0;
+    }
+    BIO_free(bio);
+    return 1;
+}
+
+void
+hex_encode(unsigned char* readbuf, void *writebuf, size_t len)
+{
+    size_t i;
+    for(i=0; i < len; i++) {
+        char *l = (char*) (2*i + ((intptr_t) writebuf));
+        sprintf(l, "%02x", readbuf[i]);
+    }
+}
+
 static xmpp_ctx_t *xmppctx;
 
 static int
 verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
+    X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
+
+    X509_NAME *issuer = X509_get_issuer_name(cert);
+    char *nameline = X509_NAME_oneline(issuer, NULL, 0);
+    xmpp_debug(xmppctx, "TLS", "ISSUER NAME: %s", nameline);
+    OPENSSL_free(nameline);
+
+    X509_NAME *subject = X509_get_subject_name(cert);
+    nameline = X509_NAME_oneline(subject, NULL, 0);
+    xmpp_debug(xmppctx, "TLS", "SUBJECT NAME: %s", nameline);
+    OPENSSL_free(nameline);
+
+    ASN1_TIME *not_before = X509_get_notBefore(cert);
+    char not_before_str[128];
+    int not_before_res = convert_ASN1TIME(not_before, not_before_str, 128);
+    if (not_before_res) {
+        xmpp_debug(xmppctx, "TLS", "NOT BEFORE: %s", not_before_str);
+    }
+
+    ASN1_TIME *not_after = X509_get_notAfter(cert);
+    char not_after_str[128];
+    int not_after_res = convert_ASN1TIME(not_after, not_after_str, 128);
+    if (not_after_res) {
+        xmpp_debug(xmppctx, "TLS", "NOT AFTER: %s", not_after_str);
+    }
+
+    char buf[20];
+    const EVP_MD *digest = EVP_sha1();
+    unsigned len;
+
+    int rc = X509_digest(cert, digest, (unsigned char*) buf, &len);
+    if (rc != 0 && len == 20) {
+        char strbuf[2*20+1];
+        hex_encode(buf, strbuf, 20);
+        xmpp_debug(xmppctx, "TLS", "FINGERPRINT: %s", strbuf);
+    }
+
     if (preverify_ok) {
+        xmpp_debug(xmppctx, "TLS", "VERIFY SUCCESS");
         return 1;
     } else {
         xmpp_debug(xmppctx, "TLS", "VERIFY FAILED");
+
         int err = X509_STORE_CTX_get_error(x509_ctx);
         const char *errstr = X509_verify_cert_error_string(err);
+        xmpp_debug(xmppctx, "TLS", "ERROR: %s", errstr);
 
-        X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
-
-//        ASN1_INTEGER *serial_number = X509_get_serialNumber(cert);
-        X509_NAME *issuer = X509_get_issuer_name(cert);
-//        X509_NAME *subject = X509_get_subject_name(cert);
-//        EVP_PKEY *pubkey = X509_get_pubkey(cert);
-
-        char *nameline = X509_NAME_oneline(issuer, NULL, 0);
-
-        xmpp_debug(xmppctx, "TLS", "ERROR: %d: %s", err, errstr);
-        xmpp_debug(xmppctx, "TLS", "ERROR ISSUER: %s", nameline);
         return 1;
     }
 }
