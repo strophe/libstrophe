@@ -80,33 +80,54 @@ hex_encode(unsigned char* readbuf, void *writebuf, size_t len)
 
 static xmpp_ctx_t *xmppctx;
 
+static void
+print_certificate(X509* cert) {
+    char subj[1024+1];
+    char issuer[1024+1];
+    X509_NAME_oneline(X509_get_subject_name(cert), subj, 1024);
+    X509_NAME_oneline(X509_get_issuer_name(cert), issuer, 1024);
+    xmpp_debug(xmppctx, "TLS", "SUBJECT : %s", subj);
+    xmpp_debug(xmppctx, "TLS", "ISSUER  : %s", issuer);
+}
+
 static int
 verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
     X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
 
-    X509_NAME *issuer = X509_get_issuer_name(cert);
-    char *nameline = X509_NAME_oneline(issuer, NULL, 0);
-    xmpp_debug(xmppctx, "TLS", "ISSUER NAME: %s", nameline);
-    OPENSSL_free(nameline);
+    const STACK_OF(X509) *sk = X509_STORE_CTX_get1_chain(x509_ctx);
+    int slen = sk_num((const _STACK *)sk);
+    unsigned i;
+    X509 *certsk;
+    xmpp_debug(xmppctx, "TLS", "STACK");
+    for(i=0; i<slen; i++) {
+        certsk = (X509*) sk_value((const _STACK *)sk, i);
+        print_certificate(certsk);
+    }
+    xmpp_debug(xmppctx, "TLS", "ENDSTACK");
 
     X509_NAME *subject = X509_get_subject_name(cert);
-    nameline = X509_NAME_oneline(subject, NULL, 0);
-    xmpp_debug(xmppctx, "TLS", "SUBJECT NAME: %s", nameline);
+    char *nameline = X509_NAME_oneline(subject, NULL, 0);
+    xmpp_debug(xmppctx, "TLS", "SUBJECT     : %s", nameline);
+    OPENSSL_free(nameline);
+
+    X509_NAME *issuer = X509_get_issuer_name(cert);
+    nameline = X509_NAME_oneline(issuer, NULL, 0);
+    xmpp_debug(xmppctx, "TLS", "ISSUER      : %s", nameline);
     OPENSSL_free(nameline);
 
     ASN1_TIME *not_before = X509_get_notBefore(cert);
     char not_before_str[128];
     int not_before_res = convert_ASN1TIME(not_before, not_before_str, 128);
     if (not_before_res) {
-        xmpp_debug(xmppctx, "TLS", "NOT BEFORE: %s", not_before_str);
+        xmpp_debug(xmppctx, "TLS", "NOT BEFORE  : %s", not_before_str);
     }
 
     ASN1_TIME *not_after = X509_get_notAfter(cert);
     char not_after_str[128];
     int not_after_res = convert_ASN1TIME(not_after, not_after_str, 128);
     if (not_after_res) {
-        xmpp_debug(xmppctx, "TLS", "NOT AFTER: %s", not_after_str);
+        xmpp_debug(xmppctx, "TLS", "NOT AFTER   : %s", not_after_str);
     }
 
     char buf[20];
@@ -117,7 +138,7 @@ verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
     if (rc != 0 && len == 20) {
         char strbuf[2*20+1];
         hex_encode(buf, strbuf, 20);
-        xmpp_debug(xmppctx, "TLS", "FINGERPRINT: %s", strbuf);
+        xmpp_debug(xmppctx, "TLS", "FINGERPRINT : %s", strbuf);
     }
 
     if (preverify_ok) {
@@ -150,7 +171,6 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
         SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
         SSL_CTX_set_mode (tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
         SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_PEER, verify_callback);
-
         tls->ssl = SSL_new(tls->ssl_ctx);
 
         ret = SSL_set_fd(tls->ssl, sock);
