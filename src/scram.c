@@ -81,7 +81,8 @@ static void SCRAM_SHA1_Hi(const uint8_t *text, size_t len,
                           const uint8_t *salt, size_t salt_len, uint32_t i,
                           uint8_t *digest)
 {
-    int j, k;
+    int  k;
+    uint32_t j;
     uint8_t tmp[128];
 
     static uint8_t int1[] = {0x0, 0x0, 0x0, 0x1};
