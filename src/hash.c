@@ -47,7 +47,7 @@ struct _hash_iterator_t {
    
 /** allocate and initialize a new hash table */
 hash_t *hash_new(xmpp_ctx_t * const ctx, const int size,
-		 hash_free_func free)
+		 hash_free_func free_func)
 {
     hash_t *result = NULL;
 
@@ -62,7 +62,7 @@ hash_t *hash_new(xmpp_ctx_t * const ctx, const int size,
 	result->length = size;
 
 	result->ctx = ctx;
-	result->free = free;
+	result->free = free_func;
 	result->num_keys = 0;
 	/* give the caller a reference */
 	result->ref = 1;
@@ -128,7 +128,7 @@ int hash_add(hash_t *table, const char * const key, void *data)
 {
    xmpp_ctx_t *ctx = table->ctx;
    hashentry_t *entry = NULL;
-   int index = _hash_key(table, key);
+   int table_index = _hash_key(table, key);
 
    /* drop existing entry, if any */
    hash_drop(table, key);
@@ -144,8 +144,8 @@ int hash_add(hash_t *table, const char * const key, void *data)
    entry->value = data;
    /* insert ourselves in the linked list */
    /* TODO: this leaks duplicate keys */
-   entry->next = table->entries[index];
-   table->entries[index] = entry;
+   entry->next = table->entries[table_index];
+   table->entries[table_index] = entry;
    table->num_keys++;
 
    return 0;
@@ -155,11 +155,11 @@ int hash_add(hash_t *table, const char * const key, void *data)
 void *hash_get(hash_t *table, const char *key)
 {
    hashentry_t *entry;
-   int index = _hash_key(table, key);
+   int table_index = _hash_key(table, key);
    void *result = NULL;
 
    /* look up the hash entry */
-   entry = table->entries[index];
+   entry = table->entries[table_index];
    while (entry != NULL) {
 	/* traverse the linked list looking for the key */
 	if (!strcmp(key, entry->key)) {
@@ -178,10 +178,10 @@ int hash_drop(hash_t *table, const char *key)
 {
    xmpp_ctx_t *ctx = table->ctx;
    hashentry_t *entry, *prev;
-   int index = _hash_key(table, key);
+   int table_index = _hash_key(table, key);
 
    /* look up the hash entry */
-   entry = table->entries[index];
+   entry = table->entries[table_index];
    prev = NULL;
    while (entry != NULL) {
 	/* traverse the linked list looking for the key */
@@ -190,7 +190,7 @@ int hash_drop(hash_t *table, const char *key)
 	  xmpp_free(ctx, entry->key);
 	  if (table->free) table->free(ctx, entry->value);
 	  if (prev == NULL) {
-	    table->entries[index] = entry->next;
+	    table->entries[table_index] = entry->next;
 	  } else {
 	    prev->next = entry->next;
 	  }
