@@ -22,7 +22,7 @@ typedef void (*hash_free_func)(const xmpp_ctx_t * const ctx, void *p);
 
 /** allocate and initialize a new hash table */
 hash_t *hash_new(xmpp_ctx_t * const ctx, const int size,
-		 hash_free_func free);
+		 hash_free_func free_func);
 
 /** allocate a new reference to an existing hash table */
 hash_t *hash_clone(hash_t * const table);
