@@ -50,6 +50,7 @@
 #include <strophe.h>
 #include "common.h"
 #include "parser.h"
+#include "thread.h"
 
 #ifndef DEFAULT_TIMEOUT
 /** @def DEFAULT_TIMEOUT
@@ -113,6 +114,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	}
 
 	/* write all data from the send queue to the socket */
+
 	sq = conn->send_queue_head;
 	while (sq) {
 	    towrite = sq->len - sq->written;
@@ -144,6 +146,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		}
 	    }
 
+	    mutex_lock (conn->sq_mutex);
+
 	    /* all data for this queue item written, delete and move on */
 	    xmpp_free(ctx, sq->data);
 	    tsq = sq;
@@ -154,6 +158,10 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 	    conn->send_queue_head = sq;
 	    /* if we've sent everything update the tail */
 	    if (!sq) conn->send_queue_tail = NULL;
+
+	    conn->send_queue_len--;
+
+	    mutex_unlock (conn->sq_mutex);
 	}
 
 	/* tear down connection on error */

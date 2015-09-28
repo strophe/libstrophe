@@ -27,6 +27,7 @@
 #include "hash.h"
 #include "util.h"
 #include "parser.h"
+#include "thread.h"
 
 /** run-time context **/
 
@@ -184,6 +185,7 @@ struct _xmpp_conn_t {
     int send_queue_len;
     xmpp_send_queue_t *send_queue_head;
     xmpp_send_queue_t *send_queue_tail;
+    mutex_t *sq_mutex;
 
     /* xml parser */
     int reset_parser;
