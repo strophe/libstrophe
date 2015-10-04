@@ -8,6 +8,7 @@ PARSER_LIBS=@PARSER_LIBS@
 
 SSL_CFLAGS = @openssl_CFLAGS@
 SSL_LIBS = @openssl_LIBS@
+PTHREAD_LIBS = @pthread_LIBS@
 
 STROPHE_FLAGS = -I$(top_srcdir)
 STROPHE_LIBS = libstrophe.la
@@ -16,7 +17,7 @@ STROPHE_LIBS = libstrophe.la
 lib_LTLIBRARIES = libstrophe.la
 
 libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS)
-libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS)
+libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(PTHREAD_LIBS)
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
 libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
@@ -45,13 +46,13 @@ EXTRA_DIST = docs
 noinst_PROGRAMS = examples/active examples/roster examples/basic examples/bot examples/component
 examples_active_SOURCES = examples/active.c
 examples_active_CFLAGS = $(STROPHE_FLAGS)
-examples_active_LDADD = $(STROPHE_LIBS) 
+examples_active_LDADD = $(STROPHE_LIBS)
 examples_roster_SOURCES = examples/roster.c
 examples_roster_CFLAGS = $(STROPHE_FLAGS)
-examples_roster_LDADD = $(STROPHE_LIBS) 
+examples_roster_LDADD = $(STROPHE_LIBS)
 examples_basic_SOURCES = examples/basic.c
 examples_basic_CFLAGS = $(STROPHE_FLAGS)
-examples_basic_LDADD = $(STROPHE_LIBS) 
+examples_basic_LDADD = $(STROPHE_LIBS)
 examples_bot_SOURCES = examples/bot.c
 examples_bot_CFLAGS = $(STROPHE_FLAGS)
 examples_bot_LDADD = $(STROPHE_LIBS)
