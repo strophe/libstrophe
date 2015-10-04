@@ -10,6 +10,7 @@ PKG_PROG_PKG_CONFIG
 AC_CANONICAL_HOST
 AS_CASE([$host_os],
   [freebsd*], [PLATFORM="freebsd"],
+  [openbsd*], [PLATFORM="openbsd"],
   [PLATFORM="nix"])
 
 PKG_CHECK_MODULES([openssl], [openssl], [PC_REQUIRES+=(openssl)],
@@ -22,6 +23,17 @@ PKG_CHECK_MODULES([openssl], [openssl], [PC_REQUIRES+=(openssl)],
                             )])
 
 PKG_CHECK_MODULES([check], [check >= 0.9.4], [], [AC_MSG_WARN([libcheck not found; unit tests will not be compilable])])
+
+if test "x$PLATFORM" = xfreebsd || test "x$PLATFORM" = xopenbsd; then
+PKG_CHECK_MODULES([pthread], [pthread], [PC_REQUIRES="pthread ${PC_REQUIRES}"],
+            [AC_CHECK_HEADER([pthread.h],
+                             [
+                              pthread_LIBS="-lpthread"
+                              PC_LIBS="${pthread_LIBS} ${PC_LIBS}"
+                             ],
+                             [AC_MSG_ERROR([pthread not found; pthread required])]
+                            )])
+fi
 
 AC_ARG_WITH([libxml2],
             [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing])],
