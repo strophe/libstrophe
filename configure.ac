@@ -88,13 +88,13 @@ fi
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
 AC_SEARCH_LIBS([socket], [socket])
 
-if test "x$PLATFORM" != xfreebsd; then
+if test "x$PLATFORM" = "xnix"; then
         AC_CHECK_LIB([resolv], [res_query], [],
             [AC_CHECK_LIB([resolv], [__res_query], [],
                 [AC_MSG_ERROR([libresolv not found; libresolv required.])])])
         PC_LIBS+=(-lresolv)
 else
-        AC_MSG_NOTICE([skipping libresolv checks for freebsd])
+        AC_MSG_NOTICE([skipping libresolv checks for FreeBSD and OpenBSD])
 fi
 
 AC_CHECK_HEADERS([arpa/nameser_compat.h])
