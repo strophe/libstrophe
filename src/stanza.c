@@ -27,6 +27,8 @@
 #define inline __inline
 #endif
 
+int _stanza_copy_attributes(xmpp_stanza_t *, const xmpp_stanza_t * const);
+
 /** Create a stanza object.
  *  This function allocates and initializes and blank stanza object.
  *  The stanza will have a reference count of one, so the caller does not
@@ -74,6 +76,37 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
     return stanza;
 }
 
+/*
+ * Copy the attributes of stanza src into stanza dst. Return -1 on error.
+ */
+int _stanza_copy_attributes(xmpp_stanza_t * dst,
+				const xmpp_stanza_t * const src)
+{
+    hash_iterator_t *iter;
+    const char *key;
+    void *val;
+
+    dst->attributes = hash_new(src->ctx, 8, xmpp_free);
+    if (!dst->attributes)
+        return -1;
+    iter = hash_iter_new(src->attributes);
+    if (!iter) {
+        printf("DEBUG HERE\n");
+        return -1;
+    }
+    while ((key = hash_iter_next(iter))) {
+        val = xmpp_strdup(src->ctx,
+            (char *)hash_get(src->attributes, key));
+        if (!val)
+        return -1;
+
+        if (hash_add(dst->attributes, key, val))
+        return -1;
+    }
+    hash_iter_release(iter);
+    return 0;
+}
+
 /** Copy a stanza and its children.
  *  This function copies a stanza along with all its children and returns
  *  the new stanza and children with a reference count of 1.  The returned
@@ -89,9 +122,6 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
 xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza)
 {
     xmpp_stanza_t *copy, *child, *copychild, *tail;
-    hash_iterator_t *iter;
-    const char *key;
-    void *val;
 
     copy = xmpp_stanza_new(stanza->ctx);
     if (!copy) goto copy_error;
@@ -104,19 +134,8 @@ xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza)
     }
 
     if (stanza->attributes) {
-	copy->attributes = hash_new(stanza->ctx, 8, xmpp_free);
-	if (!copy->attributes) goto copy_error;
-	iter = hash_iter_new(stanza->attributes);
-	if (!iter) { printf("DEBUG HERE\n"); goto copy_error; }
-	while ((key = hash_iter_next(iter))) {
-	    val = xmpp_strdup(stanza->ctx,
-			      (char *)hash_get(stanza->attributes, key));
-	    if (!val) goto copy_error;
-	    
-	    if (hash_add(copy->attributes, key, val))
-		goto copy_error;
-	}
-	hash_iter_release(iter);
+	if (_stanza_copy_attributes(copy, stanza) == -1)
+            goto copy_error;
     }
 
     tail = copy->children;
@@ -737,6 +756,48 @@ char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza)
     return (char *)hash_get(stanza->attributes, "type");
 }
 
+/** Get the 'to' attribute of the stanza object.
+ *  This is a convenience function equivalent to:
+ *  xmpp_stanza_get_attribute(stanza, "to");
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return a string with the 'to' attribute value
+ *
+ *  @ingroup Stanza
+ */
+char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza)
+{
+    if (stanza->type != XMPP_STANZA_TAG)
+	return NULL;
+
+    if (!stanza->attributes)
+	return NULL;
+
+    return (char *)hash_get(stanza->attributes, "to");
+}
+
+/** Get the 'from' attribute of the stanza object.
+ *  This is a convenience function equivalent to:
+ *  xmpp_stanza_get_attribute(stanza, "from");
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return a string with the 'from' attribute value
+ *
+ *  @ingroup Stanza
+ */
+char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza)
+{
+    if (stanza->type != XMPP_STANZA_TAG)
+	return NULL;
+
+    if (!stanza->attributes)
+	return NULL;
+
+    return (char *)hash_get(stanza->attributes, "from");
+}
+
 /** Get the first child of stanza with name.
  *  This function searches all the immediate children of stanza for a child
  *  stanza that matches the name.  The first matching child is returned.
@@ -919,6 +980,42 @@ int xmpp_stanza_set_type(xmpp_stanza_t * const stanza,
     return xmpp_stanza_set_attribute(stanza, "type", type);
 }
 
+/** Set the 'to' attribute of a stanza.
+ *
+ *  This is a convenience function for:
+ *  xmpp_stanza_set_attribute(stanza, 'to', to);
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param to a string containing the 'to' value
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_set_to(xmpp_stanza_t * const stanza,
+		       const char * const to)
+{
+    return xmpp_stanza_set_attribute(stanza, "to", to);
+}
+
+/** Set the 'from' attribute of a stanza.
+ *
+ *  This is a convenience function for:
+ *  xmpp_stanza_set_attribute(stanza, 'from', from);
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param from a string containing the 'from' value
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
+		       const char * const from)
+{
+    return xmpp_stanza_set_attribute(stanza, "from", from);
+}
+
 /** Get an attribute from a stanza.
  *  This function returns a pointer to the attribute value.  If the caller
  *  wishes to save this value it must make its own copy.
@@ -940,4 +1037,67 @@ char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
 	return NULL;
 
     return hash_get(stanza->attributes, name);
+}
+
+/** Delete an attribute from a stanza.
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param name a string containing attribute name
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
+				const char * const name)
+{
+    if (stanza->type != XMPP_STANZA_TAG)
+	return -1;
+
+    if (!stanza->attributes)
+	return -1;
+
+    return hash_drop(stanza->attributes, name);
+}
+
+/** Create a stanza object in reply to another.
+ *  This function makes a copy of a stanza object with the attribute “to” set
+ *  its original “from”.
+ *  The stanza will have a reference count of one, so the caller does not
+ *  need to clone it.
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza)
+{
+    xmpp_stanza_t *copy;
+
+    copy = xmpp_stanza_new(stanza->ctx);
+    if (!copy) goto copy_error;
+
+    copy->type = stanza->type;
+
+    if (stanza->data) {
+	copy->data = xmpp_strdup(stanza->ctx, stanza->data);
+	if (!copy->data) goto copy_error;
+    }
+
+    if (stanza->attributes) {
+	if (_stanza_copy_attributes(copy, stanza) == -1)
+            goto copy_error;
+    }
+
+    xmpp_stanza_set_to(copy, xmpp_stanza_get_from(stanza));
+    xmpp_stanza_del_attribute(copy, "from");
+
+    return copy;
+
+copy_error:
+    /* release all the hitherto allocated memory */
+    if (copy) xmpp_stanza_release(copy);
+    return NULL;
 }
