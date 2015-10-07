@@ -512,14 +512,13 @@ static char *_make_scram_sha1_init_msg(xmpp_conn_t * const conn)
     if (!node) {
         return NULL;
     }
-
     xmpp_rand_nonce(conn->ctx, nonce, sizeof(nonce));
     message_len = strlen(node) + strlen(nonce) + 8 + 1;
     message = xmpp_alloc(conn->ctx, message_len);
     if (message) {
         xmpp_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
-        xmpp_free(conn->ctx, node);
     }
+    xmpp_free(conn->ctx, node);
 
     return message;
 }
