@@ -46,6 +46,7 @@ tests/test_hash
 tests/test_jid
 tests/test_rand
 tests/test_sasl
+tests/test_scram
 tests/test_sock
 m4/
 libstrophe.project
