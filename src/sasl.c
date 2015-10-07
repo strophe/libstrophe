@@ -507,7 +507,7 @@ char *base64_encode(xmpp_ctx_t *ctx,
     int clen;
     char *cbuf, *c;
     uint32_t word, hextet;
-    int i;
+    uint32_t i;
 
     clen = base64_encoded_len(ctx, len);
     cbuf = xmpp_alloc(ctx, clen + 1);
@@ -585,7 +585,7 @@ unsigned char *base64_decode(xmpp_ctx_t *ctx,
     int dlen;
     unsigned char *dbuf, *d;
     uint32_t word, hextet;
-    int i;
+    uint32_t i;
 
     /* len must be a multiple of 4 */
     if (len & 0x03) return NULL;
