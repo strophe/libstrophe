@@ -202,7 +202,7 @@ static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 
 
 /* SHA1Init - Initialize new context */
-void SHA1_Init(SHA1_CTX* context)
+void crypto_SHA1_Init(SHA1_CTX* context)
 {
     /* SHA1 initialization constants */
     context->state[0] = 0x67452301;
@@ -215,7 +215,8 @@ void SHA1_Init(SHA1_CTX* context)
 
 
 /* Run your data through this. */
-void SHA1_Update(SHA1_CTX* context, const uint8_t* data, const size_t len)
+void crypto_SHA1_Update(SHA1_CTX* context, const uint8_t* data,
+                        const size_t len)
 {
     size_t i, j;
 
@@ -244,7 +245,7 @@ void SHA1_Update(SHA1_CTX* context, const uint8_t* data, const size_t len)
 
 
 /* Add padding and return the message digest. */
-void SHA1_Final(SHA1_CTX* context, uint8_t* digest)
+void crypto_SHA1_Final(SHA1_CTX* context, uint8_t* digest)
 {
     uint32_t i;
     uint8_t  finalcount[8];
@@ -253,11 +254,11 @@ void SHA1_Final(SHA1_CTX* context, uint8_t* digest)
         finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)]
          >> ((3-(i & 3)) * 8) ) & 255);  /* Endian independent */
     }
-    SHA1_Update(context, (uint8_t *)"\200", 1);
+    crypto_SHA1_Update(context, (uint8_t *)"\200", 1);
     while ((context->count[0] & 504) != 448) {
-        SHA1_Update(context, (uint8_t *)"\0", 1);
+        crypto_SHA1_Update(context, (uint8_t *)"\0", 1);
     }
-    SHA1_Update(context, finalcount, 8);  /* Should cause a SHA1_Transform() */
+    crypto_SHA1_Update(context, finalcount, 8);  /* Should cause a SHA1_Transform() */
     for (i = 0; i < SHA1_DIGEST_SIZE; i++) {
         digest[i] = (uint8_t)
          ((context->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
@@ -275,12 +276,13 @@ void SHA1_Final(SHA1_CTX* context, uint8_t* digest)
 #endif
 }
 
-void SHA1(const uint8_t* data, size_t len, uint8_t* digest)
+
+void crypto_SHA1(const uint8_t* data, size_t len, uint8_t* digest)
 {
     SHA1_CTX ctx;
-    SHA1_Init(&ctx);
-    SHA1_Update(&ctx, data, len);
-    SHA1_Final(&ctx, digest);
+    crypto_SHA1_Init(&ctx);
+    crypto_SHA1_Update(&ctx, data, len);
+    crypto_SHA1_Final(&ctx, digest);
 }
 
 /*************************************************************/
@@ -308,12 +310,12 @@ FILE* file;
             return(-1);
         }
     } 
-    SHA1_Init(&context);
+    crypto_SHA1_Init(&context);
     while (!feof(file)) {  /* note: what if ferror(file) */
         i = fread(buffer, 1, 16384, file);
-        SHA1_Update(&context, buffer, i);
+        crypto_SHA1_Update(&context, buffer, i);
     }
-    SHA1_Final(&context, digest);
+    crypto_SHA1_Final(&context, digest);
     fclose(file);
     for (i = 0; i < SHA1_DIGEST_SIZE/4; i++) {
         for (j = 0; j < 4; j++) {
@@ -366,9 +368,10 @@ int main(int argc, char** argv)
     fprintf(stdout, "verifying SHA-1 implementation... ");
     
     for (k = 0; k < 2; k++){ 
-        SHA1_Init(&context);
-        SHA1_Update(&context, (uint8_t*)test_data[k], strlen(test_data[k]));
-        SHA1_Final(&context, digest);
+        crypto_SHA1_Init(&context);
+        crypto_SHA1_Update(&context, (uint8_t*)test_data[k],
+                           strlen(test_data[k]));
+        crypto_SHA1_Final(&context, digest);
 	digest_to_hex(digest, output);
 
         if (strcmp(output, test_results[k])) {
@@ -380,10 +383,10 @@ int main(int argc, char** argv)
         }    
     }
     /* million 'a' vector we feed separately */
-    SHA1_Init(&context);
+    crypto_SHA1_Init(&context);
     for (k = 0; k < 1000000; k++)
-        SHA1_Update(&context, (uint8_t*)"a", 1);
-    SHA1_Final(&context, digest);
+        crypto_SHA1_Update(&context, (uint8_t*)"a", 1);
+    crypto_SHA1_Final(&context, digest);
     digest_to_hex(digest, output);
     if (strcmp(output, test_results[2])) {
         fprintf(stdout, "FAIL\n");

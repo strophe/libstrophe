@@ -1165,10 +1165,11 @@ int _handle_component_auth(xmpp_conn_t * const conn)
     /* Feed the session id and passphrase to the algorithm.
      * We need to compute SHA1(session_id + passphrase)
      */
-    SHA1_Init(&mdctx);
-    SHA1_Update(&mdctx, (uint8_t*)conn->stream_id, strlen(conn->stream_id));
-    SHA1_Update(&mdctx, (uint8_t*)conn->pass, strlen(conn->pass));
-    SHA1_Final(&mdctx, md_value);
+    crypto_SHA1_Init(&mdctx);
+    crypto_SHA1_Update(&mdctx, (uint8_t*)conn->stream_id,
+                       strlen(conn->stream_id));
+    crypto_SHA1_Update(&mdctx, (uint8_t*)conn->pass, strlen(conn->pass));
+    crypto_SHA1_Final(&mdctx, md_value);
 
     digest = xmpp_alloc(conn->ctx, 2*sizeof(md_value)+1);
     if (digest) {

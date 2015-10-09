@@ -106,7 +106,7 @@ static void Hash_df(uint8_t *input_string, size_t input_string_len,
         conj[0] = counter;
         store_be32((uint32_t)no_of_bytes_to_return * 8, conj + 1);
         memcpy(conj + 5, input_string, input_string_len);
-        SHA1(conj, input_string_len + 5, temp + offset);
+        crypto_SHA1(conj, input_string_len + 5, temp + offset);
     }
 
     memcpy(output_string, temp, no_of_bytes_to_return);
@@ -173,7 +173,7 @@ static void Hashgen(uint8_t *V, uint8_t *output,
     memcpy(data, V, seedlen);
     for (i = 1; i <= m; ++i) {
         offset = (i - 1) * outlen;
-        SHA1(data, seedlen, W + offset);
+        crypto_SHA1(data, seedlen, W + offset);
         /* increase data by 1 */
         arr_add(data, sizeof(data), &i1, 1);
     }
@@ -196,7 +196,7 @@ static int Hash_DRBG_Generate(Hash_DRBG_CTX *ctx, uint8_t *output,
 
     V3[0] = 3;
     memcpy(V3 + 1, ctx->V, seedlen);
-    SHA1(V3, sizeof(V3), H);
+    crypto_SHA1(V3, sizeof(V3), H);
     arr_add(ctx->V, sizeof(ctx->V), ctx->C, sizeof(ctx->C));
     arr_add(ctx->V, sizeof(ctx->V), H, sizeof(H));
     store_be32(ctx->reseed_counter, reseed_counter);
