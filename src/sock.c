@@ -86,7 +86,9 @@ sock_t sock_connect(const char * const host, const unsigned int port)
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
+#ifdef AI_ADDRCONFIG
     hints.ai_flags = AI_ADDRCONFIG;
+#endif /* AI_ADDRCONFIG */
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_socktype = SOCK_STREAM;
 
