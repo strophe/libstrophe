@@ -20,8 +20,6 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-
 /* namespace defines */
 /** @def XMPP_NS_CLIENT
  *  Namespace definition for 'jabber:client'.
