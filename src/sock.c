@@ -69,7 +69,7 @@ static int _in_progress(int error)
 #ifdef _WIN32
     return (error == WSAEWOULDBLOCK || error == WSAEINPROGRESS);
 #else
-    return (errno == EINPROGRESS);
+    return (error == EINPROGRESS);
 #endif
 }
 
@@ -79,8 +79,6 @@ sock_t sock_connect(const char * const host, const unsigned int port)
     char service[6];
     struct addrinfo *res, *ainfo, hints;
     int err;
-    
-    sock = -1;
 
     snprintf(service, 6, "%u", port);
 
@@ -101,18 +99,19 @@ sock_t sock_connect(const char * const host, const unsigned int port)
         if (sock < 0)
             continue;
 
-        err = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
-        if (err < 0) {
-            close(sock);
-            continue;
+        err = sock_set_nonblocking(sock);
+        if (err == 0) {
+            err = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
+            if (err == 0 || _in_progress(sock_error()))
+                break;
         }
 
-        /* Connection has been established. */
-        break;
+        close(sock);
     }
     freeaddrinfo(res);
+    sock = ainfo == NULL ? -1 : sock;
 
-    return ainfo == NULL ? -1 : sock;
+    return sock;
 }
 
 int sock_close(const sock_t sock)
@@ -130,7 +129,13 @@ int sock_set_blocking(const sock_t sock)
     u_long block = 0;
     return ioctlsocket(sock, FIONBIO, &block);
 #else
-    return fcntl(sock, F_SETFL, 0);
+    int rc;
+
+    rc = fcntl(sock, F_GETFL, NULL);
+    if (rc >= 0) {
+        rc = fcntl(sock, F_SETFL, rc & (~O_NONBLOCK));
+    }
+    return rc;
 #endif
 }
 
@@ -140,7 +145,13 @@ int sock_set_nonblocking(const sock_t sock)
     u_long nonblock = 1;
     return ioctlsocket(sock, FIONBIO, &nonblock);
 #else
-    return fcntl(sock, F_SETFL, O_NONBLOCK);
+    int rc;
+
+    rc = fcntl(sock, F_GETFL, NULL);
+    if (rc >= 0) {
+        rc = fcntl(sock, F_SETFL, rc | O_NONBLOCK);
+    }
+    return rc;
 #endif
 }
 
@@ -158,7 +169,7 @@ int sock_is_recoverable(const int error)
 {
 #ifdef _WIN32
     return (error == WSAEINTR || error == WSAEWOULDBLOCK || 
-	    error == WSAEINPROGRESS);
+            error == WSAEINPROGRESS);
 #else
     return (error == EAGAIN || error == EINTR);
 #endif
@@ -167,18 +178,18 @@ int sock_is_recoverable(const int error)
 int sock_connect_error(const sock_t sock)
 {
     struct sockaddr sa;
-    unsigned len;
+    socklen_t len;
     char temp;
 
+    memset(&sa, 0, sizeof(sa));
     sa.sa_family = AF_UNSPEC;
-
     len = sizeof(sa);
 
     /* we don't actually care about the peer name, we're just checking if
      * we're connected or not */
     if (getpeername(sock, &sa, &len) == 0)
     {
-	return 0;
+        return 0;
     }
 
     /* it's possible that the error wasn't ENOTCONN, so if it wasn't,
