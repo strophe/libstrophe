@@ -16,11 +16,10 @@
 /** @defgroup Connections Connection management
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 
-#include <strophe.h>
+#include "strophe.h"
 
 #include "common.h"
 #include "util.h"
