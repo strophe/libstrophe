@@ -543,14 +543,17 @@ void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *off
 }
 
 
-int sock_srv_lookup(const char *service, const char *proto, const char *domain, char *resulttarget, int resulttargetlength, int *resultport)
+int sock_srv_lookup(const char *service, const char *proto,
+                    const char *domain, char *resulttarget,
+                    int resulttargetlength, int *resultport)
 {
     int set = 0;
     char fulldomain[2048];
 
-    snprintf(fulldomain, 2048, "_%s._%s.%s", service, proto, domain);
-#ifdef _WIN32
+    snprintf(fulldomain, sizeof(fulldomain),
+             "_%s._%s.%s", service, proto, domain);
 
+#ifdef _WIN32
     /* try using dnsapi first */
     if (!set)
     {
@@ -908,17 +911,10 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
 	    for (i = 0; i < header.ancount; i++) {
 		netbuf_get_dnsquery_resourcerecord(buf, 65536, &offset, &rr);
-	    }	    
+	    }
 	}
     }
 #endif
 
-    if (!set)
-    {
-	snprintf(resulttarget, resulttargetlength, "%s", domain);
-	*resultport = 5222;
-	return 0;
-    }
-
-    return 1;
+    return set;
 }
