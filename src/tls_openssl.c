@@ -96,34 +96,38 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
 
 int tls_start(tls_t *tls)
 {
-    int ret = -1;
+    fd_set fds;
+    struct timeval tv;
+    int error;
+    int ret;
 
     /* Since we're non-blocking, loop the connect call until it
        succeeds or fails */
-    while (ret == -1) {
-	ret = SSL_connect(tls->ssl);
+    while (1) {
+        ret = SSL_connect(tls->ssl);
+        error = ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0;
 
-	/* wait for something to happen on the sock before looping back */
-	if (ret == -1) {
-	    fd_set fds;
-	    struct timeval tv;
+        if (ret == -1 && tls_is_recoverable(error)) {
+            /* wait for something to happen on the sock before looping back */
+            tv.tv_sec = 0;
+            tv.tv_usec = 1000;
 
-	    tv.tv_sec = 0;
-	    tv.tv_usec = 1000;
-
-	    FD_ZERO(&fds); 
-	    FD_SET(tls->sock, &fds);
+            FD_ZERO(&fds);
+            FD_SET(tls->sock, &fds);
     
-	    select(tls->sock + 1, &fds, &fds, NULL, &tv);
-	}
-    }
+            if (error == SSL_ERROR_WANT_READ)
+                select(tls->sock + 1, &fds, NULL, NULL, &tv);
+            else
+                select(tls->sock + 1, NULL, &fds, NULL, &tv);
+            continue;
+        }
 
-    if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	return 0;
+        /* success or fatal error */
+        break;
     }
+    tls->lasterror = error;
 
-    return 1;
+    return ret <= 0 ? 0 : 1;
 
 }
 
@@ -132,13 +136,9 @@ int tls_stop(tls_t *tls)
     int ret;
 
     ret = SSL_shutdown(tls->ssl);
+    tls->lasterror = ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0;
 
-    if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
-	return 0;
-    }
-
-    return 1;
+    return ret <= 0 ? 0 : 1;
 }
 
 int tls_is_recoverable(int error)
