@@ -16,6 +16,8 @@
 #ifndef __LIBSTROPHE_STROPHE_H__
 #define __LIBSTROPHE_STROPHE_H__
 
+#include <stddef.h>     /* size_t */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
