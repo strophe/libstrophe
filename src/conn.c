@@ -782,7 +782,7 @@ int conn_tls_start(xmpp_conn_t * const conn)
 
 /** Disable TLS for this connection, called by users of the library.
  *  Occasionally a server will be misconfigured to send the starttls
- *  feature, but wil not support the handshake.
+ *  feature, but will not support the handshake.
  *
  *  @param conn a Strophe connection object
  */
