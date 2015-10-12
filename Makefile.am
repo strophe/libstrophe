@@ -46,13 +46,13 @@ noinst_PROGRAMS = examples/active examples/roster examples/basic examples/bot \
 	examples/component examples/uuid
 examples_active_SOURCES = examples/active.c
 examples_active_CFLAGS = $(STROPHE_FLAGS)
-examples_active_LDADD = $(STROPHE_LIBS) 
+examples_active_LDADD = $(STROPHE_LIBS)
 examples_roster_SOURCES = examples/roster.c
 examples_roster_CFLAGS = $(STROPHE_FLAGS)
-examples_roster_LDADD = $(STROPHE_LIBS) 
+examples_roster_LDADD = $(STROPHE_LIBS)
 examples_basic_SOURCES = examples/basic.c
 examples_basic_CFLAGS = $(STROPHE_FLAGS)
-examples_basic_LDADD = $(STROPHE_LIBS) 
+examples_basic_LDADD = $(STROPHE_LIBS)
 examples_bot_SOURCES = examples/bot.c
 examples_bot_CFLAGS = $(STROPHE_FLAGS)
 examples_bot_LDADD = $(STROPHE_LIBS)
