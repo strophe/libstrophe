@@ -146,6 +146,12 @@ struct _xmpp_handlist_t {
 #define SASL_MASK_ANONYMOUS 0x04
 #define SASL_MASK_SCRAMSHA1 0x08
 
+enum {
+    XMPP_PORT_CLIENT = 5222,
+    XMPP_PORT_CLIENT_OLD_SSL = 5223,
+    XMPP_PORT_COMPONENT = 5347,
+};
+
 typedef void (*xmpp_open_handler)(xmpp_conn_t * const conn);
 
 struct _xmpp_conn_t {
@@ -162,6 +168,7 @@ struct _xmpp_conn_t {
 
     int tls_support;
     int tls_disabled;
+    int tls_is_old_ssl;
     int tls_failed; /* set when tls fails, so we don't try again */
     int sasl_support; /* if true, field is a bitfield of supported 
 			 mechanisms */ 
@@ -215,6 +222,7 @@ struct _xmpp_conn_t {
 void conn_disconnect(xmpp_conn_t * const conn);
 void conn_disconnect_clean(xmpp_conn_t * const conn);
 void conn_open_stream(xmpp_conn_t * const conn);
+int conn_tls_start(xmpp_conn_t * const conn);
 void conn_prepare_reset(xmpp_conn_t * const conn, xmpp_open_handler handler);
 void conn_parser_reset(xmpp_conn_t * const conn);
 

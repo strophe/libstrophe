@@ -10,6 +10,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 
 #include <strophe.h>
 
@@ -36,20 +37,32 @@ int main(int argc, char **argv)
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
-    char *jid, *pass, *host;
+    char *jid, *pass, *host = NULL;
+    int i;
+    int opt_disable_tls = 0;
+    int opt_old_ssl = 0;
 
     /* take a jid and password on the command line */
-    if (argc < 3 || argc > 4) {
-        fprintf(stderr, "Usage: basic <jid> <pass> [<host>]\n\n");
+    for (i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--disable-tls") == 0)
+            opt_disable_tls = 1;
+        else if (strcmp(argv[i], "--old-ssl") == 0)
+            opt_old_ssl = 1;
+        else
+            break;
+    }
+    if ((argc - i) < 2 || (argc - i) > 3) {
+        fprintf(stderr, "Usage: basic [options] <jid> <pass> [<host>]\n\n"
+                        "Options:\n"
+                        "  --disable-tls        Disable TLS.\n"
+                        "  --old-ssl            Use old style SSL.\n");
         return 1;
     }
 
-    jid = argv[1];
-    pass = argv[2];
-    host = NULL;
-
-    if (argc == 4)
-        host = argv[3];
+    jid = argv[i];
+    pass = argv[i + 1];
+    if (i + 2 < argc)
+        host = argv[i + 2];
 
     /* init library */
     xmpp_initialize();
@@ -60,6 +73,12 @@ int main(int argc, char **argv)
 
     /* create a connection */
     conn = xmpp_conn_new(ctx);
+
+    /* configure connection properties */
+    if (opt_disable_tls)
+        xmpp_conn_disable_tls(conn);
+    if (opt_old_ssl)
+        xmpp_conn_set_old_style_ssl(conn);
 
     /* setup authentication information */
     xmpp_conn_set_jid(conn, jid);

@@ -280,32 +280,19 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
 			      void * const userdata)
 {
     char *name;
+
     name = xmpp_stanza_get_name(stanza);
-    xmpp_debug(conn->ctx, "xmpp",
-	"handle proceedtls called for %s", name);
+    xmpp_debug(conn->ctx, "xmpp", "handle proceedtls called for %s", name);
 
     if (strcmp(name, "proceed") == 0) {
         xmpp_debug(conn->ctx, "xmpp", "proceeding with TLS");
 
-	conn->tls = tls_new(conn->ctx, conn->sock);
-
-	if (!tls_start(conn->tls))
-	{
-	    xmpp_debug(conn->ctx, "xmpp", "Couldn't start TLS! error %d", tls_error(conn->tls));
-	    tls_free(conn->tls);
-	    conn->tls = NULL;
-	    conn->tls_failed = 1;
-
-	    /* failed tls spoils the connection, so disconnect */
-	    xmpp_disconnect(conn);
-	}
-	else
-	{
-            conn->secured = 1;
-            conn_prepare_reset(conn, auth_handle_open);
-
-	    conn_open_stream(conn);
-	}
+        if (conn_tls_start(conn) == 0) {
+            conn_open_stream(conn);
+        } else {
+            /* failed tls spoils the connection, so disconnect */
+            xmpp_disconnect(conn);
+        }
     }
 
     return 0;

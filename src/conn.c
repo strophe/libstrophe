@@ -16,6 +16,7 @@
 /** @defgroup Connections Connection management
  */
 
+#include <errno.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -55,6 +56,7 @@ static void _handle_stream_end(char *name,
                                void * const userdata);
 static void _handle_stream_stanza(xmpp_stanza_t *stanza,
                                   void * const userdata);
+static int _conn_default_port(xmpp_conn_t * const conn);
 
 /** Create a new Strophe connection object.
  *
@@ -106,6 +108,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 
 	conn->tls_support = 0;
 	conn->tls_disabled = 0;
+	conn->tls_is_old_ssl = 0;
 	conn->tls_failed = 0;
 	conn->sasl_support = 0;
         conn->secured = 0;
@@ -377,7 +380,7 @@ xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn)
  *  @param altdomain a string with domain to use if SRV lookup fails.  If this
  *      is NULL, the domain from the JID will be used.
  *  @param altport an integer port number to use if SRV lookup fails.  If this
- *      is 0, the default port (5222) will be assumed.
+ *      is 0, the default port will be assumed.
  *  @param callback a xmpp_conn_handler callback function that will receive
  *      notifications of connection status
  *  @param userdata an opaque data pointer that will be passed to the callback
@@ -392,34 +395,43 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 			  xmpp_conn_handler callback,
 			  void * const userdata)
 {
-    char connectdomain[2048];
-    int connectport;
-    const char * domain;
+    char domain[2048];
+    int port;
+    const char *prefdomain = NULL;
+    int found;
 
     conn->type = XMPP_CLIENT;
 
     conn->domain = xmpp_jid_domain(conn->ctx, conn->jid);
     if (!conn->domain) return -1;
 
-    if (altdomain) {
+    if (altdomain != NULL) {
         xmpp_debug(conn->ctx, "xmpp", "Connecting via altdomain.");
-        strcpy(connectdomain, altdomain);
-        connectport = altport ? altport : 5222;
-    } else if (!sock_srv_lookup("xmpp-client", "tcp", conn->domain,
-                                connectdomain, 2048, &connectport)) {
-	    xmpp_debug(conn->ctx, "xmpp", "SRV lookup failed.");
-	    if (!altdomain)
-		    domain = conn->domain;
-	    else
-		    domain = altdomain;
-	    xmpp_debug(conn->ctx, "xmpp", "Using alternate domain %s, port %d",
-                   altdomain, altport);
-	    strcpy(connectdomain, domain);
-	    connectport = altport ? altport : 5222;
+        prefdomain = altdomain;
+        port = altport ? altport : _conn_default_port(conn);
+    } else {
+        found = sock_srv_lookup("xmpp-client", "tcp", conn->domain,
+                                domain, sizeof(domain), &port);
+        if (!found) {
+            xmpp_debug(conn->ctx, "xmpp", "SRV lookup failed, "
+                                          "connecting via domain.");
+            prefdomain = conn->domain;
+            port = altport ? altport : _conn_default_port(conn);
+        }
+        if (conn->tls_is_old_ssl) {
+            /* SSL tunneled connection on 5223 port is legacy and doesn't
+             * have an SRV record. Force port 5223 here.
+             */
+            port = XMPP_PORT_CLIENT_OLD_SSL;
+        }
     }
-    conn->sock = sock_connect(connectdomain, connectport);
+    if (prefdomain != NULL) {
+        strncpy(domain, prefdomain, sizeof(domain));
+        domain[sizeof(domain) - 1] = '\0';
+    }
+    conn->sock = sock_connect(domain, port);
     xmpp_debug(conn->ctx, "xmpp", "sock_connect to %s:%d returned %d",
-               connectdomain, connectport, conn->sock);
+               domain, port, conn->sock);
     if (conn->sock == -1) return -1;
 
     /* setup handler */
@@ -433,7 +445,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 
     conn->state = XMPP_STATE_CONNECTING;
     conn->timeout_stamp = time_stamp();
-    xmpp_debug(conn->ctx, "xmpp", "attempting to connect to %s", connectdomain);
+    xmpp_debug(conn->ctx, "xmpp", "attempting to connect to %s", domain);
 
     return 0;
 }
@@ -476,7 +488,7 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
     if (!(server && conn->jid && conn->pass)) return -1;
 
 
-    connectport = port ? port : 5347;
+    connectport = port ? port : _conn_default_port(conn);
 
     xmpp_debug(conn->ctx, "xmpp", "Connecting via %s", server);
     conn->sock = sock_connect(server, connectport);
@@ -730,6 +742,36 @@ void conn_open_stream(xmpp_conn_t * const conn)
 			 XMPP_NS_STREAMS);
 }
 
+int conn_tls_start(xmpp_conn_t * const conn)
+{
+    int rc;
+
+    if (conn->tls_disabled) {
+        conn->tls = NULL;
+        rc = -ENOSYS;
+    } else {
+        conn->tls = tls_new(conn->ctx, conn->sock);
+        rc = conn->tls == NULL ? -ENOMEM : 0;
+    }
+
+    if (conn->tls != NULL) {
+        if (tls_start(conn->tls)) {
+            conn->secured = 1;
+            conn_prepare_reset(conn, auth_handle_open);
+        } else {
+            rc = tls_error(conn->tls);
+            conn->error = rc;
+            tls_free(conn->tls);
+            conn->tls = NULL;
+            conn->tls_failed = 1;
+        }
+    }
+    if (rc != 0)
+        xmpp_debug(conn->ctx, "conn", "Couldn't start TLS! error %d", rc);
+
+    return rc;
+}
+
 /** Disable TLS for this connection, called by users of the library.
  *  Occasionally a server will be misconfigured to send the starttls
  *  feature, but wil not support the handshake.
@@ -739,6 +781,11 @@ void conn_open_stream(xmpp_conn_t * const conn)
 void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
 {
     conn->tls_disabled = 1;
+}
+
+void xmpp_conn_set_old_style_ssl(xmpp_conn_t * const conn)
+{
+    conn->tls_is_old_ssl = 1;
 }
 
 static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
@@ -836,4 +883,17 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza,
     }
 
     handler_fire_stanza(conn, stanza);
+}
+
+static int _conn_default_port(xmpp_conn_t * const conn)
+{
+    switch (conn->type) {
+    case XMPP_CLIENT:
+        return conn->tls_is_old_ssl ? XMPP_PORT_CLIENT_OLD_SSL :
+                                      XMPP_PORT_CLIENT;
+    case XMPP_COMPONENT:
+        return XMPP_PORT_COMPONENT;
+    default:
+        return -1;
+    };
 }

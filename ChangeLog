@@ -1,5 +1,6 @@
 0.8.9
 	- IPv6 support
+	- Old style SSL support
 	- New API xmpp_uuid_gen()
 
 0.8.8
