@@ -400,8 +400,12 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     const char *prefdomain = NULL;
     int found;
 
-    conn->type = XMPP_CLIENT;
+    if (conn->state != XMPP_STATE_DISCONNECTED)
+        return -1;
 
+    conn->type = XMPP_CLIENT;
+    conn->secured = 0;
+    conn->tls_failed = 0;
     conn->domain = xmpp_jid_domain(conn->ctx, conn->jid);
     if (!conn->domain) return -1;
 
@@ -479,14 +483,18 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
 {
     int connectport;
 
+    if (conn->state != XMPP_STATE_DISCONNECTED)
+        return -1;
+
     conn->type = XMPP_COMPONENT;
+    conn->secured = 0;
+    conn->tls_failed = 0;
     /* JID serves as an identificator here and will be used as "to" attribute
        of the stream */
     conn->domain = xmpp_strdup(conn->ctx, conn->jid);
 
     /*  The server domain, jid and password MUST be specified. */
     if (!(server && conn->jid && conn->pass)) return -1;
-
 
     connectport = port ? port : _conn_default_port(conn);
 
@@ -791,7 +799,7 @@ void xmpp_conn_set_old_style_ssl(xmpp_conn_t * const conn)
 /** Returns whether TLS session is established or not. */
 int xmpp_conn_is_secured(xmpp_conn_t * const conn)
 {
-    return conn->secured && !conn->tls_failed ? 1 : 0;
+    return conn->secured && !conn->tls_failed && conn->tls != NULL ? 1 : 0;
 }
 
 static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
