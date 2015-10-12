@@ -21,9 +21,13 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
                   void * const userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
+    int secured;
 
     if (status == XMPP_CONN_CONNECT) {
         fprintf(stderr, "DEBUG: connected\n");
+        secured = xmpp_conn_is_secured(conn);
+        fprintf(stderr, "DEBUG: connection is %s.\n",
+                secured ? "secured" : "NOT secured");
         xmpp_disconnect(conn);
     }
     else {
@@ -74,7 +78,7 @@ int main(int argc, char **argv)
     /* create a connection */
     conn = xmpp_conn_new(ctx);
 
-    /* configure connection properties */
+    /* configure connection properties (optional) */
     if (opt_disable_tls)
         xmpp_conn_disable_tls(conn);
     if (opt_old_ssl)

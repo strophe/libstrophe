@@ -788,6 +788,12 @@ void xmpp_conn_set_old_style_ssl(xmpp_conn_t * const conn)
     conn->tls_is_old_ssl = 1;
 }
 
+/** Returns whether TLS session is established or not. */
+int xmpp_conn_is_secured(xmpp_conn_t * const conn)
+{
+    return conn->secured && !conn->tls_failed ? 1 : 0;
+}
+
 static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
 {
     char buf[4096];
