@@ -383,6 +383,16 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
 
+/** jid **/
+/* these return new strings that must be xmpp_free()'d */
+char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
+                                    const char *domain,
+                                    const char *resource);
+char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid);
+char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid);
+char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid);
+char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid);
+
 #ifdef __cplusplus
 }
 #endif
