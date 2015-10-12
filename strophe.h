@@ -363,6 +363,9 @@ void xmpp_iq_new();
 void xmpp_presence_new();
 */
 
+/** UUID **/
+char *xmpp_uuid_gen(xmpp_ctx_t *ctx);
+
 /** event loop **/
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
