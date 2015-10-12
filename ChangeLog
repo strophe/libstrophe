@@ -1,3 +1,7 @@
+0.8.9
+	- IPv6 support
+	- New API xmpp_uuid_gen()
+
 0.8.8
 	- XML namespace support
 	- XEP-0114 support
