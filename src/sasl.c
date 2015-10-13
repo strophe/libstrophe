@@ -516,7 +516,7 @@ char *base64_encode(xmpp_ctx_t *ctx,
     if (cbuf != NULL) {
 	c = cbuf;
 	/* loop over data, turning every 3 bytes into 4 characters */
-	for (i = 0; i < len - 2; i += 3) {
+	for (i = 0; i + 2 < len; i += 3) {
 	    word = buffer[i] << 16 | buffer[i+1] << 8 | buffer[i+2];
 	    hextet = (word & 0x00FC0000) >> 18;
 	    *c++ = _base64_charmap[hextet];
@@ -563,6 +563,8 @@ int base64_decoded_len(xmpp_ctx_t *ctx,
     int nudge;
     int c;
 
+    if (len < 4) return 0;
+
     /* count the padding characters for the remainder */
     nudge = -1;
     c = _base64_invcharmap[(int)buffer[len-1]];
@@ -586,7 +588,7 @@ unsigned char *base64_decode(xmpp_ctx_t *ctx,
 {
     int dlen;
     unsigned char *dbuf, *d;
-    uint32_t word, hextet;
+    uint32_t word, hextet = 0;
     unsigned i;
 
     /* len must be a multiple of 4 */
@@ -597,7 +599,7 @@ unsigned char *base64_decode(xmpp_ctx_t *ctx,
     if (dbuf != NULL) {
 	d = dbuf;
 	/* loop over each set of 4 characters, decoding 3 bytes */
-	for (i = 0; i < len - 3; i += 4) {
+	for (i = 0; i + 3 < len; i += 4) {
 	    hextet = _base64_invcharmap[(int)buffer[i]];
 	    if (hextet & 0xC0) break;
 	    word = hextet << 18;
