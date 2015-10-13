@@ -45,25 +45,25 @@ do {                               \
     }                              \
 } while (0)
 
-#define COMPARE_BUF(v1, len1, v2, len2)       \
-do {                                          \
-    const uint8_t *__v1 = (uint8_t *)(v1);    \
-    const uint8_t *__v2 = (uint8_t *)(v2);    \
-    size_t __len1 = len1;                     \
-    size_t __len2 = len2;                     \
-    if (__len1 != __len2 ||                   \
-        memcmp(__v1, __v2, __len1) != 0)      \
-    {                                         \
-        printf("%s differs!\n", #v1);         \
-        printf("expected: 0x%s\n",            \
-               test_bin_to_hex(__v1, __len1); \
-        printf("got:      0x%s\n",            \
-               test_bin_to_hex(__v2, __len2); \
-        exit(1);                              \
-    }                                         \
+#define COMPARE_BUF(v1, len1, v2, len2)        \
+do {                                           \
+    const uint8_t *__v1 = (uint8_t *)(v1);     \
+    const uint8_t *__v2 = (uint8_t *)(v2);     \
+    size_t __len1 = len1;                      \
+    size_t __len2 = len2;                      \
+    if (__len1 != __len2 ||                    \
+        memcmp(__v1, __v2, __len1) != 0)       \
+    {                                          \
+        printf("%s differs!\n", #v1);          \
+        printf("expected: 0x%s\n",             \
+               test_bin_to_hex(__v1, __len1)); \
+        printf("got:      0x%s\n",             \
+               test_bin_to_hex(__v2, __len2)); \
+        exit(1);                               \
+    }                                          \
 } while (0)
 
 void test_hex_to_bin(const char *hex, uint8_t *bin, size_t *bin_len);
-const char *test_bin_to_hex(uint8_t *bin, size_t len);
+const char *test_bin_to_hex(const uint8_t *bin, size_t len);
 
 #endif /* __LIBSTROPHE_TEST_H__ */

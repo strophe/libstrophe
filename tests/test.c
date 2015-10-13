@@ -34,7 +34,7 @@ void test_hex_to_bin(const char *hex, uint8_t *bin, size_t *bin_len)
     *bin_len = len / 2;
 }
 
-const char *test_bin_to_hex(uint8_t *bin, size_t len)
+const char *test_bin_to_hex(const uint8_t *bin, size_t len)
 {
     static char buf[2048];
     size_t i;

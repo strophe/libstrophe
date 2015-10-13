@@ -65,14 +65,19 @@ examples_uuid_LDADD = $(STROPHE_LIBS)
 
 
 ## Tests
-TESTS = tests/check_parser tests/test_rand tests/test_scram
-check_PROGRAMS = tests/check_parser tests/test_rand tests/test_scram
+TESTS = tests/check_parser tests/test_rand tests/test_scram tests/test_base64
+check_PROGRAMS = $(TESTS)
 
 tests_check_parser_SOURCES = tests/check_parser.c tests/test.h
 tests_check_parser_CFLAGS = @check_CFLAGS@ $(PARSER_CFLAGS) $(STROPHE_FLAGS) \
 	-I$(top_srcdir)/src
 tests_check_parser_LDADD = @check_LIBS@ $(STROPHE_LIBS)
 tests_check_parser_LDFLAGS = -static
+
+tests_test_base64_SOURCES = tests/test_base64.c tests/test.c tests/test.h
+tests_test_base64_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
+tests_test_base64_LDADD = $(STROPHE_LIBS)
+tests_test_base64_LDFLAGS = -static
 
 tests_test_rand_SOURCES = tests/test_rand.c tests/test.c src/sha1.c
 tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
