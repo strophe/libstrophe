@@ -145,7 +145,7 @@ static const xmpp_log_level_t _xmpp_default_logger_levels[] = {XMPP_LEVEL_DEBUG,
  *  @param area the area the log message is for
  *  @param msg the log message
  */
-void xmpp_default_logger(void * const userdata,
+static void xmpp_default_logger(void * const userdata,
 			 const xmpp_log_level_t level,
 			 const char * const area,
 			 const char * const msg)
