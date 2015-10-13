@@ -249,7 +249,7 @@ struct dnsquery_resourcerecord
 };
 
 
-void netbuf_add_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int num)
+static void netbuf_add_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int num)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
@@ -263,7 +263,7 @@ void netbuf_add_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned i
 	*offset += 4;
 }
 
-void netbuf_get_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int *num)
+static void netbuf_get_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int *num)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
@@ -278,7 +278,7 @@ void netbuf_get_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned i
 	*offset += 4;
 }
 
-void netbuf_add_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short num)
+static void netbuf_add_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short num)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
@@ -290,7 +290,7 @@ void netbuf_add_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned s
 	*offset += 2;
 }
 
-void netbuf_get_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short *num)
+static void netbuf_get_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short *num)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
@@ -303,7 +303,7 @@ void netbuf_get_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned s
 	*offset += 2;
 }
 
-void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset, 
+static void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset,
 			    char *name)
 {
 	unsigned char *start = buf + *offset;
@@ -346,7 +346,7 @@ void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset,
 	*offset += p - start;
 }
 
-int calc_domain_name_size(unsigned char *buf, int buflen, int offset)
+static int calc_domain_name_size(unsigned char *buf, int buflen, int offset)
 {
 	unsigned char *p = buf + offset;
 	int len = 0;
@@ -375,7 +375,7 @@ int calc_domain_name_size(unsigned char *buf, int buflen, int offset)
 	return len;
 }
 
-int netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char *namebuf, int namebuflen)
+static int netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char *namebuf, int namebuflen)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p, *p2;
@@ -457,7 +457,7 @@ int netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char *na
 	return 0;
 }
 
-void netbuf_add_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
+static void netbuf_add_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
 {
 	unsigned char *p;
 
@@ -480,7 +480,7 @@ void netbuf_add_dnsquery_header(unsigned char *buf, int buflen, int *offset, str
 	netbuf_add_16bitnum(buf, buflen, offset, header->arcount);
 }
 
-void netbuf_get_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
+static void netbuf_get_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
 {
 	unsigned char *p;
 		
@@ -505,21 +505,21 @@ void netbuf_get_dnsquery_header(unsigned char *buf, int buflen, int *offset, str
 	netbuf_get_16bitnum(buf, buflen, offset, &(header->arcount));
 }
 
-void netbuf_add_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
+static void netbuf_add_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
 {
 	netbuf_add_domain_name(buf, buflen, offset, question->qname);
 	netbuf_add_16bitnum(buf, buflen, offset, question->qtype);
 	netbuf_add_16bitnum(buf, buflen, offset, question->qclass);
 }
 
-void netbuf_get_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
+static void netbuf_get_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
 {
 	netbuf_get_domain_name(buf, buflen, offset, question->qname, 1024);
 	netbuf_get_16bitnum(buf, buflen, offset, &(question->qtype));
 	netbuf_get_16bitnum(buf, buflen, offset, &(question->qclass));
 }
 
-void netbuf_get_dnsquery_srvrdata(unsigned char *buf, int buflen, int *offset, struct dnsquery_srvrdata *srvrdata)
+static void netbuf_get_dnsquery_srvrdata(unsigned char *buf, int buflen, int *offset, struct dnsquery_srvrdata *srvrdata)
 {
 	netbuf_get_16bitnum(buf, buflen, offset, &(srvrdata->priority));
 	netbuf_get_16bitnum(buf, buflen, offset, &(srvrdata->weight));
@@ -527,7 +527,7 @@ void netbuf_get_dnsquery_srvrdata(unsigned char *buf, int buflen, int *offset, s
 	netbuf_get_domain_name(buf, buflen, offset, srvrdata->target, 1024);
 }
 
-void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *offset, struct dnsquery_resourcerecord *rr)
+static void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *offset, struct dnsquery_resourcerecord *rr)
 {
 	netbuf_get_domain_name(buf, buflen, offset, rr->name, 1024);
 	netbuf_get_16bitnum(buf, buflen, offset, &(rr->type));
