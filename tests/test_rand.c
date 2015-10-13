@@ -9,18 +9,16 @@
  *  This program is dual licensed under the MIT and GPLv3 licenses.
  */
 
-/* gcc -o test_rand -I. -I./src tests/test_rand.c src/sha1.c */
+/* gcc -o test_rand -I./src tests/test_rand.c tests/test.c src/sha1.c */
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "test.h"
+
 /* include rand.c to access private structures and functions */
 #include "rand.c"
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
 
 /* stubs to build test without whole libstrophe */
 void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size) {
@@ -103,53 +101,6 @@ static struct {
     },
 };
 
-static uint8_t char_to_bin(char c)
-{
-    return c <= '9' ? (uint8_t)(c - '0') :
-           c <= 'Z' ? (uint8_t)(c - 'A' + 10) :
-                      (uint8_t)(c - 'a' + 10);
-}
-
-static void hex_to_bin(const char *hex, uint8_t *bin, size_t *bin_len)
-{
-    size_t len = strlen(hex);
-    size_t i;
-
-    assert(len % 2 == 0);
-
-    for (i = 0; i < len / 2; ++i) {
-        bin[i] = char_to_bin(hex[i * 2]) * 16 + char_to_bin(hex[i * 2 + 1]);
-    }
-    *bin_len = len / 2;
-}
-
-static const char *bin_to_hex(uint8_t *bin, size_t len)
-{
-    static char buf[1024];
-    size_t i;
-
-    assert(ARRAY_SIZE(buf) > len * 2);
-
-    for (i = 0; i < len; ++i) {
-        sprintf(buf + i * 2, "%02x", bin[i]);
-    }
-
-    return buf;
-}
-
-#define COMPARE(v1, v2)            \
-do {                               \
-    const char *__v1 = v1;         \
-    const char *__v2 = v2;         \
-    if (strcmp(__v1, __v2) != 0) { \
-        printf("%s differs!\n"     \
-               "expected: %s\n"    \
-               "got:      %s\n",   \
-               #v1, __v1, __v2);   \
-        exit(1);                   \
-    }                              \
-} while (0)
-
 int main()
 {
     size_t i;
@@ -160,30 +111,31 @@ int main()
     uint8_t output[1024];
     Hash_DRBG_CTX ctx;
 
+    printf("Hash_DRBG tests.\n");
     for (i = 0; i < ARRAY_SIZE(test_vectors); ++i) {
         printf("Test #%d: ", (int)i + 1);
-        hex_to_bin(test_vectors[i].entropy_input, entropy_input,
-                   &entropy_input_len);
-        hex_to_bin(test_vectors[i].nonce, nonce, &nonce_len);
+        test_hex_to_bin(test_vectors[i].entropy_input, entropy_input,
+                        &entropy_input_len);
+        test_hex_to_bin(test_vectors[i].nonce, nonce, &nonce_len);
 
         Hash_DRBG_Instantiate(&ctx, entropy_input, entropy_input_len,
                               nonce, nonce_len);
-        COMPARE(test_vectors[i].V1, bin_to_hex(ctx.V, sizeof(ctx.V)));
-        COMPARE(test_vectors[i].C1, bin_to_hex(ctx.C, sizeof(ctx.C)));
+        COMPARE(test_vectors[i].V1, test_bin_to_hex(ctx.V, sizeof(ctx.V)));
+        COMPARE(test_vectors[i].C1, test_bin_to_hex(ctx.C, sizeof(ctx.C)));
         assert(ctx.reseed_counter == 1);
 
         Hash_DRBG_Generate(&ctx, output, test_vectors[i].returned_bytes);
-        COMPARE(test_vectors[i].V2, bin_to_hex(ctx.V, sizeof(ctx.V)));
-        COMPARE(test_vectors[i].C2, bin_to_hex(ctx.C, sizeof(ctx.C)));
+        COMPARE(test_vectors[i].V2, test_bin_to_hex(ctx.V, sizeof(ctx.V)));
+        COMPARE(test_vectors[i].C2, test_bin_to_hex(ctx.C, sizeof(ctx.C)));
         assert(ctx.reseed_counter == 2);
 
         Hash_DRBG_Generate(&ctx, output, test_vectors[i].returned_bytes);
-        COMPARE(test_vectors[i].V3, bin_to_hex(ctx.V, sizeof(ctx.V)));
-        COMPARE(test_vectors[i].C3, bin_to_hex(ctx.C, sizeof(ctx.C)));
+        COMPARE(test_vectors[i].V3, test_bin_to_hex(ctx.V, sizeof(ctx.V)));
+        COMPARE(test_vectors[i].C3, test_bin_to_hex(ctx.C, sizeof(ctx.C)));
         COMPARE(test_vectors[i].output,
-                bin_to_hex(output, test_vectors[i].returned_bytes));
+                test_bin_to_hex(output, test_vectors[i].returned_bytes));
         assert(ctx.reseed_counter == 3);
-	printf("ok\n");
+        printf("ok\n");
     }
 
     return 0;

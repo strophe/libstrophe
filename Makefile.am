@@ -74,8 +74,8 @@ tests_check_parser_CFLAGS = @check_CFLAGS@ $(PARSER_CFLAGS) $(STROPHE_FLAGS) \
 tests_check_parser_LDADD = @check_LIBS@ $(STROPHE_LIBS)
 tests_check_parser_LDFLAGS = -static
 
-tests_test_rand_SOURCES = tests/test_rand.c src/sha1.c
+tests_test_rand_SOURCES = tests/test_rand.c tests/test.c src/sha1.c
 tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 
-tests_test_scram_SOURCES = tests/test_scram.c src/sha1.c
+tests_test_scram_SOURCES = tests/test_scram.c tests/test.c src/sha1.c
 tests_test_scram_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src

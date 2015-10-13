@@ -9,67 +9,17 @@
  *  This program is dual licensed under the MIT and GPLv3 licenses.
  */
 
-/* gcc -o test_scram -I. -I./src tests/test_scram.c src/sha1.c */
+/* gcc -o test_scram -I./src tests/test_scram.c tests/test.c src/sha1.c */
 
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "test.h"
+
 /* include scram.c to access static functions */
 #include "scram.c"
-
-/* TODO Make common code for tests. */
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
-
-static uint8_t char_to_bin(char c)
-{
-    return c <= '9' ? (uint8_t)(c - '0') :
-           c <= 'Z' ? (uint8_t)(c - 'A' + 10) :
-                      (uint8_t)(c - 'a' + 10);
-}
-
-static void hex_to_bin(const char *hex, uint8_t *bin, size_t *bin_len)
-{
-    size_t len = strlen(hex);
-    size_t i;
-
-    assert(len % 2 == 0);
-
-    for (i = 0; i < len / 2; ++i) {
-        bin[i] = char_to_bin(hex[i * 2]) * 16 + char_to_bin(hex[i * 2 + 1]);
-    }
-    *bin_len = len / 2;
-}
-
-static const char *bin_to_hex(uint8_t *bin, size_t len)
-{
-    static char buf[1024];
-    size_t i;
-
-    assert(ARRAY_SIZE(buf) > len * 2);
-
-    for (i = 0; i < len; ++i) {
-        sprintf(buf + i * 2, "%02x", bin[i]);
-    }
-    return buf;
-}
-
-#define COMPARE(v1, v2)            \
-do {                               \
-    const char *__v1 = v1;         \
-    const char *__v2 = v2;         \
-    if (strcmp(__v1, __v2) != 0) { \
-        printf("%s differs!\n"     \
-               "expected: %s\n"    \
-               "got:      %s\n",   \
-               #v1, __v1, __v2);   \
-        exit(1);                   \
-    }                              \
-} while (0)
 
 /*
  * Test vectors for derivation function (RFC6070).
@@ -120,7 +70,7 @@ static void test_df(void)
         SCRAM_SHA1_Hi((uint8_t *)df_vectors[i].P, df_vectors[i].P_len,
                       (uint8_t *)df_vectors[i].S, df_vectors[i].S_len,
                       df_vectors[i].c, dk);
-        s = bin_to_hex(dk, sizeof(dk));
+        s = test_bin_to_hex(dk, sizeof(dk));
         COMPARE(df_vectors[i].DK, s);
         printf("ok\n");
     }
@@ -141,9 +91,9 @@ static const struct {
         .initial = "n,,n=juliet,r=oMsTAAwAAAAMAAAANP0TAAAAAABPU0AA",
         .challenge = "r=oMsTAAwAAAAMAAAANP0TAAAAAABPU0AAe124695b-69a9-4de6-9c30"
                      "-b51b3808c59e,s=NjhkYTM0MDgtNGY0Zi00NjdmLTkxMmUtNDlmNTNmN"
-		     "DNkMDMz,i=4096",
+                     "DNkMDMz,i=4096",
         .response = "c=biws,r=oMsTAAwAAAAMAAAANP0TAAAAAABPU0AAe124695b-69a9-4de"
-	            "6-9c30-b51b3808c59e",
+                    "6-9c30-b51b3808c59e",
         .salt = "36386461333430382d346634662d34363766"
                 "2d393132652d343966353366343364303333",
         .i = 4096,
@@ -168,7 +118,7 @@ static void test_scram(void)
         snprintf(auth, sizeof(auth), "%s,%s,%s",
                  scram_vectors[i].initial + 3, scram_vectors[i].challenge,
                  scram_vectors[i].response);
-        hex_to_bin(scram_vectors[i].salt, salt, &salt_len);
+        test_hex_to_bin(scram_vectors[i].salt, salt, &salt_len);
 
         SCRAM_SHA1_ClientKey((uint8_t *)scram_vectors[i].password,
                              strlen(scram_vectors[i].password),
@@ -177,9 +127,9 @@ static void test_scram(void)
         for (j = 0; j < SHA1_DIGEST_SIZE; j++) {
             sign[j] ^= key[j];
         }
-        s = bin_to_hex(sign, SHA1_DIGEST_SIZE);
-	COMPARE(scram_vectors[i].sign, s);
-	printf("ok\n");
+        s = test_bin_to_hex(sign, SHA1_DIGEST_SIZE);
+        COMPARE(scram_vectors[i].sign, s);
+        printf("ok\n");
     }
 }
 
