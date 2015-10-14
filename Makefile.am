@@ -22,13 +22,13 @@ libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(DIST_LIBS) -no-undefined
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
 libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
-	src/event.c src/handler.c src/hash.c \
-	src/jid.c src/md5.c src/sasl.c src/scram.c src/sha1.c \
+	src/event.c src/handler.c src/hash.c src/jid.c src/md5.c \
+	src/resolver.c src/sasl.c src/scram.c src/sha1.c \
 	src/snprintf.c src/sock.c src/stanza.c \
 	src/tls_openssl.c src/util.c src/rand.c src/uuid.c \
 	src/common.h src/hash.h src/md5.h src/ostypes.h src/parser.h \
-	src/sasl.h src/scram.h src/sha1.h src/snprintf.h src/sock.h \
-	src/tls.h src/util.h src/rand.h
+	src/resolver.h src/sasl.h src/scram.h src/sha1.h src/snprintf.h \
+	src/sock.h src/tls.h src/util.h src/rand.h
 
 if PARSER_EXPAT
 libstrophe_la_SOURCES += src/parser_expat.c
@@ -68,7 +68,8 @@ examples_uuid_LDADD = $(STROPHE_LIBS)
 
 ## Tests
 TESTS = tests/check_parser tests/test_sha1 tests/test_md5 tests/test_rand \
-	tests/test_scram tests/test_base64 tests/test_snprintf
+	tests/test_scram tests/test_base64 tests/test_snprintf \
+	tests/test_resolver
 check_PROGRAMS = $(TESTS)
 
 tests_check_parser_SOURCES = tests/check_parser.c tests/test.h
@@ -81,6 +82,11 @@ tests_test_base64_SOURCES = tests/test_base64.c tests/test.c tests/test.h
 tests_test_base64_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_base64_LDADD = $(STROPHE_LIBS)
 tests_test_base64_LDFLAGS = -static
+
+tests_test_resolver_SOURCES = tests/test_resolver.c tests/test.h
+tests_test_resolver_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
+tests_test_resolver_LDADD = $(STROPHE_LIBS)
+tests_test_resolver_LDFLAGS = -static
 
 tests_test_rand_SOURCES = tests/test_rand.c tests/test.c src/sha1.c
 tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src

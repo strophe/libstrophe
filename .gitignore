@@ -48,6 +48,7 @@ tests/test_hash
 tests/test_jid
 tests/test_md5
 tests/test_rand
+tests/test_resolver
 tests/test_sasl
 tests/test_scram
 tests/test_sha1

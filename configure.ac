@@ -103,9 +103,6 @@ AC_LINK_IFELSE([AC_LANG_SOURCE([
 LIBS="${LIBS_TMP}"
 PC_LIBS="${DIST_LIBS} ${PC_LIBS}"
 
-AC_CHECK_HEADERS([arpa/nameser_compat.h])
-
-
 m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
         [AC_ARG_WITH([pkgconfigdir],
                 [AS_HELP_STRING([--with-pkgconfigdir],

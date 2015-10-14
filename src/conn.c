@@ -25,6 +25,7 @@
 #include "common.h"
 #include "util.h"
 #include "parser.h"
+#include "resolver.h"
 
 #ifndef DEFAULT_SEND_QUEUE_MAX
 /** @def DEFAULT_SEND_QUEUE_MAX
@@ -56,7 +57,7 @@ static void _handle_stream_end(char *name,
                                void * const userdata);
 static void _handle_stream_stanza(xmpp_stanza_t *stanza,
                                   void * const userdata);
-static int _conn_default_port(xmpp_conn_t * const conn);
+static unsigned short _conn_default_port(xmpp_conn_t * const conn);
 
 /** Create a new Strophe connection object.
  *
@@ -407,7 +408,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
                         void * const userdata)
 {
     char domain[2048];
-    int port;
+    unsigned short port;
     const char *prefdomain = NULL;
     int found;
 
@@ -427,8 +428,8 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
         prefdomain = altdomain;
         port = altport ? altport : _conn_default_port(conn);
     } else {
-        found = sock_srv_lookup("xmpp-client", "tcp", conn->domain,
-                                domain, sizeof(domain), &port);
+        found = resolver_srv_lookup("xmpp-client", "tcp", conn->domain,
+                                    domain, sizeof(domain), &port);
         if (!found) {
             xmpp_debug(conn->ctx, "xmpp", "SRV lookup failed, "
                                           "connecting via domain.");
@@ -448,7 +449,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
         domain[sizeof(domain) - 1] = '\0';
     }
     conn->sock = sock_connect(domain, port);
-    xmpp_debug(conn->ctx, "xmpp", "sock_connect to %s:%d returned %d",
+    xmpp_debug(conn->ctx, "xmpp", "sock_connect to %s:%u returned %d",
                domain, port, conn->sock);
     if (conn->sock == -1) return -1;
 
@@ -495,7 +496,7 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
                            unsigned short port, xmpp_conn_handler callback,
                            void * const userdata)
 {
-    int connectport;
+    unsigned short connectport;
 
     if (conn->state != XMPP_STATE_DISCONNECTED)
         return -1;
@@ -516,7 +517,7 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
 
     xmpp_debug(conn->ctx, "xmpp", "Connecting via %s", server);
     conn->sock = sock_connect(server, connectport);
-    xmpp_debug(conn->ctx, "xmpp", "sock_connect to %s:%d returned %d",
+    xmpp_debug(conn->ctx, "xmpp", "sock_connect to %s:%u returned %d",
                server, connectport, conn->sock);
     if (conn->sock == -1) return -1;
 
@@ -969,7 +970,7 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza,
     handler_fire_stanza(conn, stanza);
 }
 
-static int _conn_default_port(xmpp_conn_t * const conn)
+static unsigned short _conn_default_port(xmpp_conn_t * const conn)
 {
     switch (conn->type) {
     case XMPP_CLIENT:
