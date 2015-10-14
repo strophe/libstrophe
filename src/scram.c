@@ -24,11 +24,7 @@
 
 #include "scram.h"
 
-/* block size for HMAC */
-#define BLOCK_SIZE 64
-#if BLOCK_SIZE < SHA1_DIGEST_SIZE
-#error BLOCK_SIZE must not be less than SHA1_DIGEST_SIZE
-#endif
+#define HMAC_BLOCK_SIZE 64
 
 static const uint8_t ipad = 0x36;
 static const uint8_t opad = 0x5C;
@@ -37,33 +33,33 @@ static void crypto_HMAC_SHA1(const uint8_t *key, size_t key_len,
                              const uint8_t *text, size_t len,
                              uint8_t *digest)
 {
-    uint8_t key_pad[BLOCK_SIZE];
-    uint8_t key_ipad[BLOCK_SIZE];
-    uint8_t key_opad[BLOCK_SIZE];
+    uint8_t key_pad[HMAC_BLOCK_SIZE];
+    uint8_t key_ipad[HMAC_BLOCK_SIZE];
+    uint8_t key_opad[HMAC_BLOCK_SIZE];
     uint8_t sha_digest[SHA1_DIGEST_SIZE];
     int i;
     SHA1_CTX ctx;
 
     memset(key_pad, 0, sizeof(key_pad));
-    if (key_len <= BLOCK_SIZE) {
+    if (key_len <= HMAC_BLOCK_SIZE) {
         memcpy(key_pad, key, key_len);
     } else {
         /* according to RFC2104 */
         crypto_SHA1(key, key_len, key_pad);
     }
 
-    for (i = 0; i < BLOCK_SIZE; i++) {
+    for (i = 0; i < HMAC_BLOCK_SIZE; i++) {
         key_ipad[i] = key_pad[i] ^ ipad;
         key_opad[i] = key_pad[i] ^ opad;
     }
 
     crypto_SHA1_Init(&ctx);
-    crypto_SHA1_Update(&ctx, key_ipad, BLOCK_SIZE);
+    crypto_SHA1_Update(&ctx, key_ipad, HMAC_BLOCK_SIZE);
     crypto_SHA1_Update(&ctx, text, len);
     crypto_SHA1_Final(&ctx, sha_digest);
 
     crypto_SHA1_Init(&ctx);
-    crypto_SHA1_Update(&ctx, key_opad, BLOCK_SIZE);
+    crypto_SHA1_Update(&ctx, key_opad, HMAC_BLOCK_SIZE);
     crypto_SHA1_Update(&ctx, sha_digest, SHA1_DIGEST_SIZE);
     crypto_SHA1_Final(&ctx, digest);
 }
