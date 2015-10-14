@@ -592,7 +592,18 @@ static void _auth(xmpp_conn_t * const conn)
 
 	/* TLS was tried, unset flag */
 	conn->tls_support = 0;
-    } else if (anonjid && conn->sasl_support & SASL_MASK_ANONYMOUS) {
+	/* _auth() will be called later */
+	return;
+    }
+
+    if (conn->tls_mandatory && !xmpp_conn_is_secured(conn)) {
+        xmpp_error(conn->ctx, "xmpp", "TLS is not supported, but set as"
+                                      "mandatory for this connection");
+        conn_disconnect(conn);
+        return;
+    }
+
+    if (anonjid && conn->sasl_support & SASL_MASK_ANONYMOUS) {
 	/* some crap here */
 	auth = _make_sasl_auth(conn, "ANONYMOUS");
 	if (!auth) {

@@ -108,7 +108,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
 
 	conn->tls_support = 0;
 	conn->tls_disabled = 0;
-	conn->tls_is_old_ssl = 0;
+	conn->tls_mandatory = 0;
+	conn->tls_legacy_ssl = 0;
 	conn->tls_failed = 0;
 	conn->sasl_support = 0;
         conn->secured = 0;
@@ -422,11 +423,11 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
             prefdomain = conn->domain;
             port = altport ? altport : _conn_default_port(conn);
         }
-        if (conn->tls_is_old_ssl) {
+        if (conn->tls_legacy_ssl) {
             /* SSL tunneled connection on 5223 port is legacy and doesn't
              * have an SRV record. Force port 5223 here.
              */
-            port = XMPP_PORT_CLIENT_OLD_SSL;
+            port = XMPP_PORT_CLIENT_LEGACY_SSL;
         }
     }
     if (prefdomain != NULL) {
@@ -780,20 +781,73 @@ int conn_tls_start(xmpp_conn_t * const conn)
     return rc;
 }
 
+/** Return applied flags for the connection.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return ORed connection flags that are applied for the connection.
+ */
+long xmpp_conn_get_flags(const xmpp_conn_t * const conn)
+{
+    long flags;
+
+    flags = XMPP_CONN_FLAG_DISABLE_TLS * conn->tls_disabled |
+            XMPP_CONN_FLAG_MANDATORY_TLS * conn->tls_mandatory |
+            XMPP_CONN_FLAG_LEGACY_SSL * conn->tls_legacy_ssl;
+
+    return flags;
+}
+
+/** Set flags for the connection.
+ *  This function applies set flags and resets unset ones. Default connection
+ *  configuration is all flags unset. Flags can be applied only for a connection
+ *  in disconnected state.
+ *  All unsupported flags are ignored. If a flag is unset after successful set
+ *  operation then the flag is not supported by current version.
+ *
+ *  Supported flags are:
+ *
+ *    - XMPP_CONN_FLAG_DISABLE_TLS
+ *    - XMPP_CONN_FLAG_MANDATORY_TLS
+ *    - XMPP_CONN_FLAG_LEGACY_SSL
+ *
+ *  @param conn a Strophe connection object
+ *  @param flags ORed connection flags
+ *
+ *  @return 0 on success or -1 if flags can't be applied.
+ */
+int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags)
+{
+    if (conn->state != XMPP_STATE_DISCONNECTED) {
+        xmpp_error(conn->ctx, "conn", "Flags can be set only "
+                                      "for disconnected connection");
+        return -1;
+    }
+    if (flags & XMPP_CONN_FLAG_DISABLE_TLS &&
+        flags & (XMPP_CONN_FLAG_MANDATORY_TLS | XMPP_CONN_FLAG_LEGACY_SSL)) {
+        xmpp_error(conn->ctx, "conn", "Flags 0x%04lx conflict", flags);
+        return -1;
+    }
+
+    conn->tls_disabled = (flags & XMPP_CONN_FLAG_DISABLE_TLS) ? 1 : 0;
+    conn->tls_mandatory = (flags & XMPP_CONN_FLAG_MANDATORY_TLS) ? 1 : 0;
+    conn->tls_legacy_ssl = (flags & XMPP_CONN_FLAG_LEGACY_SSL) ? 1 : 0;
+
+    return 0;
+}
+
 /** Disable TLS for this connection, called by users of the library.
  *  Occasionally a server will be misconfigured to send the starttls
  *  feature, but will not support the handshake.
  *
  *  @param conn a Strophe connection object
+ *
+ *  @note this function is deprecated
+ *  @see xmpp_conn_set_flags()
  */
 void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
 {
     conn->tls_disabled = 1;
-}
-
-void xmpp_conn_set_old_style_ssl(xmpp_conn_t * const conn)
-{
-    conn->tls_is_old_ssl = 1;
 }
 
 /** Returns whether TLS session is established or not. */
@@ -903,7 +957,7 @@ static int _conn_default_port(xmpp_conn_t * const conn)
 {
     switch (conn->type) {
     case XMPP_CLIENT:
-        return conn->tls_is_old_ssl ? XMPP_PORT_CLIENT_OLD_SSL :
+        return conn->tls_legacy_ssl ? XMPP_PORT_CLIENT_LEGACY_SSL :
                                       XMPP_PORT_CLIENT;
     case XMPP_COMPONENT:
         return XMPP_PORT_COMPONENT;

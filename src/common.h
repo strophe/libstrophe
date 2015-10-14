@@ -137,7 +137,7 @@ struct _xmpp_handlist_t {
 
 enum {
     XMPP_PORT_CLIENT = 5222,
-    XMPP_PORT_CLIENT_OLD_SSL = 5223,
+    XMPP_PORT_CLIENT_LEGACY_SSL = 5223,
     XMPP_PORT_COMPONENT = 5347,
 };
 
@@ -157,7 +157,8 @@ struct _xmpp_conn_t {
 
     int tls_support;
     int tls_disabled;
-    int tls_is_old_ssl;
+    int tls_mandatory;
+    int tls_legacy_ssl;
     int tls_failed; /* set when tls fails, so we don't try again */
     int sasl_support; /* if true, field is a bitfield of supported 
 			 mechanisms */ 

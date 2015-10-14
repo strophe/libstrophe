@@ -1,9 +1,10 @@
 0.8.9
 	- IPv6 support
-	- Old style SSL support
+	- Legacy SSL support
 	- New API:
 		- xmpp_uuid_gen()
-		- xmpp_conn_set_old_style_ssl()
+		- xmpp_conn_get_flags()
+		- xmpp_conn_set_flags()
 		- xmpp_conn_is_secured()
 	- Exposed private API:
 		- xmpp_jid_new()

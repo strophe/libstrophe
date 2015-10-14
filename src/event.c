@@ -269,8 +269,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		conn->state = XMPP_STATE_CONNECTED;
 		xmpp_debug(ctx, "xmpp", "connection successful");
 
-                if (conn->tls_is_old_ssl) {
-                    xmpp_debug(ctx, "xmpp", "using old style SSL connection");
+                if (conn->tls_legacy_ssl) {
+                    xmpp_debug(ctx, "xmpp", "using legacy SSL connection");
                     ret = conn_tls_start(conn);
                     if (ret != 0) {
                         conn_disconnect(conn);

@@ -42,16 +42,17 @@ int main(int argc, char **argv)
     xmpp_conn_t *conn;
     xmpp_log_t *log;
     char *jid, *pass, *host = NULL;
+    long flags = 0;
     int i;
-    int opt_disable_tls = 0;
-    int opt_old_ssl = 0;
 
     /* take a jid and password on the command line */
     for (i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--disable-tls") == 0)
-            opt_disable_tls = 1;
-        else if (strcmp(argv[i], "--old-ssl") == 0)
-            opt_old_ssl = 1;
+            flags |= XMPP_CONN_FLAG_DISABLE_TLS;
+        else if (strcmp(argv[i], "--mandatory-tls") == 0)
+            flags |= XMPP_CONN_FLAG_MANDATORY_TLS;
+        else if (strcmp(argv[i], "--legacy-ssl") == 0)
+            flags |= XMPP_CONN_FLAG_LEGACY_SSL;
         else
             break;
     }
@@ -59,7 +60,10 @@ int main(int argc, char **argv)
         fprintf(stderr, "Usage: basic [options] <jid> <pass> [<host>]\n\n"
                         "Options:\n"
                         "  --disable-tls        Disable TLS.\n"
-                        "  --old-ssl            Use old style SSL.\n");
+                        "  --mandatory-tls      Deny plaintext connection.\n"
+                        "  --legacy-ssl         Use old style SSL.\n\n"
+                        "Note: --disable-tls conflicts with --mandatory-tls or "
+                              "--legacy-ssl\n");
         return 1;
     }
 
@@ -67,6 +71,11 @@ int main(int argc, char **argv)
     pass = argv[i + 1];
     if (i + 2 < argc)
         host = argv[i + 2];
+
+    /*
+     * Note, this example doesn't handle errors. Applications should check
+     * return values of non-void functions.
+     */
 
     /* init library */
     xmpp_initialize();
@@ -79,10 +88,7 @@ int main(int argc, char **argv)
     conn = xmpp_conn_new(ctx);
 
     /* configure connection properties (optional) */
-    if (opt_disable_tls)
-        xmpp_conn_disable_tls(conn);
-    if (opt_old_ssl)
-        xmpp_conn_set_old_style_ssl(conn);
+    xmpp_conn_set_flags(conn, flags);
 
     /* setup authentication information */
     xmpp_conn_set_jid(conn, jid);

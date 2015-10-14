@@ -192,6 +192,10 @@ typedef enum {
     XMPP_SE_XML_NOT_WELL_FORMED
 } xmpp_error_type_t;
 
+#define XMPP_CONN_FLAG_DISABLE_TLS   0x0001
+#define XMPP_CONN_FLAG_MANDATORY_TLS 0x0002
+#define XMPP_CONN_FLAG_LEGACY_SSL    0x0004
+
 typedef struct {
     xmpp_error_type_t type;
     char *text;
@@ -208,6 +212,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx);
 xmpp_conn_t * xmpp_conn_clone(xmpp_conn_t * const conn);
 int xmpp_conn_release(xmpp_conn_t * const conn);
 
+long xmpp_conn_get_flags(const xmpp_conn_t * const conn);
+int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags);
 const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn);
 const char *xmpp_conn_get_bound_jid(const xmpp_conn_t * const conn);
 void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
@@ -215,7 +221,6 @@ const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
 void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);
 xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn);
 void xmpp_conn_disable_tls(xmpp_conn_t * const conn);
-void xmpp_conn_set_old_style_ssl(xmpp_conn_t * const conn);
 int xmpp_conn_is_secured(xmpp_conn_t * const conn);
 
 int xmpp_connect_client(xmpp_conn_t * const conn, 
