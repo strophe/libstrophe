@@ -837,6 +837,7 @@ int sock_srv_lookup(const char *service, const char *proto,
 #else
     if (!set) {
         unsigned char buf[65535];
+        unsigned short min;
 	int len;
 	
 	if ((len = res_query(fulldomain, C_IN, T_SRV, buf, 65535)) > 0) {
@@ -853,21 +854,21 @@ int sock_srv_lookup(const char *service, const char *proto,
 		netbuf_get_dnsquery_question(buf, 65536, &offset, &question);
 	    }
 
+            min = 65535;
 	    for (i = 0; i < header.ancount; i++) {
 		netbuf_get_dnsquery_resourcerecord(buf, 65536, &offset, &rr);
 		
 		if (rr.type == 33) {
 		    struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
-		    snprintf(resulttarget, resulttargetlength, "%s",
-			     srvrdata->target);
-		    *resultport = srvrdata->port;
-		    set = 1;
+                    if (srvrdata->priority < min || !set) {
+                        snprintf(resulttarget, resulttargetlength, "%s",
+                                 srvrdata->target);
+                        *resultport = srvrdata->port;
+                        set = 1;
+                        min = srvrdata->priority;
+                    }
 		}
-	    }
-
-	    for (i = 0; i < header.ancount; i++) {
-		netbuf_get_dnsquery_resourcerecord(buf, 65536, &offset, &rr);
 	    }
 	}
     }
