@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 /* We don't have separated header file, so include this instead of common.h */
 #include "snprintf.c"

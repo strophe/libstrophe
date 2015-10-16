@@ -64,48 +64,26 @@
 /* JAM: changed declarations to xmpp_snprintf and xmpp_vsnprintf to
    avoid namespace collision. */
 
-#if !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF)
+#include "snprintf.h"
+
+/* varargs declarations: */
+
+#include <stdarg.h>
+#define VA_LOCAL_DECL   va_list ap
+#define VA_START(f)     va_start(ap, f)
+#define VA_END          va_end(ap)
+
+#ifndef HAVE_VSNPRINTF
 
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
-
-/* Define this as a fall through, HAVE_STDARG_H is probably already set */
-
-#define HAVE_VARARGS_H
-#define HAVE_STDARG_H /* JAM: set always */
-
-
-/* varargs declarations: */
-
-#if defined(HAVE_STDARG_H)
-# include <stdarg.h>
-# define HAVE_STDARGS    /* let's hope that works everywhere (mj) */
-# define VA_LOCAL_DECL   va_list ap
-# define VA_START(f)     va_start(ap, f)
-# define VA_SHIFT(v,t)  ;   /* no-op for ANSI */
-# define VA_END          va_end(ap)
-#else
-# if defined(HAVE_VARARGS_H)
-#  include <varargs.h>
-#  undef HAVE_STDARGS
-#  define VA_LOCAL_DECL   va_list ap
-#  define VA_START(f)     va_start(ap)      /* f is ignored! */
-#  define VA_SHIFT(v,t) v = va_arg(ap,t)
-#  define VA_END        va_end(ap)
-# else
-/*XX ** NO VARARGS ** XX*/
-# endif
-#endif
 
 #ifdef HAVE_LONG_DOUBLE
 #define LDOUBLE long double
 #else
 #define LDOUBLE double
 #endif
-
-int xmpp_snprintf (char *str, size_t count, const char *fmt, ...);
-int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
 
 static int dopr (char *buffer, size_t maxlen, const char *format, 
                  va_list args);
@@ -725,7 +703,6 @@ static int dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c)
   return 1;
 }
 
-#ifndef HAVE_VSNPRINTF
 int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list args)
 {
   if (str != NULL)
@@ -736,28 +713,14 @@ int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list args)
 
 #ifndef HAVE_SNPRINTF
 /* VARARGS3 */
-#ifdef HAVE_STDARGS
 int xmpp_snprintf (char *str,size_t count,const char *fmt,...)
-#else
-int xmpp_snprintf (va_alist) va_dcl
-#endif
 {
-#ifndef HAVE_STDARGS
-  char *str;
-  size_t count;
-  char *fmt;
-#endif
   VA_LOCAL_DECL;
   int total;
     
   VA_START (fmt);
-  VA_SHIFT (str, char *);
-  VA_SHIFT (count, size_t );
-  VA_SHIFT (fmt, char *);
   total = xmpp_vsnprintf(str, count, fmt, ap);
   VA_END;
   return total;
 }
-#endif /* !HAVE_SNPRINTF */
-
 #endif /* !HAVE_SNPRINTF */
