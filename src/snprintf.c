@@ -69,7 +69,6 @@
 /* varargs declarations: */
 
 #include <stdarg.h>
-#define HAVE_STDARGS    /* let's hope that works everywhere (mj) */
 #define VA_LOCAL_DECL   va_list ap
 #define VA_START(f)     va_start(ap, f)
 #define VA_SHIFT(v,t)  ;   /* no-op for ANSI */
@@ -715,17 +714,8 @@ int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list args)
 
 #ifndef HAVE_SNPRINTF
 /* VARARGS3 */
-#ifdef HAVE_STDARGS
 int xmpp_snprintf (char *str,size_t count,const char *fmt,...)
-#else
-int xmpp_snprintf (va_alist) va_dcl
-#endif
 {
-#ifndef HAVE_STDARGS
-  char *str;
-  size_t count;
-  char *fmt;
-#endif
   VA_LOCAL_DECL;
   int total;
     
