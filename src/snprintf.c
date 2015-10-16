@@ -66,12 +66,6 @@
 
 #include "snprintf.h"
 
-#if !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF)
-
-#include <string.h>
-#include <ctype.h>
-#include <sys/types.h>
-
 /* Define this as a fall through, HAVE_STDARG_H is probably already set */
 
 #define HAVE_VARARGS_H
@@ -99,6 +93,12 @@
 /*XX ** NO VARARGS ** XX*/
 # endif
 #endif
+
+#ifndef HAVE_VSNPRINTF
+
+#include <string.h>
+#include <ctype.h>
+#include <sys/types.h>
 
 #ifdef HAVE_LONG_DOUBLE
 #define LDOUBLE long double
@@ -724,7 +724,6 @@ static int dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c)
   return 1;
 }
 
-#ifndef HAVE_VSNPRINTF
 int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list args)
 {
   if (str != NULL)
@@ -757,6 +756,4 @@ int xmpp_snprintf (va_alist) va_dcl
   VA_END;
   return total;
 }
-#endif /* !HAVE_SNPRINTF */
-
 #endif /* !HAVE_SNPRINTF */
