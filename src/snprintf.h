@@ -1,12 +1,8 @@
-/* snprintf.h
- * strophe XMPP client library -- stdarg wrappers
- *
- * Copyright (C) 2015 Dmitry Podgorny <pasis.ua@gmail.com>
- *
- *  This software is provided AS-IS with no warranty, either express or
- *  implied.
- *
- *  This program is dual licensed under the MIT and GPLv3 licenses.
+/*
+ * Copyright Patrick Powell 1995
+ * This code is based on code written by Patrick Powell (papowell@astart.com)
+ * It may be used for any purpose as long as this notice remains intact
+ * on all source code distributions
  */
 
 /** @file
