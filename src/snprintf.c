@@ -71,7 +71,6 @@
 #include <stdarg.h>
 #define VA_LOCAL_DECL   va_list ap
 #define VA_START(f)     va_start(ap, f)
-#define VA_SHIFT(v,t)  ;   /* no-op for ANSI */
 #define VA_END          va_end(ap)
 
 #ifndef HAVE_VSNPRINTF
@@ -720,9 +719,6 @@ int xmpp_snprintf (char *str,size_t count,const char *fmt,...)
   int total;
     
   VA_START (fmt);
-  VA_SHIFT (str, char *);
-  VA_SHIFT (count, size_t );
-  VA_SHIFT (fmt, char *);
   total = xmpp_vsnprintf(str, count, fmt, ap);
   VA_END;
   return total;
