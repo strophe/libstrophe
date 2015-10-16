@@ -56,3 +56,6 @@ tests/test_snprintf
 tests/test_sock
 m4/
 libstrophe.project
+libs/
+obj/
+expat/

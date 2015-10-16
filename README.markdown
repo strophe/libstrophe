@@ -41,6 +41,11 @@ another path use the `--prefix` option during configure, e.g.:
 
     ./configure --prefix=/usr
 
+### Android
+
+Run script `build-android.sh` and follow the instructions. You will
+need expat sources and android-ndk.
+
 Requirements
 ------------
 
