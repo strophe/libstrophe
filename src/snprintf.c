@@ -64,6 +64,8 @@
 /* JAM: changed declarations to xmpp_snprintf and xmpp_vsnprintf to
    avoid namespace collision. */
 
+#include "snprintf.h"
+
 #if !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF)
 
 #include <string.h>
@@ -103,9 +105,6 @@
 #else
 #define LDOUBLE double
 #endif
-
-int xmpp_snprintf (char *str, size_t count, const char *fmt, ...);
-int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
 
 static int dopr (char *buffer, size_t maxlen, const char *format, 
                  va_list args);

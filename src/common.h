@@ -28,6 +28,7 @@
 #include "util.h"
 #include "parser.h"
 #include "rand.h"
+#include "snprintf.h"
 
 /** run-time context **/
 
@@ -265,9 +266,5 @@ void disconnect_mem_error(xmpp_conn_t * const conn);
 /* auth functions */
 void auth_handle_open(xmpp_conn_t * const conn);
 void auth_handle_component_open(xmpp_conn_t * const conn);
-
-/* replacement snprintf and vsnprintf */
-int xmpp_snprintf (char *str, size_t count, const char *fmt, ...);
-int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
 
 #endif /* __LIBSTROPHE_COMMON_H__ */
