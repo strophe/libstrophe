@@ -66,11 +66,6 @@
 
 #include "snprintf.h"
 
-/* Define this as a fall through, HAVE_STDARG_H is probably already set */
-
-#define HAVE_STDARG_H /* JAM: set always */
-
-
 /* varargs declarations: */
 
 #include <stdarg.h>
