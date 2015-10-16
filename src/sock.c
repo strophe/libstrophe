@@ -23,7 +23,6 @@
 #include <ws2tcpip.h>
 #include <windns.h>
 #include <Iphlpapi.h>
-#define snprintf _snprintf
 #else
 #include <errno.h>
 #include <unistd.h>
@@ -39,6 +38,7 @@
 #endif
 
 #include "sock.h"
+#include "snprintf.h"
 
 void sock_initialize(void)
 {
@@ -80,7 +80,7 @@ sock_t sock_connect(const char * const host, const unsigned int port)
     struct addrinfo *res, *ainfo, hints;
     int err;
 
-    snprintf(service, 6, "%u", port);
+    xmpp_snprintf(service, 6, "%u", port);
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -507,8 +507,8 @@ int sock_srv_lookup(const char *service, const char *proto,
     int set = 0;
     char fulldomain[2048];
 
-    snprintf(fulldomain, sizeof(fulldomain),
-             "_%s._%s.%s", service, proto, domain);
+    xmpp_snprintf(fulldomain, sizeof(fulldomain),
+                  "_%s._%s.%s", service, proto, domain);
 
 #ifdef _WIN32
     /* try using dnsapi first */
@@ -535,7 +535,7 @@ int sock_srv_lookup(const char *service, const char *proto,
 
 		    while (current) {
 			if (current->wType == DNS_TYPE_SRV) {
-			    snprintf(resulttarget, resulttargetlength, "%s", current->Data.Srv.pNameTarget);
+			    xmpp_snprintf(resulttarget, resulttargetlength, "%s", current->Data.Srv.pNameTarget);
 			    *resultport = current->Data.Srv.wPort;
 			    set = 1;
 
@@ -819,7 +819,7 @@ int sock_srv_lookup(const char *service, const char *proto,
 				{
 					struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
-					snprintf(resulttarget, resulttargetlength, "%s", srvrdata->target);
+					xmpp_snprintf(resulttarget, resulttargetlength, "%s", srvrdata->target);
 					*resultport = srvrdata->port;
 					set = 1;
 				}
@@ -862,8 +862,8 @@ int sock_srv_lookup(const char *service, const char *proto,
 		    struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
                     if (srvrdata->priority < min || !set) {
-                        snprintf(resulttarget, resulttargetlength, "%s",
-                                 srvrdata->target);
+                        xmpp_snprintf(resulttarget, resulttargetlength, "%s",
+                                      srvrdata->target);
                         *resultport = srvrdata->port;
                         set = 1;
                         min = srvrdata->priority;
