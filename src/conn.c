@@ -425,9 +425,10 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
         }
         if (conn->tls_legacy_ssl) {
             /* SSL tunneled connection on 5223 port is legacy and doesn't
-             * have an SRV record. Force port 5223 here.
+             * have an SRV record. Force port 5223 here unless altport is
+             * specified.
              */
-            port = XMPP_PORT_CLIENT_LEGACY_SSL;
+            port = altport ? altport : XMPP_PORT_CLIENT_LEGACY_SSL;
         }
     }
     if (prefdomain != NULL) {
