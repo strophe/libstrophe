@@ -478,7 +478,7 @@ int xmpp_stanza_set_name(xmpp_stanza_t *stanza,
     stanza->type = XMPP_STANZA_TAG;
     stanza->data = xmpp_strdup(stanza->ctx, name);
 
-    return XMPP_EOK;
+    return stanza->data == NULL ? XMPP_EMEM : XMPP_EOK;
 }
 
 /** Get the stanza name.
