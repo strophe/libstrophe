@@ -154,6 +154,13 @@ int main(int argc, char **argv)
     /* create a connection */
     conn = xmpp_conn_new(ctx);
 
+    /*
+     * also you can disable TLS support or force legacy SSL
+     * connection without STARTTLS
+     *
+     * see xmpp_conn_set_flags() or examples/basic.c
+     */
+
     /* setup authentication information */
     xmpp_conn_set_jid(conn, jid);
     xmpp_conn_set_pass(conn, pass);
