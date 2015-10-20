@@ -583,7 +583,10 @@ int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza,
     }
 
     val = xmpp_strdup(stanza->ctx, value);
-    if (!val) return XMPP_EMEM;
+    if (!val) {
+        hash_release(stanza->attributes);
+        return XMPP_EMEM;
+    }
 
     hash_add(stanza->attributes, key, val);
 
@@ -662,7 +665,7 @@ int xmpp_stanza_set_text(xmpp_stanza_t *stanza,
     if (stanza->data) xmpp_free(stanza->ctx, stanza->data);
     stanza->data = xmpp_strdup(stanza->ctx, text);
 
-    return XMPP_EOK;
+    return stanza->data == NULL ? XMPP_EMEM : XMPP_EOK;
 }
 
 /** Set the text data for a text stanza.
