@@ -712,13 +712,7 @@ int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
  */
 char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza)
 {
-    if (stanza->type != XMPP_STANZA_TAG)
-	return NULL;
-
-    if (!stanza->attributes)
-	return NULL;
-
-    return (char *)hash_get(stanza->attributes, "id");
+    return xmpp_stanza_get_attribute(stanza, "id");
 }
 
 /** Get the namespace attribute of the stanza object.
@@ -733,13 +727,7 @@ char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza)
  */
 char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza)
 {
-    if (stanza->type != XMPP_STANZA_TAG)
-	return NULL;
-
-    if (!stanza->attributes)
-	return NULL;
-
-    return (char *)hash_get(stanza->attributes, "xmlns");
+    return xmpp_stanza_get_attribute(stanza, "xmlns");
 }
 
 /** Get the 'type' attribute of the stanza object.
@@ -754,13 +742,7 @@ char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza)
  */
 char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza)
 {
-    if (stanza->type != XMPP_STANZA_TAG)
-	return NULL;
-    
-    if (!stanza->attributes)
-	return NULL;
-
-    return (char *)hash_get(stanza->attributes, "type");
+    return xmpp_stanza_get_attribute(stanza, "type");
 }
 
 /** Get the 'to' attribute of the stanza object.
@@ -775,13 +757,7 @@ char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza)
  */
 char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza)
 {
-    if (stanza->type != XMPP_STANZA_TAG)
-	return NULL;
-
-    if (!stanza->attributes)
-	return NULL;
-
-    return (char *)hash_get(stanza->attributes, "to");
+    return xmpp_stanza_get_attribute(stanza, "to");
 }
 
 /** Get the 'from' attribute of the stanza object.
@@ -796,13 +772,7 @@ char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza)
  */
 char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza)
 {
-    if (stanza->type != XMPP_STANZA_TAG)
-	return NULL;
-
-    if (!stanza->attributes)
-	return NULL;
-
-    return (char *)hash_get(stanza->attributes, "from");
+    return xmpp_stanza_get_attribute(stanza, "from");
 }
 
 /** Get the first child of stanza with name.
