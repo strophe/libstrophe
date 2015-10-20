@@ -6,12 +6,20 @@
 		- xmpp_conn_get_flags()
 		- xmpp_conn_set_flags()
 		- xmpp_conn_is_secured()
+		- xmpp_stanza_del_attribute()
+		- xmpp_stanza_get_to()
+		- xmpp_stanza_get_from()
+		- xmpp_stanza_set_to()
+		- xmpp_stanza_set_from()
+		- xmpp_stanza_reply()
 	- Exposed private API:
 		- xmpp_jid_new()
 		- xmpp_jid_bare()
 		- xmpp_jid_node()
 		- xmpp_jid_domain()
 		- xmpp_jid_resource()
+		- xmpp_stanza_get_attribute_count()
+		- xmpp_stanza_get_attributes()
 
 0.8.8
 	- XML namespace support
