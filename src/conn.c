@@ -403,6 +403,8 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 
     if (conn->state != XMPP_STATE_DISCONNECTED)
         return -1;
+    if (conn->domain != NULL)
+        xmpp_free(conn->ctx, conn->domain);
 
     conn->type = XMPP_CLIENT;
     conn->secured = 0;
@@ -487,6 +489,8 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
 
     if (conn->state != XMPP_STATE_DISCONNECTED)
         return -1;
+    if (conn->domain != NULL)
+        xmpp_free(conn->ctx, conn->domain);
 
     conn->type = XMPP_COMPONENT;
     conn->secured = 0;
