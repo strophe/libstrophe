@@ -145,7 +145,7 @@ static const xmpp_log_level_t _xmpp_default_logger_levels[] = {XMPP_LEVEL_DEBUG,
  *  @param area the area the log message is for
  *  @param msg the log message
  */
-void xmpp_default_logger(void * const userdata,
+static void xmpp_default_logger(void * const userdata,
 			 const xmpp_log_level_t level,
 			 const char * const area,
 			 const char * const msg)
@@ -404,6 +404,11 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem,
 
 	ctx->connlist = NULL;
 	ctx->loop_status = XMPP_LOOP_NOTSTARTED;
+	ctx->rand = xmpp_rand_new(ctx);
+	if (ctx->rand == NULL) {
+	    xmpp_free(ctx, ctx);
+	    ctx = NULL;
+	}
     }
 
     return ctx;
@@ -418,6 +423,7 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem,
 void xmpp_ctx_free(xmpp_ctx_t * const ctx)
 {
     /* mem and log are owned by their suppliers */
+    xmpp_rand_free(ctx, ctx->rand);
     xmpp_free(ctx, ctx); /* pull the hole in after us */
 }
 

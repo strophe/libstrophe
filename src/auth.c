@@ -16,12 +16,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include "strophe.h"
 #include "common.h"
 #include "sasl.h"
 #include "sha1.h"
+#include "rand.h"
 
 #ifdef _MSC_VER
 #define strcasecmp stricmp
@@ -280,32 +280,19 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
 			      void * const userdata)
 {
     char *name;
+
     name = xmpp_stanza_get_name(stanza);
-    xmpp_debug(conn->ctx, "xmpp",
-	"handle proceedtls called for %s", name);
+    xmpp_debug(conn->ctx, "xmpp", "handle proceedtls called for %s", name);
 
     if (strcmp(name, "proceed") == 0) {
         xmpp_debug(conn->ctx, "xmpp", "proceeding with TLS");
 
-	conn->tls = tls_new(conn->ctx, conn->sock);
-
-	if (!tls_start(conn->tls))
-	{
-	    xmpp_debug(conn->ctx, "xmpp", "Couldn't start TLS! error %d", tls_error(conn->tls));
-	    tls_free(conn->tls);
-	    conn->tls = NULL;
-	    conn->tls_failed = 1;
-
-	    /* failed tls spoils the connection, so disconnect */
-	    xmpp_disconnect(conn);
-	}
-	else
-	{
-            conn->secured = 1;
-            conn_prepare_reset(conn, auth_handle_open);
-
-	    conn_open_stream(conn);
-	}
+        if (conn_tls_start(conn) == 0) {
+            conn_open_stream(conn);
+        } else {
+            /* failed tls spoils the connection, so disconnect */
+            xmpp_disconnect(conn);
+        }
     }
 
     return 0;
@@ -501,46 +488,24 @@ err:
     return 0;
 }
 
-static char *_get_nonce(xmpp_ctx_t *ctx)
-{
-    unsigned char buffer[sizeof(clock_t) + sizeof(time_t)] = {0};
-    clock_t ticks = clock();
-    time_t t;
-
-    if (ticks != (clock_t)-1) {
-        *(clock_t *)buffer = ticks;
-    }
-    t = time((time_t *)(buffer + sizeof(clock_t)));
-    if (t == (time_t)-1) {
-        *(time_t *)(buffer + sizeof(clock_t)) = (time_t)rand();
-    }
-
-    return base64_encode(ctx, buffer, sizeof(buffer));
-}
-
 static char *_make_scram_sha1_init_msg(xmpp_conn_t * const conn)
 {
     size_t message_len;
     char *node;
     char *message;
-    char *nonce;
+    char nonce[32];
 
     node = xmpp_jid_node(conn->ctx, conn->jid);
     if (!node) {
         return NULL;
     }
-
-    nonce = _get_nonce(conn->ctx);
-    if (!nonce) {
-        return NULL;
-    }
+    xmpp_rand_nonce(conn->ctx, nonce, sizeof(nonce));
     message_len = strlen(node) + strlen(nonce) + 8 + 1;
     message = xmpp_alloc(conn->ctx, message_len);
     if (message) {
         xmpp_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
-        xmpp_free(conn->ctx, node);
     }
-    xmpp_free(conn->ctx, nonce);
+    xmpp_free(conn->ctx, node);
 
     return message;
 }
@@ -627,7 +592,18 @@ static void _auth(xmpp_conn_t * const conn)
 
 	/* TLS was tried, unset flag */
 	conn->tls_support = 0;
-    } else if (anonjid && conn->sasl_support & SASL_MASK_ANONYMOUS) {
+	/* _auth() will be called later */
+	return;
+    }
+
+    if (conn->tls_mandatory && !xmpp_conn_is_secured(conn)) {
+        xmpp_error(conn->ctx, "xmpp", "TLS is not supported, but set as"
+                                      "mandatory for this connection");
+        conn_disconnect(conn);
+        return;
+    }
+
+    if (anonjid && conn->sasl_support & SASL_MASK_ANONYMOUS) {
 	/* some crap here */
 	auth = _make_sasl_auth(conn, "ANONYMOUS");
 	if (!auth) {
@@ -1187,10 +1163,11 @@ int _handle_component_auth(xmpp_conn_t * const conn)
     /* Feed the session id and passphrase to the algorithm.
      * We need to compute SHA1(session_id + passphrase)
      */
-    SHA1_Init(&mdctx);
-    SHA1_Update(&mdctx, (uint8_t*)conn->stream_id, strlen(conn->stream_id));
-    SHA1_Update(&mdctx, (uint8_t*)conn->pass, strlen(conn->pass));
-    SHA1_Final(&mdctx, md_value);
+    crypto_SHA1_Init(&mdctx);
+    crypto_SHA1_Update(&mdctx, (uint8_t*)conn->stream_id,
+                       strlen(conn->stream_id));
+    crypto_SHA1_Update(&mdctx, (uint8_t*)conn->pass, strlen(conn->pass));
+    crypto_SHA1_Final(&mdctx, md_value);
 
     digest = xmpp_alloc(conn->ctx, 2*sizeof(md_value)+1);
     if (digest) {

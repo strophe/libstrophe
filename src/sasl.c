@@ -23,6 +23,7 @@
 #include "md5.h"
 #include "sha1.h"
 #include "scram.h"
+#include "rand.h"
 
 #ifdef _WIN32
 #define strtok_r strtok_s
@@ -218,6 +219,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     struct MD5Context MD5;
     unsigned char digest[16], HA1[16], HA2[16];
     char hex[32];
+    char cnonce[13];
 
     /* our digest response is 
 	Hex( KD( HEX(MD5(A1)),
@@ -250,8 +252,8 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
 
     /* add our response fields */
     hash_add(table, "username", xmpp_strdup(ctx, node));
-    /* TODO: generate a random cnonce */
-    hash_add(table, "cnonce", xmpp_strdup(ctx, "00DEADBEEF00"));
+    xmpp_rand_nonce(ctx, cnonce, sizeof(cnonce));
+    hash_add(table, "cnonce", xmpp_strdup(ctx, cnonce));
     hash_add(table, "nc", xmpp_strdup(ctx, "00000001"));
     hash_add(table, "qop", xmpp_strdup(ctx, "auth"));
     value = xmpp_alloc(ctx, 5 + strlen(domain) + 1);
@@ -507,14 +509,14 @@ char *base64_encode(xmpp_ctx_t *ctx,
     int clen;
     char *cbuf, *c;
     uint32_t word, hextet;
-    int i;
+    unsigned i;
 
     clen = base64_encoded_len(ctx, len);
     cbuf = xmpp_alloc(ctx, clen + 1);
     if (cbuf != NULL) {
 	c = cbuf;
 	/* loop over data, turning every 3 bytes into 4 characters */
-	for (i = 0; i < len - 2; i += 3) {
+	for (i = 0; i + 2 < len; i += 3) {
 	    word = buffer[i] << 16 | buffer[i+1] << 8 | buffer[i+2];
 	    hextet = (word & 0x00FC0000) >> 18;
 	    *c++ = _base64_charmap[hextet];
@@ -561,6 +563,8 @@ int base64_decoded_len(xmpp_ctx_t *ctx,
     int nudge;
     int c;
 
+    if (len < 4) return 0;
+
     /* count the padding characters for the remainder */
     nudge = -1;
     c = _base64_invcharmap[(int)buffer[len-1]];
@@ -584,8 +588,8 @@ unsigned char *base64_decode(xmpp_ctx_t *ctx,
 {
     int dlen;
     unsigned char *dbuf, *d;
-    uint32_t word, hextet;
-    int i;
+    uint32_t word, hextet = 0;
+    unsigned i;
 
     /* len must be a multiple of 4 */
     if (len & 0x03) return NULL;
@@ -595,7 +599,7 @@ unsigned char *base64_decode(xmpp_ctx_t *ctx,
     if (dbuf != NULL) {
 	d = dbuf;
 	/* loop over each set of 4 characters, decoding 3 bytes */
-	for (i = 0; i < len - 3; i += 4) {
+	for (i = 0; i + 3 < len; i += 4) {
 	    hextet = _base64_invcharmap[(int)buffer[i]];
 	    if (hextet & 0xC0) break;
 	    word = hextet << 18;

@@ -10,6 +10,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 
 #include <strophe.h>
 
@@ -20,9 +21,13 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
                   void * const userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
+    int secured;
 
     if (status == XMPP_CONN_CONNECT) {
         fprintf(stderr, "DEBUG: connected\n");
+        secured = xmpp_conn_is_secured(conn);
+        fprintf(stderr, "DEBUG: connection is %s.\n",
+                secured ? "secured" : "NOT secured");
         xmpp_disconnect(conn);
     }
     else {
@@ -36,20 +41,41 @@ int main(int argc, char **argv)
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
-    char *jid, *pass, *host;
+    char *jid, *pass, *host = NULL;
+    long flags = 0;
+    int i;
 
     /* take a jid and password on the command line */
-    if (argc < 3 || argc > 4) {
-        fprintf(stderr, "Usage: basic <jid> <pass> [<host>]\n\n");
+    for (i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--disable-tls") == 0)
+            flags |= XMPP_CONN_FLAG_DISABLE_TLS;
+        else if (strcmp(argv[i], "--mandatory-tls") == 0)
+            flags |= XMPP_CONN_FLAG_MANDATORY_TLS;
+        else if (strcmp(argv[i], "--legacy-ssl") == 0)
+            flags |= XMPP_CONN_FLAG_LEGACY_SSL;
+        else
+            break;
+    }
+    if ((argc - i) < 2 || (argc - i) > 3) {
+        fprintf(stderr, "Usage: basic [options] <jid> <pass> [<host>]\n\n"
+                        "Options:\n"
+                        "  --disable-tls        Disable TLS.\n"
+                        "  --mandatory-tls      Deny plaintext connection.\n"
+                        "  --legacy-ssl         Use old style SSL.\n\n"
+                        "Note: --disable-tls conflicts with --mandatory-tls or "
+                              "--legacy-ssl\n");
         return 1;
     }
 
-    jid = argv[1];
-    pass = argv[2];
-    host = NULL;
+    jid = argv[i];
+    pass = argv[i + 1];
+    if (i + 2 < argc)
+        host = argv[i + 2];
 
-    if (argc == 4)
-        host = argv[3];
+    /*
+     * Note, this example doesn't handle errors. Applications should check
+     * return values of non-void functions.
+     */
 
     /* init library */
     xmpp_initialize();
@@ -60,6 +86,9 @@ int main(int argc, char **argv)
 
     /* create a connection */
     conn = xmpp_conn_new(ctx);
+
+    /* configure connection properties (optional) */
+    xmpp_conn_set_flags(conn, flags);
 
     /* setup authentication information */
     xmpp_conn_set_jid(conn, jid);

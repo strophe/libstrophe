@@ -65,8 +65,11 @@ START_TEST(callbacks)
                         cbtest_handle_stanza, NULL);
 
     ret = parser_feed(parser, "<stream>", 8);
+    fail_unless(ret != 0);
     ret = parser_feed(parser, "<message/>", 10);
-    parser_feed(parser, "</stream>", 9);
+    fail_unless(ret != 0);
+    ret = parser_feed(parser, "</stream>", 9);
+    fail_unless(ret != 0);
 
     fail_unless(cbtest_got_start == 1);
     fail_unless(cbtest_got_end == 1);

@@ -1,4 +1,4 @@
-AC_INIT([libstrophe], [0.8.8], [jack@metajack.im])
+AC_INIT([libstrophe], [0.8.9], [jack@metajack.im])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT([dlopen])
@@ -37,8 +37,7 @@ fi
 
 AC_ARG_WITH([libxml2],
             [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing])],
-            [with_libxml2=check],
-            [with_libxml2=no])
+            [], [with_libxml2=no])
 
 if test "x$with_libxml2" != xno; then
   PKG_CHECK_MODULES([libxml2], [libxml-2.0 >= 2.7],

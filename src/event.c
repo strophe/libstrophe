@@ -258,9 +258,10 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		/* connection complete */
 
 		/* check for error */
-		if (sock_connect_error(conn->sock) != 0) {
+                ret = sock_connect_error(conn->sock);
+		if (ret != 0) {
 		    /* connection failed */
-		    xmpp_debug(ctx, "xmpp", "connection failed");
+		    xmpp_debug(ctx, "xmpp", "connection failed, error %d", ret);
 		    conn_disconnect(conn);
 		    break;
 		}
@@ -268,7 +269,15 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		conn->state = XMPP_STATE_CONNECTED;
 		xmpp_debug(ctx, "xmpp", "connection successful");
 
-		
+                if (conn->tls_legacy_ssl) {
+                    xmpp_debug(ctx, "xmpp", "using legacy SSL connection");
+                    ret = conn_tls_start(conn);
+                    if (ret != 0) {
+                        conn_disconnect(conn);
+                        break;
+                    }
+                }
+
 		/* send stream init */
 		conn_open_stream(conn);
 	    }

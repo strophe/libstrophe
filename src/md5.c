@@ -37,14 +37,14 @@
 
 #define PUT_32BIT_LSB_FIRST(cp, value) \
     do { \
-	(cp)[0] = (value) & 0xFF; \
-	(cp)[1] = ((value) >> 8)  & 0xFF; \
-	(cp)[2] = ((value) >> 16) & 0xFF; \
-	(cp)[3] = ((value) >> 24) & 0xFF; \
+        (cp)[0] = (value) & 0xFF; \
+        (cp)[1] = ((value) >> 8)  & 0xFF; \
+        (cp)[2] = ((value) >> 16) & 0xFF; \
+        (cp)[3] = ((value) >> 24) & 0xFF; \
     } while(0)
 
 static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
-			 struct MD5Context *ctx);
+                         struct MD5Context *ctx);
 
 /*
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
@@ -60,7 +60,7 @@ void MD5Init(struct MD5Context *ctx)
     ctx->bits[0] = 0;
     ctx->bits[1] = 0;
 
-	memset(ctx->in, 0, 64);
+    memset(ctx->in, 0, 64);
 }
 
 /*
@@ -75,33 +75,33 @@ void MD5Update(struct MD5Context *ctx, unsigned char const *buf, uint32_t len)
 
     t = ctx->bits[0];
     if ((ctx->bits[0] = (t + ((uint32_t)len << 3)) & 0xffffffff) < t)
-	ctx->bits[1]++;		/* Carry from low to high */
+        ctx->bits[1]++;         /* Carry from low to high */
     ctx->bits[1] += len >> 29;
 
-    t = (t >> 3) & 0x3f;	/* Bytes already in shsInfo->data */
+    t = (t >> 3) & 0x3f;        /* Bytes already in shsInfo->data */
 
     /* Handle any leading odd-sized chunks */
 
     if (t) {
-	unsigned char *p = ctx->in + t;
+        unsigned char *p = ctx->in + t;
 
-	t = 64 - t;
-	if (len < t) {
-	    memcpy(p, buf, len);
-	    return;
-	}
-	memcpy(p, buf, t);
-	MD5Transform(ctx->buf, ctx->in, ctx);
-	buf += t;
-	len -= t;
+        t = 64 - t;
+        if (len < t) {
+            memcpy(p, buf, len);
+            return;
+        }
+        memcpy(p, buf, t);
+        MD5Transform(ctx->buf, ctx->in, ctx);
+        buf += t;
+        len -= t;
     }
     /* Process data in 64-byte chunks */
 
     while (len >= 64) {
-	memcpy(ctx->in, buf, 64);
-	MD5Transform(ctx->buf, ctx->in, ctx);
-	buf += 64;
-	len -= 64;
+        memcpy(ctx->in, buf, 64);
+        MD5Transform(ctx->buf, ctx->in, ctx);
+        buf += 64;
+        len -= 64;
     }
 
     /* Handle any remaining bytes of data. */
@@ -131,15 +131,15 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
 
     /* Pad out to 56 mod 64 */
     if (count < 8) {
-	/* Two lots of padding:  Pad the first block to 64 bytes */
-	memset(p, 0, count);
-	MD5Transform(ctx->buf, ctx->in, ctx);
+        /* Two lots of padding:  Pad the first block to 64 bytes */
+        memset(p, 0, count);
+        MD5Transform(ctx->buf, ctx->in, ctx);
 
-	/* Now fill the next block with 56 bytes */
-	memset(ctx->in, 0, 56);
+        /* Now fill the next block with 56 bytes */
+        memset(ctx->in, 0, 56);
     } else {
-	/* Pad block to 56 bytes */
-	memset(p, 0, count - 8);
+        /* Pad block to 56 bytes */
+        memset(p, 0, count - 8);
     }
 
     /* Append length in bits and transform */
@@ -151,10 +151,8 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
     PUT_32BIT_LSB_FIRST(digest + 4, ctx->buf[1]);
     PUT_32BIT_LSB_FIRST(digest + 8, ctx->buf[2]);
     PUT_32BIT_LSB_FIRST(digest + 12, ctx->buf[3]);
-    memset(ctx, 0, sizeof(*ctx));	/* In case it's sensitive */
+    memset(ctx, 0, sizeof(*ctx));       /* In case it's sensitive */
 }
-
-#ifndef ASM_MD5
 
 /* The four core functions - F1 is optimized somewhat */
 
@@ -168,14 +166,14 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
 /* debugging version: */
 /*
 #define MD5STEP(f, w, x, y, z, data, s) \
-	printf("MD5STEP:  w: %x x: %x y: %x z: %x data: %x s: %x\n", 	\
-		w, x, y, z, data, s); 	\
-	printf("f(x,y,z) = %x\n", f(x,y,z)+data); \
-	( w += f(x, y, z) + data,  printf(" - w: %x ", w), \
-	w = w<<s | w>>(32-s),  printf(" - w: %x\n", w), w += x )
+        printf("MD5STEP:  w: %x x: %x y: %x z: %x data: %x s: %x\n", \
+                w, x, y, z, data, s); \
+        printf("f(x,y,z) = %x\n", f(x,y,z)+data); \
+        ( w += f(x, y, z) + data,  printf(" - w: %x ", w), \
+        w = w<<s | w>>(32-s),  printf(" - w: %x\n", w), w += x )
 */
 #define MD5STEP(f, w, x, y, z, data, s) \
-	( w += f(x, y, z) + data, w = w<<s | w>>(32-s), w += x )
+        ( w += f(x, y, z) + data, w = w<<s | w>>(32-s), w += x )
 
 /*
  * The core of the MD5 algorithm, this alters an existing MD5 hash to
@@ -183,7 +181,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
  * the data and converts bytes into longwords for this routine.
  */
 static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
-			 struct MD5Context *ctx)
+                         struct MD5Context *ctx)
 {
     register uint32_t a, b, c, d, i;
     uint32_t in[16];
@@ -270,23 +268,3 @@ static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
     buf[2] += c;
     buf[3] += d;
 }
-
-#ifdef DEBUG_MD5
-
-#include <stdio.h>
-
-void MD5DumpBytes(unsigned char *b, int len)
-{
-	int i;
-	for (i=0; i<len; i++) {
-		if (i%32==0 && i!=0) {
-			printf("\n");
-		}
-		printf("%02x", b[i]&0xff);
-	}
-	printf("\n");
-}
-
-#endif /* DEBUG_MD5 */
-
-#endif /* !MD5_ASM */

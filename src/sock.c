@@ -23,7 +23,6 @@
 #include <ws2tcpip.h>
 #include <windns.h>
 #include <Iphlpapi.h>
-#define snprintf _snprintf
 #else
 #include <errno.h>
 #include <unistd.h>
@@ -39,6 +38,7 @@
 #endif
 
 #include "sock.h"
+#include "snprintf.h"
 
 void sock_initialize(void)
 {
@@ -69,7 +69,7 @@ static int _in_progress(int error)
 #ifdef _WIN32
     return (error == WSAEWOULDBLOCK || error == WSAEINPROGRESS);
 #else
-    return (errno == EINPROGRESS);
+    return (error == EINPROGRESS);
 #endif
 }
 
@@ -79,35 +79,37 @@ sock_t sock_connect(const char * const host, const unsigned int port)
     char service[6];
     struct addrinfo *res, *ainfo, hints;
     int err;
-    
-    sock = -1;
 
-    snprintf(service, 6, "%u", port);
+    xmpp_snprintf(service, 6, "%u", port);
 
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_UNSPEC;
+#ifdef AI_ADDRCONFIG
+    hints.ai_flags = AI_ADDRCONFIG;
+#endif /* AI_ADDRCONFIG */
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((err = getaddrinfo(host, service, &hints, &res)) != 0)
-	return -1;
+    err = getaddrinfo(host, service, &hints, &res);
+    if (err != 0)
+        return -1;
 
-    ainfo = res;
-    while (ainfo) {
-	if ((sock = socket(ainfo->ai_family, ainfo->ai_socktype, 
-		   ainfo->ai_protocol)) >= 0) {
-	    sock_set_nonblocking(sock);
+    for (ainfo = res; ainfo != NULL; ainfo = ainfo->ai_next) {
+        sock = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
+        if (sock < 0)
+            continue;
 
-	    err = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
+        err = sock_set_nonblocking(sock);
+        if (err == 0) {
+            err = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
+            if (err == 0 || _in_progress(sock_error()))
+                break;
+        }
 
-	    if ((err == 0) || (err < 0 && _in_progress(sock_error())))
-		break;
-	}
-
-	ainfo = ainfo->ai_next;
+        close(sock);
     }
-
-    if (res) freeaddrinfo(res);
+    freeaddrinfo(res);
+    sock = ainfo == NULL ? -1 : sock;
 
     return sock;
 }
@@ -127,7 +129,13 @@ int sock_set_blocking(const sock_t sock)
     u_long block = 0;
     return ioctlsocket(sock, FIONBIO, &block);
 #else
-    return fcntl(sock, F_SETFL, 0);
+    int rc;
+
+    rc = fcntl(sock, F_GETFL, NULL);
+    if (rc >= 0) {
+        rc = fcntl(sock, F_SETFL, rc & (~O_NONBLOCK));
+    }
+    return rc;
 #endif
 }
 
@@ -137,7 +145,13 @@ int sock_set_nonblocking(const sock_t sock)
     u_long nonblock = 1;
     return ioctlsocket(sock, FIONBIO, &nonblock);
 #else
-    return fcntl(sock, F_SETFL, O_NONBLOCK);
+    int rc;
+
+    rc = fcntl(sock, F_GETFL, NULL);
+    if (rc >= 0) {
+        rc = fcntl(sock, F_SETFL, rc | O_NONBLOCK);
+    }
+    return rc;
 #endif
 }
 
@@ -155,7 +169,7 @@ int sock_is_recoverable(const int error)
 {
 #ifdef _WIN32
     return (error == WSAEINTR || error == WSAEWOULDBLOCK || 
-	    error == WSAEINPROGRESS);
+            error == WSAEINPROGRESS);
 #else
     return (error == EAGAIN || error == EINTR);
 #endif
@@ -164,18 +178,18 @@ int sock_is_recoverable(const int error)
 int sock_connect_error(const sock_t sock)
 {
     struct sockaddr sa;
-    unsigned len;
+    socklen_t len;
     char temp;
 
-    sa.sa_family = AF_INET;
-
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_family = AF_UNSPEC;
     len = sizeof(sa);
 
     /* we don't actually care about the peer name, we're just checking if
      * we're connected or not */
     if (getpeername(sock, &sa, &len) == 0)
     {
-	return 0;
+        return 0;
     }
 
     /* it's possible that the error wasn't ENOTCONN, so if it wasn't,
@@ -234,22 +248,7 @@ struct dnsquery_resourcerecord
 	struct dnsquery_srvrdata rdata;
 };
 
-
-void netbuf_add_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int num)
-{
-	unsigned char *start = buf + *offset;
-	unsigned char *p = start;
-
-	/* assuming big endian */
-	*p++ = (num >> 24) & 0xff;
-	*p++ = (num >> 16) & 0xff;
-	*p++ = (num >> 8)  & 0xff;
-	*p++ = (num)       & 0xff;
-
-	*offset += 4;
-}
-
-void netbuf_get_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int *num)
+static void netbuf_get_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned int *num)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
@@ -264,19 +263,7 @@ void netbuf_get_32bitnum(unsigned char *buf, int buflen, int *offset, unsigned i
 	*offset += 4;
 }
 
-void netbuf_add_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short num)
-{
-	unsigned char *start = buf + *offset;
-	unsigned char *p = start;
-
-	/* assuming big endian */
-	*p++ = (num >> 8) & 0xff;
-	*p++ = (num)      & 0xff;
-
-	*offset += 2;
-}
-
-void netbuf_get_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short *num)
+static void netbuf_get_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short *num)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p = start;
@@ -289,79 +276,7 @@ void netbuf_get_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned s
 	*offset += 2;
 }
 
-void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset, 
-			    char *name)
-{
-	unsigned char *start = buf + *offset;
-	unsigned char *p = start;
-	unsigned char *wordstart, *wordend;
-
-	wordstart = (unsigned char *)name;
-	
-	while (*wordstart)
-	{
-		int len;
-		wordend = wordstart;
-		while (*wordend && *wordend != '.')
-		{
-			wordend++;
-		}
-
-		len = (int)(wordend - wordstart);
-
-		if (len > 0x3F)
-		{
-			len = 0x3F;
-		}
-
-		*p++ = len;
-
-		while (wordstart != wordend)
-		{
-			*p++ = *wordstart++;
-		}
-
-		if (*wordstart == '.')
-		{
-			wordstart++;
-		}
-	}
-
-	*p++ = '\0';
-
-	*offset += p - start;
-}
-
-int calc_domain_name_size(unsigned char *buf, int buflen, int offset)
-{
-	unsigned char *p = buf + offset;
-	int len = 0;
-
-	while (*p)
-	{
-		if ((*p & 0xC0) == 0xC0)
-		{
-			int newoffset = 0;
-			newoffset |= (*p++ & 0x3F) << 8;
-			newoffset |= *p;
-
-			p = buf + newoffset;
-		}
-		else
-		{
-			if (len)
-			{
-				len += 1;
-			}
-			len += *p;
-			p += *p + 1;
-		}
-	}
-
-	return len;
-}
-
-int netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char *namebuf, int namebuflen)
+static int netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char *namebuf, int namebuflen)
 {
 	unsigned char *start = buf + *offset;
 	unsigned char *p, *p2;
@@ -443,30 +358,7 @@ int netbuf_get_domain_name(unsigned char *buf, int buflen, int *offset, char *na
 	return 0;
 }
 
-void netbuf_add_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
-{
-	unsigned char *p;
-
-	netbuf_add_16bitnum(buf, buflen, offset, header->id);
-	
-	p = buf + *offset;
-	*p++ =    ((header->qr     & 0x01) << 7)
-		| ((header->opcode & 0x0F) << 3)
-		| ((header->aa     & 0x01) << 2)
-		| ((header->tc     & 0x01) << 1)
-		| ((header->rd     & 0x01));
-	*p++ =    ((header->ra     & 0x01) << 7)
-		| ((header->z      & 0x07) << 4)
-		| ((header->rcode  & 0x0F));
-	*offset += 2;
-
-	netbuf_add_16bitnum(buf, buflen, offset, header->qdcount);
-	netbuf_add_16bitnum(buf, buflen, offset, header->ancount);
-	netbuf_add_16bitnum(buf, buflen, offset, header->nscount);
-	netbuf_add_16bitnum(buf, buflen, offset, header->arcount);
-}
-
-void netbuf_get_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
+static void netbuf_get_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
 {
 	unsigned char *p;
 		
@@ -491,21 +383,14 @@ void netbuf_get_dnsquery_header(unsigned char *buf, int buflen, int *offset, str
 	netbuf_get_16bitnum(buf, buflen, offset, &(header->arcount));
 }
 
-void netbuf_add_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
-{
-	netbuf_add_domain_name(buf, buflen, offset, question->qname);
-	netbuf_add_16bitnum(buf, buflen, offset, question->qtype);
-	netbuf_add_16bitnum(buf, buflen, offset, question->qclass);
-}
-
-void netbuf_get_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
+static void netbuf_get_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
 {
 	netbuf_get_domain_name(buf, buflen, offset, question->qname, 1024);
 	netbuf_get_16bitnum(buf, buflen, offset, &(question->qtype));
 	netbuf_get_16bitnum(buf, buflen, offset, &(question->qclass));
 }
 
-void netbuf_get_dnsquery_srvrdata(unsigned char *buf, int buflen, int *offset, struct dnsquery_srvrdata *srvrdata)
+static void netbuf_get_dnsquery_srvrdata(unsigned char *buf, int buflen, int *offset, struct dnsquery_srvrdata *srvrdata)
 {
 	netbuf_get_16bitnum(buf, buflen, offset, &(srvrdata->priority));
 	netbuf_get_16bitnum(buf, buflen, offset, &(srvrdata->weight));
@@ -513,7 +398,7 @@ void netbuf_get_dnsquery_srvrdata(unsigned char *buf, int buflen, int *offset, s
 	netbuf_get_domain_name(buf, buflen, offset, srvrdata->target, 1024);
 }
 
-void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *offset, struct dnsquery_resourcerecord *rr)
+static void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *offset, struct dnsquery_resourcerecord *rr)
 {
 	netbuf_get_domain_name(buf, buflen, offset, rr->name, 1024);
 	netbuf_get_16bitnum(buf, buflen, offset, &(rr->type));
@@ -528,15 +413,104 @@ void netbuf_get_dnsquery_resourcerecord(unsigned char *buf, int buflen, int *off
 	*offset += rr->rdlength;
 }
 
+#ifdef _WIN32
+static void netbuf_add_16bitnum(unsigned char *buf, int buflen, int *offset, unsigned short num)
+{
+	unsigned char *start = buf + *offset;
+	unsigned char *p = start;
 
-int sock_srv_lookup(const char *service, const char *proto, const char *domain, char *resulttarget, int resulttargetlength, int *resultport)
+	/* assuming big endian */
+	*p++ = (num >> 8) & 0xff;
+	*p++ = (num)      & 0xff;
+
+	*offset += 2;
+}
+
+static void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset,
+			    char *name)
+{
+	unsigned char *start = buf + *offset;
+	unsigned char *p = start;
+	unsigned char *wordstart, *wordend;
+
+	wordstart = (unsigned char *)name;
+
+	while (*wordstart)
+	{
+		int len;
+		wordend = wordstart;
+		while (*wordend && *wordend != '.')
+		{
+			wordend++;
+		}
+
+		len = (int)(wordend - wordstart);
+
+		if (len > 0x3F)
+		{
+			len = 0x3F;
+		}
+
+		*p++ = len;
+
+		while (wordstart != wordend)
+		{
+			*p++ = *wordstart++;
+		}
+
+		if (*wordstart == '.')
+		{
+			wordstart++;
+		}
+	}
+
+	*p++ = '\0';
+
+	*offset += p - start;
+}
+
+static void netbuf_add_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
+{
+	unsigned char *p;
+
+	netbuf_add_16bitnum(buf, buflen, offset, header->id);
+
+	p = buf + *offset;
+	*p++ =    ((header->qr     & 0x01) << 7)
+		| ((header->opcode & 0x0F) << 3)
+		| ((header->aa     & 0x01) << 2)
+		| ((header->tc     & 0x01) << 1)
+		| ((header->rd     & 0x01));
+	*p++ =    ((header->ra     & 0x01) << 7)
+		| ((header->z      & 0x07) << 4)
+		| ((header->rcode  & 0x0F));
+	*offset += 2;
+
+	netbuf_add_16bitnum(buf, buflen, offset, header->qdcount);
+	netbuf_add_16bitnum(buf, buflen, offset, header->ancount);
+	netbuf_add_16bitnum(buf, buflen, offset, header->nscount);
+	netbuf_add_16bitnum(buf, buflen, offset, header->arcount);
+}
+
+static void netbuf_add_dnsquery_question(unsigned char *buf, int buflen, int *offset, struct dnsquery_question *question)
+{
+	netbuf_add_domain_name(buf, buflen, offset, question->qname);
+	netbuf_add_16bitnum(buf, buflen, offset, question->qtype);
+	netbuf_add_16bitnum(buf, buflen, offset, question->qclass);
+}
+#endif /* _WIN32 */
+
+int sock_srv_lookup(const char *service, const char *proto,
+                    const char *domain, char *resulttarget,
+                    int resulttargetlength, int *resultport)
 {
     int set = 0;
     char fulldomain[2048];
 
-    snprintf(fulldomain, 2048, "_%s._%s.%s", service, proto, domain);
-#ifdef _WIN32
+    xmpp_snprintf(fulldomain, sizeof(fulldomain),
+                  "_%s._%s.%s", service, proto, domain);
 
+#ifdef _WIN32
     /* try using dnsapi first */
     if (!set)
     {
@@ -561,7 +535,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 
 		    while (current) {
 			if (current->wType == DNS_TYPE_SRV) {
-			    snprintf(resulttarget, resulttargetlength, "%s", current->Data.Srv.pNameTarget);
+			    xmpp_snprintf(resulttarget, resulttargetlength, "%s", current->Data.Srv.pNameTarget);
 			    *resultport = current->Data.Srv.wPort;
 			    set = 1;
 
@@ -845,7 +819,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 				{
 					struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
-					snprintf(resulttarget, resulttargetlength, "%s", srvrdata->target);
+					xmpp_snprintf(resulttarget, resulttargetlength, "%s", srvrdata->target);
 					*resultport = srvrdata->port;
 					set = 1;
 				}
@@ -863,6 +837,7 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 #else
     if (!set) {
         unsigned char buf[65535];
+        unsigned short min;
 	int len;
 	
 	if ((len = res_query(fulldomain, C_IN, T_SRV, buf, 65535)) > 0) {
@@ -879,32 +854,25 @@ int sock_srv_lookup(const char *service, const char *proto, const char *domain, 
 		netbuf_get_dnsquery_question(buf, 65536, &offset, &question);
 	    }
 
+            min = 65535;
 	    for (i = 0; i < header.ancount; i++) {
 		netbuf_get_dnsquery_resourcerecord(buf, 65536, &offset, &rr);
 		
 		if (rr.type == 33) {
 		    struct dnsquery_srvrdata *srvrdata = &(rr.rdata);
 
-		    snprintf(resulttarget, resulttargetlength, "%s",
-			     srvrdata->target);
-		    *resultport = srvrdata->port;
-		    set = 1;
+                    if (srvrdata->priority < min || !set) {
+                        xmpp_snprintf(resulttarget, resulttargetlength, "%s",
+                                      srvrdata->target);
+                        *resultport = srvrdata->port;
+                        set = 1;
+                        min = srvrdata->priority;
+                    }
 		}
 	    }
-
-	    for (i = 0; i < header.ancount; i++) {
-		netbuf_get_dnsquery_resourcerecord(buf, 65536, &offset, &rr);
-	    }	    
 	}
     }
 #endif
 
-    if (!set)
-    {
-	snprintf(resulttarget, resulttargetlength, "%s", domain);
-	*resultport = 5222;
-	return 0;
-    }
-
-    return 1;
+    return set;
 }

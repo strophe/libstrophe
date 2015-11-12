@@ -23,8 +23,8 @@
 #include "common.h"
 #include "parser.h"
 
-/* ASCII FF is invalid UTF-8 and should never be present in well-formed XML */
-#define NAMESPACE_SEP ('\xFF')
+/* Use the Unit Separator to delimit namespace and name in our XML*/
+#define NAMESPACE_SEP ('\x1F')
 
 struct _parser_t {
     xmpp_ctx_t *ctx;

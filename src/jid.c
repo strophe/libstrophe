@@ -56,7 +56,7 @@ char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
 	    result[nlen+dlen] = '/';
 	    memcpy(result+nlen+dlen+1, resource, rlen - 1);
 	}
-	result[nlen+dlen+rlen] = '\0';
+	result[len] = '\0';
     }
 
     return result;

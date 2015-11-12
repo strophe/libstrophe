@@ -16,11 +16,11 @@
 #ifndef __LIBSTROPHE_STROPHE_H__
 #define __LIBSTROPHE_STROPHE_H__
 
+#include <stddef.h>     /* size_t */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdio.h>
 
 /* namespace defines */
 /** @def XMPP_NS_CLIENT
@@ -192,6 +192,10 @@ typedef enum {
     XMPP_SE_XML_NOT_WELL_FORMED
 } xmpp_error_type_t;
 
+#define XMPP_CONN_FLAG_DISABLE_TLS   0x0001
+#define XMPP_CONN_FLAG_MANDATORY_TLS 0x0002
+#define XMPP_CONN_FLAG_LEGACY_SSL    0x0004
+
 typedef struct {
     xmpp_error_type_t type;
     char *text;
@@ -208,6 +212,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx);
 xmpp_conn_t * xmpp_conn_clone(xmpp_conn_t * const conn);
 int xmpp_conn_release(xmpp_conn_t * const conn);
 
+long xmpp_conn_get_flags(const xmpp_conn_t * const conn);
+int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags);
 const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn);
 const char *xmpp_conn_get_bound_jid(const xmpp_conn_t * const conn);
 void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
@@ -215,6 +221,7 @@ const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
 void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);
 xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn);
 void xmpp_conn_disable_tls(xmpp_conn_t * const conn);
+int xmpp_conn_is_secured(xmpp_conn_t * const conn);
 
 int xmpp_connect_client(xmpp_conn_t * const conn, 
 			  const char * const altdomain,
@@ -310,6 +317,9 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t * const stanza,
 xmpp_stanza_t *xmpp_stanza_get_next(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
 				const char * const name);
+int xmpp_stanza_get_attribute_count(xmpp_stanza_t * const stanza);
+int xmpp_stanza_get_attributes(xmpp_stanza_t * const stanza,
+			       const char **attr, int attrlen);
 char * xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
 /* concatenate all child text nodes.  this function
  * returns a string that must be freed by the caller */
@@ -332,23 +342,25 @@ int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
 				   const char * const text, 
 				   const size_t size);
 
+int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
+                              const char * const name);
+
 /* common stanza helpers */
 char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
 char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
+char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza);
+char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza);
 int xmpp_stanza_set_id(xmpp_stanza_t * const stanza, 
 		       const char * const id);
 int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, 
 			 const char * const type);
-
-/* unimplemented
-int xmpp_stanza_set_to();
-int xmpp_stanza_set_from();
-*/
+int xmpp_stanza_set_to(xmpp_stanza_t * const stanza,
+                       const char * const to);
+int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
+                         const char * const from);
 
 /* allocate and initialize a stanza in reply to another */
-/* unimplemented
-xmpp_stanza_t *xmpp_stanza_reply(const xmpp_stanza_t *stanza);
-*/
+xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza);
 
 /* stanza subclasses */
 /* unimplemented
@@ -359,6 +371,19 @@ void xmpp_message_set_body();
 void xmpp_iq_new();
 void xmpp_presence_new();
 */
+
+/** jid **/
+/* these return new strings that must be xmpp_free()'d */
+char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
+                                    const char *domain,
+                                    const char *resource);
+char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid);
+char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid);
+char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid);
+char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid);
+
+/** UUID **/
+char *xmpp_uuid_gen(xmpp_ctx_t *ctx);
 
 /** event loop **/
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
