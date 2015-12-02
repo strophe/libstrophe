@@ -84,7 +84,7 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 	body = xmpp_stanza_new(ctx);
 	xmpp_stanza_set_name(body, "body");
 	
-	replytext = malloc(strlen(" to you too!") + strlen(intext) + 1);
+	replytext = (char *) malloc(strlen(" to you too!") + strlen(intext) + 1);
 	strcpy(replytext, intext);
 	strcat(replytext, " to you too!");
 	xmpp_free(ctx, intext);
