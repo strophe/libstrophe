@@ -70,7 +70,8 @@ use SHA1_ prefix for public api
 move public api to sha1.h
 */
 
-/* #define SHA1HANDSOFF  */
+/* Don't change user's data */
+#define SHA1HANDSOFF
 
 #include <string.h>
 
