@@ -16,7 +16,7 @@ STROPHE_LIBS = libstrophe.la
 lib_LTLIBRARIES = libstrophe.la
 
 libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS)
-libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS)
+libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) -no-undefined
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
 libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
