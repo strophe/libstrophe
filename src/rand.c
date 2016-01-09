@@ -287,7 +287,11 @@ void xmpp_rand_nonce(xmpp_ctx_t *ctx, char *output, size_t len)
 {
     size_t i;
     size_t rand_len = len / 2;
+#ifndef _MSC_VER
     uint8_t rand_buf[rand_len];
+#else
+    uint8_t* rand_buf = (uint8_t*)_alloca(sizeof(uint8_t) * rand_len);
+#endif
 
     /* current implementation returns printable HEX representation of
      * a random buffer, however base64 encoding can be used instead;
