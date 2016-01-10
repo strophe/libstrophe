@@ -290,7 +290,7 @@ void xmpp_rand_nonce(xmpp_ctx_t *ctx, char *output, size_t len)
 #ifndef _MSC_VER
     uint8_t rand_buf[rand_len];
 #else
-    uint8_t* rand_buf = (uint8_t*)_alloca(sizeof(uint8_t) * rand_len);
+    uint8_t* rand_buf = (uint8_t*)_alloca(rand_len);
 #endif
 
     /* current implementation returns printable HEX representation of
