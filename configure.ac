@@ -9,8 +9,12 @@ PKG_PROG_PKG_CONFIG
 
 AC_CANONICAL_HOST
 AS_CASE([$host_os],
-  [freebsd*], [PLATFORM="freebsd"],
-  [PLATFORM="nix"])
+  [freebsd*],    [PLATFORM="bsd"],
+  [openbsd*],    [PLATFORM="bsd"],
+  [netbsd*],     [PLATFORM="bsd"],
+  [*nto*|*qnx*], [PLATFORM="qnx"],
+  [*solaris*],   [PLATFORM="solaris"],
+                 [PLATFORM="nix"])
 
 PKG_CHECK_MODULES([openssl], [openssl], [PC_REQUIRES="openssl ${PC_REQUIRES}"],
             [AC_CHECK_HEADER([openssl/ssl.h],
@@ -62,12 +66,10 @@ fi
 
 if test "x$with_libxml2" = xyes; then
   with_parser=libxml2
-  PARSER_NAME=libxml2
   PARSER_CFLAGS=$libxml2_CFLAGS
   PARSER_LIBS=$libxml2_LIBS
 else
   with_parser=expat
-  PARSER_NAME=expat
   PARSER_CFLAGS=$expat_CFLAGS
   PARSER_LIBS=$expat_LIBS
 fi
@@ -75,14 +77,31 @@ fi
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
 AC_SEARCH_LIBS([socket], [socket])
 
-if test "x$PLATFORM" != xfreebsd; then
-        AC_CHECK_LIB([resolv], [res_query], [],
-            [AC_CHECK_LIB([resolv], [__res_query], [],
-                [AC_MSG_ERROR([libresolv not found; libresolv required.])])])
-        PC_LIBS="-lresolv ${PC_LIBS}"
-else
-        AC_MSG_NOTICE([skipping libresolv checks for freebsd])
-fi
+DIST_LIBS=""
+AS_CASE([$PLATFORM],
+  [bsd],     [DIST_LIBS="${DIST_LIBS}"],
+  [qnx],     [DIST_LIBS="-lsocket ${DIST_LIBS}"],
+  [solaris], [DIST_LIBS="-lresolv -lsocket -lnsl ${DIST_LIBS}"],
+             [DIST_LIBS="-lresolv ${DIST_LIBS}"])
+
+LIBS_TMP="${LIBS}"
+LIBS="${DIST_LIBS}"
+AC_LINK_IFELSE([AC_LANG_SOURCE([
+    #include <sys/types.h>
+    #include <netinet/in.h>
+    #include <arpa/nameser.h>
+    #include <resolv.h>
+    #include <netdb.h>
+
+    int main() {
+        (void)res_query(NULL, 0, 0, NULL, 0);
+        return 0;
+    }
+  ])],
+  [],
+  [AC_MSG_ERROR([res_query() not found with LIBS="${LIBS}"])])
+LIBS="${LIBS_TMP}"
+PC_LIBS="${DIST_LIBS} ${PC_LIBS}"
 
 AC_CHECK_HEADERS([arpa/nameser_compat.h])
 
@@ -100,8 +119,8 @@ AC_SUBST([PC_REQUIRES], [${PC_REQUIRES}])
 AC_SUBST([PC_CFLAGS], [${PC_CFLAGS}])
 AC_SUBST([PC_LIBS], [${PC_LIBS}])
 
-AC_SUBST(PARSER_NAME)
 AC_SUBST(PARSER_CFLAGS)
 AC_SUBST(PARSER_LIBS)
+AC_SUBST(DIST_LIBS)
 AC_CONFIG_FILES([Makefile libstrophe.pc])
 AC_OUTPUT
