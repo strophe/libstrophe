@@ -22,11 +22,11 @@ libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
 libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c \
 	src/jid.c src/md5.c src/sasl.c src/scram.c src/sha1.c \
-	src/snprintf.c src/sock.c src/stanza.c src/thread.c \
+	src/snprintf.c src/sock.c src/stanza.c \
 	src/tls_openssl.c src/util.c src/rand.c src/uuid.c \
 	src/common.h src/hash.h src/md5.h src/ostypes.h src/parser.h \
 	src/sasl.h src/scram.h src/sha1.h src/snprintf.h src/sock.h \
-	src/thread.h src/tls.h src/util.h src/rand.h
+	src/tls.h src/util.h src/rand.h
 
 if PARSER_EXPAT
 libstrophe_la_SOURCES += src/parser_expat.c
