@@ -187,6 +187,7 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn)
 int xmpp_conn_release(xmpp_conn_t * const conn)
 {
     xmpp_ctx_t *ctx;
+    xmpp_send_queue_t *sq, *tsq;
     xmpp_connlist_t *item, *prev;
     xmpp_handlist_t *hlitem, *thli;
     hash_iterator_t *iter;
@@ -267,6 +268,15 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
         }
 
         parser_free(conn->parser);
+
+	/* free queued */
+	sq = conn->send_queue_head;
+	while (sq) {
+	    tsq = sq;
+	    sq = sq->next;
+	    xmpp_free(ctx, tsq->data);
+	    xmpp_free(ctx, tsq);
+	}
 
         if (conn->domain) xmpp_free(ctx, conn->domain);
         if (conn->jid) xmpp_free(ctx, conn->jid);

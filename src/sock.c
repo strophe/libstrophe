@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <arpa/nameser.h>
@@ -78,7 +79,7 @@ sock_t sock_connect(const char * const host, const unsigned int port)
     sock_t sock;
     char service[6];
     struct addrinfo *res, *ainfo, hints;
-    int err;
+    int err, optval;
 
     xmpp_snprintf(service, 6, "%u", port);
 
@@ -98,6 +99,17 @@ sock_t sock_connect(const char * const host, const unsigned int port)
         sock = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
         if (sock < 0)
             continue;
+
+	/* turn on keepalive */
+	optval = 1;
+	setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));
+	optval = 3;
+	setsockopt(sock, SOL_TCP, TCP_KEEPCNT, &optval, sizeof(optval));
+	optval = 75;
+	setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, &optval, sizeof(optval));
+	optval = 75;
+	setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval));
+
 
         err = sock_set_nonblocking(sock);
         if (err == 0) {

@@ -123,6 +123,10 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls))) {
 		    /* an error occured */
 		    conn->error = tls_error(conn->tls);
+		    if( conn->error == 5 )
+			xmpp_debug(ctx, "xmpp", "Unrecoverable TLS write error, syscall %s.", strerror(errno));
+		    else
+			xmpp_debug(ctx, "xmpp", "Unrecoverable TLS write error, %d.", conn->error);
 		    break;
 		} else if (ret < towrite) {
 		    /* not all data could be sent now */
@@ -303,8 +307,11 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 		    if (conn->tls) {
 			if (!tls_is_recoverable(tls_error(conn->tls)))
 			{
-			    xmpp_debug(ctx, "xmpp", "Unrecoverable TLS error, %d.", tls_error(conn->tls));
 			    conn->error = tls_error(conn->tls);
+			    if( conn->error == 5 )
+				xmpp_debug(ctx, "xmpp", "Unrecoverable TLS read error, syscall %s.", strerror(errno));
+			    else
+				xmpp_debug(ctx, "xmpp", "Unrecoverable TLS read error, %d.", conn->error);
 			    conn_disconnect(conn);
 			}
 		    } else {
