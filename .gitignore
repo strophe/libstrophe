@@ -1,8 +1,7 @@
+*.swp
 Makefile
 test-driver
 .libs
-src/*.lo
-*.la
 Makefile.in
 configure
 libtool
@@ -21,8 +20,10 @@ autom4te.cache
 .deps
 .sconsign*
 src/*.o
+src/*.lo
 examples/*.o
 *.a
+*.la
 *.pc
 *.tar.gz
 *.zip
