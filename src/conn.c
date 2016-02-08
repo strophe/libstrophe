@@ -59,6 +59,7 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza,
                                   void * const userdata);
 static unsigned short _conn_default_port(xmpp_conn_t * const conn,
                                          xmpp_conn_type_t type);
+static void _conn_send_queue_purge(xmpp_conn_t * const conn);
 static int _conn_connect(xmpp_conn_t * const conn,
                          const char * const domain,
                          const char * const host,
@@ -221,7 +222,6 @@ void xmpp_conn_set_keepalive(xmpp_conn_t * const conn, int timeout, int interval
 int xmpp_conn_release(xmpp_conn_t * const conn)
 {
     xmpp_ctx_t *ctx;
-    xmpp_send_queue_t *sq, *tsq;
     xmpp_connlist_t *item, *prev;
     xmpp_handlist_t *hlitem, *thli;
     hash_iterator_t *iter;
@@ -303,14 +303,7 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 
         parser_free(conn->parser);
 
-        /* free queued */
-        sq = conn->send_queue_head;
-        while (sq) {
-            tsq = sq;
-            sq = sq->next;
-            xmpp_free(ctx, tsq->data);
-            xmpp_free(ctx, tsq);
-        }
+        _conn_send_queue_purge(conn);
 
         if (conn->domain) xmpp_free(ctx, conn->domain);
         if (conn->jid) xmpp_free(ctx, conn->jid);
@@ -971,6 +964,21 @@ static unsigned short _conn_default_port(xmpp_conn_t * const conn,
     };
 }
 
+static void _conn_send_queue_purge(xmpp_conn_t * const conn)
+{
+    xmpp_ctx_t *ctx = conn->ctx;
+    xmpp_send_queue_t *sq, *tsq;
+
+    /* free queued */
+    sq = conn->send_queue_head;
+    while (sq) {
+        tsq = sq;
+        sq = sq->next;
+        xmpp_free(ctx, tsq->data);
+        xmpp_free(ctx, tsq);
+    }
+}
+
 static int _conn_connect(xmpp_conn_t * const conn,
                          const char * const domain,
                          const char * const host,
@@ -986,6 +994,8 @@ static int _conn_connect(xmpp_conn_t * const conn,
     if (conn->type != XMPP_UNKNOWN) return -1;
     if (conn->domain != NULL)
         xmpp_free(conn->ctx, conn->domain);
+
+    _conn_send_queue_purge(conn);
 
     conn->type = type;
     conn->secured = 0;
