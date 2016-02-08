@@ -22,11 +22,13 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <Iphlpapi.h>
+#include <Mstcpip.h>    /* tcp_keepalive */
 #else
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <fcntl.h>
 #endif
@@ -106,6 +108,42 @@ sock_t sock_connect(const char * const host, const unsigned short port)
     sock = ainfo == NULL ? -1 : sock;
 
     return sock;
+}
+
+int sock_set_keepalive(const sock_t sock, int timeout, int interval)
+{
+    int ret;
+    int optval = (timeout && interval) ? 1 : 0;
+
+#ifdef _WIN32
+    struct tcp_keepalive ka;
+    DWORD dw = 0;
+
+    ka.onoff = optval;
+    ka.keepalivetime = timeout * 1000;
+    ka.keepaliveinterval = interval * 1000;
+    ret = WSAIoctl(sock, SIO_KEEPALIVE_VALS, &ka, sizeof(ka), NULL, 0, &dw, NULL, NULL);
+#else
+    ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));
+    if (ret < 0)
+        return ret;
+
+    if (optval) {
+        /* it's not possible to set keepalive count in Windows, so just use some
+         * acceptable value for UNIX to keep things work the same */
+        optval = 5;
+        ret = setsockopt(sock, SOL_TCP, TCP_KEEPCNT, &optval, sizeof(optval));
+        if (ret < 0)
+            return ret;
+        ret = setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, &timeout, sizeof(timeout));
+        if (ret < 0)
+            return ret;
+        ret = setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
+        if (ret < 0)
+            return ret;
+    }
+#endif
+    return ret;
 }
 
 int sock_close(const sock_t sock)
