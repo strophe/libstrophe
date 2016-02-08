@@ -174,6 +174,27 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn)
     return conn;
 }
 
+/** Set TCP keepalive parameters
+ *  Turn on TCP keepalive and set timeout and interval. Zero timeout
+ *  disables TCP keepalives.
+ *
+ *  @param conn a Strophe connection object
+ *  @param timeout TCP keepalive timeout
+ *  @param interval TCP keepalive interval
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_keepalive(xmpp_conn_t * const conn, int timeout, int interval)
+{
+    int ret;
+    ret = sock_set_keepalive(conn->sock, timeout, interval);
+    if(ret < 0)
+    {
+	xmpp_error(conn->ctx, "xmpp", "Setting TCP keepalive (%d,%d) error: %d",
+		     timeout, interval, sock_error());
+    }
+}
+
 /** Release a Strophe connection object.
  *  Decrement the reference count by one for a connection, freeing the
  *  connection object if the count reaches 0.
