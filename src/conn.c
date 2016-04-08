@@ -188,6 +188,12 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn)
 void xmpp_conn_set_keepalive(xmpp_conn_t * const conn, int timeout, int interval)
 {
     int ret;
+
+    if (conn->state == XMPP_STATE_DISCONNECTED) {
+        xmpp_error(conn->ctx, "xmpp", "Setting TCP keepalive impossible on"
+                                      "disconnected connection");
+        return;
+    }
     ret = sock_set_keepalive(conn->sock, timeout, interval);
     if (ret < 0) {
         xmpp_error(conn->ctx, "xmpp", "Setting TCP keepalive (%d,%d) error: %d",
