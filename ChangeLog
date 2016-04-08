@@ -5,6 +5,7 @@
 		- xmpp_uuid_gen()
 		- xmpp_conn_get_flags()
 		- xmpp_conn_set_flags()
+		- xmpp_conn_set_keepalive()
 		- xmpp_conn_is_secured()
 		- xmpp_stanza_del_attribute()
 		- xmpp_stanza_get_to()

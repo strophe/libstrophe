@@ -115,6 +115,8 @@ int sock_set_keepalive(const sock_t sock, int timeout, int interval)
     int ret;
     int optval = (timeout && interval) ? 1 : 0;
 
+    /* This function doesn't change maximum number of keepalive probes */
+
 #ifdef _WIN32
     struct tcp_keepalive ka;
     DWORD dw = 0;
@@ -129,20 +131,22 @@ int sock_set_keepalive(const sock_t sock, int timeout, int interval)
         return ret;
 
     if (optval) {
-        /* it's not possible to set keepalive count in Windows, so just use some
-         * acceptable value for UNIX to keep things work the same */
-        optval = 5;
-        ret = setsockopt(sock, SOL_TCP, TCP_KEEPCNT, &optval, sizeof(optval));
+#ifdef TCP_KEEPIDLE
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &timeout, sizeof(timeout));
+#else
+        /* QNX receives `struct timeval' as argument, but it seems OSX does int */
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPALIVE, &timeout, sizeof(timeout));
+#endif /* TCP_KEEPIDLE */
         if (ret < 0)
             return ret;
-        ret = setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, &timeout, sizeof(timeout));
+#ifdef TCP_KEEPINTVL
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
         if (ret < 0)
             return ret;
-        ret = setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
-        if (ret < 0)
-            return ret;
+#endif /* TCP_KEEPINTVL */
     }
-#endif
+#endif /* _WIN32 */
+
     return ret;
 }
 
