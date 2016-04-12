@@ -131,6 +131,8 @@ struct _xmpp_handlist_t {
     };
 };
 
+#define MAX_DOMAIN_LEN 256
+
 #define SASL_MASK_PLAIN 0x01
 #define SASL_MASK_DIGESTMD5 0x02
 #define SASL_MASK_ANONYMOUS 0x04
