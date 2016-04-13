@@ -848,7 +848,10 @@ int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags)
  */
 void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
 {
-    conn->tls_disabled = 1;
+    long flags = xmpp_conn_get_flags(conn);
+
+    flags |= XMPP_CONN_FLAG_DISABLE_TLS;
+    (void)xmpp_conn_set_flags(conn, flags);
 }
 
 /** Returns whether TLS session is established or not. */
