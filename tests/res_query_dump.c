@@ -1,14 +1,41 @@
-/* Simple program to dump res_query(3) response. */
+/* res_query_dump.c
+ * Simple program to dump res_query(3) response
+ *
+ * Copyright (C) 2014 Dmitry Podgorny <pasis.ua@gmail.com>
+ *
+ *  This software is provided AS-IS with no warranty, either express
+ *  or implied.
+ *
+ *  This program is dual licensed under the MIT and GPLv3 licenses.
+ */
+
+/* Linux and OSX:
+ *   gcc -o res_query_dump tests/res_query_dump.c -lresolv
+ * *BSD:
+ *   gcc -o res_query_dump tests/res_query_dump.c
+ * QNX:
+ *   gcc -o res_query_dump tests/res_query_dump.c -lsocket
+ * Solaris:
+ *   gcc -o res_query_dump tests/res_query_dump.c -lresolv -lsocket -lnsl
+ */
 
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
-#define STEP 8
+#ifndef T_SRV
+#define T_SRV 33
+#endif /* T_SRV */
+#ifndef C_IN
+#define C_IN 1
+#endif /* C_IN */
+
+#define STEP 10
 
 int main(int argc, char **argv)
 {
@@ -46,6 +73,13 @@ int main(int argc, char **argv)
             printf("   ");
             for (j = i; j < len && j < i + STEP; ++j) {
                 printf(" 0x%02x,", buf[j]);
+            }
+            for (j = len; j < i + STEP; ++j) {
+                printf("      ");
+            }
+            printf("    // ");
+            for (j = i; j < len && j < i + STEP; ++j) {
+                printf("%c", isprint(buf[j]) ? buf[j] : '.');
             }
             printf("\n");
         }
