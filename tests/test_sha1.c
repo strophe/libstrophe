@@ -73,7 +73,7 @@ int main(int argc, char** argv)
             fprintf(stdout, "* original string was changed by SHA1\n");
             return (1);
         }
-	free(copy);
+        free(copy);
     }
     /* million 'a' vector we feed separately */
     crypto_SHA1_Init(&context);
