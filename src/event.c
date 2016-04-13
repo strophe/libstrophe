@@ -88,7 +88,6 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     int tls_read_bytes = 0;
 
     if (ctx->loop_status == XMPP_LOOP_QUIT) return;
-    ctx->loop_status = XMPP_LOOP_RUNNING;
 
     /* send queued data */
     connitem = ctx->connlist;
@@ -346,6 +345,9 @@ void xmpp_run(xmpp_ctx_t *ctx)
     while (ctx->loop_status == XMPP_LOOP_RUNNING) {
 	xmpp_run_once(ctx, DEFAULT_TIMEOUT);
     }
+
+    /* make it possible to start event loop again */
+    ctx->loop_status = XMPP_LOOP_NOTSTARTED;
 
     xmpp_debug(ctx, "event", "Event loop completed.");
 }
