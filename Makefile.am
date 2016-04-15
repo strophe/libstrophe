@@ -41,7 +41,9 @@ noinst_HEADERS = strophepp.h
 
 pkgconfig_DATA = libstrophe.pc
 
-EXTRA_DIST = docs
+EXTRA_DIST = docs rpm Doxyfile LICENSE.txt GPL-LICENSE.txt MIT-LICENSE.txt \
+	src/tls_dummy.c src/tls_gnutls.c src/tls_schannel.c \
+	examples/README.md
 
 ## Examples
 noinst_PROGRAMS = examples/active examples/roster examples/basic examples/bot \
