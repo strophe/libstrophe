@@ -101,8 +101,7 @@ sock_t sock_connect(const char * const host, const unsigned short port)
             if (err == 0 || _in_progress(sock_error()))
                 break;
         }
-
-        close(sock);
+        sock_close(sock);
     }
     freeaddrinfo(res);
     sock = ainfo == NULL ? -1 : sock;
