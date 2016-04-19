@@ -57,25 +57,25 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 
     if (tls) {
         int ret;
-	memset(tls, 0, sizeof(*tls));
+        memset(tls, 0, sizeof(*tls));
 
-	tls->ctx = ctx;
-	tls->sock = sock;
-	tls->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+        tls->ctx = ctx;
+        tls->sock = sock;
+        tls->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
 
-	SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
-	SSL_CTX_set_mode (tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-	SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_NONE, NULL);
+        SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
+        SSL_CTX_set_mode (tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+        SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-	tls->ssl = SSL_new(tls->ssl_ctx);
+        tls->ssl = SSL_new(tls->ssl_ctx);
 
-	ret = SSL_set_fd(tls->ssl, sock);
-	if (ret <= 0) {
-	    tls->lasterror = SSL_get_error(tls->ssl, ret);
-	    tls_error(tls);
-	    tls_free(tls);
-	    tls = NULL;
-	}
+        ret = SSL_set_fd(tls->ssl, sock);
+        if (ret <= 0) {
+            tls->lasterror = SSL_get_error(tls->ssl, ret);
+            tls_error(tls);
+            tls_free(tls);
+            tls = NULL;
+        }
     }
 
     return tls;
@@ -86,7 +86,6 @@ void tls_free(tls_t *tls)
     SSL_free(tls->ssl);
     SSL_CTX_free(tls->ssl_ctx);
     xmpp_free(tls->ctx, tls);
-    return;
 }
 
 int tls_set_credentials(tls_t *tls, const char *cafilename)
@@ -144,9 +143,9 @@ int tls_stop(tls_t *tls)
 int tls_is_recoverable(int error)
 {
     return (error == SSL_ERROR_NONE || error == SSL_ERROR_WANT_READ
-	    || error == SSL_ERROR_WANT_WRITE
-	    || error == SSL_ERROR_WANT_CONNECT
-	    || error == SSL_ERROR_WANT_ACCEPT);
+            || error == SSL_ERROR_WANT_WRITE
+            || error == SSL_ERROR_WANT_CONNECT
+            || error == SSL_ERROR_WANT_ACCEPT);
 }
 
 int tls_pending(tls_t *tls)
@@ -159,9 +158,8 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
     int ret = SSL_read(tls->ssl, buff, len);
 
     if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
+        tls->lasterror = SSL_get_error(tls->ssl, ret);
     }
-
     return ret;
 }
 
@@ -170,9 +168,8 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
     int ret = SSL_write(tls->ssl, buff, len);
 
     if (ret <= 0) {
-	tls->lasterror = SSL_get_error(tls->ssl, ret);
+        tls->lasterror = SSL_get_error(tls->ssl, ret);
     }
-
     return ret;
 }
 
