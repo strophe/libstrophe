@@ -13,6 +13,7 @@
  *  TLS implementation with OpenSSL.
  */
 
+#include <errno.h>   /* EINTR */
 #include <string.h>
 
 #ifndef _WIN32
@@ -36,6 +37,13 @@ struct _tls {
     int lasterror;
 };
 
+enum {
+    TLS_SHUTDOWN_MAX_RETRIES = 10,
+    TLS_TIMEOUT_SEC = 0,
+    TLS_TIMEOUT_USEC = 100000,
+};
+
+static void _tls_sock_wait(tls_t *tls, int error);
 static void _tls_set_error(tls_t *tls, int error);
 static void _tls_log_error(xmpp_ctx_t *ctx);
 
@@ -108,8 +116,6 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
 
 int tls_start(tls_t *tls)
 {
-    fd_set fds;
-    struct timeval tv;
     int error;
     int ret;
 
@@ -121,16 +127,7 @@ int tls_start(tls_t *tls)
 
         if (ret == -1 && tls_is_recoverable(error)) {
             /* wait for something to happen on the sock before looping back */
-            tv.tv_sec = 0;
-            tv.tv_usec = 1000;
-
-            FD_ZERO(&fds);
-            FD_SET(tls->sock, &fds);
-    
-            if (error == SSL_ERROR_WANT_READ)
-                select(tls->sock + 1, &fds, NULL, NULL, &tv);
-            else
-                select(tls->sock + 1, NULL, &fds, NULL, &tv);
+            _tls_sock_wait(tls, error);
             continue;
         }
 
@@ -145,10 +142,21 @@ int tls_start(tls_t *tls)
 
 int tls_stop(tls_t *tls)
 {
+    int retries = 0;
+    int error;
     int ret;
 
-    ret = SSL_shutdown(tls->ssl);
-    _tls_set_error(tls, ret < 0 ? SSL_get_error(tls->ssl, ret) : 0);
+    while (1) {
+        ++retries;
+        ret = SSL_shutdown(tls->ssl);
+        error = ret < 0 ? SSL_get_error(tls->ssl, ret) : 0;
+        if (ret == 1 || !tls_is_recoverable(error) ||
+            retries >= TLS_SHUTDOWN_MAX_RETRIES) {
+            break;
+        }
+        _tls_sock_wait(tls, error);
+    }
+    _tls_set_error(tls, error);
 
     return ret <= 0 ? 0 : 1;
 }
@@ -189,6 +197,29 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 int tls_clear_pending_write(tls_t *tls)
 {
     return 0;
+}
+
+static void _tls_sock_wait(tls_t *tls, int error)
+{
+    struct timeval tv;
+    fd_set rfds;
+    fd_set wfds;
+    int nfds;
+    int ret;
+
+    FD_ZERO(&rfds);
+    FD_ZERO(&wfds);
+    if (error == SSL_ERROR_WANT_READ)
+        FD_SET(tls->sock, &rfds);
+    if (error == SSL_ERROR_WANT_WRITE)
+        FD_SET(tls->sock, &wfds);
+    nfds = (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE) ?
+           tls->sock + 1 : 0;
+    do {
+        tv.tv_sec = TLS_TIMEOUT_SEC;
+        tv.tv_usec = TLS_TIMEOUT_USEC;
+        ret = select(nfds, &rfds, &wfds, NULL, &tv);
+    } while (ret == -1 && errno == EINTR);
 }
 
 static void _tls_set_error(tls_t *tls, int error)
