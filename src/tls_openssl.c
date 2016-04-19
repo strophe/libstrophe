@@ -22,6 +22,7 @@
 #endif
 
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #include "common.h"
 #include "tls.h"
@@ -34,6 +35,9 @@ struct _tls {
     SSL *ssl;
     int lasterror;
 };
+
+static void _tls_set_error(tls_t *tls, int error);
+static void _tls_log_error(xmpp_ctx_t *ctx);
 
 void tls_initialize(void)
 {
@@ -62,23 +66,32 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
         tls->ctx = ctx;
         tls->sock = sock;
         tls->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+        if (tls->ssl_ctx == NULL)
+            goto err;
 
         SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
         SSL_CTX_set_mode (tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
         SSL_CTX_set_verify (tls->ssl_ctx, SSL_VERIFY_NONE, NULL);
 
         tls->ssl = SSL_new(tls->ssl_ctx);
+        if (tls->ssl == NULL)
+            goto err_free_ctx;
 
         ret = SSL_set_fd(tls->ssl, sock);
-        if (ret <= 0) {
-            tls->lasterror = SSL_get_error(tls->ssl, ret);
-            tls_error(tls);
-            tls_free(tls);
-            tls = NULL;
-        }
+        if (ret <= 0)
+            goto err_free_ssl;
     }
 
     return tls;
+
+err_free_ssl:
+    SSL_free(tls->ssl);
+err_free_ctx:
+    SSL_CTX_free(tls->ssl_ctx);
+err:
+    xmpp_free(ctx, tls);
+    _tls_log_error(ctx);
+    return NULL;
 }
 
 void tls_free(tls_t *tls)
@@ -124,7 +137,7 @@ int tls_start(tls_t *tls)
         /* success or fatal error */
         break;
     }
-    tls->lasterror = error;
+    _tls_set_error(tls, error);
 
     return ret <= 0 ? 0 : 1;
 
@@ -135,7 +148,7 @@ int tls_stop(tls_t *tls)
     int ret;
 
     ret = SSL_shutdown(tls->ssl);
-    tls->lasterror = ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0;
+    _tls_set_error(tls, ret < 0 ? SSL_get_error(tls->ssl, ret) : 0);
 
     return ret <= 0 ? 0 : 1;
 }
@@ -155,25 +168,47 @@ int tls_pending(tls_t *tls)
 
 int tls_read(tls_t *tls, void * const buff, const size_t len)
 {
-    int ret = SSL_read(tls->ssl, buff, len);
+    int ret;
 
-    if (ret <= 0) {
-        tls->lasterror = SSL_get_error(tls->ssl, ret);
-    }
+    ret = SSL_read(tls->ssl, buff, len);
+    _tls_set_error(tls, ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0);
+
     return ret;
 }
 
 int tls_write(tls_t *tls, const void * const buff, const size_t len)
 {
-    int ret = SSL_write(tls->ssl, buff, len);
+    int ret;
 
-    if (ret <= 0) {
-        tls->lasterror = SSL_get_error(tls->ssl, ret);
-    }
+    ret = SSL_write(tls->ssl, buff, len);
+    _tls_set_error(tls, ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0);
+
     return ret;
 }
 
 int tls_clear_pending_write(tls_t *tls)
 {
     return 0;
+}
+
+static void _tls_set_error(tls_t *tls, int error)
+{
+    if (error != 0 && !tls_is_recoverable(error)) {
+        _tls_log_error(tls->ctx);
+    }
+    tls->lasterror = error;
+}
+
+static void _tls_log_error(xmpp_ctx_t *ctx)
+{
+    unsigned long e;
+    char buf[256];
+
+    do {
+        e = ERR_get_error();
+        if (e != 0) {
+            ERR_error_string_n(e, buf, sizeof(buf));
+            xmpp_debug(ctx, "tls", "%s", buf);
+        }
+    } while (e != 0);
 }
