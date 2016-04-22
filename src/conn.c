@@ -59,7 +59,7 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza,
                                   void * const userdata);
 static unsigned short _conn_default_port(xmpp_conn_t * const conn,
                                          xmpp_conn_type_t type);
-static void _conn_send_queue_purge(xmpp_conn_t * const conn);
+static void _conn_reset(xmpp_conn_t * const conn);
 static int _conn_connect(xmpp_conn_t * const conn,
                          const char * const domain,
                          const char * const host,
@@ -294,22 +294,11 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
             xmpp_free(ctx, thli);
         }
 
-        if (conn->stream_error) {
-            xmpp_stanza_release(conn->stream_error->stanza);
-            if (conn->stream_error->text)
-                xmpp_free(ctx, conn->stream_error->text);
-            xmpp_free(ctx, conn->stream_error);
-        }
-
         parser_free(conn->parser);
+        _conn_reset(conn);
 
-        _conn_send_queue_purge(conn);
-
-        if (conn->domain) xmpp_free(ctx, conn->domain);
         if (conn->jid) xmpp_free(ctx, conn->jid);
-        if (conn->bound_jid) xmpp_free(ctx, conn->bound_jid);
         if (conn->pass) xmpp_free(ctx, conn->pass);
-        if (conn->stream_id) xmpp_free(ctx, conn->stream_id);
         if (conn->lang) xmpp_free(ctx, conn->lang);
         xmpp_free(ctx, conn);
         released = 1;
@@ -964,10 +953,15 @@ static unsigned short _conn_default_port(xmpp_conn_t * const conn,
     };
 }
 
-static void _conn_send_queue_purge(xmpp_conn_t * const conn)
+static void _conn_reset(xmpp_conn_t * const conn)
 {
     xmpp_ctx_t *ctx = conn->ctx;
     xmpp_send_queue_t *sq, *tsq;
+
+    if (conn->state != XMPP_STATE_DISCONNECTED) {
+        xmpp_debug(ctx, "conn", "Can't reset connected object.");
+        return;
+    }
 
     /* free queued */
     sq = conn->send_queue_head;
@@ -977,6 +971,24 @@ static void _conn_send_queue_purge(xmpp_conn_t * const conn)
         xmpp_free(ctx, tsq->data);
         xmpp_free(ctx, tsq);
     }
+
+    if (conn->stream_error) {
+        xmpp_stanza_release(conn->stream_error->stanza);
+        if (conn->stream_error->text)
+            xmpp_free(ctx, conn->stream_error->text);
+        xmpp_free(ctx, conn->stream_error);
+        conn->stream_error = NULL;
+    }
+
+    if (conn->domain) xmpp_free(ctx, conn->domain);
+    if (conn->bound_jid) xmpp_free(ctx, conn->bound_jid);
+    if (conn->stream_id) xmpp_free(ctx, conn->stream_id);
+    conn->domain = NULL;
+    conn->bound_jid = NULL;
+    conn->stream_id = NULL;
+    conn->secured = 0;
+    conn->tls_failed = 0;
+    conn->error = 0;
 }
 
 static int _conn_connect(xmpp_conn_t * const conn,
@@ -990,17 +1002,10 @@ static int _conn_connect(xmpp_conn_t * const conn,
 
     if (conn->state != XMPP_STATE_DISCONNECTED) return -1;
     if (type != XMPP_CLIENT && type != XMPP_COMPONENT) return -1;
-    /* conn->stream_error must be released in order to support reconnect. */
-    if (conn->type != XMPP_UNKNOWN) return -1;
-    if (conn->domain != NULL)
-        xmpp_free(conn->ctx, conn->domain);
 
-    _conn_send_queue_purge(conn);
+    _conn_reset(conn);
 
     conn->type = type;
-    conn->secured = 0;
-    conn->tls_failed = 0;
-    conn->error = 0;
     conn->domain = xmpp_strdup(conn->ctx, domain);
     if (!conn->domain) return -1;
 
