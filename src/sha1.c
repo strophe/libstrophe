@@ -70,13 +70,13 @@ use SHA1_ prefix for public api
 move public api to sha1.h
 */
 
-/* Don't change user's data */
-#define SHA1HANDSOFF
-
 #include <string.h>
 
 #include "ostypes.h"
 #include "sha1.h"
+
+/* Don't change user's data */
+#define SHA1HANDSOFF
 
 static uint32_t host_to_be(uint32_t i);
 static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64]);
@@ -115,6 +115,7 @@ static uint32_t host_to_be(uint32_t i)
     } check = {1};
     return check.c ? le_to_be(i) : i;
 #endif
+#undef le_to_be
 }
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
