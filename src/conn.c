@@ -891,27 +891,31 @@ static void _handle_stream_start(char *name, char **attrs,
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
     char *id;
 
-    if (strcmp(name, "stream")) {
-        printf("name = %s\n", name);
-        xmpp_error(conn->ctx, "conn", "Server did not open valid stream.");
-        conn_disconnect(conn);
-    } else {
+    if (conn->stream_id) xmpp_free(conn->ctx, conn->stream_id);
+    conn->stream_id = NULL;
+
+    if (strcmp(name, "stream") == 0) {
         _log_open_tag(conn, attrs);
-
-        if (conn->stream_id) xmpp_free(conn->ctx, conn->stream_id);
-
         id = _get_stream_attribute(attrs, "id");
         if (id)
             conn->stream_id = xmpp_strdup(conn->ctx, id);
 
-        if (!conn->stream_id) {
+        /* check and log errors */
+        if (!id)
+            xmpp_error(conn->ctx, "conn", "No id attribute.");
+        else if (!conn->stream_id)
             xmpp_error(conn->ctx, "conn", "Memory allocation failed.");
-            conn_disconnect(conn);
-        }
+    } else {
+        xmpp_error(conn->ctx, "conn", "Server did not open valid stream."
+                                      " name = %s.", name);
     }
 
-    /* call stream open handler */
-    conn->open_handler(conn);
+    if (conn->stream_id) {
+        /* call stream open handler */
+        conn->open_handler(conn);
+    } else {
+        conn_disconnect(conn);
+    }
 }
 
 static void _handle_stream_end(char *name,
