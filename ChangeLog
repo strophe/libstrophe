@@ -13,6 +13,11 @@
 		- xmpp_stanza_set_to()
 		- xmpp_stanza_set_from()
 		- xmpp_stanza_reply()
+		- xmpp_message_new()
+		- xmpp_message_get_body()
+		- xmpp_message_set_body()
+		- xmpp_iq_new()
+		- xmpp_presence_new()
 	- Exposed private API:
 		- xmpp_jid_new()
 		- xmpp_jid_bare()

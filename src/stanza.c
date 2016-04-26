@@ -1077,3 +1077,140 @@ copy_error:
     if (copy) xmpp_stanza_release(copy);
     return NULL;
 }
+
+static xmpp_stanza_t *
+_stanza_new_with_attrs(xmpp_ctx_t *ctx, const char * const name,
+                       const char * const type, const char * const id,
+                       const char * const to)
+{
+    xmpp_stanza_t *stanza = xmpp_stanza_new(ctx);
+    int ret;
+
+    if (stanza) {
+        ret = xmpp_stanza_set_name(stanza, name);
+        if (ret == XMPP_EOK && type)
+            ret = xmpp_stanza_set_type(stanza, type);
+        if (ret == XMPP_EOK && id)
+            ret = xmpp_stanza_set_id(stanza, id);
+        if (ret == XMPP_EOK && to)
+            ret = xmpp_stanza_set_to(stanza, to);
+        if (ret != XMPP_EOK) {
+            xmpp_stanza_release(stanza);
+            stanza = NULL;
+        }
+    }
+    return stanza;
+}
+
+/** Create a <message/> stanza object with given attributes.
+ *  Attributes are optional and may be NULL.
+ *
+ *  @param type attribute 'type'
+ *  @param to attribute 'to'
+ *  @param id attribute 'id'
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_message_new(xmpp_ctx_t *ctx, const char * const type,
+                                const char * const to, const char * const id)
+{
+    return _stanza_new_with_attrs(ctx, "message", type, id, to);
+}
+
+/** Get text from <body/> child element.
+ *  This function returns new allocated string. The caller is responsible
+ *  for freeing this string with xmpp_free().
+ *
+ *  @param msg well formed <message/> stanza
+ *
+ *  @return allocated string or NULL on failure (no <body/> element or
+ *      memory allocation error)
+ *
+ *  @ingroup Stanza
+ */
+char *xmpp_message_get_body(xmpp_stanza_t *msg)
+{
+    xmpp_stanza_t *body;
+    const char *name;
+    char *text = NULL;
+
+    name = xmpp_stanza_get_name(msg);
+    body = xmpp_stanza_get_child_by_name(msg, "body");
+    if (name && strcmp(name, "message") == 0 && body) {
+        text = xmpp_stanza_get_text(body);
+    }
+    return text;
+}
+
+/** Add <body/> child element to a <message/> stanza with the given text.
+ *
+ *  @param msg a <message> stanza object without <body/> child element.
+ *
+ *  @return 0 on success (XMPP_EOK), and a number less than 0 on failure
+ *      (XMPP_EMEM, XMPP_EINVOP)
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_message_set_body(xmpp_stanza_t *msg, const char * const text)
+{
+    xmpp_ctx_t *ctx = msg->ctx;
+    xmpp_stanza_t *body;
+    xmpp_stanza_t *text_stanza;
+    const char *name;
+    int ret;
+
+    /* check that msg is a <message/> stanza and doesn't contain <body/> */
+    name = xmpp_stanza_get_name(msg);
+    body = xmpp_stanza_get_child_by_name(msg, "body");
+    if (!name || strcmp(name, "message") != 0 || body)
+        return XMPP_EINVOP;
+
+    body = xmpp_stanza_new(ctx);
+    text_stanza = xmpp_stanza_new(ctx);
+
+    ret = body && text_stanza ? XMPP_EOK : XMPP_EMEM;
+    if (ret == XMPP_EOK)
+        ret = xmpp_stanza_set_name(body, "body");
+    if (ret == XMPP_EOK)
+        ret = xmpp_stanza_set_text(text_stanza, text);
+    if (ret == XMPP_EOK)
+        ret = xmpp_stanza_add_child(body, text_stanza);
+    if (ret == XMPP_EOK)
+        ret = xmpp_stanza_add_child(msg, body);
+
+    if (text_stanza)
+        xmpp_stanza_release(text_stanza);
+    if (body)
+        xmpp_stanza_release(body);
+
+    return ret;
+}
+
+/** Create an <iq/> stanza object with given attributes.
+ *  Attributes are optional and may be NULL.
+ *
+ *  @param type attribute 'type'
+ *  @param id attribute 'id'
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char * const type,
+                           const char * const id)
+{
+    return _stanza_new_with_attrs(ctx, "iq", type, id, NULL);
+}
+
+/** Create a <presence/> stanza object.
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx)
+{
+    return _stanza_new_with_attrs(ctx, "presence", NULL, NULL, NULL);
+}

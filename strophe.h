@@ -365,14 +365,14 @@ int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
 xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza);
 
 /* stanza subclasses */
-/* unimplemented
-void xmpp_message_new();
-void xmpp_message_get_body();
-void xmpp_message_set_body();
+xmpp_stanza_t *xmpp_message_new(xmpp_ctx_t *ctx, const char * const type,
+                                const char * const to, const char * const id);
+char *xmpp_message_get_body(xmpp_stanza_t *msg);
+int xmpp_message_set_body(xmpp_stanza_t *msg, const char * const text);
 
-void xmpp_iq_new();
-void xmpp_presence_new();
-*/
+xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char * const type,
+                           const char * const id);
+xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx);
 
 /** jid **/
 /* these return new strings that must be xmpp_free()'d */
