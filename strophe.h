@@ -115,7 +115,7 @@ typedef struct _xmpp_log_t xmpp_log_t;
 typedef struct _xmpp_ctx_t xmpp_ctx_t;
 
 xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem, 
-			     const xmpp_log_t * const log);
+			 const xmpp_log_t * const log);
 void xmpp_ctx_free(xmpp_ctx_t * const ctx);
 
 struct _xmpp_mem_t {
@@ -210,7 +210,7 @@ typedef void (*xmpp_conn_handler)(xmpp_conn_t * const conn,
 				  void * const userdata);
 
 xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx);
-xmpp_conn_t * xmpp_conn_clone(xmpp_conn_t * const conn);
+xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn);
 int xmpp_conn_release(xmpp_conn_t * const conn);
 
 long xmpp_conn_get_flags(const xmpp_conn_t * const conn);
@@ -220,7 +220,7 @@ const char *xmpp_conn_get_bound_jid(const xmpp_conn_t * const conn);
 void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
 const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
 void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);
-xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn);
+xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t * const conn);
 void xmpp_conn_disable_tls(xmpp_conn_t * const conn);
 int xmpp_conn_is_secured(xmpp_conn_t * const conn);
 void xmpp_conn_set_keepalive(xmpp_conn_t * const conn, int timeout, int interval);
@@ -288,7 +288,7 @@ void xmpp_register_stanza_handler(conn, stanza, xmlns, type, handler)
 
 /** stanzas **/
 
-/** allocate an initialize a blank stanza */
+/** allocate and initialize a blank stanza */
 xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx);
 
 /** clone a stanza */
@@ -322,7 +322,7 @@ char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
 int xmpp_stanza_get_attribute_count(xmpp_stanza_t * const stanza);
 int xmpp_stanza_get_attributes(xmpp_stanza_t * const stanza,
 			       const char **attr, int attrlen);
-char * xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
+char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
 /* concatenate all child text nodes.  this function
  * returns a string that must be freed by the caller */
 

@@ -341,7 +341,7 @@ const char *xmpp_conn_get_bound_jid(const xmpp_conn_t * const conn)
 /** Set the JID of the user that will be bound to the connection.
  *  If any JID was previously set, it will be discarded.  This should not be
  *  be used after a connection is created.  The function will make a copy of
- *  the JID string.  If the supllied JID is missing the node, SASL
+ *  the JID string.  If the supplied JID is missing the node, SASL
  *  ANONYMOUS authentication will be used.
  *
  *  @param conn a Strophe connection object
@@ -397,7 +397,7 @@ xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn)
 
 /** Initiate a connection to the XMPP server.
  *  This function returns immediately after starting the connection
- *  process to the XMPP server, and notifiations of connection state changes
+ *  process to the XMPP server, and notifications of connection state changes
  *  will be sent to the callback function.  The domain and port to connect to
  *  are usually determined by an SRV lookup for the xmpp-client service at
  *  the domain specified in the JID.  If SRV lookup fails, altdomain and 
@@ -465,7 +465,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 
 /** Initiate a component connection to server.
  *  This function returns immediately after starting the connection
- *  process to the XMPP server, and notifiations of connection state changes
+ *  process to the XMPP server, and notifications of connection state changes
  *  will be sent to the internal callback function that will set up handler
  *  for the component handshake as defined in XEP-0114.
  *  The domain and port to connect to must be provided in this case as the JID
@@ -502,7 +502,7 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
     }
 
     port = port ? port : _conn_default_port(conn, XMPP_COMPONENT);
-    /* JID serves as an identificator here and will be used as "to" attribute
+    /* JID serves as an identifier here and will be used as "to" attribute
        of the stream */
     return _conn_connect(conn, conn->jid, server, port, XMPP_COMPONENT,
                          callback, userdata);
@@ -645,7 +645,7 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
 
 /** Send raw bytes to the XMPP server.
  *  This function is a convenience function to send raw bytes to the
- *  XMPP server.  It is usedly primarly by xmpp_send_raw_string.  This
+ *  XMPP server.  It is used primarily by xmpp_send_raw_string().  This
  *  function should be used with care as it does not validate the bytes and
  *  invalid data may result in stream termination by the XMPP server.
  *

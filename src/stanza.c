@@ -28,7 +28,7 @@
 #endif
 
 /** Create a stanza object.
- *  This function allocates and initializes and blank stanza object.
+ *  This function allocates and initializes a blank stanza object.
  *  The stanza will have a reference count of one, so the caller does not
  *  need to clone it.
  *
@@ -227,7 +227,7 @@ int xmpp_stanza_is_tag(xmpp_stanza_t * const stanza)
 }
 
 /* Escape a string with for use in a XML text node or attribute. Assumes that
- * the input string is encoded in UTF-8. On sucess, returns a pointer to a
+ * the input string is encoded in UTF-8. On success, returns a pointer to a
  * buffer with the resulting data which must be xmpp_free()'d by the caller.
  * On failure, returns NULL.
  */
@@ -302,7 +302,7 @@ static inline void _render_update(int *written, const int length,
 
 /* always returns number of bytes written or that would have been
  * written if the buffer was large enough
- * return values < 0 indicate some error occured,
+ * return values < 0 indicate some error occurred,
  * and return values > buflen indicate buffer was not large enough
  */
 static int _render_stanza_recursive(xmpp_stanza_t *stanza,
@@ -332,7 +332,7 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
     } else { /* stanza->type == XMPP_STANZA_TAG */
 	if (!stanza->data) return XMPP_EINVOP;
 
-	/* write begining of tag and attributes */
+	/* write beginning of tag and attributes */
 	ret = xmpp_snprintf(ptr, left, "<%s", stanza->data);
 	if (ret < 0) return XMPP_EMEM;
 	_render_update(&written, buflen, ret, &left, &ptr);
@@ -669,7 +669,7 @@ int xmpp_stanza_set_text(xmpp_stanza_t *stanza,
 }
 
 /** Set the text data for a text stanza.
- *  This function copies the text given and sets teh stanza object's text to
+ *  This function copies the text given and sets the stanza object's text to
  *  it.  Attempting to use this function on a stanza that has a name will
  *  fail with XMPP_EINVOP.  This function takes the text as buffer and a length
  *  as opposed to a null-terminated string.
