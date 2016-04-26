@@ -1,6 +1,7 @@
 0.10.0
 	- c-ares support
 	- LibreSSL support
+	- examples/register implements XEP-0077
 	- New API:
 		- xmpp_stanza_get_child_by_name_and_ns()
 		- xmpp_conn_is_connecting()
