@@ -608,6 +608,8 @@ void xmpp_disconnect(xmpp_conn_t * const conn)
  *  @param conn a Strophe connection object
  *  @param fmt a printf-style format string followed by a variable list of
  *      arguments to format
+ *
+ *  @ingroup Connections
  */
 void xmpp_send_raw_string(xmpp_conn_t * const conn,
                           const char * const fmt, ...)
@@ -656,6 +658,8 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
  *  @param conn a Strophe connection object
  *  @param data a buffer of raw bytes
  *  @param len the length of the data in the buffer
+ *
+ *  @ingroup Connections
  */
 void xmpp_send_raw(xmpp_conn_t * const conn,
                    const char * const data, const size_t len)
@@ -773,6 +777,8 @@ int conn_tls_start(xmpp_conn_t * const conn)
  *  @param conn a Strophe connection object
  *
  *  @return ORed connection flags that are applied for the connection.
+ *
+ *  @ingroup Connections
  */
 long xmpp_conn_get_flags(const xmpp_conn_t * const conn)
 {
@@ -802,6 +808,8 @@ long xmpp_conn_get_flags(const xmpp_conn_t * const conn)
  *  @param flags ORed connection flags
  *
  *  @return 0 on success or -1 if flags can't be applied.
+ *
+ *  @ingroup Connections
  */
 int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags)
 {
@@ -831,6 +839,8 @@ int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags)
  *
  *  @note this function is deprecated
  *  @see xmpp_conn_set_flags()
+ *
+ *  @ingroup Connections
  */
 void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
 {
@@ -840,7 +850,12 @@ void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
     (void)xmpp_conn_set_flags(conn, flags);
 }
 
-/** Returns whether TLS session is established or not. */
+/** Return whether TLS session is established or not.
+ *
+ *  @return TRUE if TLS session is established and FALSE otherwise
+ *
+ *  @ingroup Connections
+ */
 int xmpp_conn_is_secured(xmpp_conn_t * const conn)
 {
     return conn->secured && !conn->tls_failed && conn->tls != NULL ? 1 : 0;
