@@ -158,6 +158,11 @@ xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level);
 typedef struct _xmpp_conn_t xmpp_conn_t;
 typedef struct _xmpp_stanza_t xmpp_stanza_t;
 
+/* connection flags */
+#define XMPP_CONN_FLAG_DISABLE_TLS   (1UL << 0)
+#define XMPP_CONN_FLAG_MANDATORY_TLS (1UL << 1)
+#define XMPP_CONN_FLAG_LEGACY_SSL    (1UL << 2)
+
 /* connect callback */
 typedef enum {
     XMPP_CONN_CONNECT,
@@ -191,10 +196,6 @@ typedef enum {
     XMPP_SE_UNSUPPORTED_VERSION,
     XMPP_SE_XML_NOT_WELL_FORMED
 } xmpp_error_type_t;
-
-#define XMPP_CONN_FLAG_DISABLE_TLS   0x0001
-#define XMPP_CONN_FLAG_MANDATORY_TLS 0x0002
-#define XMPP_CONN_FLAG_LEGACY_SSL    0x0004
 
 typedef struct {
     xmpp_error_type_t type;

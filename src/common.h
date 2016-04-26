@@ -133,10 +133,10 @@ struct _xmpp_handlist_t {
 
 #define MAX_DOMAIN_LEN 256
 
-#define SASL_MASK_PLAIN 0x01
-#define SASL_MASK_DIGESTMD5 0x02
-#define SASL_MASK_ANONYMOUS 0x04
-#define SASL_MASK_SCRAMSHA1 0x08
+#define SASL_MASK_PLAIN     (1 << 0)
+#define SASL_MASK_DIGESTMD5 (1 << 1)
+#define SASL_MASK_ANONYMOUS (1 << 2)
+#define SASL_MASK_SCRAMSHA1 (1 << 3)
 
 enum {
     XMPP_PORT_CLIENT = 5222,
