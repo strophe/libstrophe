@@ -155,9 +155,12 @@ struct _xmpp_conn_t {
     uint64_t timeout_stamp;
     int error;
     xmpp_stream_error_t *stream_error;
-    sock_t sock;
-    tls_t *tls;
 
+    sock_t sock;
+    int ka_timeout; /* TCP keepalive timeout */
+    int ka_interval; /* TCP keepalive interval */
+
+    tls_t *tls;
     int tls_support;
     int tls_disabled;
     int tls_mandatory;

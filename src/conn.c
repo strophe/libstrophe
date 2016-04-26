@@ -90,6 +90,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
         conn->type = XMPP_UNKNOWN;
         conn->state = XMPP_STATE_DISCONNECTED;
         conn->sock = -1;
+        conn->ka_timeout = 0;
+        conn->ka_interval = 0;
         conn->tls = NULL;
         conn->timeout_stamp = 0;
         conn->error = 0;
@@ -185,7 +187,9 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn)
 
 /** Set TCP keepalive parameters
  *  Turn on TCP keepalive and set timeout and interval. Zero timeout
- *  disables TCP keepalives.
+ *  disables TCP keepalives. The parameters are applied immediately for
+ *  a non disconnected object. Also, they are applied when the connection
+ *  object connects successfully.
  *
  *  @param conn a Strophe connection object
  *  @param timeout TCP keepalive timeout in seconds
@@ -195,14 +199,14 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn)
  */
 void xmpp_conn_set_keepalive(xmpp_conn_t * const conn, int timeout, int interval)
 {
-    int ret;
+    int ret = 0;
 
-    if (conn->state == XMPP_STATE_DISCONNECTED) {
-        xmpp_error(conn->ctx, "xmpp", "Setting TCP keepalive impossible on"
-                                      "disconnected connection");
-        return;
-    }
-    ret = sock_set_keepalive(conn->sock, timeout, interval);
+    conn->ka_timeout = timeout;
+    conn->ka_interval = interval;
+
+    if (conn->state != XMPP_STATE_DISCONNECTED)
+        ret = sock_set_keepalive(conn->sock, timeout, interval);
+
     if (ret < 0) {
         xmpp_error(conn->ctx, "xmpp", "Setting TCP keepalive (%d,%d) error: %d",
                    timeout, interval, sock_error());
@@ -1003,7 +1007,6 @@ static int _conn_connect(xmpp_conn_t * const conn,
                          xmpp_conn_handler callback,
                          void * const userdata)
 {
-
     if (conn->state != XMPP_STATE_DISCONNECTED) return -1;
     if (type != XMPP_CLIENT && type != XMPP_COMPONENT) return -1;
 
@@ -1017,6 +1020,8 @@ static int _conn_connect(xmpp_conn_t * const conn,
     xmpp_debug(conn->ctx, "xmpp", "sock_connect() to %s:%u returned %d",
                host, port, conn->sock);
     if (conn->sock == -1) return -1;
+    if (conn->ka_timeout || conn->ka_interval)
+        sock_set_keepalive(conn->sock, conn->ka_timeout, conn->ka_interval);
 
     /* setup handler */
     conn->conn_handler = callback;

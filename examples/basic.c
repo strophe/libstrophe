@@ -14,6 +14,9 @@
 
 #include <strophe.h>
 
+/* hardcoded TCP keepalive timeout and interval */
+#define KA_TIMEOUT 60
+#define KA_INTERVAL 1
 
 /* define a handler for connection events */
 void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
@@ -43,6 +46,7 @@ int main(int argc, char **argv)
     xmpp_log_t *log;
     char *jid, *pass, *host = NULL;
     long flags = 0;
+    int tcp_keepalive = 0;
     int i;
 
     /* take a jid and password on the command line */
@@ -53,6 +57,8 @@ int main(int argc, char **argv)
             flags |= XMPP_CONN_FLAG_MANDATORY_TLS;
         else if (strcmp(argv[i], "--legacy-ssl") == 0)
             flags |= XMPP_CONN_FLAG_LEGACY_SSL;
+        else if (strcmp(argv[i], "--tcp-keepalive") == 0)
+            tcp_keepalive = 1;
         else
             break;
     }
@@ -61,7 +67,8 @@ int main(int argc, char **argv)
                         "Options:\n"
                         "  --disable-tls        Disable TLS.\n"
                         "  --mandatory-tls      Deny plaintext connection.\n"
-                        "  --legacy-ssl         Use old style SSL.\n\n"
+                        "  --legacy-ssl         Use old style SSL.\n"
+                        "  --tcp-keepalive      Configure TCP keepalive.\n\n"
                         "Note: --disable-tls conflicts with --mandatory-tls or "
                               "--legacy-ssl\n");
         return 1;
@@ -89,6 +96,8 @@ int main(int argc, char **argv)
 
     /* configure connection properties (optional) */
     xmpp_conn_set_flags(conn, flags);
+    /* configure TCP keepalive (optional) */
+    if (tcp_keepalive) xmpp_conn_set_keepalive(conn, KA_TIMEOUT, KA_INTERVAL);
 
     /* setup authentication information */
     xmpp_conn_set_jid(conn, jid);
