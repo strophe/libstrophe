@@ -169,6 +169,7 @@ typedef struct _xmpp_stanza_t xmpp_stanza_t;
 /* connect callback */
 typedef enum {
     XMPP_CONN_CONNECT,
+    XMPP_CONN_RAW_CONNECT,
     XMPP_CONN_DISCONNECT,
     XMPP_CONN_FAIL
 } xmpp_conn_event_t;
@@ -237,6 +238,14 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
 int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
                            unsigned short port, xmpp_conn_handler callback,
                            void * const userdata);
+
+int xmpp_connect_raw(xmpp_conn_t * const conn,
+                     const char * const altdomain,
+                     unsigned short altport,
+                     xmpp_conn_handler callback,
+                     void * const userdata);
+int xmpp_conn_raw_open_stream(xmpp_conn_t * const conn);
+int xmpp_conn_raw_tls_start(xmpp_conn_t * const conn);
 
 void xmpp_disconnect(xmpp_conn_t * const conn);
 

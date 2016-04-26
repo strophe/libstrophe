@@ -118,6 +118,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
         conn->stream_id = NULL;
         conn->bound_jid = NULL;
 
+        conn->is_raw = 0;
         conn->tls_support = 0;
         conn->tls_disabled = 0;
         conn->tls_mandatory = 0;
@@ -520,6 +521,87 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
                          callback, userdata);
 }
 
+/** Initiate a raw connection to the XMPP server.
+ *  Arguments and behaviour of the function are similar to
+ *  xmpp_connect_client(), but it skips authentication process. Instead,
+ *  the user's callback is called with event XMPP_CONN_RAW_CONNECT as soon
+ *  as tcp connection is established.
+ *
+ *  This function doesn't use password nor node part of a jid. Therefore,
+ *  the only required configuration is a domain (or full jid) passed via
+ *  xmpp_conn_set_jid().
+ *
+ *  Next step should be xmpp_conn_raw_open_stream(). In case of legacy SSL,
+ *  user might want to call xmpp_conn_raw_tls_start() before opening the
+ *  stream.
+ *
+ *  @see xmpp_connect_client()
+ *
+ *  @return XMPP_EOK (0) on success a number less than 0 on failure
+ *
+ *  @ingroup Connections
+ */
+int xmpp_connect_raw(xmpp_conn_t * const conn,
+                     const char * const altdomain,
+                     unsigned short altport,
+                     xmpp_conn_handler callback,
+                     void * const userdata)
+{
+    conn->is_raw = 1;
+    return xmpp_connect_client(conn, altdomain, altport, callback, userdata);
+}
+
+/* Called when tcp connection is established. */
+void conn_established(xmpp_conn_t * const conn)
+{
+    if (conn->tls_legacy_ssl && !conn->is_raw) {
+        xmpp_debug(conn->ctx, "xmpp", "using legacy SSL connection");
+        if (conn_tls_start(conn) != 0) {
+            conn_disconnect(conn);
+            return;
+        }
+    }
+
+    if (conn->is_raw) {
+        handler_reset_timed(conn, 0);
+        /* we skip authentication for a "raw" connection, but the event loop
+           ignores user's handlers when conn->authenticated is not set. */
+        conn->authenticated = 1;
+        conn->conn_handler(conn, XMPP_CONN_RAW_CONNECT, 0, NULL, conn->userdata);
+    } else {
+        /* send stream init */
+        conn_open_stream(conn);
+    }
+}
+
+/** Send an opening stream tag.
+ *  User's connection handler is called with event XMPP_CONN_CONNECT when
+ *  server replies with its opening tag.
+ *
+ *  @return XMPP_EOK (0) on success a number less than 0 on failure
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_raw_open_stream(xmpp_conn_t * const conn)
+{
+    if (!conn->is_raw)
+        return XMPP_EINVOP;
+
+    conn_prepare_reset(conn, auth_handle_open_raw);
+    conn_open_stream(conn);
+
+    return XMPP_EOK;
+}
+
+/** Start synchronous TLS handshake with the server.
+ *
+ *  @return XMPP_EOK (0) on success a number less than 0 on failure
+ */
+int xmpp_conn_raw_tls_start(xmpp_conn_t * const conn)
+{
+    return conn_tls_start(conn);
+}
+
 /** Cleanly disconnect the connection.
  *  This function is only called by the stream parser when </stream:stream>
  *  is received, and it not intended to be called by code outside of Strophe.
@@ -756,27 +838,27 @@ int conn_tls_start(xmpp_conn_t * const conn)
 
     if (conn->tls_disabled) {
         conn->tls = NULL;
-        rc = -ENOSYS;
+        rc = XMPP_EINVOP;
     } else {
         conn->tls = tls_new(conn->ctx, conn->sock);
-        rc = conn->tls == NULL ? -ENOMEM : 0;
+        rc = conn->tls == NULL ? XMPP_EMEM : 0;
     }
 
     if (conn->tls != NULL) {
         if (tls_start(conn->tls)) {
             conn->secured = 1;
-            conn_prepare_reset(conn, auth_handle_open);
         } else {
-            rc = tls_error(conn->tls);
-            conn->error = rc;
+            rc = XMPP_EINT;
+            conn->error = tls_error(conn->tls);
             tls_free(conn->tls);
             conn->tls = NULL;
             conn->tls_failed = 1;
         }
     }
-    if (rc != 0)
-        xmpp_debug(conn->ctx, "conn", "Couldn't start TLS! error %d", rc);
-
+    if (rc != 0) {
+        xmpp_debug(conn->ctx, "conn", "Couldn't start TLS! "
+                   "error %d tls_error %d", rc, conn->error);
+    }
     return rc;
 }
 
@@ -1030,6 +1112,8 @@ static int _conn_connect(xmpp_conn_t * const conn,
                          xmpp_conn_handler callback,
                          void * const userdata)
 {
+    xmpp_open_handler open_handler;
+
     if (conn->state != XMPP_STATE_DISCONNECTED) return -1;
     if (type != XMPP_CLIENT && type != XMPP_COMPONENT) return -1;
 
@@ -1050,8 +1134,10 @@ static int _conn_connect(xmpp_conn_t * const conn,
     conn->conn_handler = callback;
     conn->userdata = userdata;
 
-    conn_prepare_reset(conn, type == XMPP_CLIENT ? auth_handle_open :
-                                                   auth_handle_component_open);
+    open_handler = conn->is_raw ? auth_handle_open_stub :
+                   type == XMPP_CLIENT ? auth_handle_open :
+                                         auth_handle_component_open;
+    conn_prepare_reset(conn, open_handler);
 
     /* FIXME: it could happen that the connect returns immediately as
      * successful, though this is pretty unlikely.  This would be a little

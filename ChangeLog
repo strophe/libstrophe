@@ -4,8 +4,14 @@
 	- Initial Android support
 	- Resolver returns all SRV records instead of one. Lookup is performed
 	  according to RFC2052.
+	- xmpp_connect_raw() provides access to a xmpp_conn object just after
+	  establishing TCP connection. This allows to implement in-band
+	  registration or authentication mechanisms.
 	- New API:
 		- xmpp_uuid_gen()
+		- xmpp_connect_raw()
+		- xmpp_conn_raw_open_stream()
+		- xmpp_conn_raw_tls_start()
 		- xmpp_conn_get_flags()
 		- xmpp_conn_set_flags()
 		- xmpp_conn_set_keepalive()

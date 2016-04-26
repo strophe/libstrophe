@@ -150,6 +150,7 @@ struct _xmpp_conn_t {
     unsigned int ref;
     xmpp_ctx_t *ctx;
     xmpp_conn_type_t type;
+    int is_raw;
 
     xmpp_conn_state_t state;
     uint64_t timeout_stamp;
@@ -215,6 +216,7 @@ struct _xmpp_conn_t {
 
 void conn_disconnect(xmpp_conn_t * const conn);
 void conn_disconnect_clean(xmpp_conn_t * const conn);
+void conn_established(xmpp_conn_t * const conn);
 void conn_open_stream(xmpp_conn_t * const conn);
 int conn_tls_start(xmpp_conn_t * const conn);
 void conn_prepare_reset(xmpp_conn_t * const conn, xmpp_open_handler handler);
@@ -269,5 +271,7 @@ void disconnect_mem_error(xmpp_conn_t * const conn);
 /* auth functions */
 void auth_handle_open(xmpp_conn_t * const conn);
 void auth_handle_component_open(xmpp_conn_t * const conn);
+void auth_handle_open_raw(xmpp_conn_t * const conn);
+void auth_handle_open_stub(xmpp_conn_t * const conn);
 
 #endif /* __LIBSTROPHE_COMMON_H__ */
