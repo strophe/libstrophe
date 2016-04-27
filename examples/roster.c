@@ -23,7 +23,7 @@ int handle_reply(xmpp_conn_t * const conn,
 		 void * const userdata)
 {
     xmpp_stanza_t *query, *item;
-    char *type, *name;
+    const char *type, *name;
 
     type = xmpp_stanza_get_type(stanza);
     if (strcmp(type, "error") == 0)

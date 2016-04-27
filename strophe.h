@@ -295,7 +295,7 @@ xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx);
 xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza);
 
 /** copies a stanza and all children */
-xmpp_stanza_t * xmpp_stanza_copy(const xmpp_stanza_t * const stanza);
+xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza);
 
 /** free a stanza object and it's contents */
 int xmpp_stanza_release(xmpp_stanza_t * const stanza);
@@ -317,21 +317,18 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_name(xmpp_stanza_t * const stanza,
 xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t * const stanza,
 					   const char * const ns);
 xmpp_stanza_t *xmpp_stanza_get_next(xmpp_stanza_t * const stanza);
-char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
-				const char * const name);
+int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child);
+
+const char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
+				      const char * const name);
 int xmpp_stanza_get_attribute_count(xmpp_stanza_t * const stanza);
 int xmpp_stanza_get_attributes(xmpp_stanza_t * const stanza,
 			       const char **attr, int attrlen);
-char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
 /* concatenate all child text nodes.  this function
  * returns a string that must be freed by the caller */
-
 char *xmpp_stanza_get_text(xmpp_stanza_t * const stanza);
-char *xmpp_stanza_get_text_ptr(xmpp_stanza_t * const stanza);
-char *xmpp_stanza_get_name(xmpp_stanza_t * const stanza);
-
-int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child);
-int xmpp_stanza_set_ns(xmpp_stanza_t * const stanza, const char * const ns);
+const char *xmpp_stanza_get_text_ptr(xmpp_stanza_t * const stanza);
+const char *xmpp_stanza_get_name(xmpp_stanza_t * const stanza);
 /* set_attribute adds/replaces attributes */
 int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza, 
 			      const char * const key,
@@ -343,23 +340,20 @@ int xmpp_stanza_set_text(xmpp_stanza_t *stanza,
 int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
 				   const char * const text, 
 				   const size_t size);
-
 int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
                               const char * const name);
 
 /* common stanza helpers */
-char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
-char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
-char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza);
-char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza);
-int xmpp_stanza_set_id(xmpp_stanza_t * const stanza, 
-		       const char * const id);
-int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, 
-			 const char * const type);
-int xmpp_stanza_set_to(xmpp_stanza_t * const stanza,
-                       const char * const to);
-int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
-                         const char * const from);
+const char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
+const char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
+const char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
+const char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza);
+const char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza);
+int xmpp_stanza_set_ns(xmpp_stanza_t * const stanza, const char * const ns);
+int xmpp_stanza_set_id(xmpp_stanza_t * const stanza, const char * const id);
+int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, const char * const type);
+int xmpp_stanza_set_to(xmpp_stanza_t * const stanza, const char * const to);
+int xmpp_stanza_set_from(xmpp_stanza_t * const stanza, const char * const from);
 
 /* allocate and initialize a stanza in reply to another */
 xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza);

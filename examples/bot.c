@@ -26,7 +26,7 @@
 int version_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {
 	xmpp_stanza_t *reply, *query, *name, *version, *text;
-	char *ns;
+	const char *ns;
 	xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
 	printf("Received version request from %s\n", xmpp_stanza_get_from(stanza));
 	

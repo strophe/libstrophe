@@ -35,7 +35,7 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
 			 xmpp_stanza_t * const stanza)
 {
     xmpp_handlist_t *item, *prev;
-    char *id, *ns, *name, *type;
+    const char *id, *ns, *name, *type;
     
     /* call id handlers */
     id = xmpp_stanza_get_id(stanza);

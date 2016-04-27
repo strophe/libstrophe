@@ -111,7 +111,7 @@ static int _handle_error(xmpp_conn_t * const conn,
 			 void * const userdata)
 {
     xmpp_stanza_t *child;
-    char *name;
+    const char *name;
 
     /* free old stream error if it's still there */
     if (conn->stream_error) {
@@ -130,7 +130,7 @@ static int _handle_error(xmpp_conn_t * const conn,
     if (conn->stream_error) {
 	child = xmpp_stanza_get_children(stanza);
 	do {
-	    char *ns = NULL;
+	    const char *ns = NULL;
 
 	    if (child) {
 		ns = xmpp_stanza_get_ns(child);
@@ -279,7 +279,7 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
 			      xmpp_stanza_t * const stanza,
 			      void * const userdata)
 {
-    char *name;
+    const char *name;
 
     name = xmpp_stanza_get_name(stanza);
     xmpp_debug(conn->ctx, "xmpp", "handle proceedtls called for %s", name);
@@ -302,7 +302,7 @@ static int _handle_sasl_result(xmpp_conn_t * const conn,
 			       xmpp_stanza_t * const stanza,
 			       void * const userdata)
 {
-    char *name;
+    const char *name;
 
     name = xmpp_stanza_get_name(stanza);
 
@@ -341,7 +341,7 @@ static int _handle_digestmd5_challenge(xmpp_conn_t * const conn,
     char *text;
     char *response;
     xmpp_stanza_t *auth, *authdata;
-    char *name;
+    const char *name;
 
     name = xmpp_stanza_get_name(stanza);
     xmpp_debug(conn->ctx, "xmpp",\
@@ -396,7 +396,7 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t * const conn,
 			      void * const userdata)
 {
     xmpp_stanza_t *auth;
-    char *name;
+    const char *name;
 
     name = xmpp_stanza_get_name(stanza);
     xmpp_debug(conn->ctx, "xmpp",
@@ -429,7 +429,7 @@ static int _handle_scram_sha1_challenge(xmpp_conn_t * const conn,
     char *text;
     char *response;
     xmpp_stanza_t *auth, *authdata;
-    char *name;
+    const char *name;
     char *challenge;
     char *scram_init = (char *)userdata;
 
@@ -979,7 +979,7 @@ static int _handle_bind(xmpp_conn_t * const conn,
 			xmpp_stanza_t * const stanza,
 			void * const userdata)
 {
-    char *type;
+    const char *type;
     xmpp_stanza_t *iq, *session;
 
     /* delete missing bind handler */
@@ -1062,7 +1062,7 @@ static int _handle_session(xmpp_conn_t * const conn,
 			   xmpp_stanza_t * const stanza,
 			   void * const userdata)
 {
-    char *type;
+    const char *type;
 
     /* delete missing session handler */
     xmpp_timed_handler_delete(conn, _handle_missing_session);
@@ -1099,7 +1099,8 @@ static int _handle_legacy(xmpp_conn_t * const conn,
 			  xmpp_stanza_t * const stanza,
 			  void * const userdata)
 {
-    char *type, *name;
+    const char *type;
+    const char *name;
 
     /* delete missing handler */
     xmpp_timed_handler_delete(conn, _handle_missing_legacy);
@@ -1201,7 +1202,7 @@ int _handle_component_hs_response(xmpp_conn_t * const conn,
             xmpp_stanza_t * const stanza,
             void * const userdata)
 {
-    char *name;
+    const char *name;
 
     xmpp_timed_handler_delete(conn, _handle_missing_handshake);
 

@@ -415,9 +415,9 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
  *
  *  @ingroup Stanza
  */
-int  xmpp_stanza_to_text(xmpp_stanza_t *stanza,
-			 char ** const buf,
-			 size_t * const buflen)
+int xmpp_stanza_to_text(xmpp_stanza_t *stanza,
+                        char ** const buf,
+                        size_t * const buflen)
 {
     char *buffer, *tmp;
     size_t length;
@@ -491,7 +491,7 @@ int xmpp_stanza_set_name(xmpp_stanza_t *stanza,
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_name(xmpp_stanza_t * const stanza)
+const char *xmpp_stanza_get_name(xmpp_stanza_t * const stanza)
 {
     if (stanza->type == XMPP_STANZA_TEXT) return NULL;
     return stanza->data;
@@ -710,7 +710,7 @@ int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza)
+const char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza)
 {
     return xmpp_stanza_get_attribute(stanza, "id");
 }
@@ -725,7 +725,7 @@ char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza)
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza)
+const char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza)
 {
     return xmpp_stanza_get_attribute(stanza, "xmlns");
 }
@@ -740,7 +740,7 @@ char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza)
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza)
+const char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza)
 {
     return xmpp_stanza_get_attribute(stanza, "type");
 }
@@ -755,7 +755,7 @@ char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza)
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza)
+const char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza)
 {
     return xmpp_stanza_get_attribute(stanza, "to");
 }
@@ -770,7 +770,7 @@ char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza)
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza)
+const char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza)
 {
     return xmpp_stanza_get_attribute(stanza, "from");
 }
@@ -915,7 +915,7 @@ char *xmpp_stanza_get_text(xmpp_stanza_t * const stanza)
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_text_ptr(xmpp_stanza_t * const stanza)
+const char *xmpp_stanza_get_text_ptr(xmpp_stanza_t * const stanza)
 {
     if (stanza->type == XMPP_STANZA_TEXT)
 	return stanza->data;
@@ -1004,8 +1004,8 @@ int xmpp_stanza_set_from(xmpp_stanza_t * const stanza,
  *
  *  @ingroup Stanza
  */
-char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
-				const char * const name)
+const char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
+                                      const char * const name)
 {
     if (stanza->type != XMPP_STANZA_TAG)
 	return NULL;
