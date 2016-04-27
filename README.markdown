@@ -3,7 +3,7 @@ libstrophe
 
 libstrophe is a lightweight XMPP client library written in C. It has
 minimal dependencies and is configurable for various environments. It
-runs well on both Linux, Unix, and Windows based platforms.
+runs well on Linux, Unix and Windows based platforms.
 
 Its goals are:
 
@@ -49,7 +49,9 @@ libstrophe requires:
 - expat or libxml2 - expat is the default; use --with-libxml2 to
   switch
 - openssl on UNIX systems
-- libtool
+
+To build libstrophe using autotools you will need autoconf, automake
+and libtool.
 
 In addition, if you wish to run the unit tests, you will need the
 check package.
