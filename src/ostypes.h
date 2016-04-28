@@ -30,8 +30,11 @@ typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned __int64 uint64_t; 
 
+#ifndef UINT16_MAX
+#define UINT16_MAX ((uint16_t)0xffff)
+#endif /* UINT16_MAX */
 #ifndef UINT32_MAX
-#define UINT32_MAX 0xffffffff
+#define UINT32_MAX ((uint32_t)0xffffffff)
 #endif /* UINT32_MAX */
 #ifndef SIZE_MAX
 #define SIZE_MAX UINT32_MAX

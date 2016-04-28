@@ -157,6 +157,7 @@ int resolver_srv_lookup_buf(const unsigned char *buf, size_t len,
      * RFC2052: A client MUST attempt to contact the target host
      * with the lowest-numbered priority it can reach.
      */
+    priority_min = UINT16_MAX;
     for (i = 0; i < header.ancount; ++i) {
         name_len = message_name_len(buf, len, j);
         j += name_len;
