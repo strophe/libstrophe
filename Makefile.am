@@ -9,7 +9,7 @@ PARSER_LIBS=@PARSER_LIBS@
 SSL_CFLAGS = @openssl_CFLAGS@
 SSL_LIBS = @openssl_LIBS@
 
-DIST_LIBS = @DIST_LIBS@
+RESOLV_LIBS = @RESOLV_LIBS@
 
 STROPHE_FLAGS = -I$(top_srcdir)
 STROPHE_LIBS = libstrophe.la
@@ -18,17 +18,23 @@ STROPHE_LIBS = libstrophe.la
 lib_LTLIBRARIES = libstrophe.la
 
 libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS)
-libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(DIST_LIBS) -no-undefined
+libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(RESOLV_LIBS) -no-undefined
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
 libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c src/jid.c src/md5.c \
 	src/resolver.c src/sasl.c src/scram.c src/sha1.c \
-	src/snprintf.c src/sock.c src/stanza.c \
-	src/tls_openssl.c src/util.c src/rand.c src/uuid.c \
+	src/snprintf.c src/sock.c src/stanza.c src/util.c \
+	src/rand.c src/uuid.c \
 	src/common.h src/hash.h src/md5.h src/ostypes.h src/parser.h \
 	src/resolver.h src/sasl.h src/scram.h src/sha1.h src/snprintf.h \
 	src/sock.h src/tls.h src/util.h src/rand.h
+
+if DISABLE_TLS
+libstrophe_la_SOURCES += src/tls_dummy.c
+else
+libstrophe_la_SOURCES += src/tls_openssl.c
+endif
 
 if PARSER_EXPAT
 libstrophe_la_SOURCES += src/parser_expat.c
