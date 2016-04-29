@@ -118,6 +118,10 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem,
 			 const xmpp_log_t * const log);
 void xmpp_ctx_free(xmpp_ctx_t * const ctx);
 
+/* free some blocks returned by other APIs, for example the
+   buffer you get from xmpp_stanza_to_text */
+void xmpp_free(const xmpp_ctx_t * const ctx, void *p);
+
 struct _xmpp_mem_t {
     void *(*alloc)(const size_t size, void * const userdata);
     void (*free)(void *p, void * const userdata);
@@ -146,7 +150,6 @@ typedef void (*xmpp_log_handler)(void * const userdata,
 struct _xmpp_log_t {
     xmpp_log_handler handler;
     void *userdata;
-    /* mutex_t lock; */
 };
 
 /* return a default logger filtering at a given level */
@@ -286,28 +289,24 @@ void xmpp_id_handler_delete(xmpp_conn_t * const conn,
 void xmpp_register_stanza_handler(conn, stanza, xmlns, type, handler)
 */
 
-/** stanzas **/
+/* stanzas */
 
-/** allocate and initialize a blank stanza */
+/* allocate and initialize a blank stanza */
 xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx);
 
-/** clone a stanza */
+/* clone a stanza */
 xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza);
 
-/** copies a stanza and all children */
+/* copies a stanza and all children */
 xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza);
 
-/** free a stanza object and it's contents */
+/* free a stanza object and it's contents */
 int xmpp_stanza_release(xmpp_stanza_t * const stanza);
-
-/** free some blocks returned by other APIs, for example the
-    buffer you get from xmpp_stanza_to_text **/
-void xmpp_free(const xmpp_ctx_t * const ctx, void *p);
 
 int xmpp_stanza_is_text(xmpp_stanza_t * const stanza);
 int xmpp_stanza_is_tag(xmpp_stanza_t * const stanza);
 
-/** marshall a stanza into text for transmission or display **/
+/* marshall a stanza into text for transmission or display */
 int xmpp_stanza_to_text(xmpp_stanza_t *stanza, 
 			char ** const buf, size_t * const buflen);
 
@@ -368,7 +367,8 @@ xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char * const type,
                            const char * const id);
 xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx);
 
-/** jid **/
+/* jid */
+
 /* these return new strings that must be xmpp_free()'d */
 char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
                                     const char *domain,
@@ -378,13 +378,15 @@ char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid);
 char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid);
 char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid);
 
-/** UUID **/
-char *xmpp_uuid_gen(xmpp_ctx_t *ctx);
+/* event loop */
 
-/** event loop **/
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
+
+/* UUID */
+
+char *xmpp_uuid_gen(xmpp_ctx_t *ctx);
 
 #ifdef __cplusplus
 }
