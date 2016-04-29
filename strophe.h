@@ -388,6 +388,25 @@ void xmpp_stop(xmpp_ctx_t *ctx);
 
 char *xmpp_uuid_gen(xmpp_ctx_t *ctx);
 
+/* SHA1 */
+
+/** @def XMPP_SHA1_DIGEST_SIZE
+ *  Size of the SHA1 message digest.
+ */
+#define XMPP_SHA1_DIGEST_SIZE 20
+
+typedef struct _xmpp_sha1_t xmpp_sha1_t;
+
+char *xmpp_sha1(xmpp_ctx_t *ctx, const unsigned char *data, size_t len);
+
+xmpp_sha1_t *xmpp_sha1_new(xmpp_ctx_t *ctx);
+void xmpp_sha1_free(xmpp_sha1_t *sha1);
+void xmpp_sha1_update(xmpp_sha1_t *sha1, const unsigned char *data, size_t len);
+void xmpp_sha1_final(xmpp_sha1_t *sha1);
+char *xmpp_sha1_to_string(xmpp_sha1_t *sha1, char *s, size_t slen);
+char *xmpp_sha1_to_string_alloc(xmpp_sha1_t *sha1);
+void xmpp_sha1_to_digest(xmpp_sha1_t *sha1, unsigned char *digest);
+
 #ifdef __cplusplus
 }
 #endif

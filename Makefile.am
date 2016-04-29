@@ -21,7 +21,7 @@ libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS)
 libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(RESOLV_LIBS) -no-undefined
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
-libstrophe_la_SOURCES = src/auth.c src/conn.c src/ctx.c \
+libstrophe_la_SOURCES = src/auth.c src/conn.c src/crypto.c src/ctx.c \
 	src/event.c src/handler.c src/hash.c src/jid.c src/md5.c \
 	src/resolver.c src/sasl.c src/scram.c src/sha1.c \
 	src/snprintf.c src/sock.c src/stanza.c src/util.c \
