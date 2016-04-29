@@ -252,7 +252,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
 
     /* add our response fields */
     hash_add(table, "username", xmpp_strdup(ctx, node));
-    xmpp_rand_nonce(ctx, cnonce, sizeof(cnonce));
+    xmpp_rand_nonce(ctx->rand, cnonce, sizeof(cnonce));
     hash_add(table, "cnonce", xmpp_strdup(ctx, cnonce));
     hash_add(table, "nc", xmpp_strdup(ctx, "00000001"));
     hash_add(table, "qop", xmpp_strdup(ctx, "auth"));

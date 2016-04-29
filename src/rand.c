@@ -16,13 +16,19 @@
  *  Hash function is SHA1.
  */
 
-#include <assert.h>
-#include <string.h>
-#include <time.h>
+/** @defgroup Random Pseudo-random number generator
+ */
 
-#include "common.h"
-#include "ostypes.h"
+#include <assert.h>
+#include <string.h>     /* memeset */
+#include <time.h>       /* clock, time */
+
+#include "common.h"     /* xmpp_alloc, xmpp_free */
+#include "ostypes.h"    /* uint8_t, uint32_t, size_t */
 #include "sha1.h"
+#include "snprintf.h"   /* xmpp_snprintf */
+
+#include "rand.h"       /* xmpp_rand_t */
 
 #define outlen SHA1_DIGEST_SIZE
 #define seedlen (440 / 8)
@@ -214,30 +220,31 @@ do {                                                \
     }                                               \
 } while (0)
 
-static void xmpp_rand_reseed(xmpp_ctx_t *ctx)
+static void xmpp_rand_reseed(xmpp_rand_t *rand)
 {
     uint8_t entropy[ENTROPY_MAX];
     uint8_t *ptr = entropy;
     const uint8_t *last = entropy + sizeof(entropy);
     size_t len;
-    xmpp_rand_t *rand = ctx->rand;
 
     /* entropy:
      *  1. time(2)
      *  2. clock(3) if != -1
-     *  3. xmpp_ctx_t address to make unique seed within one process
+     *  3. xmpp_rand_t address to make unique seed within one process
      *  4. counter to make unique seed within one context
-     *  5. local ports of every connection in list (getsockname)
-     *  6. other non-constant info that can be retieved from socket
+     *  5. stack address
+     *  6. local ports of every connection in list (getsockname)
+     *  7. other non-constant info that can be retieved from socket
      *
      *  rand(3) can't be used as it isn't thread-safe.
-     *  XXX 5 and 6 not implemented yet.
+     *  XXX 6 and 7 are not implemented yet.
      */
 
     ENTROPY_ACCUMULATE(ptr, last, time_t, time(NULL));
     ENTROPY_ACCUMULATE(ptr, last, clock_t, clock());
-    ENTROPY_ACCUMULATE(ptr, last, void *, ctx);
+    ENTROPY_ACCUMULATE(ptr, last, void *, rand);
     ENTROPY_ACCUMULATE(ptr, last, unsigned, ++rand->reseed_count);
+    ENTROPY_ACCUMULATE(ptr, last, void *, &entropy);
     len = ptr - entropy;
 
     if (rand->inited) {
@@ -262,35 +269,34 @@ void xmpp_rand_free(xmpp_ctx_t *ctx, xmpp_rand_t *rand)
     xmpp_free(ctx, rand);
 }
 
-void xmpp_rand_bytes(xmpp_ctx_t *ctx, uint8_t *output, size_t len)
+void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len)
 {
     int rc;
-    xmpp_rand_t *rand = ctx->rand;
 
-    rc = Hash_DRBG_Generate(&rand->ctx, output, len);
+    rc = Hash_DRBG_Generate(&rand->ctx, (uint8_t *)output, len);
     if (rc == RESEED_NEEDED) {
-        xmpp_rand_reseed(ctx);
-        rc = Hash_DRBG_Generate(&rand->ctx, output, len);
+        xmpp_rand_reseed(rand);
+        rc = Hash_DRBG_Generate(&rand->ctx, (uint8_t *)output, len);
         assert(rc == 0);
     }
 }
 
-int xmpp_rand(xmpp_ctx_t *ctx)
+int xmpp_rand(xmpp_rand_t *rand)
 {
     int result;
 
-    xmpp_rand_bytes(ctx, (uint8_t *)&result, sizeof(result));
+    xmpp_rand_bytes(rand, (unsigned char *)&result, sizeof(result));
     return result;
 }
 
-void xmpp_rand_nonce(xmpp_ctx_t *ctx, char *output, size_t len)
+void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len)
 {
     size_t i;
     size_t rand_len = len / 2;
 #ifndef _MSC_VER
-    uint8_t rand_buf[rand_len];
+    unsigned char rand_buf[rand_len];
 #else
-    uint8_t* rand_buf = (uint8_t*)_alloca(rand_len);
+    unsigned char *rand_buf = (unsigned char *)_alloca(rand_len);
 #endif
 
     /* current implementation returns printable HEX representation of
@@ -299,9 +305,9 @@ void xmpp_rand_nonce(xmpp_ctx_t *ctx, char *output, size_t len)
      * as result can fail.
      */
 
-    xmpp_rand_bytes(ctx, rand_buf, rand_len);
+    xmpp_rand_bytes(rand, rand_buf, rand_len);
     for (i = 0; i < rand_len; ++i) {
-        xmpp_snprintf(output + i * 2, len, "%02x", (unsigned char)rand_buf[i]);
+        xmpp_snprintf(output + i * 2, len, "%02x", rand_buf[i]);
         len -= 2;
     }
 }

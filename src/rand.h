@@ -16,25 +16,43 @@
 #ifndef __LIBSTROPHE_RAND_H__
 #define __LIBSTROPHE_RAND_H__
 
-#include "strophe.h"
-#include "ostypes.h"
+#include <stddef.h>     /* size_t */
+#include "strophe.h"    /* xmpp_ctx_t */
 
 typedef struct _xmpp_rand_t xmpp_rand_t;
 
+/** Create new xmpp_rand_t object.
+ *
+ *  @ingroup Random
+ */
 xmpp_rand_t *xmpp_rand_new(xmpp_ctx_t *ctx);
+/** Destroy an xmpp_rand_t object.
+ *
+ *  @ingroup Random
+ */
 void xmpp_rand_free(xmpp_ctx_t *ctx, xmpp_rand_t *rand);
 
-/** Analogue of rand(3). */
-int xmpp_rand(xmpp_ctx_t *ctx);
-
-/** Generates random bytes. */
-void xmpp_rand_bytes(xmpp_ctx_t *ctx, uint8_t *output, size_t len);
-
-/** Generates a nonce that is printable randomized string.
+/** Generate random integer
+ *  Analogue of rand(3).
  *
- * @param len Number of bytes reserved for the output string, including
- *            end of line '\0'.
+ *  @ingroup Random
  */
-void xmpp_rand_nonce(xmpp_ctx_t *ctx, char *output, size_t len);
+int xmpp_rand(xmpp_rand_t *rand);
+
+/** Generate random bytes.
+ *  Generates len bytes and stores them to the output buffer.
+ *
+ *  @ingroup Random
+ */
+void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len);
+
+/** Generate a nonce that is printable randomized string.
+ *
+ *  @param len Number of bytes reserved for the output string, including
+ *             end of line '\0'.
+ *
+ *  @ingroup Random
+ */
+void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len);
 
 #endif /* __LIBSTROPHE_RAND_H__ */
