@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 
-/* We don't have separated header file, so include this instead of common.h */
+#undef HAVE_VSNPRINTF
+#undef HAVE_SNPRINTF
 #include "snprintf.c"
 
 #ifndef LONG_STRING
