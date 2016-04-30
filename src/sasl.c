@@ -32,7 +32,8 @@
 
 /** generate authentication string for the SASL PLAIN mechanism */
 char *sasl_plain(xmpp_ctx_t *ctx, const char *authid, const char *password) {
-    int idlen, passlen;
+    size_t idlen, passlen;
+    size_t msglen;
     char *result = NULL;
     char *msg;
     
@@ -41,13 +42,14 @@ char *sasl_plain(xmpp_ctx_t *ctx, const char *authid, const char *password) {
 
     idlen = strlen(authid);
     passlen = strlen(password);
-    msg = xmpp_alloc(ctx, 2 + idlen + passlen);
+    msglen = 2 + idlen + passlen;
+    msg = xmpp_alloc(ctx, msglen);
     if (msg != NULL) {
 	msg[0] = '\0';
 	memcpy(msg+1, authid, idlen);
 	msg[1+idlen] = '\0';
 	memcpy(msg+1+idlen+1, password, passlen);
-	result = base64_encode(ctx, (unsigned char *)msg, 2 + idlen + passlen);
+	result = xmpp_base64_encode(ctx, (unsigned char *)msg, msglen);
 	xmpp_free(ctx, msg);
     }
 
@@ -93,7 +95,7 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
     char *key, *value;
     unsigned char *s, *t;
 
-    text = base64_decode(ctx, msg, strlen(msg));
+    text = (unsigned char *)xmpp_base64_decode_str(ctx, msg, strlen(msg));
     if (text == NULL) {
 	xmpp_error(ctx, "SASL", "couldn't Base64 decode challenge!");
 	return NULL;
@@ -346,7 +348,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     hash_release(table); /* also frees value strings */
 
     /* reuse response for the base64 encode of our result */
-    response = base64_encode(ctx, (unsigned char *)result, strlen(result));
+    response = xmpp_base64_encode(ctx, (unsigned char *)result, strlen(result));
     xmpp_free(ctx, result);
 
     return response;
@@ -398,11 +400,11 @@ char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
         goto out;
     }
 
-    sval = (char *)base64_decode(ctx, s, strlen(s));
+    sval = xmpp_base64_decode_str(ctx, s, strlen(s));
     if (!sval) {
         goto out;
     }
-    sval_len = base64_decoded_len(ctx, s, strlen(s));
+    sval_len = strlen(sval);
     ival = strtol(i, &saveptr, 10);
 
     auth_len = 10 + strlen(r) + strlen(first_bare) + strlen(challenge);
@@ -428,7 +430,7 @@ char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
         sign[j] ^= key[j];
     }
 
-    sign_b64 = base64_encode(ctx, sign, sizeof(sign));
+    sign_b64 = xmpp_base64_encode(ctx, sign, sizeof(sign));
     if (!sign_b64) {
         goto out_response;
     }
@@ -441,8 +443,8 @@ char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
     strcat(response, sign_b64);
     xmpp_free(ctx, sign_b64);
 
-    response_b64 = base64_encode(ctx, (unsigned char *)response,
-                                 strlen(response));
+    response_b64 = xmpp_base64_encode(ctx, (unsigned char *)response,
+                                      strlen(response));
     if (!response_b64) {
         goto out_response;
     }
@@ -458,259 +460,3 @@ out:
     xmpp_free(ctx, tmp);
     return result;
 }
-
-
-/** Base64 encoding routines. Implemented according to RFC 3548 */
-
-/** map of all byte values to the base64 values, or to
-    '65' which indicates an invalid character. '=' is '64' */
-static const char _base64_invcharmap[256] = {
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,62, 65,65,65,63,
-    52,53,54,55, 56,57,58,59, 60,61,65,65, 65,64,65,65,
-    65, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
-    15,16,17,18, 19,20,21,22, 23,24,25,65, 65,65,65,65,
-    65,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
-    41,42,43,44, 45,46,47,48, 49,50,51,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65,
-    65,65,65,65, 65,65,65,65, 65,65,65,65, 65,65,65,65 
-};
-
-/** map of all 6-bit values to their corresponding byte
-    in the base64 alphabet. Padding char is the value '64' */
-static const char _base64_charmap[65] = {
-    'A','B','C','D', 'E','F','G','H',
-    'I','J','K','L', 'M','N','O','P',
-    'Q','R','S','T', 'U','V','W','X',
-    'Y','Z','a','b', 'c','d','e','f',
-    'g','h','i','j', 'k','l','m','n',
-    'o','p','q','r', 's','t','u','v',
-    'w','x','y','z', '0','1','2','3',
-    '4','5','6','7', '8','9','+','/',
-    '='
-};
-
-int base64_encoded_len(xmpp_ctx_t *ctx, const unsigned len)
-{
-    /* encoded steam is 4 bytes for every three, rounded up */
-    return ((len + 2)/3) << 2;
-}
-
-char *base64_encode(xmpp_ctx_t *ctx, 
-		    const unsigned char * const buffer, const unsigned len)
-{
-    int clen;
-    char *cbuf, *c;
-    uint32_t word, hextet;
-    unsigned i;
-
-    clen = base64_encoded_len(ctx, len);
-    cbuf = xmpp_alloc(ctx, clen + 1);
-    if (cbuf != NULL) {
-	c = cbuf;
-	/* loop over data, turning every 3 bytes into 4 characters */
-	for (i = 0; i + 2 < len; i += 3) {
-	    word = buffer[i] << 16 | buffer[i+1] << 8 | buffer[i+2];
-	    hextet = (word & 0x00FC0000) >> 18;
-	    *c++ = _base64_charmap[hextet];
-	    hextet = (word & 0x0003F000) >> 12;
-	    *c++ = _base64_charmap[hextet];
-	    hextet = (word & 0x00000FC0) >> 6;
-	    *c++ = _base64_charmap[hextet];
-	    hextet = (word & 0x000003F);
-	    *c++ = _base64_charmap[hextet];
-	}
-	/* zero, one or two bytes left */
-	switch (len - i) {
-	    case 0:
-		break;
-	    case 1:
-		hextet = (buffer[len-1] & 0xFC) >> 2;
-		*c++ = _base64_charmap[hextet];
-		hextet = (buffer[len-1] & 0x03) << 4;
-		*c++ = _base64_charmap[hextet];
-		*c++ = _base64_charmap[64]; /* pad */
-		*c++ = _base64_charmap[64]; /* pad */
-		break;
-	    case 2:
-		hextet = (buffer[len-2] & 0xFC) >> 2;
-		*c++ = _base64_charmap[hextet];
-		hextet = ((buffer[len-2] & 0x03) << 4) |
-			 ((buffer[len-1] & 0xF0) >> 4);
-		*c++ = _base64_charmap[hextet];
-		hextet = (buffer[len-1] & 0x0F) << 2;
-		*c++ = _base64_charmap[hextet];
-		*c++ = _base64_charmap[64]; /* pad */
-		break;
-	}
-	/* add a terminal null */
-	*c = '\0';
-    }
-
-    return cbuf;
-}
-
-int base64_decoded_len(xmpp_ctx_t *ctx, 
-		       const char * const buffer, const unsigned len)
-{
-    int nudge;
-    int c;
-
-    if (len < 4) return 0;
-
-    /* count the padding characters for the remainder */
-    nudge = -1;
-    c = _base64_invcharmap[(int)buffer[len-1]];
-    if (c < 64) nudge = 0;
-    else if (c == 64) {
-	c = _base64_invcharmap[(int)buffer[len-2]];
-	if (c < 64) nudge = 1;
-	else if (c == 64) {
-	    c = _base64_invcharmap[(int)buffer[len-3]];
-	    if (c < 64) nudge = 2;
-	} 
-    }
-    if (nudge < 0) return 0; /* reject bad coding */
-
-    /* decoded steam is 3 bytes for every four */ 
-    return 3 * (len >> 2) - nudge;
-}
-
-unsigned char *base64_decode(xmpp_ctx_t *ctx,
-			     const char * const buffer, const unsigned len)
-{
-    int dlen;
-    unsigned char *dbuf, *d;
-    uint32_t word, hextet = 0;
-    unsigned i;
-
-    /* len must be a multiple of 4 */
-    if (len & 0x03) return NULL;
-
-    dlen = base64_decoded_len(ctx, buffer, len);
-    dbuf = xmpp_alloc(ctx, dlen + 1);
-    if (dbuf != NULL) {
-	d = dbuf;
-	/* loop over each set of 4 characters, decoding 3 bytes */
-	for (i = 0; i + 3 < len; i += 4) {
-	    hextet = _base64_invcharmap[(int)buffer[i]];
-	    if (hextet & 0xC0) break;
-	    word = hextet << 18;
-	    hextet = _base64_invcharmap[(int)buffer[i+1]];
-	    if (hextet & 0xC0) break;
-	    word |= hextet << 12;
-	    hextet = _base64_invcharmap[(int)buffer[i+2]];
-	    if (hextet & 0xC0) break;
-	    word |= hextet << 6;
-	    hextet = _base64_invcharmap[(int)buffer[i+3]];
-	    if (hextet & 0xC0) break;
-	    word |= hextet;
-	    *d++ = (word & 0x00FF0000) >> 16;
-	    *d++ = (word & 0x0000FF00) >> 8;
-	    *d++ = (word & 0x000000FF);
-	}
-	if (hextet > 64) goto _base64_decode_error;
-	/* handle the remainder */
-	switch (dlen % 3) {
-	    case 0:
-		/* nothing to do */
-		break;
-	    case 1:
-		/* redo the last quartet, checking for correctness */
-		hextet = _base64_invcharmap[(int)buffer[len-4]];
-		if (hextet & 0xC0) goto _base64_decode_error;
-		word = hextet << 2;
-		hextet = _base64_invcharmap[(int)buffer[len-3]];
-		if (hextet & 0xC0) goto _base64_decode_error;
-		word |= hextet >> 4;
-		*d++ = word & 0xFF;
-		hextet = _base64_invcharmap[(int)buffer[len-2]];
-		if (hextet != 64) goto _base64_decode_error;
-		hextet = _base64_invcharmap[(int)buffer[len-1]];
-		if (hextet != 64) goto _base64_decode_error;
-		break;
-	    case 2:
-		/* redo the last quartet, checking for correctness */
-		hextet = _base64_invcharmap[(int)buffer[len-4]];
-		if (hextet & 0xC0) goto _base64_decode_error;
-		word = hextet << 10;		
-		hextet = _base64_invcharmap[(int)buffer[len-3]];
-		if (hextet & 0xC0) goto _base64_decode_error;
-		word |= hextet << 4;		
-		hextet = _base64_invcharmap[(int)buffer[len-2]];
-		if (hextet & 0xC0) goto _base64_decode_error;
-		word |= hextet >> 2;
-		*d++ = (word & 0xFF00) >> 8;
-		*d++ = (word & 0x00FF);		
-		hextet = _base64_invcharmap[(int)buffer[len-1]];
-		if (hextet != 64) goto _base64_decode_error;
-		break;
-	}
-	*d = '\0';
-    }
-    return dbuf;
-
-_base64_decode_error:	
-    /* invalid character; abort decoding! */
-    xmpp_free(ctx, dbuf);
-    return NULL;
-}
-
-/*** self tests ***/
-#ifdef TEST
-
-#include <stdio.h>
-
-int test_charmap_identity(void)
-{
-    int i, v, u;
-
-    for (i = 0; i < 65; i++) {
-	v = _base64_charmap[i];
-	if (v > 255) return 1;
-	u = _base64_invcharmap[v];
-/*	printf("map: %d -> %d -> %d\n", i, v, u); */
-	if (u != i) return 1;
-    }
-
-    return 0; 
-}
-
-int test_charmap_range(void)
-{
-    int i, v;
-
-    for (i = 64; i < 256; i++) {
-	v = _base64_invcharmap[i];
-	if (i < 64) return 1;
-    }
-
-    return 0;
-}
-
-int main(int argc, char *argv[])
-{
-    int ret = 0;
-
-    printf("testing charmap identity...");
-    ret = test_charmap_identity();
-    if (ret) return ret;
-    printf(" ok.\n");
-
-    printf("testing charmap range...");
-    ret = test_charmap_range();
-    if (ret) return ret;
-    printf(" ok.\n");
-
-    printf("no error\n");
-    return 0;
-}
-
-#endif /* TEST */

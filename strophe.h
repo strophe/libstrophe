@@ -407,6 +407,13 @@ char *xmpp_sha1_to_string(xmpp_sha1_t *sha1, char *s, size_t slen);
 char *xmpp_sha1_to_string_alloc(xmpp_sha1_t *sha1);
 void xmpp_sha1_to_digest(xmpp_sha1_t *sha1, unsigned char *digest);
 
+/* Base64 */
+
+char *xmpp_base64_encode(xmpp_ctx_t *ctx, const unsigned char *data, size_t len);
+char *xmpp_base64_decode_str(xmpp_ctx_t *ctx, const char *base64, size_t len);
+void xmpp_base64_decode_bin(xmpp_ctx_t *ctx, const char *base64, size_t len,
+                            unsigned char **out, size_t *outlen);
+
 #ifdef __cplusplus
 }
 #endif

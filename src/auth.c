@@ -442,7 +442,7 @@ static int _handle_scram_sha1_challenge(xmpp_conn_t * const conn,
         if (!text)
             goto err;
 
-        challenge = (char *)base64_decode(conn->ctx, text, strlen(text));
+        challenge = xmpp_base64_decode_str(conn->ctx, text, strlen(text));
         xmpp_free(conn->ctx, text);
         if (!challenge)
             goto err;
@@ -639,8 +639,8 @@ static void _auth(xmpp_conn_t * const conn)
             return;
         }
 
-        str = (char *)base64_encode(conn->ctx, (unsigned char *)scram_init,
-                                    strlen(scram_init));
+        str = xmpp_base64_encode(conn->ctx, (unsigned char *)scram_init,
+                                 strlen(scram_init));
         if (!str) {
             xmpp_free(conn->ctx, scram_init);
             xmpp_stanza_release(auth);
