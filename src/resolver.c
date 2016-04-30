@@ -21,9 +21,9 @@
 
 #include <string.h>             /* strncpy */
 
-#include "common.h"
-#include "resolver.h"
 #include "ostypes.h"
+#include "snprintf.h"
+#include "resolver.h"
 
 #define MESSAGE_HEADER_LEN 12
 #define MESSAGE_RESPONSE 1

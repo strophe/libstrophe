@@ -9,7 +9,10 @@
  *  This program is dual licensed under the MIT and GPLv3 licenses.
  */
 
-/* gcc -o test_resolver -I. -I./src tests/test_resolver.c -static -lstrophe */
+/*
+ * gcc -o test_resolver -I./src tests/test_resolver.c src/resolver.c \
+ * src/snprintf.c
+ */
 
 #include <assert.h>
 #include <stdio.h>
