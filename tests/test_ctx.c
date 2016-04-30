@@ -94,6 +94,8 @@ int main(int argc, char **argv)
     if (!(log_called && mem_alloc_called && mem_realloc_called && 
 	  mem_free_called))
 	return 1;
+    if (mem_alloc_called != mem_free_called)
+        return 1;
     
     return 0;
 }
