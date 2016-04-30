@@ -1,4 +1,4 @@
-/* test_base64.c
+/* test_jid.c
 ** libstrophe XMPP client library -- test routines for the jid utils
 **
 ** Copyright (C) 2005-2009 Collecta, Inc. 

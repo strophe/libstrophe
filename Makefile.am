@@ -76,7 +76,7 @@ examples_uuid_LDADD = $(STROPHE_LIBS)
 
 ## Tests
 TESTS = tests/check_parser tests/test_sha1 tests/test_md5 tests/test_rand \
-	tests/test_scram tests/test_base64 tests/test_snprintf \
+	tests/test_scram tests/test_base64 tests/test_jid tests/test_snprintf \
 	tests/test_resolver
 check_PROGRAMS = $(TESTS)
 
@@ -90,6 +90,11 @@ tests_test_base64_SOURCES = tests/test_base64.c tests/test.c tests/test.h
 tests_test_base64_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_base64_LDADD = $(STROPHE_LIBS)
 tests_test_base64_LDFLAGS = -static
+
+tests_test_jid_SOURCES = tests/test_jid.c
+tests_test_jid_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
+tests_test_jid_LDADD = $(STROPHE_LIBS)
+tests_test_jid_LDFLAGS = -static
 
 tests_test_resolver_SOURCES = tests/test_resolver.c tests/test.h
 tests_test_resolver_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
