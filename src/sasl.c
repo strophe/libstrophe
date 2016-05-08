@@ -364,7 +364,7 @@ char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
     char *r = NULL;
     char *s = NULL;
     char *i = NULL;
-    char *sval;
+    unsigned char *sval;
     size_t sval_len;
     long ival;
     char *tmp;
@@ -400,11 +400,10 @@ char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
         goto out;
     }
 
-    sval = xmpp_base64_decode_str(ctx, s, strlen(s));
+    xmpp_base64_decode_bin(ctx, s, strlen(s), &sval, &sval_len);
     if (!sval) {
         goto out;
     }
-    sval_len = strlen(sval);
     ival = strtol(i, &saveptr, 10);
 
     auth_len = 10 + strlen(r) + strlen(first_bare) + strlen(challenge);
