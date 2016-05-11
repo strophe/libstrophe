@@ -132,7 +132,7 @@ int sock_set_keepalive(const sock_t sock, int timeout, int interval)
     if (optval) {
 #ifdef TCP_KEEPIDLE
         ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &timeout, sizeof(timeout));
-#else
+#elif defined(TCP_KEEPALIVE)
         /* QNX receives `struct timeval' as argument, but it seems OSX does int */
         ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPALIVE, &timeout, sizeof(timeout));
 #endif /* TCP_KEEPIDLE */
