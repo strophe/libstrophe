@@ -598,7 +598,7 @@ static void _auth(xmpp_conn_t * const conn)
     }
 
     if (conn->tls_mandatory && !xmpp_conn_is_secured(conn)) {
-        xmpp_error(conn->ctx, "xmpp", "TLS is not supported, but set as"
+        xmpp_error(conn->ctx, "xmpp", "TLS is not supported, but set as "
                                       "mandatory for this connection");
         conn_disconnect(conn);
         return;
