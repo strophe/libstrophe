@@ -111,23 +111,91 @@ static unsigned message_name_len(const unsigned char *buf, size_t buf_len,
     return message_name_get(buf, buf_len, buf_offset, NULL, SIZE_MAX);
 }
 
-int resolver_srv_lookup_buf(const unsigned char *buf, size_t len,
-                            char *target, size_t target_len,
-                            unsigned short *port)
+int resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
 {
-    int set = 0;
+    resolver_srv_rr_t * rr_head;
+    resolver_srv_rr_t * rr_current;
+    resolver_srv_rr_t * rr_next;
+    resolver_srv_rr_t * rr_prev;
+    int swap;
+
+    rr_head = *srv_rr_list;
+
+    if ((rr_head == NULL) || (rr_head->next == NULL)) {
+        /* Empty or single record list */
+        return 0;
+    }
+
+    do {
+        rr_prev = NULL;
+        rr_current = rr_head;
+        rr_next = rr_head->next;
+        swap = 0;
+        while (rr_next!=NULL) {
+            /*
+             * RFC2052: When selecting a target host among the
+             * those that have the same priority, the chance of trying
+             * this one first SHOULD be proportional to its weight.
+             */
+            if ((rr_current->priority > rr_next->priority) ||
+                (rr_current->priority == rr_next->priority && rr_current->weight < rr_next->weight ))
+            {
+                /* Swap node */
+                swap = 1;
+                if (rr_prev!=NULL) {
+                    rr_prev->next = rr_next;
+                } else {
+                    /* Swap head node */
+                    rr_head = rr_next;
+                }
+                rr_current->next = rr_next->next;
+                rr_next->next = rr_current;
+
+                rr_prev = rr_next;
+                rr_next = rr_current->next;
+            } else {
+                /* Next node */
+                rr_prev = rr_current;
+                rr_current = rr_current->next;
+                rr_next = rr_current->next;
+            }
+        }
+    }while (swap != 0) ;
+
+    *srv_rr_list = rr_head;
+
+    return 0;
+}
+
+int resolver_srv_list_add(resolver_srv_rr_t **srv_rr_list, resolver_srv_rr_t *srv_rr_data)
+{
+    resolver_srv_rr_t *rr_head;
+
+    rr_head = *srv_rr_list;
+    if (strlen(rr_head->target) > 0) {
+        srv_rr_data->next = rr_head;
+    }
+
+    *srv_rr_list = srv_rr_data;
+
+    return 0;
+}
+
+int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf, size_t len,
+                            resolver_srv_rr_t **srv_rr_list)
+{
+    int set = XMPP_DOMAIN_NOT_FOUND;
     unsigned i;
     unsigned j;
     unsigned name_len;
     unsigned rdlength;
     uint16_t type;
     uint16_t class;
-    uint16_t priority;
-    uint16_t priority_min;
     struct message_header header;
+    resolver_srv_rr_t *srv_rr_data;
 
     if (len < MESSAGE_HEADER_LEN)
-        return 0;
+        return XMPP_DOMAIN_NOT_FOUND;
 
     header.id = xmpp_ntohs_ptr(&buf[0]);
     header.octet2 = buf[2];
@@ -139,7 +207,7 @@ int resolver_srv_lookup_buf(const unsigned char *buf, size_t len,
     if (message_header_qr(&header) != MESSAGE_RESPONSE ||
         message_header_rcode(&header) != 0)
     {
-        return 0;
+        return XMPP_DOMAIN_NOT_FOUND;
     }
     j = MESSAGE_HEADER_LEN;
 
@@ -148,7 +216,7 @@ int resolver_srv_lookup_buf(const unsigned char *buf, size_t len,
         name_len = message_name_len(buf, len, j);
         if (name_len == 0) {
             /* error in name format */
-            return 0;
+            return XMPP_DOMAIN_NOT_FOUND;
         }
         j += name_len + 4;
     }
@@ -157,7 +225,6 @@ int resolver_srv_lookup_buf(const unsigned char *buf, size_t len,
      * RFC2052: A client MUST attempt to contact the target host
      * with the lowest-numbered priority it can reach.
      */
-    priority_min = UINT16_MAX;
     for (i = 0; i < header.ancount; ++i) {
         name_len = message_name_len(buf, len, j);
         j += name_len;
@@ -166,48 +233,52 @@ int resolver_srv_lookup_buf(const unsigned char *buf, size_t len,
         rdlength = xmpp_ntohs_ptr(&buf[j + 8]);
         j += 10;
         if (type == MESSAGE_T_SRV && class == MESSAGE_C_IN) {
-            priority = xmpp_ntohs_ptr(&buf[j]);
-            if (!set || priority < priority_min) {
-                *port = xmpp_ntohs_ptr(&buf[j + 4]);
-                name_len = message_name_get(buf, len, j + 6, target, target_len);
-                set = name_len > 0 ? 1 : 0;
-                priority_min = priority;
-            }
+            srv_rr_data = xmpp_alloc(ctx, sizeof(*srv_rr_data));
+            srv_rr_data->priority = xmpp_ntohs_ptr(&buf[j]);
+            srv_rr_data->weight = xmpp_ntohs_ptr(&buf[j+2]);
+            srv_rr_data->port = xmpp_ntohs_ptr(&buf[j + 4]);
+            name_len = message_name_get(buf, len, j + 6, &(srv_rr_data->target), MAX_DOMAIN_LEN);
+            srv_rr_data->next = NULL;
+            set = name_len > 0 ? XMPP_DOMAIN_FOUND : XMPP_DOMAIN_NOT_FOUND;
+            resolver_srv_list_add(srv_rr_list,srv_rr_data);
         }
         j += rdlength;
     }
+    resolver_srv_list_sort(srv_rr_list);
 
     return set;
 }
 
-int resolver_srv_lookup(const char *service, const char *proto,
-                        const char *domain, char *target,
-                        size_t target_len, unsigned short *port)
+int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
+                        const char *domain, resolver_srv_rr_t **srv_rr_list)
 {
     char fulldomain[2048];
     unsigned char buf[65535];
     int len;
-    int set = 0;
+    int set = XMPP_DOMAIN_NOT_FOUND;
+#ifdef _WIN32
+    resolver_srv_rr_t *rr;
+#endif
 
     xmpp_snprintf(fulldomain, sizeof(fulldomain),
                   "_%s._%s.%s", service, proto, domain);
 
 #ifdef _WIN32
-    set = resolver_win32_srv_lookup(fulldomain, target, target_len, port);
-    if (set)
-        return set;
+    rr = xmpp_alloc(ctx, sizeof(*rr));
+    rr->next = NULL;
+    set = resolver_win32_srv_lookup(fulldomain, rr->target, sizeof(rr->target), &rr->port);
+    if (set) *srv_rr_list = rr;
+    else xmpp_free(ctx, rr);
     len = resolver_win32_srv_query(fulldomain, buf, sizeof(buf));
 #else /* _WIN32 */
     len = res_query(fulldomain, MESSAGE_C_IN, MESSAGE_T_SRV, buf, sizeof(buf));
 #endif /* _WIN32 */
 
     if (len > 0)
-        set = resolver_srv_lookup_buf(buf, (size_t)len, target, target_len, port);
+        set = resolver_srv_lookup_buf(ctx, buf, (size_t)len, srv_rr_list);
 
     return set;
 }
-
-/* FIXME: interface that returns array of results, maybe sorted by priority */
 
 #ifdef _WIN32
 

@@ -17,25 +17,35 @@
 #define __LIBSTROPHE_RESOLVER_H__
 
 #include "ostypes.h"
+#include "common.h"
 
-/** Perform lookup for RFC1035 message format. */
-int resolver_srv_lookup_buf(const unsigned char *buf, size_t len,
-                            char *target, size_t target_len,
-                            unsigned short *port);
+typedef enum {
+    XMPP_DOMAIN_NOT_FOUND,
+    XMPP_DOMAIN_FOUND,
+    XMPP_DOMAIN_ALTDOMAIN
+} xmpp_domain_state_t;
 
+typedef struct resolver_srv_rr_struc {
+    uint16_t priority;
+    uint16_t weight;
+    uint16_t port;
+    char target[MAX_DOMAIN_LEN];
+    struct resolver_srv_rr_struc *next;
+}resolver_srv_rr_t;
+
+/* This function allocates all elements including the 1st one. (*srv_rr_list) is the result */
+int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf, size_t len,
+                            resolver_srv_rr_t **srv_rr_list);
 /** Resolve SRV record.
  *
  *  @param service service of the SRV record
  *  @param proto protocol of the SRV record
  *  @param domain resolving domain
- *  @param target pre-allocated string where result is stored
- *  @param target_len maximum size of the target
- *  @param port pointer where resulting port is stored
+ *  @param srv_rr_list is the result
  *
- *  @return 1 on success or 0 on fail
+ *  @return XMPP_DOMAIN_FOUND on success or XMPP_DOMAIN_NOT_FOUND on fail
  */
-int resolver_srv_lookup(const char *service, const char *proto,
-                        const char *domain, char *target,
-                        size_t target_len, unsigned short *port);
+int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
+                        const char *domain, resolver_srv_rr_t **srv_rr_list);
 
 #endif /* __LIBSTROPHE_RESOLVER_H__ */
