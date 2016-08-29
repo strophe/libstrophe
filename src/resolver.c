@@ -41,9 +41,8 @@ struct message_header {
 };
 
 #ifdef _WIN32
-static int resolver_win32_srv_lookup(const char *fulldomain,
-                                     char *target, size_t target_len,
-                                     unsigned short *port);
+static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
+                                     resolver_srv_rr_t **srv_rr_list);
 static int resolver_win32_srv_query(const char *fulldomain,
                                     unsigned char *buf, size_t len);
 #endif /* _WIN32 */
@@ -111,7 +110,7 @@ static unsigned message_name_len(const unsigned char *buf, size_t buf_len,
     return message_name_get(buf, buf_len, buf_offset, NULL, SIZE_MAX);
 }
 
-int resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
+static void resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
 {
     resolver_srv_rr_t * rr_head;
     resolver_srv_rr_t * rr_current;
@@ -123,7 +122,7 @@ int resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
 
     if ((rr_head == NULL) || (rr_head->next == NULL)) {
         /* Empty or single record list */
-        return 0;
+        return;
     }
 
     do {
@@ -131,18 +130,21 @@ int resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
         rr_current = rr_head;
         rr_next = rr_head->next;
         swap = 0;
-        while (rr_next!=NULL) {
+        while (rr_next != NULL) {
             /*
+             * RFC2052: A client MUST attempt to contact the target host
+             * with the lowest-numbered priority it can reach.
              * RFC2052: When selecting a target host among the
              * those that have the same priority, the chance of trying
              * this one first SHOULD be proportional to its weight.
              */
             if ((rr_current->priority > rr_next->priority) ||
-                (rr_current->priority == rr_next->priority && rr_current->weight < rr_next->weight ))
+                (rr_current->priority == rr_next->priority &&
+                 rr_current->weight < rr_next->weight))
             {
                 /* Swap node */
                 swap = 1;
-                if (rr_prev!=NULL) {
+                if (rr_prev != NULL) {
                     rr_prev->next = rr_next;
                 } else {
                     /* Swap head node */
@@ -156,35 +158,18 @@ int resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
             } else {
                 /* Next node */
                 rr_prev = rr_current;
-                rr_current = rr_current->next;
-                rr_next = rr_current->next;
+                rr_current = rr_next;
+                rr_next = rr_next->next;
             }
         }
-    }while (swap != 0) ;
+    } while (swap != 0);
 
     *srv_rr_list = rr_head;
-
-    return 0;
 }
 
-int resolver_srv_list_add(resolver_srv_rr_t **srv_rr_list, resolver_srv_rr_t *srv_rr_data)
+int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
+                            size_t len, resolver_srv_rr_t **srv_rr_list)
 {
-    resolver_srv_rr_t *rr_head;
-
-    rr_head = *srv_rr_list;
-    if (strlen(rr_head->target) > 0) {
-        srv_rr_data->next = rr_head;
-    }
-
-    *srv_rr_list = srv_rr_data;
-
-    return 0;
-}
-
-int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf, size_t len,
-                            resolver_srv_rr_t **srv_rr_list)
-{
-    int set = XMPP_DOMAIN_NOT_FOUND;
     unsigned i;
     unsigned j;
     unsigned name_len;
@@ -192,7 +177,7 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf, size_t le
     uint16_t type;
     uint16_t class;
     struct message_header header;
-    resolver_srv_rr_t *srv_rr_data;
+    resolver_srv_rr_t *rr;
 
     if (len < MESSAGE_HEADER_LEN)
         return XMPP_DOMAIN_NOT_FOUND;
@@ -221,10 +206,6 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf, size_t le
         j += name_len + 4;
     }
 
-    /*
-     * RFC2052: A client MUST attempt to contact the target host
-     * with the lowest-numbered priority it can reach.
-     */
     for (i = 0; i < header.ancount; ++i) {
         name_len = message_name_len(buf, len, j);
         j += name_len;
@@ -233,20 +214,23 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf, size_t le
         rdlength = xmpp_ntohs_ptr(&buf[j + 8]);
         j += 10;
         if (type == MESSAGE_T_SRV && class == MESSAGE_C_IN) {
-            srv_rr_data = xmpp_alloc(ctx, sizeof(*srv_rr_data));
-            srv_rr_data->priority = xmpp_ntohs_ptr(&buf[j]);
-            srv_rr_data->weight = xmpp_ntohs_ptr(&buf[j+2]);
-            srv_rr_data->port = xmpp_ntohs_ptr(&buf[j + 4]);
-            name_len = message_name_get(buf, len, j + 6, &(srv_rr_data->target), MAX_DOMAIN_LEN);
-            srv_rr_data->next = NULL;
-            set = name_len > 0 ? XMPP_DOMAIN_FOUND : XMPP_DOMAIN_NOT_FOUND;
-            resolver_srv_list_add(srv_rr_list,srv_rr_data);
+            rr = xmpp_alloc(ctx, sizeof(*rr));
+            rr->next = *srv_rr_list;
+            rr->priority = xmpp_ntohs_ptr(&buf[j]);
+            rr->weight = xmpp_ntohs_ptr(&buf[j + 2]);
+            rr->port = xmpp_ntohs_ptr(&buf[j + 4]);
+            name_len = message_name_get(buf, len, j + 6, rr->target,
+                                        sizeof(rr->target));
+            if (name_len > 0)
+                *srv_rr_list = rr;
+            else
+                xmpp_free(ctx, rr); /* skip broken record */
         }
         j += rdlength;
     }
     resolver_srv_list_sort(srv_rr_list);
 
-    return set;
+    return *srv_rr_list != NULL ? XMPP_DOMAIN_FOUND : XMPP_DOMAIN_NOT_FOUND;
 }
 
 int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
@@ -256,19 +240,14 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
     unsigned char buf[65535];
     int len;
     int set = XMPP_DOMAIN_NOT_FOUND;
-#ifdef _WIN32
-    resolver_srv_rr_t *rr;
-#endif
 
     xmpp_snprintf(fulldomain, sizeof(fulldomain),
                   "_%s._%s.%s", service, proto, domain);
 
 #ifdef _WIN32
-    rr = xmpp_alloc(ctx, sizeof(*rr));
-    rr->next = NULL;
-    set = resolver_win32_srv_lookup(fulldomain, rr->target, sizeof(rr->target), &rr->port);
-    if (set) *srv_rr_list = rr;
-    else xmpp_free(ctx, rr);
+    set = resolver_win32_srv_lookup(ctx, fulldomain, srv_rr_list);
+    if (set == XMPP_DOMAIN_FOUND)
+        return set;
     len = resolver_win32_srv_query(fulldomain, buf, sizeof(buf));
 #else /* _WIN32 */
     len = res_query(fulldomain, MESSAGE_C_IN, MESSAGE_T_SRV, buf, sizeof(buf));
@@ -280,6 +259,17 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
     return set;
 }
 
+void resolver_srv_free(xmpp_ctx_t *ctx, resolver_srv_rr_t *srv_rr_list)
+{
+    resolver_srv_rr_t *rr;
+
+    while (srv_rr_list != NULL) {
+        rr = srv_rr_list->next;
+        xmpp_free(ctx, srv_rr_list);
+        srv_rr_list = rr;
+    }
+}
+
 #ifdef _WIN32
 
 /*******************************************************************************
@@ -288,8 +278,8 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
  * The idea is to get raw response from a name server and pass it to
  * resolver_srv_lookup_buf(). In fact, resolver_win32_srv_query() replaces
  * the call of res_query().
- * Dnsapi code is left unchanged and moved to a separated function
- * resolver_srv_win32_lookup().
+ * Dnsapi code is moved to a separated function resolver_srv_win32_lookup() and
+ * changed to meet new API.
  *
  * XXX If the code is compiled it should work like before.
  ******************************************************************************/
@@ -408,55 +398,54 @@ static void netbuf_add_dnsquery_question(unsigned char *buf, int buflen, int *of
 	netbuf_add_16bitnum(buf, buflen, offset, question->qclass);
 }
 
-static int resolver_win32_srv_lookup(const char *fulldomain,
-                                     char *target, size_t target_len,
-                                     unsigned short *port)
+static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
+                                     resolver_srv_rr_t **srv_rr_list)
 {
-    int set = 0;
+    resolver_srv_rr_t *rr;
+    HINSTANCE hdnsapi = NULL;
 
-    /* try using dnsapi first */
-    if (!set)
-    {
-        HINSTANCE hdnsapi = NULL;
+    DNS_STATUS (WINAPI * pDnsQuery_A)(PCSTR, WORD, DWORD, PIP4_ARRAY, PDNS_RECORD*, PVOID*);
+    void (WINAPI * pDnsRecordListFree)(PDNS_RECORD, DNS_FREE_TYPE);
 
-	DNS_STATUS (WINAPI * pDnsQuery_A)(PCSTR, WORD, DWORD, PIP4_ARRAY, PDNS_RECORD*, PVOID*);
-	void (WINAPI * pDnsRecordListFree)(PDNS_RECORD, DNS_FREE_TYPE);
+    *srv_rr_list = NULL;
+    if (hdnsapi = LoadLibrary("dnsapi.dll")) {
+        pDnsQuery_A = (void *)GetProcAddress(hdnsapi, "DnsQuery_A");
+        pDnsRecordListFree = (void *)GetProcAddress(hdnsapi, "DnsRecordListFree");
 
-	if (hdnsapi = LoadLibrary("dnsapi.dll")) {
+        if (pDnsQuery_A && pDnsRecordListFree) {
+            PDNS_RECORD dnsrecords = NULL;
+            DNS_STATUS error;
 
-	    pDnsQuery_A = (void *)GetProcAddress(hdnsapi, "DnsQuery_A");
-	    pDnsRecordListFree = (void *)GetProcAddress(hdnsapi, "DnsRecordListFree");
+            error = pDnsQuery_A(fulldomain, DNS_TYPE_SRV, DNS_QUERY_STANDARD, NULL, &dnsrecords, NULL);
 
-	    if (pDnsQuery_A && pDnsRecordListFree) {
-		PDNS_RECORD dnsrecords = NULL;
-		DNS_STATUS error;
+            if (error == 0) {
+                PDNS_RECORD current = dnsrecords;
 
-		error = pDnsQuery_A(fulldomain, DNS_TYPE_SRV, DNS_QUERY_STANDARD, NULL, &dnsrecords, NULL);
+                while (current) {
+                    if (current->wType == DNS_TYPE_SRV) {
+                        rr = xmpp_alloc(ctx, sizeof(*rr));
+                        if (rr == NULL)
+                            break;
+                        rr->next = *srv_rr_list;
+                        rr->port = current->Data.Srv.wPort;
+                        rr->priority = current->Data.Srv.wPriority;
+                        rr->weight = current->Data.Srv.wWeight;
+                        xmpp_snprintf(rr->target, sizeof(rr->target), "%s",
+                                      current->Data.Srv.pNameTarget);
+                        *srv_rr_list = rr;
+                    }
+                    current = current->pNext;
+                }
+            }
 
-		if (error == 0) {
-		    PDNS_RECORD current = dnsrecords;
+            pDnsRecordListFree(dnsrecords, DnsFreeRecordList);
+        }
 
-		    while (current) {
-			if (current->wType == DNS_TYPE_SRV) {
-			    xmpp_snprintf(target, target_len, "%s", current->Data.Srv.pNameTarget);
-			    *port = current->Data.Srv.wPort;
-			    set = 1;
-
-			    current = NULL;
-			} else {
-			    current = current->pNext;
-			}
-		    }
-		}
-
-		pDnsRecordListFree(dnsrecords, DnsFreeRecordList);
-	    }
-
-	    FreeLibrary(hdnsapi);
-	}
+        FreeLibrary(hdnsapi);
     }
+    resolver_srv_list_sort(srv_rr_list);
 
-    return set;
+    return *srv_rr_list != NULL ? XMPP_DOMAIN_FOUND : XMPP_DOMAIN_NOT_FOUND;
 }
 
 static int resolver_win32_srv_query(const char *fulldomain,

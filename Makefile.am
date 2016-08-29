@@ -101,10 +101,10 @@ tests_test_jid_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_jid_LDADD = $(STROPHE_LIBS)
 tests_test_jid_LDFLAGS = -static
 
-tests_test_resolver_SOURCES = tests/test_resolver.c tests/test.h \
-	src/resolver.c src/snprintf.c
+tests_test_resolver_SOURCES = tests/test_resolver.c tests/test.h
 tests_test_resolver_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
-tests_test_resolver_LDADD = $(RESOLV_LIBS)
+tests_test_resolver_LDADD = $(STROPHE_LIBS)
+tests_test_resolver_LDFLAGS = -static
 
 tests_test_rand_SOURCES = tests/test_rand.c tests/test.c src/sha1.c
 tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src

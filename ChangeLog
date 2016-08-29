@@ -2,6 +2,8 @@
 	- IPv6 support
 	- Legacy SSL support
 	- Initial Android support
+	- Resolver returns all SRV records instead of one. Lookup is performed
+	  according to RFC2052.
 	- New API:
 		- xmpp_uuid_gen()
 		- xmpp_conn_get_flags()

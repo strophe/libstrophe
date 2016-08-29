@@ -427,6 +427,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
                         void * const userdata)
 {
     resolver_srv_rr_t *srv_rr_list = NULL;
+    resolver_srv_rr_t *rr;
     char *domain;
     const char *host;
     unsigned short port;
@@ -445,31 +446,8 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     /* SSL tunneled connection on 5223 port is legacy and doesn't
      * have an SRV record. */
     } else if (!conn->tls_legacy_ssl) {
-        host = xmpp_alloc(conn->ctx, MAX_DOMAIN_LEN);
-        srv_rr_list = xmpp_alloc(conn->ctx, sizeof(resolver_srv_rr_t));
-        if (srv_rr_list != NULL) {
-            srv_rr_list->next = NULL;
-            found = resolver_srv_lookup(conn->ctx, "xmpp-client", "tcp", domain,
-                                        &srv_rr_list);
-
-             /* Try DNS-SRV list connection*/
-            if (found == XMPP_DOMAIN_FOUND) {
-                resolver_srv_rr_t *srv_rr_p = srv_rr_list;
-                sock_t sock_try;
-                while(srv_rr_p != NULL) {
-                    xmpp_debug(conn->ctx, "xmpp", "Try sock_connect %s:%d ",srv_rr_p->target, srv_rr_p->port);
-                    sock_try = sock_connect(srv_rr_p->target, srv_rr_p->port);
-                    if (sock_try == 0){
-                        host = srv_rr_p->target;
-                        port = srv_rr_p->port;
-                        found = XMPP_DOMAIN_FOUND;
-                        break;
-                    }
-                    srv_rr_p = srv_rr_p->next;
-                    found = XMPP_DOMAIN_NOT_FOUND;
-                }
-            }
-        }
+        found = resolver_srv_lookup(conn->ctx, "xmpp-client", "tcp", domain,
+                                    &srv_rr_list);
     }
 
     if (XMPP_DOMAIN_NOT_FOUND == found) {
@@ -477,16 +455,22 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
                                       "connecting via domain.");
         host = domain;
         port = altport ? altport : _conn_default_port(conn, XMPP_CLIENT);
+        found = XMPP_DOMAIN_ALTDOMAIN;
     }
 
-    rc = _conn_connect(conn, domain, host, port, XMPP_CLIENT,
-                       callback, userdata);
+    rr = srv_rr_list;
+    do {
+        if (XMPP_DOMAIN_FOUND == found && rr != NULL) {
+            host = rr->target;
+            port = rr->port;
+            rr = rr->next;
+        }
+        rc = _conn_connect(conn, domain, host, port, XMPP_CLIENT,
+                           callback, userdata);
+    } while (rc != 0 && rr != NULL);
+
     xmpp_free(conn->ctx, domain);
-    while (srv_rr_list!=NULL) {
-        resolver_srv_rr_t *rr_next = srv_rr_list->next;
-        xmpp_free(conn->ctx, srv_rr_list);
-        srv_rr_list = rr_next;
-    }
+    resolver_srv_free(conn->ctx, srv_rr_list);
 
     return rc;
 }
