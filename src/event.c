@@ -38,7 +38,7 @@
 #include <sys/select.h>
 #include <errno.h>
 #include <unistd.h>
-#define _sleep(x) usleep(x*1000)
+#define _sleep(x) usleep((x) * 1000)
 #else
 #include <winsock2.h>
 #define ETIMEDOUT WSAETIMEDOUT
