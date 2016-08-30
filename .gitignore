@@ -36,6 +36,7 @@ examples/bot
 examples/component
 examples/roster
 examples/uuid
+examples/vcard
 test_stamp
 test-suite.log
 tests/*.o
