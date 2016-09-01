@@ -176,7 +176,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
  *  @param conn a Strophe connection object
  *
  *  @return the same conn object passed in with its reference count
- *      incremented by 1
+ *          incremented by 1
  *
  *  @ingroup Connections
  */
@@ -417,7 +417,7 @@ xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn)
  *      notifications of connection status
  *  @param userdata an opaque data pointer that will be passed to the callback
  *
- *  @return 0 on success and -1 on an error
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
  *
  *  @ingroup Connections
  */
@@ -436,7 +436,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     int rc;
 
     domain = xmpp_jid_domain(conn->ctx, conn->jid);
-    if (!domain) return -1;
+    if (!domain) return XMPP_EMEM;
 
     if (altdomain != NULL) {
         xmpp_debug(conn->ctx, "xmpp", "Connecting via altdomain.");
@@ -495,7 +495,7 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
  *      notifications of connection status
  *  @param userdata an opaque data pointer that will be passed to the callback
  *
- *  @return 0 on success and -1 on an error
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
  *
  *  @ingroup Connections
  */
@@ -504,14 +504,14 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
                            void * const userdata)
 {
     /*  The server domain, jid and password MUST be specified. */
-    if (!(server && conn->jid && conn->pass)) return -1;
+    if (!(server && conn->jid && conn->pass)) return XMPP_EINVOP;
 
     /* XEP-0114 does not support TLS */
     xmpp_conn_disable_tls(conn);
     if (!conn->tls_disabled) {
         xmpp_error(conn->ctx, "conn", "Failed to disable TLS. "
                                       "XEP-0114 does not support TLS");
-        return -1;
+        return XMPP_EINT;
     }
 
     port = port ? port : _conn_default_port(conn, XMPP_COMPONENT);
@@ -897,7 +897,7 @@ long xmpp_conn_get_flags(const xmpp_conn_t * const conn)
  *  @param conn a Strophe connection object
  *  @param flags ORed connection flags
  *
- *  @return 0 on success or -1 if flags can't be applied.
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
  *
  *  @ingroup Connections
  */
@@ -906,12 +906,12 @@ int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags)
     if (conn->state != XMPP_STATE_DISCONNECTED) {
         xmpp_error(conn->ctx, "conn", "Flags can be set only "
                                       "for disconnected connection");
-        return -1;
+        return XMPP_EINVOP;
     }
     if (flags & XMPP_CONN_FLAG_DISABLE_TLS &&
         flags & (XMPP_CONN_FLAG_MANDATORY_TLS | XMPP_CONN_FLAG_LEGACY_SSL)) {
         xmpp_error(conn->ctx, "conn", "Flags 0x%04lx conflict", flags);
-        return -1;
+        return XMPP_EINVOP;
     }
 
     conn->tls_disabled = (flags & XMPP_CONN_FLAG_DISABLE_TLS) ? 1 : 0;
@@ -1114,19 +1114,19 @@ static int _conn_connect(xmpp_conn_t * const conn,
 {
     xmpp_open_handler open_handler;
 
-    if (conn->state != XMPP_STATE_DISCONNECTED) return -1;
-    if (type != XMPP_CLIENT && type != XMPP_COMPONENT) return -1;
+    if (conn->state != XMPP_STATE_DISCONNECTED) return XMPP_EINVOP;
+    if (type != XMPP_CLIENT && type != XMPP_COMPONENT) return XMPP_EINVOP;
 
     _conn_reset(conn);
 
     conn->type = type;
     conn->domain = xmpp_strdup(conn->ctx, domain);
-    if (!conn->domain) return -1;
+    if (!conn->domain) return XMPP_EMEM;
 
     conn->sock = sock_connect(host, port);
     xmpp_debug(conn->ctx, "xmpp", "sock_connect() to %s:%u returned %d",
                host, port, conn->sock);
-    if (conn->sock == -1) return -1;
+    if (conn->sock == -1) return XMPP_EINT;
     if (conn->ka_timeout || conn->ka_interval)
         sock_set_keepalive(conn->sock, conn->ka_timeout, conn->ka_interval);
 
