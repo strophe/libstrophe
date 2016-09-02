@@ -563,19 +563,15 @@ static void _auth(xmpp_conn_t * const conn)
 	anonjid = 0;
     }
 
-    if (conn->tls_support)
-    {
+    if (conn->tls_support) {
 	tls_t *tls = tls_new(conn->ctx, conn->sock);
 
 	/* If we couldn't init tls, it isn't there, so go on */
-	if (!tls)
-	{
+	if (!tls) {
 	    conn->tls_support = 0;
 	    _auth(conn);
 	    return;
-	}
-	else
-	{
+	} else {
 	    tls_free(tls);
 	}
 
