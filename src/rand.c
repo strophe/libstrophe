@@ -212,9 +212,7 @@ static int Hash_DRBG_Generate(Hash_DRBG_CTX *ctx, uint8_t *output,
 #define ENTROPY_ACCUMULATE(ptr, last, type, arg)    \
 do {                                                \
     type __arg = (type)(arg);                       \
-    if ((char*)ptr + sizeof(__arg) < (char*)last && \
-        __arg != (type)-1)                          \
-    {                                               \
+    if ((char*)ptr + sizeof(__arg) < (char*)last) { \
         *(type*)ptr = __arg;                        \
         ptr = (void*)((char*)ptr + sizeof(__arg));  \
     }                                               \
@@ -228,8 +226,8 @@ static void xmpp_rand_reseed(xmpp_rand_t *rand)
     size_t len;
 
     /* entropy:
-     *  1. time(2)
-     *  2. clock(3) if != -1
+     *  1. time_stamp()
+     *  2. clock(3)
      *  3. xmpp_rand_t address to make unique seed within one process
      *  4. counter to make unique seed within one context
      *  5. stack address
@@ -240,7 +238,7 @@ static void xmpp_rand_reseed(xmpp_rand_t *rand)
      *  XXX 6 and 7 are not implemented yet.
      */
 
-    ENTROPY_ACCUMULATE(ptr, last, time_t, time(NULL));
+    ENTROPY_ACCUMULATE(ptr, last, uint64_t, time_stamp());
     ENTROPY_ACCUMULATE(ptr, last, clock_t, clock());
     ENTROPY_ACCUMULATE(ptr, last, void *, rand);
     ENTROPY_ACCUMULATE(ptr, last, unsigned, ++rand->reseed_count);

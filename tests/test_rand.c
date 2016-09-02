@@ -28,6 +28,9 @@ void xmpp_free(const xmpp_ctx_t * const ctx, void *p) { }
 int xmpp_snprintf (char *str, size_t count, const char *fmt, ...) {
     return 0;
 }
+uint64_t time_stamp(void) {
+    return 0;
+}
 
 static struct {
     const char *entropy_input;
