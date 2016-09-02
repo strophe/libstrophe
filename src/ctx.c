@@ -49,6 +49,11 @@
 #include "common.h"
 #include "util.h"
 
+/* Workaround for visual studio without va_copy support. */
+#if defined(_MSC_VER) && _MSC_VER < 1800
+#define va_copy(d,s) ((d) = (s))
+#endif
+
 /** Initialize the Strophe library.
  *  This function initializes subcomponents of the Strophe library and must
  *  be called for Strophe to operate correctly.
