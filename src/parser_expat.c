@@ -43,7 +43,7 @@ static char *_xml_name(xmpp_ctx_t *ctx, const char *nsname)
 {
     char *result = NULL;
     const char *c;
-    int len;
+    size_t len;
 
     c = strchr(nsname, NAMESPACE_SEP);
     if (c == NULL) return xmpp_strdup(ctx, nsname);
