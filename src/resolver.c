@@ -179,6 +179,8 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
     struct message_header header;
     resolver_srv_rr_t *rr;
 
+    *srv_rr_list = NULL;
+
     if (len < MESSAGE_HEADER_LEN)
         return XMPP_DOMAIN_NOT_FOUND;
 
@@ -243,6 +245,8 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
 
     xmpp_snprintf(fulldomain, sizeof(fulldomain),
                   "_%s._%s.%s", service, proto, domain);
+
+    *srv_rr_list = NULL;
 
 #ifdef _WIN32
     set = resolver_win32_srv_lookup(ctx, fulldomain, srv_rr_list);
@@ -407,7 +411,6 @@ static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
     DNS_STATUS (WINAPI * pDnsQuery_A)(PCSTR, WORD, DWORD, PIP4_ARRAY, PDNS_RECORD*, PVOID*);
     void (WINAPI * pDnsRecordListFree)(PDNS_RECORD, DNS_FREE_TYPE);
 
-    *srv_rr_list = NULL;
     if (hdnsapi = LoadLibrary("dnsapi.dll")) {
         pDnsQuery_A = (void *)GetProcAddress(hdnsapi, "DnsQuery_A");
         pDnsRecordListFree = (void *)GetProcAddress(hdnsapi, "DnsRecordListFree");
