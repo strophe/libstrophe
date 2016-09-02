@@ -84,7 +84,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     int towrite;
     char buf[4096];
     uint64_t next;
-    long usec;
+    uint64_t usec;
     int tls_read_bytes = 0;
 
     if (ctx->loop_status == XMPP_LOOP_QUIT) return;
@@ -180,8 +180,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     next = handler_fire_timed(ctx);
 
     usec = ((next < timeout) ? next : timeout) * 1000;
-    tv.tv_sec = usec / 1000000;
-    tv.tv_usec = usec % 1000000;
+    tv.tv_sec = (long)(usec / 1000000);
+    tv.tv_usec = (long)(usec % 1000000);
 
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
