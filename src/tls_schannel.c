@@ -563,7 +563,6 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 {
     SecBufferDesc sbdenc;
     SecBuffer sbenc[4];
-    unsigned char *sendbuffer;
     const unsigned char *p = buff;
     int sent = 0, ret, remain = len;
 
