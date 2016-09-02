@@ -33,7 +33,7 @@ parser_t *parser_new(xmpp_ctx_t *ctx,
                      parser_end_callback endcb,
                      parser_stanza_callback stanzacb,
                      void *userdata);
-void parser_free(parser_t * const parser);
+void parser_free(parser_t *parser);
 char* parser_attr_name(xmpp_ctx_t *ctx, char *nsname);
 int parser_reset(parser_t *parser);
 int parser_feed(parser_t *parser, char *chunk, int len);
