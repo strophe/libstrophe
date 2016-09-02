@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "strophe.h"
 #include "resolver.h"
 #include "test.h"
 
@@ -84,47 +85,98 @@ static const unsigned char data3[] = {
     0x6d, 0x00,
 };
 
+/* res_query("_xmpp-client._tcp.jabber.calyxinstitute.org", C_IN, T_SRV, ...) */
+static const unsigned char data4[] = {
+    0x8d, 0x58, 0x81, 0x80, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00,    // .X........
+    0x00, 0x00, 0x0c, 0x5f, 0x78, 0x6d, 0x70, 0x70, 0x2d, 0x63,    // ..._xmpp-c
+    0x6c, 0x69, 0x65, 0x6e, 0x74, 0x04, 0x5f, 0x74, 0x63, 0x70,    // lient._tcp
+    0x06, 0x6a, 0x61, 0x62, 0x62, 0x65, 0x72, 0x0e, 0x63, 0x61,    // .jabber.ca
+    0x6c, 0x79, 0x78, 0x69, 0x6e, 0x73, 0x74, 0x69, 0x74, 0x75,    // lyxinstitu
+    0x74, 0x65, 0x03, 0x6f, 0x72, 0x67, 0x00, 0x00, 0x21, 0x00,    // te.org..!.
+    0x01, 0xc0, 0x0c, 0x00, 0x21, 0x00, 0x01, 0x00, 0x00, 0x03,    // ....!.....
+    0x83, 0x00, 0x1e, 0x00, 0x04, 0x00, 0x00, 0x14, 0x66, 0x10,    // ........f.
+    0x69, 0x6a, 0x65, 0x65, 0x79, 0x6e, 0x72, 0x63, 0x36, 0x78,    // ijeeynrc6x
+    0x32, 0x75, 0x79, 0x35, 0x6f, 0x62, 0x05, 0x6f, 0x6e, 0x69,    // 2uy5ob.oni
+    0x6f, 0x6e, 0x00, 0xc0, 0x0c, 0x00, 0x21, 0x00, 0x01, 0x00,    // on....!...
+    0x00, 0x03, 0x83, 0x00, 0x21, 0x00, 0x05, 0x00, 0x01, 0x14,    // ....!.....
+    0x66, 0x06, 0x6a, 0x61, 0x62, 0x62, 0x65, 0x72, 0x0e, 0x63,    // f.jabber.c
+    0x61, 0x6c, 0x79, 0x78, 0x69, 0x6e, 0x73, 0x74, 0x69, 0x74,    // alyxinstit
+    0x75, 0x74, 0x65, 0x03, 0x6f, 0x72, 0x67, 0x00,                // ute.org.
+};
+
 static const struct {
     const unsigned char *data;
     size_t len;
     char *target;
     unsigned short port;
+    int target_nr;
 } tests[] = {
     {
         .data = data1,
         .len = sizeof(data1),
         .target = "jabber.kiev.ua",
         .port = 5222,
+        .target_nr = 1,
     },
     {
         .data = data2,
         .len = sizeof(data2),
         .target = "hermes2.jabber.org",
         .port = 5222,
+        .target_nr = 2,
     },
     {
         .data = data3,
         .len = sizeof(data3),
         .target = "xmpp.l.google.com",
         .port = 5222,
+        .target_nr = 5,
+    },
+    {
+        .data = data4,
+        .len = sizeof(data4),
+        .target = "ijeeynrc6x2uy5ob.onion",
+        .port = 5222,
+        .target_nr = 2,
     },
 };
 
+static int srv_rr_list_len(resolver_srv_rr_t *list)
+{
+    int nr;
+
+    for(nr = 0; list != NULL; ++nr, list = list->next);
+
+    return nr;
+}
+
 int main(int argc, char **argv)
 {
-    char domain[2048];
+    xmpp_ctx_t *ctx;
+    resolver_srv_rr_t *srv_rr_list;
+    char *domain;
     unsigned short port;
     size_t i;
     int ret;
 
-#if 0
+    ctx = xmpp_ctx_new(NULL, NULL);
+    assert(ctx != NULL);
+
     printf("resolver_srv_lookup_buf() tests.\n");
     for (i = 0; i < ARRAY_SIZE(tests); ++i) {
         printf("Test #%zu: ", i + 1);
-        memset(domain, 'x', sizeof(domain));
-        ret = resolver_srv_lookup_buf(tests[i].data, tests[i].len,
-                                      domain, sizeof(domain), &port);
-        assert(ret == 1);
+        ret = resolver_srv_lookup_buf(ctx, tests[i].data, tests[i].len,
+                                      &srv_rr_list);
+        assert(ret == XMPP_DOMAIN_FOUND);
+        assert(srv_rr_list != NULL);
+        if (tests[i].target_nr != srv_rr_list_len(srv_rr_list)) {
+            printf("fail! got %d targets, but should be %d\n",
+                   srv_rr_list_len(srv_rr_list), tests[i].target_nr);
+            return 1;
+        }
+        /* check only 1st result */
+        domain = srv_rr_list->target;
+        port = srv_rr_list->port;
         COMPARE(tests[i].target, domain);
         if (tests[i].port != port) {
             printf("fail! got port=%u, but should be %u\n",
@@ -132,15 +184,10 @@ int main(int argc, char **argv)
             return 1;
         }
         printf("ok\n");
+        resolver_srv_free(ctx, srv_rr_list);
     }
-#else
-    printf("resolver_srv_lookup_buf() tests are DISABLED due to changed API.\n");
-    (void)tests;
-    (void)ret;
-    (void)i;
-    (void)port;
-    (void)domain;
-#endif
+
+    xmpp_ctx_free(ctx);
 
     return 0;
 }
