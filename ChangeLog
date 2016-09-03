@@ -7,6 +7,8 @@
 	- xmpp_connect_raw() provides access to a xmpp_conn object just after
 	  establishing TCP connection. This allows to implement in-band
 	  registration or authentication mechanisms.
+	- xmpp_conn_t object is reusable now and can be reconnected with saving
+	  all handlers, flags, jid and password.
 	- New API:
 		- xmpp_uuid_gen()
 		- xmpp_connect_raw()
