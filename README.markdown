@@ -55,8 +55,8 @@ libstrophe requires:
   switch
 - openssl on UNIX systems
 
-To build libstrophe using autotools you will need autoconf, automake
-and libtool.
+To build libstrophe using autotools you will need autoconf, automake,
+libtool and pkg-config.
 
 In addition, if you wish to run the unit tests, you will need the
 check package.
