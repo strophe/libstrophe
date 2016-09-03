@@ -4,8 +4,8 @@ install:
     - sudo apt-get -y install libtool pkg-config libexpat1-dev libxml2-dev libssl-dev check
 script:
     - ./bootstrap.sh
-    - ./configure --without-libxml2 && make CFLAGS="-Wall -Werror" && make CFLAGS="-Wall -Werror" check-TESTS && make install && make uninstall
+    - ./configure --without-libxml2 && make CFLAGS="-Wall -Werror" && make CFLAGS="-Wall -Werror" check-TESTS
     - make clean
-    - ./configure --with-libxml2 && make CFLAGS="-Wall -Werror" && make CFLAGS="-Wall -Werror" check-TESTS && make install && make uninstall
+    - ./configure --with-libxml2 && make CFLAGS="-Wall -Werror" && make CFLAGS="-Wall -Werror" check-TESTS
     - make clean
-    - ./configure --disable-tls && make CFLAGS="-Wall -Werror" && make CFLAGS="-Wall -Werror" check-TESTS && make install && make uninstall
+    - ./configure --disable-tls && make CFLAGS="-Wall -Werror" && make CFLAGS="-Wall -Werror" check-TESTS
