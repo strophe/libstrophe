@@ -1099,6 +1099,7 @@ static void _conn_reset(xmpp_conn_t * const conn)
     conn->domain = NULL;
     conn->bound_jid = NULL;
     conn->stream_id = NULL;
+    conn->authenticated = 0;
     conn->secured = 0;
     conn->tls_failed = 0;
     conn->error = 0;
