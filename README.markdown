@@ -1,4 +1,4 @@
-libstrophe
+libstrophe [![Build Status](https://travis-ci.org/strophe/libstrophe.png?branch=master)](https://travis-ci.org/strophe/libstrophe)
 ==========
 
 libstrophe is a lightweight XMPP client library written in C. It has
