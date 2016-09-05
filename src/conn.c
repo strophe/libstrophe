@@ -430,8 +430,8 @@ int xmpp_connect_client(xmpp_conn_t * const conn,
     resolver_srv_rr_t *srv_rr_list = NULL;
     resolver_srv_rr_t *rr;
     char *domain;
-    const char *host;
-    unsigned short port;
+    const char *host = NULL;
+    unsigned short port = 0;
     int found = XMPP_DOMAIN_NOT_FOUND;
     int rc;
 
@@ -1117,6 +1117,7 @@ static int _conn_connect(xmpp_conn_t * const conn,
 
     if (conn->state != XMPP_STATE_DISCONNECTED) return XMPP_EINVOP;
     if (type != XMPP_CLIENT && type != XMPP_COMPONENT) return XMPP_EINVOP;
+    if (host == NULL || port == 0) return XMPP_EINT;
 
     _conn_reset(conn);
 
