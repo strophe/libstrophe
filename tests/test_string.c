@@ -58,7 +58,7 @@ static int test_strtok_r(void)
 static int test_strdup_one(xmpp_ctx_t *ctx, const char *s)
 {
     char *s1, *s2;
-    int rc;
+    int rc = 0;
 
     s1 = strdup(s);
     s2 = xmpp_strdup(ctx, s);
