@@ -1140,6 +1140,8 @@ static int _handle_missing_legacy(xmpp_conn_t * const conn,
 
 void auth_handle_component_open(xmpp_conn_t * const conn)
 {
+    int rc;
+
     /* reset all timed handlers */
     handler_reset_timed(conn, 0);
 
@@ -1148,7 +1150,11 @@ void auth_handle_component_open(xmpp_conn_t * const conn)
                 "handshake", NULL, NULL);
     handler_add_timed(conn, _handle_missing_handshake, HANDSHAKE_TIMEOUT, NULL);
 
-    _handle_component_auth(conn);
+    rc = _handle_component_auth(conn);
+    if (rc != 0) {
+        xmpp_error(conn->ctx, "auth", "Component authentication failed.");
+        xmpp_disconnect(conn);
+    }
 }
 
 /* Will compute SHA1 and authenticate the component to the server */
@@ -1158,6 +1164,11 @@ int _handle_component_auth(xmpp_conn_t * const conn)
     SHA1_CTX mdctx;
     char *digest;
     size_t i;
+
+    if (conn->stream_id == NULL) {
+        xmpp_error(conn->ctx, "auth", "Received no stream id from the server.");
+        return XMPP_EINT;
+    }
 
     /* Feed the session id and passphrase to the algorithm.
      * We need to compute SHA1(session_id + passphrase)
@@ -1186,7 +1197,6 @@ int _handle_component_auth(xmpp_conn_t * const conn)
     } else {
         xmpp_debug(conn->ctx, "auth", "Couldn't allocate memory for component "\
                                       "handshake digest.");
-        xmpp_disconnect(conn);
         return XMPP_EMEM;
     }
 

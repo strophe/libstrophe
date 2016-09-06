@@ -6,14 +6,15 @@
 	  according to RFC2052.
 	- xmpp_connect_raw() provides access to a xmpp_conn object just after
 	  establishing TCP connection. This allows to implement in-band
-	  registration or authentication mechanisms.
+	  registration, authentication mechanisms or serverless messaging.
 	- xmpp_conn_t object is reusable now and can be reconnected with saving
 	  all handlers, flags, jid and password.
 	- New API:
 		- xmpp_uuid_gen()
 		- xmpp_connect_raw()
-		- xmpp_conn_raw_open_stream()
-		- xmpp_conn_raw_tls_start()
+		- xmpp_conn_open_stream_default()
+		- xmpp_conn_open_stream()
+		- xmpp_conn_tls_start()
 		- xmpp_conn_get_flags()
 		- xmpp_conn_set_flags()
 		- xmpp_conn_set_keepalive()

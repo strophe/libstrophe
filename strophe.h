@@ -244,8 +244,10 @@ int xmpp_connect_raw(xmpp_conn_t * const conn,
                      unsigned short altport,
                      xmpp_conn_handler callback,
                      void * const userdata);
-int xmpp_conn_raw_open_stream(xmpp_conn_t * const conn);
-int xmpp_conn_raw_tls_start(xmpp_conn_t * const conn);
+int xmpp_conn_open_stream_default(xmpp_conn_t * const conn);
+int xmpp_conn_open_stream(xmpp_conn_t * const conn, char **attributes,
+                          size_t attributes_len);
+int xmpp_conn_tls_start(xmpp_conn_t * const conn);
 
 void xmpp_disconnect(xmpp_conn_t * const conn);
 
