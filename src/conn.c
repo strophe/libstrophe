@@ -697,18 +697,6 @@ void conn_parser_reset(xmpp_conn_t * const conn)
     parser_reset(conn->parser);
 }
 
-/* timed handler for cleanup if normal disconnect procedure takes too long */
-static int _disconnect_cleanup(xmpp_conn_t * const conn, 
-                               void * const userdata)
-{
-    xmpp_debug(conn->ctx, "xmpp",
-               "disconnection forced by cleanup timeout");
-
-    conn_disconnect(conn);
-
-    return 0;
-}
-
 /** Initiate termination of the connection to the XMPP server.
  *  This function starts the disconnection sequence by sending
  *  </stream:stream> to the XMPP server.  This function will do nothing
@@ -862,7 +850,7 @@ void xmpp_send(xmpp_conn_t * const conn,
  */
 void conn_open_stream(xmpp_conn_t * const conn)
 {
-    xmpp_send_raw_string(conn, 
+    xmpp_send_raw_string(conn,
                          "<?xml version=\"1.0\"?>"                     \
                          "<stream:stream to=\"%s\" "                   \
                          "xml:lang=\"%s\" "                            \
@@ -993,6 +981,18 @@ void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
 int xmpp_conn_is_secured(xmpp_conn_t * const conn)
 {
     return conn->secured && !conn->tls_failed && conn->tls != NULL ? 1 : 0;
+}
+
+/* timed handler for cleanup if normal disconnect procedure takes too long */
+static int _disconnect_cleanup(xmpp_conn_t * const conn,
+                               void * const userdata)
+{
+    xmpp_debug(conn->ctx, "xmpp",
+               "disconnection forced by cleanup timeout");
+
+    conn_disconnect(conn);
+
+    return 0;
 }
 
 static char *_conn_build_stream_tag(xmpp_conn_t * const conn,
