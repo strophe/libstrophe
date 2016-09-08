@@ -23,10 +23,6 @@
 #include "common.h"
 #include "hash.h"
 
-#ifdef _WIN32
-#define inline __inline
-#endif
-
 /** Create a stanza object.
  *  This function allocates and initializes a blank stanza object.
  *  The stanza will have a reference count of one, so the caller does not
@@ -285,7 +281,7 @@ static char *_escape_xml(xmpp_ctx_t * const ctx, char *text)
 }
 
 /* small helper function */
-static inline void _render_update(int *written, const int length,
+static void _render_update(int *written, const int length,
 			   const int lastwrite,
 			   size_t *left, char **ptr)
 {
