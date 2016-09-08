@@ -705,7 +705,7 @@ static int dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c)
 
 int xmpp_vsnprintf (char *str, size_t count, const char *fmt, va_list args)
 {
-  if (str != NULL)
+  if (str != NULL && count > 0)
     str[0] = 0;
   return dopr(str, count, fmt, args);
 }

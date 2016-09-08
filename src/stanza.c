@@ -291,7 +291,7 @@ static inline void _render_update(int *written, const int length,
 {
     *written += lastwrite;
 
-    if (*written > length) {
+    if (*written >= length) {
 	*left = 0;
 	*ptr = NULL;
     } else {
