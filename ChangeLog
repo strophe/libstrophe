@@ -3,12 +3,12 @@
 	- Legacy SSL support
 	- Initial Android support
 	- Resolver returns all SRV records instead of one. Lookup is performed
-	  according to RFC2052.
+	  according to RFC2052
 	- xmpp_connect_raw() provides access to a xmpp_conn object just after
 	  establishing TCP connection. This allows to implement in-band
-	  registration, authentication mechanisms or serverless messaging.
+	  registration, authentication mechanisms or serverless messaging
 	- xmpp_conn_t object is reusable now and can be reconnected with saving
-	  all handlers, flags, jid and password.
+	  all handlers, flags, jid and password
 	- New API:
 		- xmpp_uuid_gen()
 		- xmpp_connect_raw()
