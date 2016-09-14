@@ -528,16 +528,18 @@ int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
 
 /** Initiate a raw connection to the XMPP server.
  *  Arguments and behaviour of the function are similar to
- *  xmpp_connect_client(), but it skips authentication process. Instead,
- *  the user's callback is called with event XMPP_CONN_RAW_CONNECT as soon
- *  as tcp connection is established.
+ *  xmpp_connect_client(), but it skips authentication process. In opposite to
+ *  xmpp_connect_client() during connection process two events are generated
+ *  instead of one. User's callback is called with event XMPP_CONN_RAW_CONNECT
+ *  when the TCP connection with the server is established. At this point user
+ *  might want to open an XMPP stream with xmpp_conn_open_stream() or establish
+ *  TLS session with xmpp_conn_tls_start(). Event XMPP_CONN_CONNECT is generated
+ *  when the XMPP stream is opened successfully and user may send stanzas over
+ *  the connection.
  *
  *  This function doesn't use password nor node part of a jid. Therefore,
  *  the only required configuration is a domain (or full jid) passed via
  *  xmpp_conn_set_jid().
- *
- *  Next step should be xmpp_conn_open_stream(). In case of legacy SSL,
- *  user might want to call xmpp_conn_tls_start() before opening the stream.
  *
  *  @see xmpp_connect_client()
  *
