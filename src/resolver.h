@@ -36,6 +36,7 @@ typedef struct resolver_srv_rr_struc {
 /** Perform lookup for RFC1035 message format.
  *  This function allocates all elements.
  *
+ *  @param ctx a Strophe context object
  *  @param buf message in RFC1035 format
  *  @param len length of the message
  *  @param srv_rr_list is the result
@@ -46,6 +47,7 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
                             size_t len, resolver_srv_rr_t **srv_rr_list);
 /** Resolve SRV record.
  *
+ *  @param ctx a Strophe context object
  *  @param service service of the SRV record
  *  @param proto protocol of the SRV record
  *  @param domain resolving domain
@@ -59,6 +61,7 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
 /** Release a list returned by resolver_srv_lookup() or
  *  resolver_srv_lookup_buf().
  *
+ *  @param ctx a Strophe context object
  *  @param srv_rr_list a list allocated by lookup functions
  */
 void resolver_srv_free(xmpp_ctx_t *ctx, resolver_srv_rr_t *srv_rr_list);

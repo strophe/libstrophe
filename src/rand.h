@@ -23,10 +23,14 @@ typedef struct _xmpp_rand_t xmpp_rand_t;
 
 /** Create new xmpp_rand_t object.
  *
+ *  @param ctx A Strophe context object
+ *
  *  @ingroup Random
  */
 xmpp_rand_t *xmpp_rand_new(xmpp_ctx_t *ctx);
 /** Destroy an xmpp_rand_t object.
+ *
+ *  @param ctx A Strophe context object
  *
  *  @ingroup Random
  */
@@ -47,7 +51,10 @@ int xmpp_rand(xmpp_rand_t *rand);
 void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len);
 
 /** Generate a nonce that is printable randomized string.
+ *  This function doesn't allocate memory and doesn't fail.
  *
+ *  @param output A buffer where a NULL-terminated string will be placed.
+ *                The string will contain len-1 printable symbols.
  *  @param len Number of bytes reserved for the output string, including
  *             end of line '\0'.
  *

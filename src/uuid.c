@@ -24,6 +24,7 @@
 
 /** Generate UUID version 4 in pre-allocated buffer.
  *
+ *  @param ctx a Strophe context object
  *  @param uuid pre-allocated buffer of size (XMPP_UUID_LEN + 1)
  */
 static void crypto_uuid_gen(xmpp_ctx_t *ctx, char *uuid)
@@ -55,6 +56,8 @@ static void crypto_uuid_gen(xmpp_ctx_t *ctx, char *uuid)
 /** Generate UUID version 4.
  *  This function allocates memory for the resulting string and must be freed
  *  with xmpp_free().
+ *
+ *  @param ctx a Strophe context object
  *
  *  @return ASCIIZ string
  */

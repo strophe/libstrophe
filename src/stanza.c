@@ -1101,6 +1101,7 @@ _stanza_new_with_attrs(xmpp_ctx_t *ctx, const char * const name,
 /** Create a <message/> stanza object with given attributes.
  *  Attributes are optional and may be NULL.
  *
+ *  @param ctx a Strophe context object
  *  @param type attribute 'type'
  *  @param to attribute 'to'
  *  @param id attribute 'id'
@@ -1187,6 +1188,7 @@ int xmpp_message_set_body(xmpp_stanza_t *msg, const char * const text)
 /** Create an <iq/> stanza object with given attributes.
  *  Attributes are optional and may be NULL.
  *
+ *  @param ctx a Strophe context object
  *  @param type attribute 'type'
  *  @param id attribute 'id'
  *
@@ -1201,6 +1203,8 @@ xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char * const type,
 }
 
 /** Create a <presence/> stanza object.
+ *
+ *  @param ctx a Strophe context object
  *
  *  @return a new Strophe stanza object
  *
