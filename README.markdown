@@ -58,9 +58,6 @@ libstrophe requires:
 To build libstrophe using autotools you will need autoconf, automake,
 libtool and pkg-config.
 
-In addition, if you wish to run the unit tests, you will need the
-check package.
-
 Installation
 ------------
 
