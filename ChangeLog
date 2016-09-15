@@ -1,4 +1,6 @@
 0.9.1
+	- Fixed bug #95 (DNS lookup failing on Cygwin)
+	- Removed dependency on the check package
 
 0.9.0
 	- IPv6 support
