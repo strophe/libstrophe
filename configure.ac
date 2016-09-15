@@ -22,9 +22,6 @@ AC_ARG_WITH([libxml2],
 AC_ARG_ENABLE([tls],
     [AS_HELP_STRING([--disable-tls], [disable TLS support])])
 
-PKG_CHECK_MODULES([check], [check >= 0.9.4],
-    [], [AC_MSG_WARN([libcheck not found; unit tests will not be compilable])])
-
 if test "x$enable_tls" != xno; then
     PKG_CHECK_MODULES([openssl], [openssl],
         [PC_REQUIRES="openssl ${PC_REQUIRES}"],

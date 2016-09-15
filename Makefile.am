@@ -81,9 +81,9 @@ TESTS = tests/check_parser tests/test_sha1 tests/test_md5 tests/test_rand \
 check_PROGRAMS = $(TESTS)
 
 tests_check_parser_SOURCES = tests/check_parser.c tests/test.h
-tests_check_parser_CFLAGS = @check_CFLAGS@ $(PARSER_CFLAGS) $(STROPHE_FLAGS) \
+tests_check_parser_CFLAGS = $(PARSER_CFLAGS) $(STROPHE_FLAGS) \
 	-I$(top_srcdir)/src
-tests_check_parser_LDADD = @check_LIBS@ $(STROPHE_LIBS)
+tests_check_parser_LDADD = $(STROPHE_LIBS)
 tests_check_parser_LDFLAGS = -static
 
 tests_test_ctx_SOURCES = tests/test_ctx.c
