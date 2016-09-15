@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 #include "strophe.h"
+#include "rand.h"
 #include "resolver.h"
 #include "test.h"
 
@@ -84,7 +85,6 @@ static const unsigned char data3[] = {
     0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x03, 0x63, 0x6f,
     0x6d, 0x00,
 };
-
 /* res_query("_xmpp-client._tcp.jabber.calyxinstitute.org", C_IN, T_SRV, ...) */
 static const unsigned char data4[] = {
     0x8d, 0x58, 0x81, 0x80, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00,    // .X........
@@ -102,6 +102,20 @@ static const unsigned char data4[] = {
     0x66, 0x06, 0x6a, 0x61, 0x62, 0x62, 0x65, 0x72, 0x0e, 0x63,    // f.jabber.c
     0x61, 0x6c, 0x79, 0x78, 0x69, 0x6e, 0x73, 0x74, 0x69, 0x74,    // alyxinstit
     0x75, 0x74, 0x65, 0x03, 0x6f, 0x72, 0x67, 0x00,                // ute.org.
+};
+/* hacked data2 with two empty-string targets. */
+static const unsigned char data5[] = {
+    0xf2, 0x98, 0x81, 0x80, 0x00, 0x01, 0x00, 0x02,
+    0x00, 0x00, 0x00, 0x00, 0x0c, 0x5f, 0x78, 0x6d,
+    0x70, 0x70, 0x2d, 0x63, 0x6c, 0x69, 0x65, 0x6e,
+    0x74, 0x04, 0x5f, 0x74, 0x63, 0x70, 0x06, 0x6a,
+    0x61, 0x62, 0x62, 0x65, 0x72, 0x03, 0x6f, 0x72,
+    0x67, 0x00, 0x00, 0x21, 0x00, 0x01, 0xc0, 0x0c,
+    0x00, 0x21, 0x00, 0x01, 0x00, 0x00, 0x03, 0x83,
+    0x00, 0x07, 0x00, 0x1e, 0x00, 0x1e, 0x14, 0x66,
+    0x00, 0xc0, 0x0c, 0x00, 0x21, 0x00, 0x01, 0x00,
+    0x00, 0x03, 0x83, 0x00, 0x08, 0x00, 0x1f, 0x00,
+    0x1e, 0x14, 0x66, 0xc0, 0x40,
 };
 
 static const struct {
@@ -139,6 +153,13 @@ static const struct {
         .port = 5222,
         .target_nr = 2,
     },
+    {
+        .data = data5,
+        .len = sizeof(data5),
+        .target = "",
+        .port = 5222,
+        .target_nr = 2,
+    },
 };
 
 static int srv_rr_list_len(resolver_srv_rr_t *list)
@@ -153,8 +174,10 @@ static int srv_rr_list_len(resolver_srv_rr_t *list)
 int main(int argc, char **argv)
 {
     xmpp_ctx_t *ctx;
+    xmpp_rand_t *rand;
     resolver_srv_rr_t *srv_rr_list;
     char *domain;
+    unsigned char *buf;
     unsigned short port;
     size_t i;
     int ret;
@@ -186,6 +209,25 @@ int main(int argc, char **argv)
         printf("ok\n");
         resolver_srv_free(ctx, srv_rr_list);
     }
+
+    /*
+     * The next test case must not crash and is supposed to be checked
+     * under valgrind.
+     */
+    printf("Test of a broken message: ");
+    rand = xmpp_rand_new(ctx);
+    assert(rand != NULL);
+    assert(sizeof(data2) > 64);
+    buf = xmpp_alloc(ctx, sizeof(data2));
+    assert(buf != NULL);
+    memcpy(buf, data2, 64);
+    xmpp_rand_bytes(rand, &buf[64], sizeof(data2) - 64);
+    ret = resolver_srv_lookup_buf(ctx, buf, sizeof(data2), &srv_rr_list);
+    if (ret == XMPP_DOMAIN_FOUND && srv_rr_list != NULL)
+        resolver_srv_free(ctx, srv_rr_list);
+    xmpp_free(ctx, buf);
+    xmpp_rand_free(ctx, rand);
+    printf("ok\n");
 
     xmpp_ctx_free(ctx);
 

@@ -23,6 +23,7 @@
 
 #include "ostypes.h"
 #include "snprintf.h"
+#include "util.h"               /* xmpp_min */
 #include "resolver.h"
 
 #define MESSAGE_HEADER_LEN 12
@@ -65,6 +66,26 @@ static uint8_t message_header_rcode(const struct message_header *header)
     return header->octet3 & 0x0f;
 }
 
+/*
+ * Append a label or a dot to the target name with buffer overflow checks.
+ * Returns length of the non-truncated resulting string, may be bigger than
+ * name_max.
+ */
+static size_t message_name_append_safe(char *name, size_t name_len,
+                                       size_t name_max,
+                                       const char *tail, size_t tail_len)
+{
+    size_t copy_len;
+
+    copy_len = name_max > name_len ? name_max - name_len : 0;
+    copy_len = xmpp_min(tail_len, copy_len);
+    if (copy_len > 0)
+        strncpy(&name[name_len], tail, copy_len);
+
+    return name_len + tail_len;
+}
+
+/* Returns length of the compressed name. This is NOT the same as strlen(). */
 static unsigned message_name_get(const unsigned char *buf, size_t buf_len,
                                  unsigned buf_offset,
                                  char *name, size_t name_max)
@@ -72,25 +93,41 @@ static unsigned message_name_get(const unsigned char *buf, size_t buf_len,
     size_t name_len = 0;
     unsigned i = buf_offset;
     unsigned pointer;
+    unsigned rc;
     unsigned char label_len;
 
-    while ((label_len = buf[i++]) != 0) {
-        /* label */
+
+    while (1) {
+        if (i >= buf_len) return 0;
+        label_len = buf[i++];
+        if (label_len == 0) break;
+
+        /* Label */
         if ((label_len & 0xc0) == 0) {
+            if (i + label_len - 1 >= buf_len) return 0;
             if (name != NULL) {
-                if (name_len != 0)
-                    name[name_len++] = '.';
-                strncpy(&name[name_len], (char *)&buf[i], label_len);
+                name_len = message_name_append_safe(name, name_len, name_max,
+                                                    (char *)&buf[i], label_len);
+                name_len = message_name_append_safe(name, name_len, name_max,
+                                                    ".", 1);
             }
             i += label_len;
-            name_len += label_len;
 
-        /* pointer */
+        /* Pointer */
         } else if ((label_len & 0xc0) == 0xc0) {
+            if (i >= buf_len) return 0;
             pointer = (label_len & 0x3f) << 8 | buf[i++];
-            (void)message_name_get(buf, buf_len, pointer, &name[name_len],
-                                   name_max - name_len);
-            /* pointer is always the last */
+            if (name != NULL && name_len >= name_max && name_max > 0) {
+                /* We have filled the name buffer. Don't pass it recursively. */
+                name[name_max - 1] = '\0';
+                name = NULL;
+                name_max = 0;
+            }
+            rc = message_name_get(buf, buf_len, pointer,
+                                  name != NULL ? &name[name_len] : NULL,
+                                  name_max > name_len ? name_max - name_len : 0);
+            if (rc == 0) return 0;
+            /* Pointer is always the last. */
             break;
 
         /* The 10 and 01 combinations are reserved for future use. */
@@ -98,8 +135,21 @@ static unsigned message_name_get(const unsigned char *buf, size_t buf_len,
             return 0;
         }
     }
-    if (label_len == 0 && name != NULL)
-        name[name_len] = '\0';
+    if (label_len == 0) {
+        if (name_len == 0) name_len = 1;
+        /*
+         * At this point name_len is length of the resulting name,
+         * including '\0'. This value can be exported to allocate buffer
+         * of precise size.
+         */
+        if (name != NULL && name_max > 0) {
+            /*
+             * Overwrite leading '.' with a '\0'. If the resulting name is
+             * bigger than name_max it is truncated.
+             */
+            name[xmpp_min(name_len, name_max) - 1] = '\0';
+        }
+    }
 
     return i - buf_offset;
 }
@@ -167,6 +217,15 @@ static void resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
     *srv_rr_list = rr_head;
 }
 
+#define BUF_OVERFLOW_CHECK(ptr, len) do {         \
+    if ((ptr) >= (len)) {                         \
+        if (*srv_rr_list != NULL)                 \
+            resolver_srv_free(ctx, *srv_rr_list); \
+        *srv_rr_list = NULL;                      \
+        return XMPP_DOMAIN_NOT_FOUND;             \
+    }                                             \
+} while (0)
+
 int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
                             size_t len, resolver_srv_rr_t **srv_rr_list)
 {
@@ -200,17 +259,20 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
 
     /* skip question section */
     for (i = 0; i < header.qdcount; ++i) {
+        BUF_OVERFLOW_CHECK(j, len);
         name_len = message_name_len(buf, len, j);
-        if (name_len == 0) {
-            /* error in name format */
-            return XMPP_DOMAIN_NOT_FOUND;
-        }
+        /* error in name format */
+        if (name_len == 0) return XMPP_DOMAIN_NOT_FOUND;
         j += name_len + 4;
     }
 
     for (i = 0; i < header.ancount; ++i) {
+        BUF_OVERFLOW_CHECK(j, len);
         name_len = message_name_len(buf, len, j);
+        /* error in name format */
+        if (name_len == 0) return XMPP_DOMAIN_NOT_FOUND;
         j += name_len;
+        BUF_OVERFLOW_CHECK(j + 16, len);
         type = xmpp_ntohs_ptr(&buf[j]);
         class = xmpp_ntohs_ptr(&buf[j + 2]);
         rdlength = xmpp_ntohs_ptr(&buf[j + 8]);

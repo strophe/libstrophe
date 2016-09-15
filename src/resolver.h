@@ -65,4 +65,5 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
  *  @param srv_rr_list a list allocated by lookup functions
  */
 void resolver_srv_free(xmpp_ctx_t *ctx, resolver_srv_rr_t *srv_rr_list);
+
 #endif /* __LIBSTROPHE_RESOLVER_H__ */

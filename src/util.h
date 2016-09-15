@@ -18,6 +18,9 @@
 
 #include "ostypes.h"
 
+/* TODO evaluate x and y only once */
+#define xmpp_min(x, y) ((x) < (y) ? (x) : (y))
+
 /* string functions */
 char *xmpp_strtok_r(char *s, const char *delim, char **saveptr);
 
