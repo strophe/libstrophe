@@ -44,6 +44,7 @@ LOCAL_SRC_FILES := \
 	../src/resolver.c \
 	../src/sasl.c \
 	../src/scram.c \
+	../src/server.c \
 	../src/sha1.c \
 	../src/snprintf.c \
 	../src/sock.c \

@@ -109,6 +109,43 @@ sock_t sock_connect(const char * const host, const unsigned short port)
     return sock;
 }
 
+sock_t sock_listen(const unsigned short port)
+{
+    struct sockaddr_in addr;
+    sock_t sock;
+    int rc;
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) return -1;
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    rc = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+    if (rc == 0) {
+        rc = listen(sock, 100);
+        sock_set_nonblocking(sock);
+    }
+    if (rc != 0) close(sock);
+
+    return rc == 0 ? sock : -1;
+}
+
+int sock_stop_listen(const sock_t sock)
+{
+    return sock_close(sock);
+}
+
+sock_t sock_accept(const sock_t sock)
+{
+    sock_t fd;
+
+    fd = accept(sock, NULL, NULL);
+
+    return fd;
+}
+
 int sock_set_keepalive(const sock_t sock, int timeout, int interval)
 {
     int ret;

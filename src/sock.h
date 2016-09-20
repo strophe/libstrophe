@@ -32,6 +32,9 @@ int sock_error(void);
 
 sock_t sock_connect(const char * const host, const unsigned short port);
 int sock_close(const sock_t sock);
+sock_t sock_listen(const unsigned short port);
+int sock_stop_listen(const sock_t sock);
+sock_t sock_accept(const sock_t sock);
 
 int sock_set_blocking(const sock_t sock);
 int sock_set_nonblocking(const sock_t sock);

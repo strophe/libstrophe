@@ -625,14 +625,15 @@ int xmpp_conn_open_stream(xmpp_conn_t * const conn, char **attributes,
 {
     char *tag;
 
-    if (!conn->is_raw)
+    if (!conn->is_raw && conn->type != XMPP_INCOMING)
         return XMPP_EINVOP;
 
     tag = _conn_build_stream_tag(conn, attributes, attributes_len);
     if (!tag)
         return XMPP_EMEM;
 
-    conn_prepare_reset(conn, auth_handle_open_raw);
+    if (conn->type != XMPP_INCOMING)
+        conn_prepare_reset(conn, auth_handle_open_raw);
     xmpp_send_raw_string(conn, "<?xml version=\"1.0\"?>%s", tag);
     xmpp_free(conn->ctx, tag);
 

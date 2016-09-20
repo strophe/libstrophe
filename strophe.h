@@ -139,7 +139,8 @@ typedef enum {
 typedef enum {
     XMPP_UNKNOWN,
     XMPP_CLIENT,
-    XMPP_COMPONENT
+    XMPP_COMPONENT,
+    XMPP_INCOMING
 } xmpp_conn_type_t;
 
 typedef void (*xmpp_log_handler)(void * const userdata, 
@@ -211,7 +212,7 @@ typedef struct {
     xmpp_stanza_t *stanza;
 } xmpp_stream_error_t;
 
-typedef void (*xmpp_conn_handler)(xmpp_conn_t * const conn, 
+typedef void (*xmpp_conn_handler)(xmpp_conn_t * const conn,
 				  const xmpp_conn_event_t event,
 				  const int error,
 				  xmpp_stream_error_t * const stream_error,
@@ -263,6 +264,30 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
 void xmpp_send_raw(xmpp_conn_t * const conn, 
 		   const char * const data, const size_t len);
 
+/* server */
+
+/* opaque server object */
+typedef struct _xmpp_server_t xmpp_server_t;
+
+/* server callback */
+typedef enum {
+    XMPP_SERVER_ACCEPT,
+    XMPP_SERVER_OPEN_STREAM,
+    XMPP_SERVER_DISCONNECT,
+    XMPP_SERVER_FAIL
+} xmpp_server_event_t;
+
+typedef void (*xmpp_server_handler)(xmpp_server_t * const srv,
+                                    xmpp_conn_t * const conn,
+                                    const xmpp_server_event_t event,
+                                    const int error,
+                                    void * const userdata);
+
+xmpp_server_t *xmpp_server_new(xmpp_ctx_t * const ctx);
+void xmpp_server_free(xmpp_server_t * const srv);
+int xmpp_server_listen(xmpp_server_t * const srv, unsigned short port,
+                       xmpp_server_handler callback, void * const userdata);
+void xmpp_server_stop(xmpp_server_t * const srv);
 
 /* handlers */
 

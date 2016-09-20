@@ -43,6 +43,11 @@ typedef struct _xmpp_connlist_t {
     struct _xmpp_connlist_t *next;
 } xmpp_connlist_t;
 
+typedef struct _xmpp_serverlist_t {
+    xmpp_server_t *server;
+    struct _xmpp_serverlist_t *next;
+} xmpp_serverlist_t;
+
 struct _xmpp_ctx_t {
     const xmpp_mem_t *mem;
     const xmpp_log_t *log;
@@ -50,6 +55,7 @@ struct _xmpp_ctx_t {
     xmpp_rand_t *rand;
     xmpp_loop_status_t loop_status;
     xmpp_connlist_t *connlist;
+    xmpp_serverlist_t *serverlist;
 
     unsigned long timeout;
 };
@@ -225,6 +231,24 @@ int conn_tls_start(xmpp_conn_t * const conn);
 void conn_prepare_reset(xmpp_conn_t * const conn, xmpp_open_handler handler);
 void conn_parser_reset(xmpp_conn_t * const conn);
 
+typedef enum {
+    XMPP_STATE_STOPPED,
+    XMPP_STATE_LISTENING
+} xmpp_server_state_t;
+
+struct _xmpp_server_t {
+    xmpp_ctx_t *ctx;
+    xmpp_server_state_t state;
+
+    sock_t sock;
+    unsigned short port;
+    xmpp_server_handler callback;
+    void *userdata;
+    /* incomming connections list */
+};
+
+void server_accept(xmpp_server_t * const srv);
+void server_handle_open(xmpp_conn_t * const conn);
 
 typedef enum {
     XMPP_STANZA_UNKNOWN,

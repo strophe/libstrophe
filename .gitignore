@@ -35,6 +35,7 @@ examples/basic
 examples/bot
 examples/component
 examples/roster
+examples/server
 examples/uuid
 examples/vcard
 test_stamp

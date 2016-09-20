@@ -36,6 +36,7 @@ libstrophe_la_SOURCES = \
 	src/resolver.c \
 	src/sasl.c \
 	src/scram.c \
+	src/server.c \
 	src/sha1.c \
 	src/snprintf.c \
 	src/sock.c \
@@ -99,6 +100,7 @@ noinst_PROGRAMS = \
 	examples/bot \
 	examples/component \
 	examples/roster \
+	examples/server \
 	examples/uuid \
 	examples/vcard
 
@@ -117,6 +119,9 @@ examples_component_LDADD = $(STROPHE_LIBS)
 examples_roster_SOURCES = examples/roster.c
 examples_roster_CFLAGS = $(STROPHE_FLAGS)
 examples_roster_LDADD = $(STROPHE_LIBS)
+examples_server_SOURCES = examples/server.c
+examples_server_CFLAGS = $(STROPHE_FLAGS)
+examples_server_LDADD = $(STROPHE_LIBS)
 examples_uuid_SOURCES = examples/uuid.c
 examples_uuid_CFLAGS = $(STROPHE_FLAGS)
 examples_uuid_LDADD = $(STROPHE_LIBS)

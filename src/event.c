@@ -67,7 +67,9 @@
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 {
     xmpp_connlist_t *connitem;
+    xmpp_serverlist_t *serveritem;
     xmpp_conn_t *conn;
+    xmpp_server_t *srv;
     fd_set rfds, wfds;
     sock_t max = 0;
     int ret;
@@ -206,6 +208,23 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
         connitem = connitem->next;
     }
 
+    serveritem = ctx->serverlist;
+    while (serveritem) {
+        srv = serveritem->server;
+
+        switch (srv->state) {
+        case XMPP_STATE_LISTENING:
+            FD_SET(srv->sock, &rfds);
+            if (srv->sock > max) max = srv->sock;
+            break;
+        case XMPP_STATE_STOPPED:
+            /* do nothing */
+        default:
+            break;
+        }
+        serveritem = serveritem->next;
+    }
+
     /* check for events */
     if (max > 0)
         ret = select(max + 1, &rfds,  &wfds, NULL, &tv);
@@ -291,6 +310,24 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
         }
 
         connitem = connitem->next;
+    }
+
+    serveritem = ctx->serverlist;
+    while (serveritem) {
+        srv = serveritem->server;
+
+        switch (srv->state) {
+        case XMPP_STATE_LISTENING:
+            if (FD_ISSET(srv->sock, &rfds)) {
+                server_accept(srv);
+            }
+            break;
+        case XMPP_STATE_STOPPED:
+            /* do nothing */
+        default:
+            break;
+        }
+        serveritem = serveritem->next;
     }
 
     /* fire any ready handlers */
