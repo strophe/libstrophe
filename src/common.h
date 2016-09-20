@@ -1,7 +1,7 @@
 /* common.h
 ** strophe XMPP client library -- internal common structures
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express or
 **  implied.
@@ -56,32 +56,32 @@ struct _xmpp_ctx_t {
 /* convenience functions for accessing the context */
 void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size);
 void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p, 
-		   const size_t size);
+                   const size_t size);
 char *xmpp_strdup(const xmpp_ctx_t * const ctx, const char * const s);
 
-void xmpp_log(const xmpp_ctx_t * const ctx, 
-	      const xmpp_log_level_t level,
-	      const char * const area,
-	      const char * const fmt, 
-	      va_list ap);
+void xmpp_log(const xmpp_ctx_t * const ctx,
+              const xmpp_log_level_t level,
+              const char * const area,
+              const char * const fmt,
+              va_list ap);
 
 /* wrappers for xmpp_log at specific levels */
 void xmpp_error(const xmpp_ctx_t * const ctx,
-		const char * const area,
-		const char * const fmt,
-		...);
+                const char * const area,
+                const char * const fmt,
+                ...);
 void xmpp_warn(const xmpp_ctx_t * const ctx,
-		const char * const area,
-		const char * const fmt,
-		...);
+                const char * const area,
+                const char * const fmt,
+                ...);
 void xmpp_info(const xmpp_ctx_t * const ctx,
-		const char * const area,
-		const char * const fmt,
-		...);
+                const char * const area,
+                const char * const fmt,
+                ...);
 void xmpp_debug(const xmpp_ctx_t * const ctx,
-		const char * const area,
-		const char * const fmt,
-		...);
+                const char * const area,
+                const char * const fmt,
+                ...);
 
 /** connection **/
 
@@ -108,26 +108,26 @@ struct _xmpp_handlist_t {
     void *handler;
     void *userdata;
     int enabled; /* handlers are added disabled and enabled after the
-		  * handler chain is processed to prevent stanzas from
-		  * getting processed by newly added handlers */
+                  * handler chain is processed to prevent stanzas from
+                  * getting processed by newly added handlers */
     xmpp_handlist_t *next;
 
     union {
-	/* timed handlers */
-	struct {
-	    unsigned long period;
-	    uint64_t last_stamp;
-	};
-	/* id handlers */
-	struct {
-	    char *id;
-	};
-	/* normal handlers */
-	struct {
-	    char *ns;
-	    char *name;
-	    char *type;
-	};
+        /* timed handlers */
+        struct {
+            unsigned long period;
+            uint64_t last_stamp;
+        };
+        /* id handlers */
+        struct {
+            char *id;
+        };
+        /* normal handlers */
+        struct {
+            char *ns;
+            char *name;
+            char *type;
+        };
     };
 };
 
@@ -168,7 +168,7 @@ struct _xmpp_conn_t {
     int tls_legacy_ssl;
     int tls_failed; /* set when tls fails, so we don't try again */
     int sasl_support; /* if true, field is a bitfield of supported 
-			 mechanisms */ 
+                         mechanisms */
     int secured; /* set when stream is secured with TLS */
 
     /* if server returns <bind/> or <session/> we must do them */
@@ -196,7 +196,7 @@ struct _xmpp_conn_t {
     /* timeouts */
     unsigned int connect_timeout;
 
-    /* event handlers */    
+    /* event handlers */
 
     /* stream open handler */
     xmpp_open_handler open_handler;
@@ -247,23 +247,23 @@ struct _xmpp_stanza_t {
 
 /* handler management */
 void handler_fire_stanza(xmpp_conn_t * const conn,
-			 xmpp_stanza_t * const stanza);
+                         xmpp_stanza_t * const stanza);
 uint64_t handler_fire_timed(xmpp_ctx_t * const ctx);
 void handler_reset_timed(xmpp_conn_t *conn, int user_only);
 void handler_add_timed(xmpp_conn_t * const conn,
-		       xmpp_timed_handler handler,
-		       const unsigned long period,
-		       void * const userdata);
+                       xmpp_timed_handler handler,
+                       const unsigned long period,
+                       void * const userdata);
 void handler_add_id(xmpp_conn_t * const conn,
-		    xmpp_handler handler,
-		    const char * const id,
-		    void * const userdata);
+                    xmpp_handler handler,
+                    const char * const id,
+                    void * const userdata);
 void handler_add(xmpp_conn_t * const conn,
-		 xmpp_handler handler,
-		 const char * const ns,
-		 const char * const name,
-		 const char * const type,
-		 void * const userdata);
+                 xmpp_handler handler,
+                 const char * const ns,
+                 const char * const name,
+                 const char * const type,
+                 void * const userdata);
 
 /* utility functions */
 void disconnect_mem_error(xmpp_conn_t * const conn);
