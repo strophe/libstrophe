@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     len = res_query(fulldomain, C_IN, T_SRV, buf, sizeof(buf));
 
     if (len < 0) {
-        fprintf(stderr, "res_query(): Error occured (errno=%d)\n", errno);
+        fprintf(stderr, "res_query(): Error occurred (errno=%d)\n", errno);
     }
     if (len == 0) {
         fprintf(stderr, "res_query(): Empty result\n");
