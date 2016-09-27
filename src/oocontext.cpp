@@ -1,7 +1,7 @@
 /* oocontext.cpp
 ** strophe XMPP client library -- C++ context implementation
-** 
-** Copyright (C) 2005-2009 Collecta, Inc. 
+**
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -14,7 +14,7 @@
 #include "strophe.h"
 #include "strophepp.h"
 
-XMPP::Context::Context() 
+XMPP::Context::Context()
 {
     m_mem.alloc = callAlloc;
     m_mem.realloc = callRealloc;
@@ -48,8 +48,8 @@ void XMPP::Context::free(void *p)
 }
 
 void XMPP::Context::log(const xmpp_log_level_t level,
-			const char * const area,
-			const char * const msg)
+                        const char * const area,
+                        const char * const msg)
 {
     /* do nothing by default */
 }
@@ -65,7 +65,7 @@ void *XMPP::Context::callAlloc(const size_t size, void * const userdata)
 }
 
 void *XMPP::Context::callRealloc(void *p, const size_t size,
-				 void * const userdata)
+                                 void * const userdata)
 {
     return reinterpret_cast<Context *>(userdata)->realloc(p, size);
 }
@@ -76,10 +76,9 @@ void XMPP::Context::callFree(void *p, void * const userdata)
 }
 
 void XMPP::Context::callLog(void * const userdata,
-			    const xmpp_log_level_t level,
-			    const char * const area,
-			    const char * const msg)
+                            const xmpp_log_level_t level,
+                            const char * const area,
+                            const char * const msg)
 {
     reinterpret_cast<Context *>(userdata)->log(level, area, msg);
 }
-

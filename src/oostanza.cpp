@@ -1,7 +1,7 @@
 /* oostanza.cpp
 ** strophe XMPP client library -- C++ context implementation
-** 
-** Copyright (C) 2005-2009 Collecta, Inc. 
+**
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -28,8 +28,8 @@ void *Stanza::operator new(size_t size, Context *ctx)
     if (!p) return p;
 
     *reinterpret_cast<Context **>(p) = ctx;
-    p = reinterpret_cast<void *>(reinterpret_cast<char *>(p) + 
-				 sizeof(Context *));
+    p = reinterpret_cast<void *>(reinterpret_cast<char *>(p) +
+                                 sizeof(Context *));
 
     return p;
 }
@@ -61,7 +61,7 @@ Stanza *Stanza::create(Context *ctx)
 void Stanza::release()
 {
     if (::xmpp_stanza_release(m_stanza))
-	delete this;
+        delete this;
 }
 
 Stanza *Stanza::clone()
@@ -75,5 +75,3 @@ Stanza *Stanza::copy()
     // TODO
     return NULL;
 }
-
-
