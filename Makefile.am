@@ -98,6 +98,7 @@ noinst_PROGRAMS = \
 	examples/basic \
 	examples/bot \
 	examples/component \
+	examples/ext_auth \
 	examples/roster \
 	examples/uuid \
 	examples/vcard
@@ -114,6 +115,9 @@ examples_bot_LDADD = $(STROPHE_LIBS)
 examples_component_SOURCES = examples/component.c
 examples_component_CFLAGS = $(STROPHE_FLAGS)
 examples_component_LDADD = $(STROPHE_LIBS)
+examples_ext_auth_SOURCES = examples/ext_auth.c
+examples_ext_auth_CFLAGS = $(STROPHE_FLAGS)
+examples_ext_auth_LDADD = $(STROPHE_LIBS)
 examples_roster_SOURCES = examples/roster.c
 examples_roster_CFLAGS = $(STROPHE_FLAGS)
 examples_roster_LDADD = $(STROPHE_LIBS)

@@ -34,6 +34,7 @@ examples/active
 examples/basic
 examples/bot
 examples/component
+examples/ext_auth
 examples/roster
 examples/uuid
 examples/vcard
