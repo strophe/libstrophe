@@ -130,6 +130,15 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 #if 0
     /* Something down the line doesn't like AES, so force it to RC4 */
     algs[0] = CALG_RC4;
+    /* dsb@eagle.ru: Win8.1 disables the support for RC4 in TLS by default, but AES does work ok. */
+    /* Note that for apps not manifested for Win8.1 GetVersion() returns Win8.0 version value (6.2). */
+    {
+        const DWORD winver = GetVersion();
+        const DWORD major = LOBYTE(LOWORD(winver));
+        const DWORD minor = HIBYTE(LOWORD(winver));
+        if (major >= 6 && minor >= 2)
+            algs[0] = CALG_AES;
+    }
     scred.cSupportedAlgs = 1;
     scred.palgSupportedAlgs = algs;
 #else
