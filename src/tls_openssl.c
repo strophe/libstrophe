@@ -77,6 +77,13 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
         if (tls->ssl_ctx == NULL)
             goto err;
 
+	SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_ALL); /* Enable bug workarounds. */
+
+	/* Disable insecure SSL/TLS versions. */
+	SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv2); /* DROWN */
+	SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv3); /* POODLE */
+	SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_TLSv1); /* BEAST */
+
         SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
         SSL_CTX_set_mode(tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
         SSL_CTX_set_verify(tls->ssl_ctx, SSL_VERIFY_NONE, NULL);
