@@ -73,15 +73,18 @@ int version_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
-    xmpp_stanza_t *reply;
+    xmpp_stanza_t *body, *reply;
+    const char *type;
     char *intext, *replytext;
 
-    if (!xmpp_stanza_get_child_by_name(stanza, "body"))
+    body = xmpp_stanza_get_child_by_name(stanza, "body");
+    if (body == NULL)
         return 1;
-    if (xmpp_stanza_get_type(stanza) != NULL && !strcmp(xmpp_stanza_get_type(stanza), "error"))
+    type = xmpp_stanza_get_type(stanza);
+    if (type != NULL && strcmp(type, "error") == 0)
         return 1;
 
-    intext = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "body"));
+    intext = xmpp_stanza_get_text(body);
 
     printf("Incoming message from %s: %s\n", xmpp_stanza_get_from(stanza), intext);
 
