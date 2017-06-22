@@ -874,7 +874,7 @@ int conn_tls_start(xmpp_conn_t * const conn)
         conn->tls = NULL;
         rc = XMPP_EINVOP;
     } else {
-        conn->tls = tls_new(conn->ctx, conn->sock);
+        conn->tls = tls_new(conn);
         rc = conn->tls == NULL ? XMPP_EMEM : 0;
     }
 

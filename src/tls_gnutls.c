@@ -46,13 +46,13 @@ void tls_shutdown(void)
     gnutls_global_deinit();
 }
 
-tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
+tls_t *tls_new(xmpp_conn_t *conn)
 {
-    tls_t *tls = xmpp_alloc(ctx, sizeof(tls_t));
+    tls_t *tls = xmpp_alloc(conn->ctx, sizeof(tls_t));
 
     if (tls) {
-        tls->ctx = ctx;
-        tls->sock = sock;
+        tls->ctx = conn->ctx;
+        tls->sock = conn->sock;
         gnutls_init(&tls->session, GNUTLS_CLIENT);
 
         gnutls_certificate_allocate_credentials(&tls->cred);
@@ -61,7 +61,7 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
         gnutls_set_default_priority(tls->session);
 
         /* fixme: this may require setting a callback on win32? */
-        gnutls_transport_set_int(tls->session, sock);
+        gnutls_transport_set_int(tls->session, conn->sock);
     }
 
     return tls;

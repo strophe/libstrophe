@@ -63,16 +63,16 @@ int tls_error(tls_t *tls)
     return tls->lasterror;
 }
 
-tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
+tls_t *tls_new(xmpp_conn_t *conn)
 {
-    tls_t *tls = xmpp_alloc(ctx, sizeof(*tls));
+    tls_t *tls = xmpp_alloc(conn->ctx, sizeof(*tls));
 
     if (tls) {
         int ret;
         memset(tls, 0, sizeof(*tls));
 
-        tls->ctx = ctx;
-        tls->sock = sock;
+        tls->ctx = conn->ctx;
+        tls->sock = conn->sock;
         tls->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
         if (tls->ssl_ctx == NULL)
             goto err;
@@ -92,7 +92,7 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
         if (tls->ssl == NULL)
             goto err_free_ctx;
 
-        ret = SSL_set_fd(tls->ssl, sock);
+        ret = SSL_set_fd(tls->ssl, conn->sock);
         if (ret <= 0)
             goto err_free_ssl;
     }
@@ -104,8 +104,8 @@ err_free_ssl:
 err_free_ctx:
     SSL_CTX_free(tls->ssl_ctx);
 err:
-    xmpp_free(ctx, tls);
-    _tls_log_error(ctx);
+    xmpp_free(conn->ctx, tls);
+    _tls_log_error(conn->ctx);
     return NULL;
 }
 
