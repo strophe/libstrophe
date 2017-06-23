@@ -24,6 +24,7 @@
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/opensslv.h>
 #include <openssl/x509v3.h>
 
 #include "common.h"
@@ -93,6 +94,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (tls->ssl == NULL)
             goto err_free_ctx;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
         SSL_set_verify(tls->ssl, SSL_VERIFY_PEER, 0);
         X509_VERIFY_PARAM *param = SSL_get0_param(tls->ssl);
 
@@ -104,6 +106,10 @@ tls_t *tls_new(xmpp_conn_t *conn)
          */
         X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
         X509_VERIFY_PARAM_set1_host(param, conn->domain, 0);
+#else
+        /* Hostname verification is not supported before OpenSSL 1.0.2. */
+        SSL_set_verify(tls->ssl, SSL_VERIFY_NONE, 0);
+#endif
 
         ret = SSL_set_fd(tls->ssl, conn->sock);
         if (ret <= 0)
