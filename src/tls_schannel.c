@@ -23,6 +23,7 @@
 
 struct _tls {
     xmpp_ctx_t *ctx;
+    xmpp_conn_t *conn;
     sock_t sock;
 
     HANDLE hsec32;
@@ -60,8 +61,10 @@ void tls_shutdown(void)
     return;
 }
 
-tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
+tls_t *tls_new(xmpp_conn_t *conn)
 {
+    xmpp_ctx_t *ctx = conn->ctx;
+    sock_t sock = conn->sock;
     tls_t *tls;
     PSecurityFunctionTable (*pInitSecurityInterface)(void);
     SCHANNEL_CRED scred;
@@ -92,6 +95,7 @@ tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
 
     memset(tls, 0, sizeof(*tls));
     tls->ctx = ctx;
+    tls->conn = conn;
     tls->sock = sock;
 
     if (!(tls->hsec32 = LoadLibrary ("secur32.dll"))) {
@@ -216,24 +220,10 @@ int tls_start(tls_t *tls)
     SecBuffer sbin[2], sbout[1];
     SECURITY_STATUS ret;
     int sent;
-    char *name = NULL;
+    char *name;
 
-    /* search the ctx's conns for our sock, and use the domain there as our
-     * name */
-    {
-	xmpp_connlist_t *listentry = tls->ctx->connlist;
-
-	while (listentry) {
-	    xmpp_conn_t *conn = listentry->conn;
-
-	    if (conn->sock == tls->sock) {
-		name = strdup(conn->domain);
-		listentry = NULL;
-	    } else {
-		listentry = listentry->next;
-	    }
-	}
-    }
+    /* use the domain there as our name */
+    name = strdup(tls->conn->domain);
 
     ctxtreq = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT
 	    | ISC_REQ_CONFIDENTIALITY | ISC_RET_EXTENDED_ERROR
