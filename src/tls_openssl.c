@@ -24,6 +24,7 @@
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/x509v3.h>
 
 #include "common.h"
 #include "tls.h"
@@ -86,11 +87,23 @@ tls_t *tls_new(xmpp_conn_t *conn)
 
         SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
         SSL_CTX_set_mode(tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-        SSL_CTX_set_verify(tls->ssl_ctx, SSL_VERIFY_NONE, NULL);
+        SSL_CTX_set_default_verify_paths(tls->ssl_ctx);
 
         tls->ssl = SSL_new(tls->ssl_ctx);
         if (tls->ssl == NULL)
             goto err_free_ctx;
+
+        SSL_set_verify(tls->ssl, SSL_VERIFY_PEER, 0);
+        X509_VERIFY_PARAM *param = SSL_get0_param(tls->ssl);
+
+        /*
+         * Allow only complete wildcards.  RFC 6125 discourages wildcard usage
+         * completely, and lists internationalized domain names as a reason
+         * against partial wildcards.
+         * See https://tools.ietf.org/html/rfc6125#section-7.2 for more information.
+         */
+        X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+        X509_VERIFY_PARAM_set1_host(param, conn->domain, 0);
 
         ret = SSL_set_fd(tls->ssl, conn->sock);
         if (ret <= 0)
