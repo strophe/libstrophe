@@ -62,6 +62,7 @@
 
 static void _auth(xmpp_conn_t * const conn);
 static void _handle_open_sasl(xmpp_conn_t * const conn);
+static void _handle_open_tls(xmpp_conn_t * const conn);
 
 static int _handle_component_auth(xmpp_conn_t * const conn);
 static int _handle_component_hs_response(xmpp_conn_t * const conn,
@@ -288,9 +289,7 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
         xmpp_debug(conn->ctx, "xmpp", "proceeding with TLS");
 
         if (conn_tls_start(conn) == 0) {
-            /* we are about to re-open stream, add new error handler after */
-            xmpp_handler_delete(conn, _handle_error);
-            conn_prepare_reset(conn, auth_handle_open);
+            conn_prepare_reset(conn, _handle_open_tls);
             conn_open_stream(conn);
         } else {
             /* failed tls spoils the connection, so disconnect */
@@ -317,7 +316,7 @@ static int _handle_sasl_result(xmpp_conn_t * const conn,
 	/* fall back to next auth method */
 	_auth(conn);
     } else if (strcmp(name, "success") == 0) {
-	/* SASL PLAIN auth successful, we need to restart the stream */
+	/* SASL auth successful, we need to restart the stream */
 	xmpp_debug(conn->ctx, "xmpp", "SASL %s auth successful",
 		   (char *)userdata);
 
@@ -840,15 +839,23 @@ void auth_handle_open(xmpp_conn_t * const conn)
     /* reset all timed handlers */
     handler_reset_timed(conn, 0);
 
-    /* setup handler for stream:error */
-    handler_add(conn, _handle_error,
-		XMPP_NS_STREAMS, "error", NULL, NULL);
+    /* setup handler for stream:error, we will keep this handler
+     * for reopened streams until connection is disconnected */
+    handler_add(conn, _handle_error, XMPP_NS_STREAMS, "error", NULL, NULL);
 
     /* setup handlers for incoming <stream:features> */
     handler_add(conn, _handle_features,
 		XMPP_NS_STREAMS, "features", NULL, NULL);
-    handler_add_timed(conn, _handle_missing_features,
-		      FEATURES_TIMEOUT, NULL);
+    handler_add_timed(conn, _handle_missing_features, FEATURES_TIMEOUT, NULL);
+}
+
+/* called when stream:stream tag received after TLS establishment */
+static void _handle_open_tls(xmpp_conn_t * const conn)
+{
+    /* setup handlers for incoming <stream:features> */
+    handler_add(conn, _handle_features,
+		XMPP_NS_STREAMS, "features", NULL, NULL);
+    handler_add_timed(conn, _handle_missing_features, FEATURES_TIMEOUT, NULL);
 }
 
 /* called when stream:stream tag received after SASL auth */
