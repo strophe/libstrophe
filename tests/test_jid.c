@@ -27,54 +27,67 @@ static const char *_s(const char *s)
 
 int test_jid(xmpp_ctx_t *ctx)
 {
+    char *bare;
     char *node;
     char *domain;
     char *resource;
 
+    bare = xmpp_jid_bare(ctx, jid1);
     node = xmpp_jid_node(ctx, jid1);
     domain = xmpp_jid_domain(ctx, jid1);
     resource = xmpp_jid_resource(ctx, jid1);
     printf("jid '%s' parsed to %s, %s, %s\n",
            jid1, _s(node), _s(domain), _s(resource));
+    if (bare == NULL || strcmp(bare, "foo@bar.com")) return 1;
     if (node == NULL || strcmp(node, "foo")) return 1;
     if (domain == NULL || strcmp(domain, "bar.com")) return 1;
     if (resource != NULL) return 1;
+    if (bare) xmpp_free(ctx, bare);
     if (node) xmpp_free(ctx, node);
     if (domain) xmpp_free(ctx, domain);
     if (resource) xmpp_free(ctx, resource);
 
+    bare = xmpp_jid_bare(ctx, jid2);
     node = xmpp_jid_node(ctx, jid2);
     domain = xmpp_jid_domain(ctx, jid2);
     resource = xmpp_jid_resource(ctx, jid2);
     printf("jid '%s' parsed to %s, %s, %s\n",
            jid2, _s(node), _s(domain), _s(resource));
+    if (bare == NULL || strcmp(bare, "anyone@example.com")) return 1;
     if (node == NULL || strcmp(node, "anyone")) return 1;
     if (domain == NULL || strcmp(domain, "example.com")) return 1;
     if (resource == NULL || strcmp(resource, "hullo")) return 1;
+    if (bare) xmpp_free(ctx, bare);
     if (node) xmpp_free(ctx, node);
     if (domain) xmpp_free(ctx, domain);
     if (resource) xmpp_free(ctx, resource);
 
+    bare = xmpp_jid_bare(ctx, jid3);
     node = xmpp_jid_node(ctx, jid3);
     domain = xmpp_jid_domain(ctx, jid3);
     resource = xmpp_jid_resource(ctx, jid3);
     printf("jid '%s' parsed to %s, %s, %s\n",
            jid3, _s(node), _s(domain), _s(resource));
+    if (bare == NULL || strcmp(bare, "manic.porter@xyz.net")) return 1;
     if (node == NULL || strcmp(node, "manic.porter")) return 1;
     if (domain == NULL || strcmp(domain, "xyz.net")) return 1;
     if (resource == NULL || strcmp(resource, "frob")) return 1;
+    if (bare) xmpp_free(ctx, bare);
     if (node) xmpp_free(ctx, node);
     if (domain) xmpp_free(ctx, domain);
     if (resource) xmpp_free(ctx, resource);
 
+    bare = xmpp_jid_bare(ctx, jid4);
     node = xmpp_jid_node(ctx, jid4);
     domain = xmpp_jid_domain(ctx, jid4);
     resource = xmpp_jid_resource(ctx, jid4);
     printf("jid '%s' parsed to %s, %s, %s\n",
            jid4, _s(node), _s(domain), _s(resource));
+    if (bare == NULL || strcmp(bare, "domain.tld")) return 1;
     if (node != NULL) return 1;
     if (domain == NULL || strcmp(domain, "domain.tld")) return 1;
     if (resource != NULL) return 1;
+    if (bare) xmpp_free(ctx, bare);
     if (node) xmpp_free(ctx, node);
     if (domain) xmpp_free(ctx, domain);
     if (resource) xmpp_free(ctx, resource);
