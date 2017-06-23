@@ -1,6 +1,6 @@
 1. Setup
 
-yum install gcc make expat-devel libstrophe
+yum install gcc make autoconf automake expat-devel openssl-devel
 
 Fedora:
 

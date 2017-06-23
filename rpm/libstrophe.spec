@@ -8,10 +8,12 @@ License:	MIT/GPLv3
 URL:		http://strophe.im/libstrophe/
 Source0:	libstrophe_git.tar.gz
 
+BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	libtool
 BuildRequires:	openssl-devel
 BuildRequires:	expat-devel
+Requires:	openssl
 Requires:	expat
 
 %description
