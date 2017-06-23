@@ -1,3 +1,9 @@
+0.9.2
+	- Certificate hostname verification is forced for openssl-1.0.2 and
+	  newer
+	- Support of handlers with the same callback function, but different
+	  userdata
+
 0.9.1
 	- Fixed bug #95 (DNS lookup failing on Cygwin)
 	- Removed dependency on the check package
