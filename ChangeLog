@@ -4,6 +4,8 @@
 	- OpenSSL tls module disables insecure SSLv2 SSLv3 and TLSv1
 	- Support of handlers with the same callback function, but different
 	  userdata
+	- System handlers are deleted on xmpp_conn_t reconnection. Old system
+	  handlers could cause problems
 	- New public function xmpp_sha1_digest()
 
 0.9.1

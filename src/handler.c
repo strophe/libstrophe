@@ -87,6 +87,7 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
                 head_old = head;
                 _handler_item_remove(&head, item);
                 if (head != head_old) {
+                    /* TODO implement hash_replace() */
                     hash_drop(conn->id_handlers, id);
                     hash_add(conn->id_handlers, id, head);
                 }
@@ -613,4 +614,74 @@ void handler_add(xmpp_conn_t * const conn,
                  void * const userdata)
 {
     _handler_add(conn, handler, ns, name, type, userdata, 0);
+}
+
+/** Delete all system handlers.
+ *  This function is used to reset conn object before re-connecting.
+ *
+ *  @param conn a Strophe connection object
+ */
+void handler_system_delete_all(xmpp_conn_t *conn)
+{
+    xmpp_handlist_t *item, *next, *head, *head_old;
+    hash_iterator_t *iter;
+    const char *key;
+    char *key2;
+
+    /* TODO unify all kinds of handlers and avoid copy-paste below */
+
+    item = conn->handlers;
+    while (item) {
+        if (!item->user_handler) {
+            next = item->next;
+            _handler_item_remove(&conn->handlers, item);
+            if (item->ns) xmpp_free(conn->ctx, item->ns);
+            if (item->name) xmpp_free(conn->ctx, item->name);
+            if (item->type) xmpp_free(conn->ctx, item->type);
+            xmpp_free(conn->ctx, item);
+            item = next;
+        } else
+            item = item->next;
+    }
+
+    item = conn->timed_handlers;
+    while (item) {
+        if (!item->user_handler) {
+            next = item->next;
+            _handler_item_remove(&conn->timed_handlers, item);
+            xmpp_free(conn->ctx, item);
+            item = next;
+        } else
+            item = item->next;
+    }
+
+    iter = hash_iter_new(conn->id_handlers);
+    key = iter == NULL ? NULL : hash_iter_next(iter);
+    while (key != NULL) {
+        head = head_old = (xmpp_handlist_t *)hash_get(conn->id_handlers, key);
+        item = head;
+        while (item) {
+            if (!item->user_handler) {
+                next = item->next;
+                _handler_item_remove(&head, item);
+                xmpp_free(conn->ctx, item->id);
+                xmpp_free(conn->ctx, item);
+                item = next;
+            } else
+                item = item->next;
+        }
+        if (head != head_old)
+            key2 = xmpp_strdup(conn->ctx, key);
+        /* Hash table implementation is not perfect, so we need to find next
+           key before dropping current one. Otherwise, we will get access to
+           freed memory. */
+        key = hash_iter_next(iter);
+        if (head != head_old) {
+            /* TODO implement hash_replace() to reduce number of allocations */
+            hash_drop(conn->id_handlers, key2);
+            if (head != NULL)
+                hash_add(conn->id_handlers, key2, head);
+            xmpp_free(conn->ctx, key2);
+        }
+    }
 }

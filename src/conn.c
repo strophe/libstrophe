@@ -1215,6 +1215,8 @@ static void _conn_reset(xmpp_conn_t * const conn)
     conn->secured = 0;
     conn->tls_failed = 0;
     conn->error = 0;
+
+    handler_system_delete_all(conn);
 }
 
 static int _conn_connect(xmpp_conn_t * const conn,
