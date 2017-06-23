@@ -72,15 +72,13 @@ char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
 char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid)
 {
     char *result;
-    const char *c;
+    size_t len;
 
-    c = strchr(jid, '/');
-    if (c == NULL) return xmpp_strdup(ctx, jid);
-
-    result = xmpp_alloc(ctx, c-jid+1);
+    len = strcspn(jid, "/");
+    result = xmpp_alloc(ctx, len + 1);
     if (result != NULL) {
-	memcpy(result, jid, c-jid);
-	result[c-jid] = '\0';
+	memcpy(result, jid, len);
+	result[len] = '\0';
     }
 
     return result;
@@ -121,7 +119,8 @@ char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid)
 char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
 {
     char *result = NULL;
-    const char *c,*s;
+    const char *c;
+    size_t dlen;
 
     c = strchr(jid, '@');
     if (c == NULL) {
@@ -131,15 +130,11 @@ char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
 	/* advance past the separator */
 	c++;
     }
-    s = strchr(c, '/');
-    if (s == NULL) {
-	/* no resource */
-	s = c + strlen(c);
-    }
-    result = xmpp_alloc(ctx, (s-c) + 1);
+    dlen = strcspn(c, "/"); /* do not include resource */
+    result = xmpp_alloc(ctx, dlen + 1);
     if (result != NULL) {
-	memcpy(result, c, (s-c));
-	result[s-c] = '\0';
+	memcpy(result, c, dlen);
+	result[dlen] = '\0';
     }
 
     return result;
@@ -155,20 +150,8 @@ char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
  */
 char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid)
 {
-    char *result = NULL;
     const char *c;
-    size_t len;
 
     c = strchr(jid, '/');
-    if (c != NULL)  {
-	c++;
-	len = strlen(c);
-	result = xmpp_alloc(ctx, len + 1);
-	if (result != NULL) {
-	    memcpy(result, c, len);
-	    result[len] = '\0';
-	}
-    }
-
-    return result;
+    return c != NULL ? xmpp_strdup(ctx, c + 1) : NULL;
 }
