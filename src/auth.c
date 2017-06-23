@@ -288,6 +288,8 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
         xmpp_debug(conn->ctx, "xmpp", "proceeding with TLS");
 
         if (conn_tls_start(conn) == 0) {
+            /* we are about to re-open stream, add new error handler after */
+            xmpp_handler_delete(conn, _handle_error);
             conn_prepare_reset(conn, auth_handle_open);
             conn_open_stream(conn);
         } else {
