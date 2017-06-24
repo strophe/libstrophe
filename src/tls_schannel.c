@@ -223,7 +223,7 @@ int tls_start(tls_t *tls)
     char *name;
 
     /* use the domain there as our name */
-    name = strdup(tls->conn->domain);
+    name = tls->conn->domain;
 
     ctxtreq = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT
 	    | ISC_REQ_CONFIDENTIALITY | ISC_RET_EXTENDED_ERROR
