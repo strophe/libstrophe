@@ -10,8 +10,8 @@
 #include "sock.h"
 
 struct _tls {
-    xmpp_ctx_t *ctx; /* do we need this? */
-    sock_t sock;
+	xmpp_ctx_t *ctx; /* do we need this? */
+	sock_t sock;
 
 	SSLContextRef sslctx;
 };
@@ -141,35 +141,35 @@ void tls_free(tls_t *tls)
 {
 	CFRelease(tls->sslctx);
 
-    xmpp_free(tls->ctx, tls);
+	xmpp_free(tls->ctx, tls);
 }
 
 int tls_set_credentials(tls_t *tls, const char *cafilename)
 {
-/*	
+/*
 	Not implemented in OpenSSL version so we should not need it either.
 	But if we want to do it here's a place to start:
 
 	FILE * ret = fopen(cafilename, options);
 	void *data = malloc(bytes);
-	fread(data, 1, bytes, ret); 
+	fread(data, 1, bytes, ret);
 	fclose(ret);
 	NSData *myCertData = [NSData dataWithBytesNoCopy:data length:bytes];  <- requires -ObjC compile option?
 
-	SecCertificateRef cert = SecCertificateCreateWithData(kCFAllocatorDefault, myCertData); 
-	CFArrayRef certRefs = CFArrayCreate(kCFAllocatorDefault, (const void **)&cert, 1, NULL); 
+	SecCertificateRef cert = SecCertificateCreateWithData(kCFAllocatorDefault, myCertData);
+	CFArrayRef certRefs = CFArrayCreate(kCFAllocatorDefault, (const void **)&cert, 1, NULL);
 
 	SSLSetCertificate(tls->sslctx, certRefs);
 */
-    return -1;
+	return -1;
 }
 
 int tls_start(tls_t *tls)
 {
-    int ret;
+	int ret;
 
-    /* Since we're non-blocking, loop the connect call until it
-       succeeds or fails */
+	/* Since we're non-blocking, loop the connect call until it
+	   succeeds or fails */
 	do {
 		ret = SSLHandshake(tls->sslctx);
 	} while (ret == errSSLWouldBlock);
@@ -197,8 +197,8 @@ int tls_is_recoverable(int error)
 
 int tls_error(tls_t *tls)
 {
-    /* todo: some kind of error polling/dump */
-    return 0;
+	/* todo: some kind of error polling/dump */
+	return 0;
 }
 
 int tls_pending(tls_t *tls)
@@ -232,6 +232,6 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 
 int tls_clear_pending_write(tls_t *tls)
 {
-    return 0;
+	return 0;
 }
 
