@@ -102,6 +102,7 @@ EXTRA_DIST = \
 	jni/Android.mk \
 	jni/Application.mk \
 	src/tls_schannel.c \
+	src/tls_securetransport.c \
 	tests/res_query_dump.c
 
 if TLS_WITH_GNUTLS
