@@ -134,6 +134,7 @@ TESTS = \
 	tests/test_scram \
 	tests/test_ctx \
 	tests/test_base64 \
+	tests/test_hash \
 	tests/test_jid \
 	tests/test_snprintf \
 	tests/test_string \
@@ -156,6 +157,11 @@ tests_test_base64_SOURCES = tests/test_base64.c tests/test.c tests/test.h
 tests_test_base64_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_base64_LDADD = $(STROPHE_LIBS)
 tests_test_base64_LDFLAGS = -static
+
+tests_test_hash_SOURCES = tests/test_hash.c
+tests_test_hash_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
+tests_test_hash_LDADD = $(STROPHE_LIBS)
+tests_test_hash_LDFLAGS = -static
 
 tests_test_jid_SOURCES = tests/test_jid.c
 tests_test_jid_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src

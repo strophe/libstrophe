@@ -76,6 +76,18 @@ int main(int argc, char **argv)
 	return 1;
     }
 
+    /* test replacing old values */
+    for (i = 0; i < nkeys; i++) {
+        err = hash_add(table, keys[0], (void*)values[i]);
+        if (err) return err;
+        if (hash_num_keys(table) != nkeys) return 1;
+        result = hash_get(table, keys[0]);
+        if (result == NULL) return 1;
+        if (strcmp(result, values[i]) != 0) return 1;
+    }
+    /* restore value for the 1st key */
+    hash_add(table, keys[0], (void*)values[0]);
+
     /* test cloning */
     clone = hash_clone(table);
 
