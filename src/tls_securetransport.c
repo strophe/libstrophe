@@ -10,7 +10,7 @@
 #include "sock.h"
 
 struct _tls {
-	xmpp_ctx_t *ctx; /* do we need this? */
+	xmpp_ctx_t *ctx;
 	sock_t sock;
 
 	SSLContextRef sslctx;
@@ -120,13 +120,13 @@ OSStatus MySSLWriteFunction(SSLConnectionRef connection, const void *data, size_
 	return ortn;
 }
 
-tls_t *tls_new(xmpp_ctx_t *ctx, sock_t sock)
+tls_t *tls_new(xmpp_conn_t *conn)
 {
-	tls_t *tls = xmpp_alloc(ctx, sizeof(tls_t));
+	tls_t *tls = xmpp_alloc(conn->ctx, sizeof(tls_t));
 
 	if (tls) {
-		tls->ctx = ctx;
-		tls->sock = sock;
+		tls->ctx = conn->ctx;
+		tls->sock = conn->sock;
 		tls->sslctx = SSLCreateContext(NULL, kSSLClientSide, kSSLStreamType);
 
 		SSLSetIOFuncs(tls->sslctx, MySSLReadFunction, MySSLWriteFunction);
