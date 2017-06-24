@@ -87,8 +87,7 @@ void handler_fire_stanza(xmpp_conn_t * const conn,
                 head_old = head;
                 _handler_item_remove(&head, item);
                 if (head != head_old) {
-                    /* TODO implement hash_replace() */
-                    hash_drop(conn->id_handlers, id);
+                    /* replace old value */
                     hash_add(conn->id_handlers, id, head);
                 }
                 xmpp_free(conn->ctx, item->id);
@@ -677,10 +676,11 @@ void handler_system_delete_all(xmpp_conn_t *conn)
            freed memory. */
         key = hash_iter_next(iter);
         if (head != head_old) {
-            /* TODO implement hash_replace() to reduce number of allocations */
-            hash_drop(conn->id_handlers, key2);
+            /* hash_add() replaces value if the key exists */
             if (head != NULL)
                 hash_add(conn->id_handlers, key2, head);
+            else
+                hash_drop(conn->id_handlers, key2);
             xmpp_free(conn->ctx, key2);
         }
     }
