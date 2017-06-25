@@ -106,18 +106,17 @@ void hash_release(hash_t * const table)
 /** hash a key for our table lookup */
 static int _hash_key(hash_t *table, const char *key)
 {
-   int hash = 0;
-   int shift = 0;
-   const char *c = key;
+   unsigned hash = 0;
+   unsigned shift = 0;
+   const unsigned char *c = (const unsigned char *)key;
 
-   while (*c != '\0') {
+   while (*c != 0) {
 	/* assume 32 bit ints */
-	hash ^= ((int)*c++ << shift);
+	hash ^= ((unsigned)*c++ << shift);
 	shift += 8;
 	if (shift > 24) shift = 0;
    }
-
-   return hash % table->length;
+   return hash % (unsigned)table->length;
 }
 
 /** add a key, value pair to a hash table.
