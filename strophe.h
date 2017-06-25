@@ -409,6 +409,8 @@ char *xmpp_uuid_gen(xmpp_ctx_t *ctx);
 typedef struct _xmpp_sha1_t xmpp_sha1_t;
 
 char *xmpp_sha1(xmpp_ctx_t *ctx, const unsigned char *data, size_t len);
+void xmpp_sha1_digest(const unsigned char *data, size_t len,
+                      unsigned char *digest);
 
 xmpp_sha1_t *xmpp_sha1_new(xmpp_ctx_t *ctx);
 void xmpp_sha1_free(xmpp_sha1_t *sha1);

@@ -81,7 +81,35 @@ char *xmpp_sha1(xmpp_ctx_t *ctx, const unsigned char *data, size_t len)
     return digest_to_string_alloc(ctx, digest);
 }
 
+/** Compute SHA1 message digest
+ *  Stores digest in user's buffer which must be at least XMPP_SHA1_DIGEST_SIZE
+ *  bytes long.
+ *
+ *  @param data buffer for digest computation
+ *  @param len size of the data buffer
+ *  @param digest output buffer of XMPP_SHA1_DIGEST_SIZE bytes
+ *
+ *  @ingroup Digests
+ */
+void xmpp_sha1_digest(const unsigned char *data, size_t len,
+                      unsigned char *digest)
+{
+    crypto_SHA1((const uint8_t *)data, len, digest);
+}
+
 /** Create new SHA1 object
+ *  SHA1 object is used to compute SHA1 digest of a buffer that is split
+ *  in multiple chunks or provided in stream mode. A single buffer can be
+ *  processed by short functions xmpp_sha1() and xmpp_sha1_digest().
+ *  Follow the next use-case for xmpp_sha1_t object:
+ *  @code
+ *      xmpp_sha1_t *sha1 = xmpp_sha1_new(ctx);
+ *      // Repeat update for all chunks of data
+ *      xmpp_sha1_update(sha1, data, len);
+ *      xmpp_sha1_final(sha1);
+ *      char *digest = xmpp_sha1_to_string_alloc(sha1);
+ *      xmpp_sha1_free(sha1);
+ *  @endcode
  *
  *  @param ctx a Strophe context onject
  *

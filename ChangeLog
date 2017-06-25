@@ -3,6 +3,7 @@
 	  newer
 	- Support of handlers with the same callback function, but different
 	  userdata
+	- New public function xmpp_sha1_digest()
 
 0.9.1
 	- Fixed bug #95 (DNS lookup failing on Cygwin)
