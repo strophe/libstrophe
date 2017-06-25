@@ -150,6 +150,7 @@ uint64_t handler_fire_timed(xmpp_ctx_t * const ctx)
     xmpp_handlist_t *item, *next;
     xmpp_conn_t *conn;
     uint64_t elapsed, min;
+    uint64_t timestamp;
     int ret;
 
     min = (uint64_t)(-1);
@@ -176,10 +177,11 @@ uint64_t handler_fire_timed(xmpp_ctx_t * const ctx)
             }
 
             next = item->next;
-            elapsed = time_elapsed(item->last_stamp, time_stamp());
+            timestamp = time_stamp();
+            elapsed = time_elapsed(item->last_stamp, timestamp);
             if (elapsed >= item->period) {
                 /* fire! */
-                item->last_stamp = time_stamp();
+                item->last_stamp = timestamp;
                 ret = ((xmpp_timed_handler)item->handler)(conn, item->userdata);
                 /* list may be changed during execution of a handler */
                 next = item->next;
