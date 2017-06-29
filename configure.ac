@@ -117,6 +117,15 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
         [], [with_pkgconfigdir='$(libdir)/pkgconfig'])
     AC_SUBST([pkgconfigdir], [${with_pkgconfigdir}])])
 
+if `$CC -v 2>&1 | grep 'gcc version' >/dev/null 2>&1`; then
+  case `$CC -dumpversion 2>/dev/null` in
+    [[0-3]].* | \
+    4.[[0-7]].*)
+      GCC_CFLAGS="$GCC_CFLAGS -Wno-type-limits"
+        ;;
+  esac
+fi
+
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AM_CONDITIONAL([DISABLE_TLS], [test x$enable_tls = xno])
 
@@ -124,6 +133,7 @@ AC_SUBST([PC_REQUIRES], [${PC_REQUIRES}])
 AC_SUBST([PC_CFLAGS], [${PC_CFLAGS}])
 AC_SUBST([PC_LIBS], [${PC_LIBS}])
 
+AC_SUBST(GCC_CFLAGS)
 AC_SUBST(PARSER_CFLAGS)
 AC_SUBST(PARSER_LIBS)
 AC_SUBST(RESOLV_LIBS)
