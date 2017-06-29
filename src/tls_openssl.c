@@ -57,6 +57,13 @@ void tls_initialize(void)
 
 void tls_shutdown(void)
 {
+    ERR_free_strings();
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
+#if OPENSSL_VERSION_NUMBER >= 0x10200000
+    SSL_COMP_free_compression_methods();
+#endif
+    ERR_remove_state(0);
     return;
 }
 
