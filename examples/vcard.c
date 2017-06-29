@@ -36,6 +36,7 @@ static void vcard_photo(vcard_t *vc, xmpp_stanza_t *stanza)
     char *copy;
     unsigned char *img;
     size_t img_size;
+    size_t written;
     FILE *fd;
 
     tmp = xmpp_stanza_get_child_by_name(stanza, "TYPE");
@@ -65,7 +66,9 @@ static void vcard_photo(vcard_t *vc, xmpp_stanza_t *stanza)
 
     fd = fopen(vc->img_path, "w");
     assert(fd != NULL);
-    fwrite(img, 1, img_size, fd);
+    written = fwrite(img, 1, img_size, fd);
+    if (written < img_size)
+        printf("Saving photo failed\n");
     fclose(fd);
 
     free(copy);
