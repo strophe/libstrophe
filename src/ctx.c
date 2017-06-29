@@ -450,6 +450,5 @@ void xmpp_ctx_free(xmpp_ctx_t * const ctx)
  */
 void xmpp_ctx_set_timeout(xmpp_ctx_t * const ctx, const unsigned long timeout)
 {
-  ctx->timeout = timeout;
+    ctx->timeout = timeout;
 }
-
