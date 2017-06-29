@@ -50,6 +50,8 @@ struct _xmpp_ctx_t {
     xmpp_rand_t *rand;
     xmpp_loop_status_t loop_status;
     xmpp_connlist_t *connlist;
+
+    unsigned long timeout;
 };
 
 

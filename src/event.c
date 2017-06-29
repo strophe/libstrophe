@@ -51,14 +51,6 @@
 #include "common.h"
 #include "parser.h"
 
-#ifndef DEFAULT_TIMEOUT
-/** @def DEFAULT_TIMEOUT
- *  The default timeout in milliseconds for the event loop.
- *  This is set to 1 millisecond.
- */
-#define DEFAULT_TIMEOUT 1
-#endif
-
 /** Run the event loop once.
  *  This function will run send any data that has been queued by
  *  xmpp_send and related functions and run through the Strophe even
@@ -333,7 +325,7 @@ void xmpp_run(xmpp_ctx_t *ctx)
 
     ctx->loop_status = XMPP_LOOP_RUNNING;
     while (ctx->loop_status == XMPP_LOOP_RUNNING) {
-        xmpp_run_once(ctx, DEFAULT_TIMEOUT);
+        xmpp_run_once(ctx, ctx->timeout);
     }
 
     /* make it possible to start event loop again */
