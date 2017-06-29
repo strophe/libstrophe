@@ -107,7 +107,7 @@ typedef struct _xmpp_handlist_t xmpp_handlist_t;
 struct _xmpp_handlist_t {
     /* common members */
     int user_handler;
-    void *handler;
+    int (*handler)();
     void *userdata;
     int enabled; /* handlers are added disabled and enabled after the
                   * handler chain is processed to prevent stanzas from

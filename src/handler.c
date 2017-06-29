@@ -229,7 +229,7 @@ static void _timed_handler_add(xmpp_conn_t * const conn,
 
     /* check if handler is already in the list */
     for (item = conn->timed_handlers; item; item = item->next) {
-        if (item->handler == (void *)handler && item->userdata == userdata) {
+        if (item->handler == handler && item->userdata == userdata) {
             xmpp_warn(conn->ctx, "xmpp", "Timed handler already exists.");
             break;
         }
@@ -241,7 +241,7 @@ static void _timed_handler_add(xmpp_conn_t * const conn,
     if (!item) return;
 
     item->user_handler = user_handler;
-    item->handler = (void *)handler;
+    item->handler = handler;
     item->userdata = userdata;
     item->enabled = 0;
     item->next = NULL;
@@ -277,7 +277,7 @@ void xmpp_timed_handler_delete(xmpp_conn_t * const conn,
     prev = NULL;
     item = conn->timed_handlers;
     while (item) {
-        if (item->handler == (void *)handler) {
+        if (item->handler == handler) {
             if (prev)
                 prev->next = item->next;
             else
@@ -302,7 +302,7 @@ static void _id_handler_add(xmpp_conn_t * const conn,
     /* check if handler is already in the list */
     item = (xmpp_handlist_t *)hash_get(conn->id_handlers, id);
     while (item) {
-        if (item->handler == (void *)handler && item->userdata == userdata) {
+        if (item->handler == handler && item->userdata == userdata) {
             xmpp_warn(conn->ctx, "xmpp", "Id handler already exists.");
             break;
         }
@@ -315,7 +315,7 @@ static void _id_handler_add(xmpp_conn_t * const conn,
     if (!item) return;
 
     item->user_handler = user_handler;
-    item->handler = (void *)handler;
+    item->handler = handler;
     item->userdata = userdata;
     item->enabled = 0;
     item->next = NULL;
@@ -358,7 +358,7 @@ void xmpp_id_handler_delete(xmpp_conn_t * const conn,
     while (item) {
         next = item->next;
 
-        if (item->handler == (void *)handler) {
+        if (item->handler == handler) {
             if (prev)
                 prev->next = next;
             else {
@@ -390,7 +390,7 @@ static void _handler_add(xmpp_conn_t * const conn,
     for (item = conn->handlers; item; item = item->next) {
         /* same handler function can process different stanzas and
            distinguish them according to userdata. */
-        if (item->handler == (void *)handler && item->userdata == userdata) {
+        if (item->handler == handler && item->userdata == userdata) {
             xmpp_warn(conn->ctx, "xmpp", "Stanza handler already exists.");
             break;
         }
@@ -402,7 +402,7 @@ static void _handler_add(xmpp_conn_t * const conn,
     if (!item) return;
 
     item->user_handler = user_handler;
-    item->handler = (void *)handler;
+    item->handler = handler;
     item->userdata = userdata;
     item->enabled = 0;
     item->next = NULL;
@@ -462,7 +462,7 @@ void xmpp_handler_delete(xmpp_conn_t * const conn,
     prev = NULL;
     item = conn->handlers;
     while (item) {
-        if (item->handler == (void *)handler) {
+        if (item->handler == handler) {
             if (prev)
                 prev->next = item->next;
             else
