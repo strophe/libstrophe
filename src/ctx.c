@@ -190,7 +190,6 @@ xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level)
 {
     /* clamp to the known range */
     if (level > XMPP_LEVEL_ERROR) level = XMPP_LEVEL_ERROR;
-    if (level < XMPP_LEVEL_DEBUG) level = XMPP_LEVEL_DEBUG;
 
     return (xmpp_log_t*)&_xmpp_default_loggers[level];
 }
