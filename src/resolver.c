@@ -431,7 +431,7 @@ static void netbuf_add_domain_name(unsigned char *buf, int buflen, int *offset,
 
 	*p++ = '\0';
 
-	*offset += p - start;
+	*offset += (int)(p - start);
 }
 
 static void netbuf_add_dnsquery_header(unsigned char *buf, int buflen, int *offset, struct dnsquery_header *header)
@@ -711,14 +711,14 @@ static int resolver_win32_srv_query(const char *fulldomain,
 		header.rd = 1;
 		header.qdcount = 1;
 
-		netbuf_add_dnsquery_header(buf, len, &offset, &header);
+		netbuf_add_dnsquery_header(buf, (int)len, &offset, &header);
 
 		memset(&question, 0, sizeof(question));
 		strncpy(question.qname, fulldomain, 1024);
 		question.qtype = 33; /* SRV */
 		question.qclass = 1; /* INTERNET! */
 
-		netbuf_add_dnsquery_question(buf, len, &offset, &question);
+		netbuf_add_dnsquery_question(buf, (int)len, &offset, &question);
 
 		insize = 0;
 		for (i = 0; i < numdnsservers && insize <= 0; i++)
@@ -736,7 +736,7 @@ static int resolver_win32_srv_query(const char *fulldomain,
 			sendto(sock, (char *)buf, offset, 0, (struct sockaddr *)&dnsaddr, addrlen);
 			for (j = 0; j < 50; j++)
 			{
-				insize = recvfrom(sock, (char *)buf, len, 0, (struct sockaddr *)&dnsaddr, &addrlen);
+				insize = recvfrom(sock, (char *)buf, (int)len, 0, (struct sockaddr *)&dnsaddr, &addrlen);
 				if (insize == SOCKET_ERROR)
 				{
 					if (sock_error() == WSAEWOULDBLOCK)
