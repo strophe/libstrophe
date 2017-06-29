@@ -1,4 +1,5 @@
 *.swp
+*.orig
 Makefile
 test-driver
 .libs
@@ -61,3 +62,6 @@ libstrophe.project
 libs/
 obj/
 expat/
+.settings/
+.project
+.cproject
