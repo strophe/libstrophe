@@ -116,11 +116,12 @@ static void _start_element(void *userdata,
 
     if (parser->depth == 0) {
         /* notify the owner */
-        if (parser->startcb)
+        if (parser->startcb) {
             cbattrs = _convert_attrs(parser, nattrs, attrs);
             parser->startcb((char *)name, cbattrs, 
                             parser->userdata);
             _free_cbattrs(parser, cbattrs);
+	}
     } else {
 	/* build stanzas at depth 1 */
 	if (!parser->stanza && parser->depth != 1) {
