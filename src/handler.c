@@ -627,7 +627,7 @@ void handler_system_delete_all(xmpp_conn_t *conn)
     xmpp_handlist_t *item, *next, *head, *head_old;
     hash_iterator_t *iter;
     const char *key;
-    char *key2;
+    char *key2 = NULL;
 
     /* TODO unify all kinds of handlers and avoid copy-paste below */
 
