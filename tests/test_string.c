@@ -79,7 +79,7 @@ static int test_strdup_one(xmpp_ctx_t *ctx, const char *s)
 static int test_strdup(void)
 {
     xmpp_ctx_t *ctx;
-    int i;
+    size_t i;
     int rc = 0;
 
     static const char *tests[] = { "", "\0", "test", "s p a c e", "\n\r" };

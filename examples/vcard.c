@@ -131,7 +131,7 @@ static vcard_cb_t vcard_cb_get(xmpp_stanza_t *stanza)
 {
     vcard_cb_t cb = NULL;
     const char *tag;
-    int i;
+    size_t i;
 
     static struct {
         const char *tag;

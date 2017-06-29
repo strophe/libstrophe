@@ -134,8 +134,7 @@ int main(int argc, char *argv[])
     unsigned char *udec;
     char *dec;
     char *enc;
-    size_t len;
-    int i;
+    size_t len, i;
 
     printf("BASE64 tests.\n");
 

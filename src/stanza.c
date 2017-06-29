@@ -431,7 +431,7 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza,
     ret = _render_stanza_recursive(stanza, buffer, length);
     if (ret < 0) return ret;
 
-    if (ret > length - 1) {
+    if ((size_t)ret > length - 1) {
 	tmp = xmpp_realloc(stanza->ctx, buffer, ret + 1);
 	if (!tmp) {
 	    xmpp_free(stanza->ctx, buffer);
@@ -443,7 +443,7 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza,
 	buffer = tmp;
 
 	ret = _render_stanza_recursive(stanza, buffer, length);
-	if (ret > length - 1) return XMPP_EMEM;
+	if ((size_t)ret > length - 1) return XMPP_EMEM;
     }
     
     buffer[length - 1] = 0;
