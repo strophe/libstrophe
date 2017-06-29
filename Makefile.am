@@ -3,6 +3,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -g -Wall
 
+GCC_CFLAGS=@GCC_CFLAGS@
+
 PARSER_CFLAGS=@PARSER_CFLAGS@
 PARSER_LIBS=@PARSER_LIBS@
 
@@ -17,7 +19,7 @@ STROPHE_LIBS = libstrophe.la
 ## Main build targets
 lib_LTLIBRARIES = libstrophe.la
 
-libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS)
+libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS) $(GCC_CFLAGS)
 libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(RESOLV_LIBS) -no-undefined
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
