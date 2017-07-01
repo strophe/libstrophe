@@ -686,4 +686,5 @@ void handler_system_delete_all(xmpp_conn_t *conn)
             xmpp_free(conn->ctx, key2);
         }
     }
+    if (iter) hash_iter_release(iter);
 }

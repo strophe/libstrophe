@@ -264,6 +264,8 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
             }
         }
 
+        _conn_reset(conn);
+
         /* free handler stuff
          * note that userdata is the responsibility of the client
          * and the handler pointers don't need to be freed since they
@@ -305,7 +307,6 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
         }
 
         parser_free(conn->parser);
-        _conn_reset(conn);
 
         if (conn->jid) xmpp_free(ctx, conn->jid);
         if (conn->pass) xmpp_free(ctx, conn->pass);
