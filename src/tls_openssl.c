@@ -101,8 +101,9 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (tls->ssl == NULL)
             goto err_free_ctx;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
         SSL_set_verify(tls->ssl, SSL_VERIFY_PEER, 0);
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+        /* Hostname verification is supported in OpenSSL 1.0.2 and newer. */
         X509_VERIFY_PARAM *param = SSL_get0_param(tls->ssl);
 
         /*
@@ -113,9 +114,6 @@ tls_t *tls_new(xmpp_conn_t *conn)
          */
         X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
         X509_VERIFY_PARAM_set1_host(param, conn->domain, 0);
-#else
-        /* Hostname verification is not supported before OpenSSL 1.0.2. */
-        SSL_set_verify(tls->ssl, SSL_VERIFY_NONE, 0);
 #endif
 
         ret = SSL_set_fd(tls->ssl, conn->sock);
@@ -151,6 +149,7 @@ int tls_start(tls_t *tls)
 {
     int error;
     int ret;
+    long x509_res;
 
     /* Since we're non-blocking, loop the connect call until it
        succeeds or fails */
@@ -167,8 +166,12 @@ int tls_start(tls_t *tls)
         /* success or fatal error */
         break;
     }
-    _tls_set_error(tls, error);
 
+    x509_res = SSL_get_verify_result(tls->ssl);
+    xmpp_debug(tls->ctx, "tls", "Certificate verification %s",
+               x509_res == X509_V_OK ? "passed" : "FAILED");
+
+    _tls_set_error(tls, error);
     return ret <= 0 ? 0 : 1;
 }
 
