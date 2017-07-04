@@ -117,7 +117,6 @@ typedef struct _xmpp_ctx_t xmpp_ctx_t;
 xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem, 
 			 const xmpp_log_t * const log);
 void xmpp_ctx_free(xmpp_ctx_t * const ctx);
-void xmpp_ctx_set_timeout(xmpp_ctx_t * const ctx, const unsigned long timeout);
 
 /* free some blocks returned by other APIs, for example the
    buffer you get from xmpp_stanza_to_text */
@@ -399,6 +398,7 @@ char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid);
 void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
+void xmpp_ctx_set_timeout(xmpp_ctx_t * const ctx, const unsigned long timeout);
 
 /* UUID */
 
