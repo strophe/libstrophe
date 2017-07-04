@@ -75,6 +75,7 @@ int tls_error(tls_t *tls)
 tls_t *tls_new(xmpp_conn_t *conn)
 {
     tls_t *tls = xmpp_alloc(conn->ctx, sizeof(*tls));
+    int mode;
 
     if (tls) {
         int ret;
@@ -86,7 +87,8 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (tls->ssl_ctx == NULL)
             goto err;
 
-        SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_ALL); /* Enable bug workarounds. */
+        /* Enable bug workarounds. */
+        SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_ALL);
 
         /* Disable insecure SSL/TLS versions. */
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv2); /* DROWN */
@@ -101,7 +103,9 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (tls->ssl == NULL)
             goto err_free_ctx;
 
-        SSL_set_verify(tls->ssl, SSL_VERIFY_PEER, 0);
+        /* Trust server's certificate when user sets the flag explicitly. */
+        mode = conn->tls_trust ? SSL_VERIFY_NONE : SSL_VERIFY_PEER;
+        SSL_set_verify(tls->ssl, mode, 0);
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
         /* Hostname verification is supported in OpenSSL 1.0.2 and newer. */
         X509_VERIFY_PARAM *param = SSL_get0_param(tls->ssl);
