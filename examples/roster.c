@@ -1,7 +1,7 @@
 /* roster.c
 ** libstrophe XMPP client library -- handler example
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -31,10 +31,10 @@ int handle_reply(xmpp_conn_t * const conn,
     else {
 	query = xmpp_stanza_get_child_by_name(stanza, "query");
 	printf("Roster:\n");
-	for (item = xmpp_stanza_get_children(query); item; 
+	for (item = xmpp_stanza_get_children(query); item;
 	     item = xmpp_stanza_get_next(item))
 	    if ((name = xmpp_stanza_get_attribute(item, "name")))
-		printf("\t %s (%s) sub=%s\n", 
+		printf("\t %s (%s) sub=%s\n",
 		       name,
 		       xmpp_stanza_get_attribute(item, "jid"),
 		       xmpp_stanza_get_attribute(item, "subscription"));
@@ -51,7 +51,7 @@ int handle_reply(xmpp_conn_t * const conn,
     return 0;
 }
 
-void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status, 
+void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 		  const int error, xmpp_stream_error_t * const stream_error,
 		  void * const userdata)
 {
@@ -60,7 +60,7 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 
     if (status == XMPP_CONN_CONNECT) {
 	fprintf(stderr, "DEBUG: connected\n");
-	
+
 	/* create iq stanza for request */
 	iq = xmpp_iq_new(ctx, "get", "roster1");
 

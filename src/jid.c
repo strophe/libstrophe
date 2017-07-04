@@ -1,7 +1,7 @@
 /* jid.c
 ** strophe XMPP client library -- helper functions for parsing JIDs
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -63,7 +63,7 @@ char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
 }
 
 /** Create a bare JID from a JID.
- *  
+ *
  *  @param ctx the Strophe context object
  *  @param jid the JID
  *
@@ -85,7 +85,7 @@ char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid)
 }
 
 /** Create a node string from a JID.
- *  
+ *
  *  @param ctx a Strophe context object
  *  @param jid the JID
  *
@@ -145,7 +145,7 @@ char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
  *  @param ctx a Strophe context object
  *  @param jid the JID
  *
- *  @return an allocated string with the resource or NULL if no resource 
+ *  @return an allocated string with the resource or NULL if no resource
  *      is found or an error occurs
  */
 char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid)

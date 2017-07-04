@@ -120,7 +120,7 @@ int xmpp_version_check(int major, int minor)
 /* We define the global default allocator, logger, and context here. */
 
 /* Wrap stdlib routines malloc, free, and realloc for default memory
- * management. 
+ * management.
  */
 static void *_malloc(const size_t size, void * const userdata)
 {

@@ -1,7 +1,7 @@
 /* test_ctx.c
 ** libstrophe XMPP client library -- test routines for the library run-time context
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -91,11 +91,11 @@ int main(int argc, char **argv)
     xmpp_ctx_free(ctx);
 
     /* check for test failure */
-    if (!(log_called && mem_alloc_called && mem_realloc_called && 
+    if (!(log_called && mem_alloc_called && mem_realloc_called &&
 	  mem_free_called))
 	return 1;
     if (mem_alloc_called != mem_free_called)
         return 1;
-    
+
     return 0;
 }

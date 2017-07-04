@@ -1,7 +1,7 @@
 /* check_parser.h
 ** strophe XMPP client library -- parser tests
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express or
 **  implied.
@@ -67,8 +67,8 @@ static void callbacks(void)
     int ret;
 
     ctx = xmpp_ctx_new(NULL, NULL);
-    parser = parser_new(ctx, 
-                        cbtest_handle_start, 
+    parser = parser_new(ctx,
+                        cbtest_handle_start,
                         cbtest_handle_end,
                         cbtest_handle_stanza, NULL);
 

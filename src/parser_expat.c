@@ -1,7 +1,7 @@
 /* parser.c
 ** strophe XMPP client library -- xml parser handlers and utility functions
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.

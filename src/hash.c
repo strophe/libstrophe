@@ -1,7 +1,7 @@
 /* hash.c
 ** strophe XMPP client library -- hash table implementation
-** 
-** Copyright (C) 2005-2009 Collecta, Inc. 
+**
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -44,7 +44,7 @@ struct _hash_iterator_t {
     hashentry_t *entry;
     int index;
 };
-   
+
 /** allocate and initialize a new hash table */
 hash_t *hash_new(xmpp_ctx_t * const ctx, const int size,
 		 hash_free_func free_func)
@@ -67,7 +67,7 @@ hash_t *hash_new(xmpp_ctx_t * const ctx, const int size,
 	/* give the caller a reference */
 	result->ref = 1;
     }
-    
+
     return result;
 }
 
@@ -84,7 +84,7 @@ void hash_release(hash_t * const table)
     xmpp_ctx_t *ctx = table->ctx;
     hashentry_t *entry, *next;
     int i;
-    
+
     if (table->ref > 1)
 	table->ref--;
     else {

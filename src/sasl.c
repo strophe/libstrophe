@@ -1,7 +1,7 @@
 /* sasl.c
 ** strophe XMPP client library -- SASL authentication helpers
-** 
-** Copyright (C) 2005-2009 Collecta, Inc. 
+**
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -43,7 +43,7 @@ char *sasl_plain(xmpp_ctx_t *ctx, const char *authid, const char *password) {
     size_t msglen;
     char *result = NULL;
     char *msg;
-    
+
     /* our message is Base64(authzid,\0,authid,\0,password)
        if there is no authzid, that field is left empty */
 
@@ -168,7 +168,7 @@ static void _digest_to_hex(const char *digest, char *hex)
 }
 
 /** append 'key="value"' to a buffer, growing as necessary */
-static char *_add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key, 
+static char *_add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key,
 		      char *buf, int *len, int quote)
 {
     int olen,nlen;
@@ -230,7 +230,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     char hex[32];
     char cnonce[13];
 
-    /* our digest response is 
+    /* our digest response is
 	Hex( KD( HEX(MD5(A1)),
 	  nonce ':' nc ':' cnonce ':' qop ':' HEX(MD5(A2))
 	))
@@ -271,7 +271,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     memcpy(value+5, domain, strlen(domain));
     value[5+strlen(domain)] = '\0';
     hash_add(table, "digest-uri", value);
-    
+
     /* generate response */
 
     /* construct MD5(node : realm : password) */
@@ -341,16 +341,16 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     /* construct reply */
     result = NULL;
     rlen = 0;
-    result = _add_key(ctx, table, "username", result, &rlen, 1); 
-    result = _add_key(ctx, table, "realm", result, &rlen, 1); 
-    result = _add_key(ctx, table, "nonce", result, &rlen, 1); 
-    result = _add_key(ctx, table, "cnonce", result, &rlen, 1); 
-    result = _add_key(ctx, table, "nc", result, &rlen, 0); 
-    result = _add_key(ctx, table, "qop", result, &rlen, 0); 
-    result = _add_key(ctx, table, "digest-uri", result, &rlen, 1); 
-    result = _add_key(ctx, table, "response", result, &rlen, 0); 
+    result = _add_key(ctx, table, "username", result, &rlen, 1);
+    result = _add_key(ctx, table, "realm", result, &rlen, 1);
+    result = _add_key(ctx, table, "nonce", result, &rlen, 1);
+    result = _add_key(ctx, table, "cnonce", result, &rlen, 1);
+    result = _add_key(ctx, table, "nc", result, &rlen, 0);
+    result = _add_key(ctx, table, "qop", result, &rlen, 0);
+    result = _add_key(ctx, table, "digest-uri", result, &rlen, 1);
+    result = _add_key(ctx, table, "response", result, &rlen, 0);
     result = _add_key(ctx, table, "charset", result, &rlen, 0);
- 
+
     xmpp_free(ctx, node);
     xmpp_free(ctx, domain);
     hash_release(table); /* also frees value strings */

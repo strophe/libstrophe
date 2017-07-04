@@ -57,7 +57,7 @@ struct _xmpp_ctx_t {
 
 /* convenience functions for accessing the context */
 void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size);
-void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p, 
+void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p,
                    const size_t size);
 char *xmpp_strdup(const xmpp_ctx_t * const ctx, const char * const s);
 
@@ -170,7 +170,7 @@ struct _xmpp_conn_t {
     int tls_legacy_ssl;
     int tls_trust;
     int tls_failed; /* set when tls fails, so we don't try again */
-    int sasl_support; /* if true, field is a bitfield of supported 
+    int sasl_support; /* if true, field is a bitfield of supported
                          mechanisms */
     int auth_legacy_enabled;
     int secured; /* set when stream is secured with TLS */
@@ -207,7 +207,7 @@ struct _xmpp_conn_t {
 
     /* user handlers only get called after authentication */
     int authenticated;
-    
+
     /* connection events handler */
     xmpp_conn_handler conn_handler;
     void *userdata;
@@ -238,7 +238,7 @@ struct _xmpp_stanza_t {
     xmpp_ctx_t *ctx;
 
     xmpp_stanza_type_t type;
-    
+
     xmpp_stanza_t *prev;
     xmpp_stanza_t *next;
     xmpp_stanza_t *children;

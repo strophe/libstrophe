@@ -1,7 +1,7 @@
 /* test_hash.c
 ** libstrophe XMPP client library -- self-test for the hash-table implementation
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.

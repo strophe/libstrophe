@@ -1,7 +1,7 @@
 /* tls_schannel.c
 ** strophe XMPP client library -- TLS abstraction schannel impl.
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -298,7 +298,7 @@ int tls_start(tls_t *tls)
 
 	    FD_ZERO(&fds);
 	    FD_SET(tls->sock, &fds);
-    
+
 	    select(tls->sock, &fds, NULL, NULL, &tv);
 	}
 
@@ -311,7 +311,7 @@ int tls_start(tls_t *tls)
 
 	    FD_ZERO(&fds);
 	    FD_SET(tls->sock, &fds);
-    
+
 	    select(tls->sock, &fds, NULL, NULL, &tv);
 
 	    inbytes = sock_read(tls->sock, p, tls->spi->cbMaxToken - len);

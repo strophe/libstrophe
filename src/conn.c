@@ -34,7 +34,7 @@
 #define DEFAULT_SEND_QUEUE_MAX 64
 #endif
 #ifndef DISCONNECT_TIMEOUT
-/** @def DISCONNECT_TIMEOUT 
+/** @def DISCONNECT_TIMEOUT
  *  The time to wait (in milliseconds) for graceful disconnection to
  *  complete before the connection is reset.  The default is 2 seconds.
  */
@@ -183,12 +183,12 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
             else conn->ctx->connlist = item;
         }
     }
-    
+
     return conn;
 }
 
 /** Clone a Strophe connection object.
- *  
+ *
  *  @param conn a Strophe connection object
  *
  *  @return the same conn object passed in with its reference count
@@ -336,7 +336,7 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
 }
 
 /** Get the JID which is or will be bound to the connection.
- *  
+ *
  *  @param conn a Strophe connection object
  *
  *  @return a string containing the full JID or NULL if it has not been set
@@ -399,7 +399,7 @@ const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn)
 /** Set the password used to authenticate the connection.
  *  If any password was previously set, it will be discarded.  The function
  *  will make a copy of the password string.
- * 
+ *
  *  @param conn a Strophe connection object
  *  @param pass the password
  *
@@ -413,9 +413,9 @@ void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass)
 
 /** Get the strophe context that the connection is associated with.
 *  @param conn a Strophe connection object
-* 
+*
 *  @return a Strophe context
-* 
+*
 *  @ingroup Connections
 */
 xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn)
@@ -428,7 +428,7 @@ xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn)
  *  process to the XMPP server, and notifications of connection state changes
  *  will be sent to the callback function.  The domain and port to connect to
  *  are usually determined by an SRV lookup for the xmpp-client service at
- *  the domain specified in the JID.  If SRV lookup fails, altdomain and 
+ *  the domain specified in the JID.  If SRV lookup fails, altdomain and
  *  altport will be used instead if specified.
  *
  *  @param conn a Strophe connection object
@@ -686,7 +686,7 @@ void conn_disconnect_clean(xmpp_conn_t * const conn)
  *
  *  @param conn a Strophe connection object
  */
-void conn_disconnect(xmpp_conn_t * const conn) 
+void conn_disconnect(xmpp_conn_t * const conn)
 {
     xmpp_debug(conn->ctx, "xmpp", "Closing socket.");
     conn->state = XMPP_STATE_DISCONNECTED;

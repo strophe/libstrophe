@@ -1,7 +1,7 @@
 /* test_sock.c
 ** libstrophe XMPP client library -- test routines for the socket abstraction
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.

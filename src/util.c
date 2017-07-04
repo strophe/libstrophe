@@ -1,7 +1,7 @@
 /* util.c
 ** strophe XMPP client library -- various utility functions
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -130,7 +130,7 @@ uint64_t time_elapsed(uint64_t t1, uint64_t t2)
 
 /** Disconnect the stream with a memory error.
  *  This is a convenience function used internally by various parts of
- *  the Strophe library for terminating the connection because of a 
+ *  the Strophe library for terminating the connection because of a
  *  memory error.
  *
  *  @param conn a Strophe connection object

@@ -1,7 +1,7 @@
 /* parser.c
 ** strophe XMPP client library -- xml parser handlers and utility functions
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -104,7 +104,7 @@ static void _free_cbattrs(parser_t *parser, char **attrs)
     xmpp_free(parser->ctx, attrs);
 }
 
-static void _start_element(void *userdata, 
+static void _start_element(void *userdata,
                            const xmlChar *name, const xmlChar *prefix,
                            const xmlChar *uri, int nnamespaces,
                            const xmlChar **namespaces, int nattrs,
@@ -118,7 +118,7 @@ static void _start_element(void *userdata,
         /* notify the owner */
         if (parser->startcb) {
             cbattrs = _convert_attrs(parser, nattrs, attrs);
-            parser->startcb((char *)name, cbattrs, 
+            parser->startcb((char *)name, cbattrs,
                             parser->userdata);
             _free_cbattrs(parser, cbattrs);
 	}
@@ -151,7 +151,7 @@ static void _start_element(void *userdata,
 
 	    /* add child to parent */
 	    xmpp_stanza_add_child(parser->stanza, child);
-	    
+
 	    /* the child is owned by the toplevel stanza now */
 	    xmpp_stanza_release(child);
 
@@ -259,13 +259,13 @@ int parser_reset(parser_t *parser)
 {
     if (parser->xmlctx)
         xmlFreeParserCtxt(parser->xmlctx);
-    if (parser->stanza) 
+    if (parser->stanza)
 	xmpp_stanza_release(parser->stanza);
 
     parser->stanza = NULL;
     parser->depth = 0;
 
-    parser->xmlctx = xmlCreatePushParserCtxt(&parser->handlers, 
+    parser->xmlctx = xmlCreatePushParserCtxt(&parser->handlers,
                                              parser, NULL, 0, NULL);
 
     return parser->xmlctx ? 1 : 0;

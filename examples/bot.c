@@ -1,7 +1,7 @@
 /* bot.c
 ** libstrophe XMPP client library -- basic usage example
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -10,7 +10,7 @@
 */
 
 /* simple bot example
-**  
+**
 ** This example was provided by Matthew Wild <mwild1@gmail.com>.
 **
 ** This bot responds to basic messages and iq version requests.
@@ -115,7 +115,7 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 }
 
 /* define a handler for connection events */
-void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status, 
+void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
                   const int error, xmpp_stream_error_t * const stream_error,
                   void * const userdata)
 {
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
     /* initiate connection */
     xmpp_connect_client(conn, NULL, 0, conn_handler, ctx);
 
-    /* enter the event loop - 
+    /* enter the event loop -
        our connect handler will trigger an exit */
     xmpp_run(ctx);
 

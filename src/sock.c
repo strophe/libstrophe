@@ -1,7 +1,7 @@
 /* sock.c
 ** strophe XMPP client library -- socket abstraction implementation
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -198,7 +198,7 @@ int sock_write(const sock_t sock, const void * const buff, const size_t len)
 int sock_is_recoverable(const int error)
 {
 #ifdef _WIN32
-    return (error == WSAEINTR || error == WSAEWOULDBLOCK || 
+    return (error == WSAEINTR || error == WSAEWOULDBLOCK ||
             error == WSAEINPROGRESS);
 #else
     return (error == EAGAIN || error == EINTR);

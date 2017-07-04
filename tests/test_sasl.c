@@ -1,7 +1,7 @@
 /* test_sasl.c
 ** libstrophe XMPP client library -- test routines for the SASL implementation
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -20,7 +20,7 @@ static const unsigned char jid[] = "foo@bar.com";
 static const char password[] = "secret";
 static const char response_plain[] = "AGZvb0BiYXIuY29tAHNlY3JldA==";
 
-static const char challenge_md5[] = 
+static const char challenge_md5[] =
   "cmVhbG09InNvbWVyZWFsbSIsbm9uY2U9Ik9BNk1HOXRFUUdtMmhoIixxb3A9ImF1dGgi"
   "LGNoYXJzZXQ9dXRmLTgsYWxnb3JpdGhtPW1kNS1zZXNzCg==";
 static const char response_md5[] =
@@ -85,13 +85,13 @@ int main(int argc, char *argv[])
     xmpp_ctx_t *ctx;
     int ret;
 
-    printf("allocating context... ");   
+    printf("allocating context... ");
     ctx = xmpp_ctx_new(NULL, NULL);
     if (ctx == NULL) printf("failed to create context\n");
     if (ctx == NULL) return -1;
     printf("ok.\n");
 
-    printf("testing SASL PLAIN... ");   
+    printf("testing SASL PLAIN... ");
     ret = test_plain(ctx);
     if (ret) printf("failed!\n");
     if (ret) return ret;
