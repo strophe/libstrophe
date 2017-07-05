@@ -187,6 +187,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
             break;
         case XMPP_STATE_CONNECTED:
             FD_SET(conn->sock, &rfds);
+            if (conn->send_queue_len > 0)
+                FD_SET(conn->sock, &wfds);
             break;
         case XMPP_STATE_DISCONNECTED:
             /* do nothing */
