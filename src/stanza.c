@@ -76,35 +76,27 @@ xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza)
 static int _stanza_copy_attributes(xmpp_stanza_t * dst,
                                    const xmpp_stanza_t * const src)
 {
-    hash_iterator_t *iter = NULL;
+    hash_iterator_t *iter;
     const char *key;
-    void *val;
+    const char *val;
+    int rc = XMPP_EOK;
 
-    dst->attributes = hash_new(src->ctx, 8, xmpp_free);
-    if (!dst->attributes)
-        return -1;
     iter = hash_iter_new(src->attributes);
-    if (!iter)
-        goto error;
-    while ((key = hash_iter_next(iter))) {
-        val = xmpp_strdup(src->ctx,
-                          (char *)hash_get(src->attributes, key));
-        if (!val)
-            goto error;
+    if (!iter) rc = XMPP_EMEM;
 
-        if (hash_add(dst->attributes, key, val)) {
-            xmpp_free(src->ctx, val);
-            goto error;
-        }
+    while (rc == XMPP_EOK && (key = hash_iter_next(iter))) {
+        val = hash_get(src->attributes, key);
+        if (!val) rc = XMPP_EINT;
+        if (rc == XMPP_EOK)
+            rc = xmpp_stanza_set_attribute(dst, key, val);
     }
     hash_iter_release(iter);
-    return 0;
 
-error:
-    if (iter != NULL)
-        hash_iter_release(iter);
-    hash_release(dst->attributes);
-    return -1;
+    if (rc != XMPP_EOK && dst->attributes) {
+        hash_release(dst->attributes);
+        dst->attributes = NULL;
+    }
+    return rc;
 }
 
 /** Copy a stanza and its children.
@@ -570,6 +562,7 @@ int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza,
 			      const char * const value)
 {
     char *val;
+    int rc;
 
     if (stanza->type != XMPP_STANZA_TAG) return XMPP_EINVOP;
 
@@ -584,7 +577,11 @@ int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza,
         return XMPP_EMEM;
     }
 
-    hash_add(stanza->attributes, key, val);
+    rc = hash_add(stanza->attributes, key, val);
+    if (rc < 0) {
+        xmpp_free(stanza->ctx, val);
+        return XMPP_EMEM;
+    }
 
     return XMPP_EOK;
 }
@@ -1047,7 +1044,12 @@ int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
  */
 xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza)
 {
-    xmpp_stanza_t *copy;
+    xmpp_stanza_t *copy = NULL;
+    const char *from;
+    int rc;
+
+    from = xmpp_stanza_get_from(stanza);
+    if (!from) goto copy_error;
 
     copy = xmpp_stanza_new(stanza->ctx);
     if (!copy) goto copy_error;
@@ -1060,12 +1062,14 @@ xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza)
     }
 
     if (stanza->attributes) {
-        if (_stanza_copy_attributes(copy, stanza) == -1)
+        if (_stanza_copy_attributes(copy, stanza) < 0)
             goto copy_error;
     }
 
-    xmpp_stanza_set_to(copy, xmpp_stanza_get_from(stanza));
+    xmpp_stanza_del_attribute(copy, "to");
     xmpp_stanza_del_attribute(copy, "from");
+    rc = xmpp_stanza_set_to(copy, from);
+    if (rc != XMPP_EOK) goto copy_error;
 
     return copy;
 
