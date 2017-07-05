@@ -76,6 +76,7 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
     xmpp_stanza_t *body, *reply;
     const char *type;
     char *intext, *replytext;
+    int quit = 0;
 
     body = xmpp_stanza_get_child_by_name(stanza, "body");
     if (body == NULL)
@@ -92,15 +93,24 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
     if (xmpp_stanza_get_type(reply) == NULL)
         xmpp_stanza_set_type(reply, "chat");
 
-    replytext = (char *) malloc(strlen(" to you too!") + strlen(intext) + 1);
-    strcpy(replytext, intext);
-    strcat(replytext, " to you too!");
+    if (strcmp(intext, "quit") == 0) {
+        replytext = strdup("bye!");
+        quit = 1;
+    } else {
+        replytext = (char *) malloc(strlen(" to you too!") + strlen(intext) + 1);
+        strcpy(replytext, intext);
+        strcat(replytext, " to you too!");
+    }
     xmpp_free(ctx, intext);
     xmpp_message_set_body(reply, replytext);
 
     xmpp_send(conn, reply);
     xmpp_stanza_release(reply);
     free(replytext);
+
+    if (quit)
+        xmpp_disconnect(conn);
+
     return 1;
 }
 
