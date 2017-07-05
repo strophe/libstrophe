@@ -91,12 +91,12 @@ void xmpp_shutdown(void)
 #define LIBXMPP_VERSION_MINOR (0)
 #endif
 
-#ifndef DEFAULT_TIMEOUT
-/** @def DEFAULT_TIMEOUT
+#ifndef EVENT_LOOP_DEFAULT_TIMEOUT
+/** @def EVENT_LOOP_DEFAULT_TIMEOUT
  *  The default timeout in milliseconds for the event loop.
- *  This is set to 1 millisecond.
+ *  This is set to 1 second.
  */
-#define DEFAULT_TIMEOUT 1
+#define EVENT_LOOP_DEFAULT_TIMEOUT 1000
 #endif
 
 /** Check that Strophe supports a specific API version.
@@ -417,7 +417,7 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem,
         ctx->connlist = NULL;
         ctx->loop_status = XMPP_LOOP_NOTSTARTED;
         ctx->rand = xmpp_rand_new(ctx);
-        ctx->timeout = DEFAULT_TIMEOUT;
+        ctx->timeout = EVENT_LOOP_DEFAULT_TIMEOUT;
         if (ctx->rand == NULL) {
             xmpp_free(ctx, ctx);
             ctx = NULL;
