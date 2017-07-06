@@ -26,6 +26,12 @@
 /* Use the Unit Separator to delimit namespace and name in our XML*/
 #define NAMESPACE_SEP ('\x1F')
 
+/* Allocate inner text by this number bytes more. Expat splits string
+ * "new\nline" into 3 strings: "new" "\n" "line". Expecting this pattern,
+ * we can leave few bytes in the inner_text for "\n". It should reduce
+ * number of re-allocations in 2 times for multi-line texts. */
+#define INNER_TEXT_PADDING 2
+
 struct _parser_t {
     xmpp_ctx_t *ctx;
     XML_Parser expat;
@@ -36,6 +42,10 @@ struct _parser_t {
     int depth;
     xmpp_stanza_t *stanza;
     char* inner_text;
+    /* number of allocated bytes */
+    int inner_text_size;
+    /* excluding terminal '\0' */
+    int inner_text_used;
 };
 
 /* return allocated string with the name from a delimited
@@ -93,6 +103,26 @@ static void _set_attributes(xmpp_stanza_t *stanza, const XML_Char **attrs)
     }
 }
 
+static void complete_inner_text(parser_t *parser)
+{
+    xmpp_stanza_t *stanza;
+
+    if (parser->inner_text) {
+        /* create and populate stanza */
+        stanza = xmpp_stanza_new(parser->ctx);
+        /* FIXME: disconnect on allocation error */
+        if (stanza) {
+            xmpp_stanza_set_text(stanza, parser->inner_text);
+            xmpp_stanza_add_child(parser->stanza, stanza);
+            xmpp_stanza_release(stanza);
+        }
+        xmpp_free(parser->ctx, parser->inner_text);
+        parser->inner_text = NULL;
+        parser->inner_text_size = 0;
+        parser->inner_text_used = 0;
+    }
+}
+
 static void _start_element(void *userdata,
                            const XML_Char *nsname,
                            const XML_Char **attrs)
@@ -126,6 +156,7 @@ static void _start_element(void *userdata,
                 xmpp_stanza_set_ns(child, ns);
 
             if (parser->stanza != NULL) {
+                complete_inner_text(parser);
                 xmpp_stanza_add_child(parser->stanza, child);
                 xmpp_stanza_release(child);
             }
@@ -142,7 +173,6 @@ static void _start_element(void *userdata,
 static void _end_element(void *userdata, const XML_Char *name)
 {
     parser_t *parser = (parser_t *)userdata;
-    xmpp_stanza_t *stanza;
 
     parser->depth--;
 
@@ -151,21 +181,9 @@ static void _end_element(void *userdata, const XML_Char *name)
         if (parser->endcb)
             parser->endcb((char *)name, parser->userdata);
     } else {
+        complete_inner_text(parser);
         if (parser->stanza->parent) {
             /* we're finishing a child stanza, so set current to the parent */
-            if (parser->inner_text) {
-                /* create and populate stanza */
-                stanza = xmpp_stanza_new(parser->ctx);
-                if (!stanza) {
-                /* FIXME: allocation error, disconnect */
-                    return;
-                }
-                xmpp_stanza_set_text(stanza, parser->inner_text);
-                xmpp_free(parser->ctx, parser->inner_text);
-                parser->inner_text = NULL;
-                xmpp_stanza_add_child(parser->stanza, stanza);
-                xmpp_stanza_release(stanza);
-            }
             parser->stanza = parser->stanza->parent;
         } else {
             if (parser->stanzacb)
@@ -180,26 +198,29 @@ static void _end_element(void *userdata, const XML_Char *name)
 static void _characters(void *userdata, const XML_Char *s, int len)
 {
     parser_t *parser = (parser_t *)userdata;
-    char* new_text;
-    int textlen;
+    char *p;
 
     if (parser->depth < 2) return;
 
-    if (!parser->inner_text) {
-        textlen = 0;
-    } else {
-        textlen = strlen(parser->inner_text);
+    /* Join all parts to a single resulting string. Stanza is created in
+     * _start_element() and _end_element(). */
+    if (parser->inner_text_used + len >= parser->inner_text_size) {
+        parser->inner_text_size = parser->inner_text_used + len + 1 +
+                                  INNER_TEXT_PADDING;
+        p = xmpp_realloc(parser->ctx, parser->inner_text,
+                         parser->inner_text_size);
+        if (p == NULL) {
+            xmpp_free(parser->ctx, parser->inner_text);
+            parser->inner_text = NULL;
+            parser->inner_text_used = 0;
+            parser->inner_text_size = 0;
+            return;
+        }
+        parser->inner_text = p;
+        parser->inner_text[parser->inner_text_used] = '\0';
     }
-
-    new_text = xmpp_realloc(parser->ctx, parser->inner_text, textlen+len+1);
-    if (!new_text) {
-        /* FIXME: allocation error, disconnect */
-        return;
-    }
-
-    parser->inner_text = new_text;
-    memcpy(parser->inner_text+textlen, s, len);
-    parser->inner_text[textlen+len] = '\0';
+    parser->inner_text_used += len;
+    strncat(parser->inner_text, s, len);
 }
 
 parser_t *parser_new(xmpp_ctx_t *ctx,
@@ -221,6 +242,8 @@ parser_t *parser_new(xmpp_ctx_t *ctx,
         parser->depth = 0;
         parser->stanza = NULL;
         parser->inner_text = NULL;
+        parser->inner_text_size = 0;
+        parser->inner_text_used = 0;
 
         parser_reset(parser);
     }
