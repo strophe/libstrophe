@@ -55,10 +55,7 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 	fprintf(stderr, "DEBUG: connected\n");
 	
 	/* create iq stanza for request */
-	iq = xmpp_stanza_new(ctx);
-	xmpp_stanza_set_name(iq, "iq");
-	xmpp_stanza_set_type(iq, "get");
-	xmpp_stanza_set_id(iq, "active1");
+	iq = xmpp_iq_new(ctx, "get", "active1");
 	xmpp_stanza_set_to(iq, "xxxxxxxxx.com");
 
 	query = xmpp_stanza_new(ctx);
