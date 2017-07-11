@@ -51,20 +51,34 @@ static void _tls_log_error(xmpp_ctx_t *ctx);
 
 void tls_initialize(void)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_library_init();
     SSL_load_error_strings();
+#else
+    OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
+#endif
 }
 
 void tls_shutdown(void)
 {
+    /*
+     * FIXME: Don't free global tables, program or other libraries may use
+     * openssl after libstrophe finalization. Maybe better leak some fixed
+     * memory rather than cause random crashes of the main program.
+     */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     ERR_free_strings();
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
-#if OPENSSL_VERSION_NUMBER >= 0x10200000
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
     SSL_COMP_free_compression_methods();
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x10000000L
     ERR_remove_state(0);
-    return;
+#else
+    ERR_remove_thread_state(NULL);
+#endif
+#endif
 }
 
 int tls_error(tls_t *tls)
