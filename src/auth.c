@@ -92,6 +92,9 @@ static int
 _handle_session(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata);
 static int _handle_missing_session(xmpp_conn_t *conn, void *userdata);
 static int _handle_missing_handshake(xmpp_conn_t *conn, void *userdata);
+static int _handle_sm(xmpp_conn_t *const conn,
+                      xmpp_stanza_t *const stanza,
+                      void *const userdata);
 
 /* stream:error handler */
 static int
@@ -908,6 +911,12 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                 ns != NULL && strcmp(ns, XMPP_NS_SESSION) == 0;
     }
 
+    opt = xmpp_stanza_get_child_by_ns(stanza, XMPP_NS_SM);
+    if (opt && strcmp(xmpp_stanza_get_name(opt), "sm") == 0) {
+        /* stream management supported */
+        conn->sm_support = 1;
+    }
+
     /* if bind is required, go ahead and start it */
     if (conn->bind_required) {
         /* bind resource */
@@ -997,7 +1006,7 @@ static int
 _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     const char *type;
-    xmpp_stanza_t *iq, *session;
+    xmpp_stanza_t *iq, *enable, *session, *binding, *jid_stanza;
 
     UNUSED(userdata);
 
@@ -1010,12 +1019,11 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         strophe_error(conn->ctx, "xmpp", "Binding failed.");
         xmpp_disconnect(conn);
     } else if (type && strcmp(type, "result") == 0) {
-        xmpp_stanza_t *binding = xmpp_stanza_get_child_by_name(stanza, "bind");
+        binding = xmpp_stanza_get_child_by_name(stanza, "bind");
         strophe_debug(conn->ctx, "xmpp", "Bind successful.");
 
         if (binding) {
-            xmpp_stanza_t *jid_stanza =
-                xmpp_stanza_get_child_by_name(binding, "jid");
+            jid_stanza = xmpp_stanza_get_child_by_name(binding, "jid");
             if (jid_stanza) {
                 conn->bound_jid = xmpp_stanza_get_text(jid_stanza);
             }
@@ -1051,7 +1059,23 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
             /* send session establishment request */
             xmpp_send(conn, iq);
             xmpp_stanza_release(iq);
-        } else {
+        }
+
+        if (conn->sm_support) {
+            enable = xmpp_stanza_new(conn->ctx);
+            if (!enable) {
+                disconnect_mem_error(conn);
+                return 0;
+            }
+            xmpp_stanza_set_name(enable, "enable");
+            xmpp_stanza_set_ns(enable, XMPP_NS_SM);
+            handler_add(conn, _handle_sm, XMPP_NS_SM, NULL, NULL, NULL);
+            xmpp_send(conn, enable);
+            xmpp_stanza_release(enable);
+            conn->sm_sent_nr = 0;
+        }
+
+        if (!conn->session_required) {
             _auth_success(conn);
         }
     } else {
@@ -1117,6 +1141,23 @@ static int _handle_missing_legacy(xmpp_conn_t *conn, void *userdata)
                   "Server did not reply to legacy "
                   "authentication request.");
     xmpp_disconnect(conn);
+    return 0;
+}
+
+static int _handle_sm(xmpp_conn_t *const conn,
+                      xmpp_stanza_t *const stanza,
+                      void *const userdata)
+{
+    const char *name;
+
+    name = xmpp_stanza_get_name(stanza);
+    if (name && strcmp(name, "enabled") == 0) {
+        conn->sm_enabled = 1;
+        conn->sm_handled_nr = 0;
+    } else {
+        conn->sm_enabled = 0;
+        strophe_warn(conn->ctx, "auth", "Stream management failed.");
+    }
     return 0;
 }
 

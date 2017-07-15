@@ -94,6 +94,8 @@ static void _conn_attributes_destroy(xmpp_conn_t *conn,
 static void _handle_stream_start(char *name, char **attrs, void *userdata);
 static void _handle_stream_end(char *name, void *userdata);
 static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *userdata);
+static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
+                                   xmpp_stanza_t *stanza);
 static unsigned short _conn_default_port(xmpp_conn_t *conn,
                                          xmpp_conn_type_t type);
 static void _conn_reset(xmpp_conn_t *conn);
@@ -189,6 +191,10 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
 
         conn->bind_required = 0;
         conn->session_required = 0;
+        conn->sm_support = 0;
+        conn->sm_enabled = 0;
+        conn->sm_handled_nr = 0;
+        conn->sm_sent_nr = 0;
 
         conn->parser =
             parser_new(conn->ctx, _handle_stream_start, _handle_stream_end,
@@ -1486,6 +1492,36 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *userdata)
     }
 
     handler_fire_stanza(conn, stanza);
+    if (conn->sm_enabled)
+        _conn_sm_handle_stanza(conn, stanza);
+}
+
+/* XEP-0198 stream management */
+static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
+                                   xmpp_stanza_t *stanza)
+{
+    xmpp_stanza_t *a;
+    const char *name;
+    const char *ns;
+    char h[11];
+
+    ns = xmpp_stanza_get_ns(stanza);
+    if (ns && strcmp(ns, XMPP_NS_SM) != 0)
+        ++conn->sm_handled_nr;
+    else {
+        name = xmpp_stanza_get_name(stanza);
+        if (name && strcmp(name, "r") == 0) {
+            a = xmpp_stanza_new(conn->ctx);
+            if (!a)
+                return; /* XXX */
+            xmpp_stanza_set_name(a, "a");
+            xmpp_stanza_set_ns(a, XMPP_NS_SM);
+            strophe_snprintf(h, sizeof(h), "%u", conn->sm_handled_nr);
+            xmpp_stanza_set_attribute(a, "h", h);
+            xmpp_send(conn, a);
+            xmpp_stanza_release(a);
+        }
+    }
 }
 
 static unsigned short _conn_default_port(xmpp_conn_t *conn,
@@ -1547,6 +1583,8 @@ static void _conn_reset(xmpp_conn_t *conn)
     conn->error = 0;
 
     conn->tls_support = 0;
+    conn->sm_support = 0;
+    conn->sm_enabled = 0;
     conn->bind_required = 0;
     conn->session_required = 0;
 
