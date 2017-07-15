@@ -722,14 +722,11 @@ static void _auth(xmpp_conn_t * const conn)
     } else if (conn->type == XMPP_CLIENT) {
 	/* legacy client authentication */
 
-	iq = xmpp_stanza_new(conn->ctx);
+	iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_auth1");
 	if (!iq) {
 	    disconnect_mem_error(conn);
 	    return;
 	}
-	xmpp_stanza_set_name(iq, "iq");
-	xmpp_stanza_set_type(iq, "set");
-	xmpp_stanza_set_id(iq, "_xmpp_auth1");
 
 	query = xmpp_stanza_new(conn->ctx);
 	if (!query) {
@@ -905,15 +902,11 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 			  BIND_TIMEOUT, NULL);
 
 	/* send bind request */
-	iq = xmpp_stanza_new(conn->ctx);
+	iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_bind1");
 	if (!iq) {
 	    disconnect_mem_error(conn);
 	    return 0;
 	}
-
-	xmpp_stanza_set_name(iq, "iq");
-	xmpp_stanza_set_type(iq, "set");
-	xmpp_stanza_set_id(iq, "_xmpp_bind1");
 
 	bind = xmpp_stanza_copy(bind);
 	if (!bind) {
@@ -1017,20 +1010,17 @@ static int _handle_bind(xmpp_conn_t * const conn,
 			      SESSION_TIMEOUT, NULL);
 
 	    /* send session request */
-	    iq = xmpp_stanza_new(conn->ctx);
+            iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_session1");
 	    if (!iq) {
 		disconnect_mem_error(conn);
 		return 0;
 	    }
 
-	    xmpp_stanza_set_name(iq, "iq");
-	    xmpp_stanza_set_type(iq, "set");
-	    xmpp_stanza_set_id(iq, "_xmpp_session1");
-
 	    session = xmpp_stanza_new(conn->ctx);
 	    if (!session) {
 		xmpp_stanza_release(iq);
 		disconnect_mem_error(conn);
+                return 0;
 	    }
 
 	    xmpp_stanza_set_name(session, "session");
