@@ -1222,6 +1222,10 @@ static void _conn_reset(xmpp_conn_t * const conn)
     conn->tls_failed = 0;
     conn->error = 0;
 
+    conn->tls_support = 0;
+    conn->bind_required = 0;
+    conn->session_required = 0;
+
     handler_system_delete_all(conn);
 }
 
