@@ -178,6 +178,10 @@ struct _xmpp_conn_t {
     /* if server returns <bind/> or <session/> we must do them */
     int bind_required;
     int session_required;
+    int sm_support;
+    int sm_enabled;
+    uint32_t sm_handled_nr;
+    uint32_t sm_sent_nr;
 
     char *lang;
     char *domain;
