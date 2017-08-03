@@ -319,12 +319,59 @@ int tls_start(tls_t *tls)
 
 	}
 
-	sbin[0].cbBuffer = len;
+    /* management of SEC_E_INCOMPLETE_MESSAGE event - start */
+    {
+    int numMissingBytes = 0;
+    int checkForFragmentPacket = 1;
+    while(checkForFragmentPacket)
+    {
+        sbin[0].cbBuffer = len;
 
-	ret = tls->sft->InitializeSecurityContextA(&(tls->hcred), &(tls->hctxt), name,
-					      ctxtreq, 0, 0, &sbdin, 0,
-					      &(tls->hctxt), &sbdout,
-					      &ctxtattr, NULL);
+        ret = tls->sft->InitializeSecurityContextA(&(tls->hcred), &(tls->hctxt), name,
+                              ctxtreq, 0, 0, &sbdin, 0,
+                              &(tls->hctxt), &sbdout,
+                              &ctxtattr, NULL);
+
+        checkForFragmentPacket = (ret == SEC_E_INCOMPLETE_MESSAGE) ? 1 : 0;
+
+        if(checkForFragmentPacket)
+        {
+            xmpp_debug(tls->ctx, "TLSS", "attempt to process the SEC_E_INCOMPLETE_MESSAGE event");
+            xmpp_debug(tls->ctx, "TLSS", "BufferType: 0x%lx", (unsigned long)sbdin.pBuffers->BufferType);
+            xmpp_debug(tls->ctx, "TLSS", "numMissingBytes: 0x%lx", (unsigned long)sbdin.pBuffers->cbBuffer);
+
+            numMissingBytes = sbdin.pBuffers->cbBuffer;
+
+            while (numMissingBytes > 0)
+            {
+                fd_set fds;
+                struct timeval tv;
+
+                tv.tv_sec = 0;
+                tv.tv_usec = 1000;
+
+                FD_ZERO(&fds);
+                FD_SET(tls->sock, &fds);
+
+                select(tls->sock, &fds, NULL, NULL, &tv);
+
+                numMissingBytes = sock_read(tls->sock, p, numMissingBytes);
+
+                if (numMissingBytes > 0)
+                {
+                    len += numMissingBytes;
+                    p += numMissingBytes;
+                }
+                else
+                {
+                    tls->lasterror = sock_error();
+                }
+            }
+        }
+    }
+    }
+    /* management of SEC_E_INCOMPLETE_MESSAGE event - end */
+						  
     }
 
     if (ret == SEC_E_OK) {
