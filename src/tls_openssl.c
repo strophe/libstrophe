@@ -278,6 +278,7 @@ static void _tls_sock_wait(tls_t *tls, int error)
 static void _tls_set_error(tls_t *tls, int error)
 {
     if (error != 0 && !tls_is_recoverable(error)) {
+        xmpp_debug(tls->ctx, "tls", "errno=%d", errno);
         _tls_log_error(tls->ctx);
     }
     tls->lasterror = error;
