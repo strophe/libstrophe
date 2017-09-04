@@ -517,7 +517,7 @@ static int resolver_win32_srv_query(const char *fulldomain,
                                     unsigned char *buf, size_t len)
 {
     int set = 0;
-    int insize;
+    int insize = 0;
 
     /* if dnsapi didn't work/isn't there, try querying the dns server manually */
     if (!set)

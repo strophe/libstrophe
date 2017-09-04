@@ -1218,3 +1218,120 @@ xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx)
 {
     return _stanza_new_with_attrs(ctx, "presence", NULL, NULL, NULL);
 }
+
+/** Create an <stream:error/> stanza object with given type and error text.
+ *  iError text are optional and may be NULL.
+ *
+ *  @param ctx a Strophe context object
+ *  @param type enum of xmpp_error_type_t 
+ *  @param text content of a 'text'
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type, char * const text)
+{
+	xmpp_stanza_t *error = _stanza_new_with_attrs(ctx, "stream:error", NULL, NULL, NULL);
+
+	xmpp_stanza_t *error_type = xmpp_stanza_new(ctx);
+	switch(type)
+	{
+		case XMPP_SE_BAD_FORMAT:
+			xmpp_stanza_set_name(error_type, "bad-format");
+			break;
+		case XMPP_SE_BAD_NS_PREFIX:
+			xmpp_stanza_set_name(error_type, "bad-namespace-prefix");
+			break;
+		case XMPP_SE_CONFLICT:
+			xmpp_stanza_set_name(error_type, "conflict");
+			break;
+		case XMPP_SE_CONN_TIMEOUT:
+			xmpp_stanza_set_name(error_type, "connection-timeout");
+			break;
+		case XMPP_SE_HOST_GONE:
+			xmpp_stanza_set_name(error_type, "host-gone");
+			break;
+		case XMPP_SE_HOST_UNKNOWN:
+			xmpp_stanza_set_name(error_type, "host-unknown");
+			break;
+		case XMPP_SE_IMPROPER_ADDR:
+			xmpp_stanza_set_name(error_type, "improper-addressing");
+			break;
+		case XMPP_SE_INTERNAL_SERVER_ERROR:
+			xmpp_stanza_set_name(error_type, "internal-server-error");
+			break;
+		case XMPP_SE_INVALID_FROM:
+			xmpp_stanza_set_name(error_type, "invalid-from");
+			break;
+		case XMPP_SE_INVALID_ID:
+			xmpp_stanza_set_name(error_type, "invalid-id");
+			break;
+		case XMPP_SE_INVALID_NS:
+			xmpp_stanza_set_name(error_type, "invalid-namespace");
+			break;
+		case XMPP_SE_INVALID_XML:
+			xmpp_stanza_set_name(error_type, "invalid-xml");
+			break;
+		case XMPP_SE_NOT_AUTHORIZED:
+			xmpp_stanza_set_name(error_type, "not-authorized");
+			break;
+		case XMPP_SE_POLICY_VIOLATION:
+			xmpp_stanza_set_name(error_type, "policy-violation");
+			break;
+		case XMPP_SE_REMOTE_CONN_FAILED:
+			xmpp_stanza_set_name(error_type, "remote-connection-failed");
+			break;
+		case XMPP_SE_RESOURCE_CONSTRAINT:
+			xmpp_stanza_set_name(error_type, "resource-constraint");
+			break;
+		case XMPP_SE_RESTRICTED_XML:
+			xmpp_stanza_set_name(error_type, "restricted-xml");
+			break;
+		case XMPP_SE_SEE_OTHER_HOST:
+			xmpp_stanza_set_name(error_type, "see-other-host");
+			break;
+		case XMPP_SE_SYSTEM_SHUTDOWN:
+			xmpp_stanza_set_name(error_type, "system-shutdown");
+			break;
+		case XMPP_SE_UNDEFINED_CONDITION:
+			xmpp_stanza_set_name(error_type, "undefined-condition");
+			break;
+		case XMPP_SE_UNSUPPORTED_ENCODING:
+			xmpp_stanza_set_name(error_type, "unsupported-encoding");
+			break;
+		case XMPP_SE_UNSUPPORTED_STANZA_TYPE:
+			xmpp_stanza_set_name(error_type, "unsupported-stanza-type");
+			break;
+		case XMPP_SE_UNSUPPORTED_VERSION:
+			xmpp_stanza_set_name(error_type, "unsupported-version");
+			break;
+		case XMPP_SE_XML_NOT_WELL_FORMED:
+			xmpp_stanza_set_name(error_type, "xml-not-well-formed");
+			break;
+		default:
+			xmpp_stanza_set_name(error_type, "internal-server-error");
+			break;
+	}
+
+	xmpp_stanza_set_ns(error_type, XMPP_NS_STREAMS_IETF);
+	xmpp_stanza_add_child(error, error_type);
+	xmpp_stanza_release(error_type);
+
+	if(text)
+	{
+		xmpp_stanza_t *error_text = xmpp_stanza_new(ctx);
+		xmpp_stanza_set_name(error_text, "text");
+		xmpp_stanza_set_ns(error_text, XMPP_NS_STREAMS_IETF);
+		xmpp_stanza_set_text(error_text, text);
+		xmpp_stanza_add_child(error, error_text);
+		xmpp_stanza_release(error_text);
+
+		xmpp_stanza_t *content = xmpp_stanza_new(ctx);
+        xmpp_stanza_set_text(content, text);
+        xmpp_stanza_add_child(error_text, content);
+        xmpp_stanza_release(content);
+    }
+
+    return error;
+}

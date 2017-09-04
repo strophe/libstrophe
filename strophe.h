@@ -217,6 +217,7 @@ typedef void (*xmpp_conn_handler)(xmpp_conn_t * const conn,
 				  xmpp_stream_error_t * const stream_error,
 				  void * const userdata);
 
+void xmpp_send_error(xmpp_conn_t * const conn, xmpp_error_type_t const type, char * const text);
 xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx);
 xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn);
 int xmpp_conn_release(xmpp_conn_t * const conn);
@@ -381,6 +382,7 @@ int xmpp_message_set_body(xmpp_stanza_t *msg, const char * const text);
 xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char * const type,
                            const char * const id);
 xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx);
+xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type, char * const text);
 
 /* jid */
 

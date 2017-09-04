@@ -73,6 +73,15 @@ static int _conn_connect(xmpp_conn_t * const conn,
                          xmpp_conn_handler callback,
                          void * const userdata);
 
+void xmpp_send_error(xmpp_conn_t * const conn, xmpp_error_type_t const type, char * const text)
+{
+    xmpp_stanza_t *error = xmpp_error_new(conn->ctx, type, text);
+
+    xmpp_send(conn, error);
+
+    xmpp_stanza_release(error);
+}
+
 /** Create a new Strophe connection object.
  *
  *  @param ctx a Strophe context object

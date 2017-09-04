@@ -262,10 +262,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
                 if (ret > 0) {
                     ret = parser_feed(conn->parser, buf, ret);
                     if (!ret) {
-                        /* parse error, we need to shut down */
-                        /* FIXME */
-                        xmpp_debug(ctx, "xmpp", "parse error, disconnecting");
-                        conn_disconnect(conn);
+                        xmpp_debug(ctx, "xmpp", "parse error [%s]", buf);
+                        xmpp_send_error(conn, XMPP_SE_INVALID_XML, "parse error");
                     }
                 } else {
                     if (conn->tls) {

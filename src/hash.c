@@ -241,7 +241,7 @@ void hash_iter_release(hash_iterator_t *iter)
 
     iter->ref--;
 
-    if (iter->ref <= 0) {
+    if (iter->ref == 0) { // ref is unsigned!!!
 	hash_release(iter->table);
 	xmpp_free(ctx, iter);
     }
