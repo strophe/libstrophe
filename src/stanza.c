@@ -1321,14 +1321,14 @@ xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type, cha
         xmpp_stanza_t *error_text = xmpp_stanza_new(ctx);
         xmpp_stanza_set_name(error_text, "text");
         xmpp_stanza_set_ns(error_text, XMPP_NS_STREAMS_IETF);
-        xmpp_stanza_set_text(error_text, text);
-        xmpp_stanza_add_child(error, error_text);
-        xmpp_stanza_release(error_text);
 
         xmpp_stanza_t *content = xmpp_stanza_new(ctx);
         xmpp_stanza_set_text(content, text);
         xmpp_stanza_add_child(error_text, content);
         xmpp_stanza_release(content);
+
+        xmpp_stanza_add_child(error, error_text);
+        xmpp_stanza_release(error_text);
     }
 
     return error;
