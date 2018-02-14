@@ -20,6 +20,16 @@
 
 #include "test.h" /* ARRAY_SIZE */
 
+/* strtok_s() has appeared in visual studio 2005.
+   Use own implementation for older versions. */
+#ifdef _MSC_VER
+# if (_MSC_VER >= 1400)
+# define strtok_r strtok_s
+# else
+# define strtok_r xmpp_strtok_r
+# endif
+#endif /* _MSC_VER */
+
 static int test_strtok_r(void)
 {
     const char *test = "-abc-=-def--";
