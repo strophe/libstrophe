@@ -209,6 +209,14 @@ int tls_stop(tls_t *tls)
         }
         _tls_sock_wait(tls, error);
     }
+    if (error == SSL_ERROR_SYSCALL && errno == 0) {
+        /*
+         * Handle special case when peer closes connection instead of
+         * proper shutdown.
+         */
+        error = 0;
+        ret = 1;
+    }
     _tls_set_error(tls, error);
 
     return ret <= 0 ? 0 : 1;
@@ -260,6 +268,8 @@ static void _tls_sock_wait(tls_t *tls, int error)
     int nfds;
     int ret;
 
+    if (error == SSL_ERROR_NONE) return;
+
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
     if (error == SSL_ERROR_WANT_READ)
@@ -278,7 +288,7 @@ static void _tls_sock_wait(tls_t *tls, int error)
 static void _tls_set_error(tls_t *tls, int error)
 {
     if (error != 0 && !tls_is_recoverable(error)) {
-        xmpp_debug(tls->ctx, "tls", "errno=%d", errno);
+        xmpp_debug(tls->ctx, "tls", "error=%d errno=%d", error, errno);
         _tls_log_error(tls->ctx);
     }
     tls->lasterror = error;
