@@ -249,6 +249,8 @@ void parser_free(parser_t *parser)
 {
     if (parser->xmlctx)
         xmlFreeParserCtxt(parser->xmlctx);
+    if (parser->stanza)
+        xmpp_stanza_release(parser->stanza);
     xmpp_free(parser->ctx, parser);
 }
 
@@ -257,18 +259,16 @@ int parser_reset(parser_t *parser)
 {
     if (parser->xmlctx)
         xmlFreeParserCtxt(parser->xmlctx);
-
     if (parser->stanza) 
 	xmpp_stanza_release(parser->stanza);
 
+    parser->stanza = NULL;
+    parser->depth = 0;
+
     parser->xmlctx = xmlCreatePushParserCtxt(&parser->handlers, 
                                              parser, NULL, 0, NULL);
-    if (!parser->xmlctx) return 0;
 
-    parser->depth = 0;
-    parser->stanza = NULL;
-
-    return 1;
+    return parser->xmlctx ? 1 : 0;
 }
 
 /* feed a chunk of data to the parser */
