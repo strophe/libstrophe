@@ -550,7 +550,7 @@ static int resolver_win32_srv_query(const char *fulldomain,
 				char buffer[65535];
 
 				len = 65535;
-				fi = buffer;
+				fi = (FIXED_INFO *)buffer;
 
 				if ((error = pGetNetworkParams(fi, &len)) == ERROR_SUCCESS)
 				{
