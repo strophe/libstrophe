@@ -8,6 +8,9 @@
 	  userdata
 	- System handlers are deleted on xmpp_conn_t reconnection. Old system
 	  handlers could cause problems
+	- Default timeout for xmpp_run() is increased from 1 millisecond to 1
+	  second in order to reduce CPU consumption
+	- Reduced memory usage in expat module
 	- New functions:
 		- xmpp_ctx_set_timeout()
 		- xmpp_sha1_digest()
