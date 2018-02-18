@@ -264,7 +264,8 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx, const char *challenge,
     xmpp_rand_nonce(ctx->rand, cnonce, sizeof(cnonce));
     hash_add(table, "cnonce", xmpp_strdup(ctx, cnonce));
     hash_add(table, "nc", xmpp_strdup(ctx, "00000001"));
-    hash_add(table, "qop", xmpp_strdup(ctx, "auth"));
+    if (hash_get(table, "qop") == NULL)
+        hash_add(table, "qop", xmpp_strdup(ctx, "auth"));
     value = xmpp_alloc(ctx, 5 + strlen(domain) + 1);
     memcpy(value, "xmpp/", 5);
     memcpy(value+5, domain, strlen(domain));
