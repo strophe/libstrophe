@@ -1220,7 +1220,7 @@ xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx)
 }
 
 /** Create an <stream:error/> stanza object with given type and error text.
- *  iError text are optional and may be NULL.
+ *  The error text is optional and may be NULL.
  *
  *  @param ctx a Strophe context object
  *  @param type enum of xmpp_error_type_t
@@ -1228,9 +1228,12 @@ xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx)
  *
  *  @return a new Strophe stanza object
  *
+ *  @todo Handle errors in this function
+ *
  *  @ingroup Stanza
  */
-xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type, char * const text)
+xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type,
+                              const char * const text)
 {
     xmpp_stanza_t *error = _stanza_new_with_attrs(ctx, "stream:error", NULL, NULL, NULL);
     xmpp_stanza_t *error_type = xmpp_stanza_new(ctx);
@@ -1319,10 +1322,11 @@ xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type, cha
 
     if (text) {
         xmpp_stanza_t *error_text = xmpp_stanza_new(ctx);
+        xmpp_stanza_t *content = xmpp_stanza_new(ctx);
+
         xmpp_stanza_set_name(error_text, "text");
         xmpp_stanza_set_ns(error_text, XMPP_NS_STREAMS_IETF);
 
-        xmpp_stanza_t *content = xmpp_stanza_new(ctx);
         xmpp_stanza_set_text(content, text);
         xmpp_stanza_add_child(error_text, content);
         xmpp_stanza_release(content);

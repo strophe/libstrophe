@@ -382,7 +382,8 @@ int xmpp_message_set_body(xmpp_stanza_t *msg, const char * const text);
 xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char * const type,
                            const char * const id);
 xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx);
-xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type, char * const text);
+xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type,
+                              const char * const text);
 
 /* jid */
 
