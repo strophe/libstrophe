@@ -11,7 +11,7 @@ SSL_LIBS = @openssl_LIBS@
 
 RESOLV_LIBS = @RESOLV_LIBS@
 
-STROPHE_FLAGS = -I$(top_srcdir) -Wall -Wextra -Werror -Wno-unused-parameter
+STROPHE_FLAGS = -I$(top_srcdir) -Wall -Wextra -Wno-unused-parameter
 STROPHE_LIBS = libstrophe.la
 
 ## Main build targets
