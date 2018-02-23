@@ -844,10 +844,9 @@ void xmpp_send(xmpp_conn_t * const conn,
 {
     char *buf;
     size_t len;
-    int ret;
 
     if (conn->state == XMPP_STATE_CONNECTED) {
-        if ((ret = xmpp_stanza_to_text(stanza, &buf, &len)) == 0) {
+        if (xmpp_stanza_to_text(stanza, &buf, &len) == 0) {
             xmpp_send_raw(conn, buf, len);
             xmpp_debug(conn->ctx, "conn", "SENT: %s", buf);
             xmpp_free(conn->ctx, buf);
