@@ -888,8 +888,10 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 
     session = xmpp_stanza_get_child_by_name(stanza, "session");
     if (session && strcmp(xmpp_stanza_get_ns(session), XMPP_NS_SESSION) == 0) {
-	/* session establishment required */
-	conn->session_required = 1;
+	/* session establishment might be required */
+	xmpp_stanza_t *opt = xmpp_stanza_get_child_by_name(session, "optional");
+	if (!opt)
+	    conn->session_required = 1;
     }
 
     /* if bind is required, go ahead and start it */
