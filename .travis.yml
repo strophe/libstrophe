@@ -1,7 +1,7 @@
 language: c
 install:
     - sudo apt-get update
-    - sudo apt-get -y install libtool pkg-config libexpat1-dev libxml2-dev libssl-dev check
+    - sudo apt-get -y install libtool pkg-config libexpat1-dev libxml2-dev libssl-dev
 before_script:
     - ./bootstrap.sh
 script:
