@@ -809,10 +809,11 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t * const stanza,
                                            const char * const ns)
 {
     xmpp_stanza_t *child;
+    const char *child_ns;
 
     for (child = stanza->children; child; child = child->next) {
-        if (xmpp_stanza_get_ns(child) &&
-            strcmp(ns, xmpp_stanza_get_ns(child)) == 0)
+        child_ns = xmpp_stanza_get_ns(child);
+        if (child_ns && strcmp(ns, child_ns) == 0)
             break;
     }
     
