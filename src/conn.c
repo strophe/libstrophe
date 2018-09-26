@@ -713,7 +713,7 @@ void conn_parser_reset(xmpp_conn_t * const conn)
 /** Initiate termination of the connection to the XMPP server.
  *  This function starts the disconnection sequence by sending
  *  </stream:stream> to the XMPP server.  This function will do nothing
- *  if the connection state is CONNECTING or CONNECTED.
+ *  if the connection state is different from CONNECTING or CONNECTED.
  *
  *  @param conn a Strophe connection object
  *
