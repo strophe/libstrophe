@@ -36,7 +36,7 @@ xmpp_rand_t *xmpp_rand_new(xmpp_ctx_t *ctx);
  */
 void xmpp_rand_free(xmpp_ctx_t *ctx, xmpp_rand_t *rand);
 
-/** Generate random integer
+/** Generate random integer.
  *  Analogue of rand(3).
  *
  *  @ingroup Random
