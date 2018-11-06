@@ -48,6 +48,7 @@ enum {
 static void _tls_sock_wait(tls_t *tls, int error);
 static void _tls_set_error(tls_t *tls, int error);
 static void _tls_log_error(xmpp_ctx_t *ctx);
+static void _tls_dump_cert_info(tls_t *tls);
 
 void tls_initialize(void)
 {
@@ -188,6 +189,7 @@ int tls_start(tls_t *tls)
     x509_res = SSL_get_verify_result(tls->ssl);
     xmpp_debug(tls->ctx, "tls", "Certificate verification %s",
                x509_res == X509_V_OK ? "passed" : "FAILED");
+    _tls_dump_cert_info(tls);
 
     _tls_set_error(tls, error);
     return ret <= 0 ? 0 : 1;
@@ -306,4 +308,27 @@ static void _tls_log_error(xmpp_ctx_t *ctx)
             xmpp_debug(ctx, "tls", "%s", buf);
         }
     } while (e != 0);
+}
+
+static void _tls_dump_cert_info(tls_t *tls)
+{
+    X509 *cert;
+    char *name;
+
+    cert = SSL_get_peer_certificate(tls->ssl);
+    if (cert == NULL)
+        xmpp_debug(tls->ctx, "tls", "Certificate was not presented by peer");
+    else {
+        name = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
+        if (name != NULL) {
+            xmpp_debug(tls->ctx, "tls", "Subject=%s", name);
+            OPENSSL_free(name);
+        }
+        name = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
+        if (name != NULL) {
+            xmpp_debug(tls->ctx, "tls", "Issuer=%s", name);
+            OPENSSL_free(name);
+        }
+        X509_free(cert);
+    }
 }
