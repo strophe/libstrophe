@@ -5,7 +5,7 @@ install:
 before_script:
     - ./bootstrap.sh
 script:
-    - ./configure ${CONFIGURE_OPT} && make && make check-TESTS
+    - ./configure ${CONFIGURE_OPT} CFLAGS="-Werror" && make && make check
 env:
     - CONFIGURE_OPT="--without-libxml2"
     - CONFIGURE_OPT="--with-libxml2"
