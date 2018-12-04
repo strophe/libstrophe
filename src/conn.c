@@ -1210,6 +1210,9 @@ static void _conn_reset(xmpp_conn_t * const conn)
         xmpp_free(ctx, tsq->data);
         xmpp_free(ctx, tsq);
     }
+    conn->send_queue_head = NULL;
+    conn->send_queue_tail = NULL;
+    conn->send_queue_len = 0;
 
     if (conn->stream_error) {
         xmpp_stanza_release(conn->stream_error->stanza);
