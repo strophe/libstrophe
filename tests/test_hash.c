@@ -16,18 +16,19 @@
 #include "strophe.h"
 #include "common.h"
 #include "hash.h"
+#include "test.h"
 
 #define TABLESIZE 100
 #define TESTSIZE 500
 
 /* static test data */
-const int nkeys = 5;
 const char *keys[] = {
   "foo", "bar", "baz", "quux", "xyzzy"
 };
 const char *values[] = {
   "wuzzle", "mug", "canonical", "rosebud", "lottery"
 };
+const int nkeys = ARRAY_SIZE(keys);
 
 int main(int argc, char **argv)
 {
@@ -58,7 +59,7 @@ int main(int argc, char **argv)
     }
 
     /* allocate a hash table */
-    table = hash_new(ctx, TABLESIZE, NULL);
+    table = hash_new(ctx, TABLESIZE, xmpp_free);
     if (table == NULL) {
 	/* table allocation failed! */
 	return 1;
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
 
     /* test insertion */
     for (i = 0; i < nkeys; i++) {
-	err = hash_add(table, keys[i], (void*)values[i]);
+	err = hash_add(table, keys[i], xmpp_strdup(ctx, values[i]));
 	if (err) return err;
     }
 
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
 
     /* test replacing old values */
     for (i = 0; i < nkeys; i++) {
-        err = hash_add(table, keys[0], (void*)values[i]);
+        err = hash_add(table, keys[0], xmpp_strdup(ctx, values[i]));
         if (err) return err;
         if (hash_num_keys(table) != nkeys) return 1;
         result = hash_get(table, keys[0]);
@@ -86,7 +87,7 @@ int main(int argc, char **argv)
         if (strcmp(result, values[i]) != 0) return 1;
     }
     /* restore value for the 1st key */
-    hash_add(table, keys[0], (void*)values[0]);
+    hash_add(table, keys[0], xmpp_strdup(ctx, values[0]));
 
     /* test cloning */
     clone = hash_clone(table);

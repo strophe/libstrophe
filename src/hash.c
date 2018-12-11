@@ -163,6 +163,8 @@ int hash_add(hash_t *table, const char * const key, void *data)
       entry->next = table->entries[table_index];
       table->entries[table_index] = entry;
       table->num_keys++;
+   } else {
+      if (table->free) table->free(ctx, entry->value);
    }
 
    entry->value = data;
