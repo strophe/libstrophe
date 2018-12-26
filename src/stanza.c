@@ -344,10 +344,16 @@ static int _render_stanza_recursive(xmpp_stanza_t *stanza,
                 }
                 tmp = _escape_xml(stanza->ctx,
                     (char *)hash_get(stanza->attributes, key));
-                if (tmp == NULL) return XMPP_EMEM;
+                if (tmp == NULL) {
+                    hash_iter_release(iter);
+                    return XMPP_EMEM;
+                }
                 ret = xmpp_snprintf(ptr, left, " %s=\"%s\"", key, tmp);
                 xmpp_free(stanza->ctx, tmp);
-                if (ret < 0) return XMPP_EMEM;
+                if (ret < 0) {
+                    hash_iter_release(iter);
+                    return XMPP_EMEM;
+                }
                 _render_update(&written, buflen, ret, &left, &ptr);
             }
             hash_iter_release(iter);
@@ -421,7 +427,12 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza,
     }
 
     ret = _render_stanza_recursive(stanza, buffer, length);
-    if (ret < 0) return ret;
+    if (ret < 0) {
+        xmpp_free(stanza->ctx, buffer);
+        *buf = NULL;
+        *buflen = 0;
+        return ret;
+    }
 
     if ((size_t)ret > length - 1) {
         tmp = xmpp_realloc(stanza->ctx, buffer, ret + 1);
@@ -435,7 +446,12 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza,
         buffer = tmp;
 
         ret = _render_stanza_recursive(stanza, buffer, length);
-        if ((size_t)ret > length - 1) return XMPP_EMEM;
+        if ((size_t)ret > length - 1) {
+            xmpp_free(stanza->ctx, buffer);
+            *buf = NULL;
+            *buflen = 0;
+            return XMPP_EMEM;
+        }
     }
     
     buffer[length - 1] = 0;
