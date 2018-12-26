@@ -589,7 +589,6 @@ int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza,
 
     val = xmpp_strdup(stanza->ctx, value);
     if (!val) {
-        hash_release(stanza->attributes);
         return XMPP_EMEM;
     }
 
