@@ -137,7 +137,7 @@ static void _start_element(void *userdata,
     if (parser->depth == 0) {
         /* notify the owner */
         if (parser->startcb)
-            parser->startcb((char *)name, (char **)attrs, 
+            parser->startcb(name, (char **)attrs,
                             parser->userdata);
     } else {
         /* build stanzas at depth 1 */
