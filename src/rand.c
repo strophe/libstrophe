@@ -127,9 +127,11 @@ static void Hash_DRBG_Instantiate(Hash_DRBG_CTX *ctx,
 
     assert(entropy_input_len <= ENTROPY_MAX);
     assert(nonce_len <= NONCE_MAX);
+    assert(nonce != NULL || nonce_len == 0);
 
     memcpy(seed_material, entropy_input, entropy_input_len);
-    memcpy(seed_material + entropy_input_len, nonce, nonce_len);
+    if (nonce != NULL)
+        memcpy(seed_material + entropy_input_len, nonce, nonce_len);
     Hash_df(seed_material, entropy_input_len + nonce_len, seed, seedlen);
     seed0[0] = 0;
 
