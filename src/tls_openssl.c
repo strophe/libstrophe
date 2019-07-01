@@ -201,6 +201,11 @@ int tls_stop(tls_t *tls)
     int error;
     int ret;
 
+    /* According to OpenSSL.org, we must not call SSL_shutdown(3)
+       if a previous fatal error has occurred on a connection. */
+    if (tls->lasterror == SSL_ERROR_SYSCALL || tls->lasterror == SSL_ERROR_SSL)
+        return 1;
+
     while (1) {
         ++retries;
         ret = SSL_shutdown(tls->ssl);
