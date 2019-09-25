@@ -1,3 +1,9 @@
+0.9.3
+	- Session is not established if it is optional
+	- Fixed a bug causing a reused connection not to cleanup properly
+	- Improved debug logging in OpenSSL module
+	- Few memory leaks fixed
+
 0.9.2
 	- OpenSSL tls module verifies certificate by default. Set flag
 	  XMPP_CONN_FLAG_TRUST_TLS to ignore result of the verification
