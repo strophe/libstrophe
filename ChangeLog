@@ -12,6 +12,8 @@
 	  second in order to reduce CPU consumption
 	- Reduced memory usage in expat module
 	- New functions:
+		- xmpp_error_new()
+		- xmpp_send_error()
 		- xmpp_ctx_set_timeout()
 		- xmpp_sha1_digest()
 
