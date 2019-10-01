@@ -259,6 +259,10 @@ static int _handle_features(xmpp_conn_t * const conn,
 	}
     }
 
+    /* Disable PLAIN when other secure mechanisms are supported */
+    if (conn->sasl_support & ~(SASL_MASK_PLAIN | SASL_MASK_ANONYMOUS))
+        conn->sasl_support &= ~SASL_MASK_PLAIN;
+
     _auth(conn);
 
     return 0;
