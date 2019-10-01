@@ -61,6 +61,7 @@
 #endif
 
 static void _auth(xmpp_conn_t * const conn);
+static void _auth_legacy(xmpp_conn_t *conn);
 static void _handle_open_sasl(xmpp_conn_t * const conn);
 static void _handle_open_tls(xmpp_conn_t * const conn);
 
@@ -69,11 +70,6 @@ static int _handle_component_hs_response(xmpp_conn_t * const conn,
             xmpp_stanza_t * const stanza,
             void * const userdata);
 
-static int _handle_missing_legacy(xmpp_conn_t * const conn,
-				  void * const userdata);
-static int _handle_legacy(xmpp_conn_t * const conn,
-			  xmpp_stanza_t * const stanza,
-			  void * const userdata);
 static int _handle_features_sasl(xmpp_conn_t * const conn,
 				 xmpp_stanza_t * const stanza,
 				 void * const userdata);
@@ -557,9 +553,11 @@ static xmpp_stanza_t *_make_sasl_auth(xmpp_conn_t * const conn,
  */
 static void _auth(xmpp_conn_t * const conn)
 {
-    xmpp_stanza_t *auth, *authdata, *query, *child, *iq;
-    char *str, *authid;
+    xmpp_stanza_t *auth;
+    xmpp_stanza_t *authdata;
+    char *authid;
     char *scram_init;
+    char *str;
     int anonjid;
 
     /* if there is no node in conn->jid, we assume anonymous connect */
@@ -726,105 +724,12 @@ static void _auth(xmpp_conn_t * const conn)
 
 	/* SASL PLAIN was tried */
 	conn->sasl_support &= ~SASL_MASK_PLAIN;
-    } else if (conn->type == XMPP_CLIENT) {
-	/* legacy client authentication */
-
-	iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_auth1");
-	if (!iq) {
-	    disconnect_mem_error(conn);
-	    return;
-	}
-
-	query = xmpp_stanza_new(conn->ctx);
-	if (!query) {
-	    xmpp_stanza_release(iq);
-	    disconnect_mem_error(conn);
-	    return;
-	}
-	xmpp_stanza_set_name(query, "query");
-	xmpp_stanza_set_ns(query, XMPP_NS_AUTH);
-	xmpp_stanza_add_child(iq, query);
-	xmpp_stanza_release(query);
-
-	child = xmpp_stanza_new(conn->ctx);
-	if (!child) {
-	    xmpp_stanza_release(iq);
-	    disconnect_mem_error(conn);
-	    return;
-	}
-	xmpp_stanza_set_name(child, "username");
-	xmpp_stanza_add_child(query, child);
-	xmpp_stanza_release(child);
-
-	authdata = xmpp_stanza_new(conn->ctx);
-	if (!authdata) {
-	    xmpp_stanza_release(iq);
-	    disconnect_mem_error(conn);
-	    return;
-	}
-	str = xmpp_jid_node(conn->ctx, conn->jid);
-	xmpp_stanza_set_text(authdata, str);
-	xmpp_free(conn->ctx, str);
-	xmpp_stanza_add_child(child, authdata);
-	xmpp_stanza_release(authdata);
-
-	child = xmpp_stanza_new(conn->ctx);
-	if (!child) {
-	    xmpp_stanza_release(iq);
-	    disconnect_mem_error(conn);
-	    return;
-	}
-	xmpp_stanza_set_name(child, "password");
-	xmpp_stanza_add_child(query, child);
-	xmpp_stanza_release(child);
-
-	authdata = xmpp_stanza_new(conn->ctx);
-	if (!authdata) {
-	    xmpp_stanza_release(iq);
-	    disconnect_mem_error(conn);
-	    return;
-	}
-	xmpp_stanza_set_text(authdata, conn->pass);
-	xmpp_stanza_add_child(child, authdata);
-	xmpp_stanza_release(authdata);
-
-	child = xmpp_stanza_new(conn->ctx);
-	if (!child) {
-	    xmpp_stanza_release(iq);
-	    disconnect_mem_error(conn);
-	    return;
-	}
-	xmpp_stanza_set_name(child, "resource");
-	xmpp_stanza_add_child(query, child);
-	xmpp_stanza_release(child);
-
-	authdata = xmpp_stanza_new(conn->ctx);
-	if (!authdata) {
-	    xmpp_stanza_release(iq);
-	    disconnect_mem_error(conn);
-	    return;
-	}
-	str = xmpp_jid_resource(conn->ctx, conn->jid);
-	if (str) {
-	    xmpp_stanza_set_text(authdata, str);
-	    xmpp_free(conn->ctx, str);
-	} else {
-	    xmpp_stanza_release(authdata);
-	    xmpp_stanza_release(iq);
-	    xmpp_error(conn->ctx, "auth",
-		       "Cannot authenticate without resource");
-	    xmpp_disconnect(conn);
-	    return;
-	}
-	xmpp_stanza_add_child(child, authdata);
-	xmpp_stanza_release(authdata);
-
-	handler_add_id(conn, _handle_legacy, "_xmpp_auth1", NULL);
-	handler_add_timed(conn, _handle_missing_legacy,
-			  LEGACY_TIMEOUT, NULL);
-
-	xmpp_send(conn, iq);
-	xmpp_stanza_release(iq);
+    } else if (conn->type == XMPP_CLIENT && conn->auth_legacy_enabled) {
+        /* legacy client authentication */
+        _auth_legacy(conn);
+    } else {
+        xmpp_error(conn->ctx, "auth", "Cannot authenticate with known methods");
+        xmpp_disconnect(conn);
     }
 }
 
@@ -1105,6 +1010,15 @@ static int _handle_missing_session(xmpp_conn_t * const conn,
     return 0;
 }
 
+static int _handle_missing_legacy(xmpp_conn_t * const conn,
+				  void * const userdata)
+{
+    xmpp_error(conn->ctx, "xmpp", "Server did not reply to legacy "\
+	       "authentication request.");
+    xmpp_disconnect(conn);
+    return 0;
+}
+
 static int _handle_legacy(xmpp_conn_t * const conn,
 			  xmpp_stanza_t * const stanza,
 			  void * const userdata)
@@ -1141,13 +1055,97 @@ static int _handle_legacy(xmpp_conn_t * const conn,
     return 0;
 }
 
-static int _handle_missing_legacy(xmpp_conn_t * const conn,
-				  void * const userdata)
+static void _auth_legacy(xmpp_conn_t *conn)
 {
-    xmpp_error(conn->ctx, "xmpp", "Server did not reply to legacy "\
-	       "authentication request.");
-    xmpp_disconnect(conn);
-    return 0;
+    xmpp_stanza_t *iq;
+    xmpp_stanza_t *authdata;
+    xmpp_stanza_t *query;
+    xmpp_stanza_t *child;
+    char *str;
+
+    xmpp_debug(conn->ctx, "auth", "Legacy authentication request");
+
+    iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_auth1");
+    if (!iq)
+        goto err;
+
+    query = xmpp_stanza_new(conn->ctx);
+    if (!query)
+        goto err_free;
+    xmpp_stanza_set_name(query, "query");
+    xmpp_stanza_set_ns(query, XMPP_NS_AUTH);
+    xmpp_stanza_add_child(iq, query);
+    xmpp_stanza_release(query);
+
+    child = xmpp_stanza_new(conn->ctx);
+    if (!child)
+        goto err_free;
+    xmpp_stanza_set_name(child, "username");
+    xmpp_stanza_add_child(query, child);
+    xmpp_stanza_release(child);
+
+    authdata = xmpp_stanza_new(conn->ctx);
+    if (!authdata)
+        goto err_free;
+    str = xmpp_jid_node(conn->ctx, conn->jid);
+    if (!str) {
+        xmpp_stanza_release(authdata);
+        goto err_free;
+    }
+    xmpp_stanza_set_text(authdata, str);
+    xmpp_free(conn->ctx, str);
+    xmpp_stanza_add_child(child, authdata);
+    xmpp_stanza_release(authdata);
+
+    child = xmpp_stanza_new(conn->ctx);
+    if (!child)
+        goto err_free;
+    xmpp_stanza_set_name(child, "password");
+    xmpp_stanza_add_child(query, child);
+    xmpp_stanza_release(child);
+
+    authdata = xmpp_stanza_new(conn->ctx);
+    if (!authdata)
+        goto err_free;
+    xmpp_stanza_set_text(authdata, conn->pass);
+    xmpp_stanza_add_child(child, authdata);
+    xmpp_stanza_release(authdata);
+
+    child = xmpp_stanza_new(conn->ctx);
+    if (!child)
+        goto err_free;
+    xmpp_stanza_set_name(child, "resource");
+    xmpp_stanza_add_child(query, child);
+    xmpp_stanza_release(child);
+
+    authdata = xmpp_stanza_new(conn->ctx);
+    if (!authdata)
+        goto err_free;
+    str = xmpp_jid_resource(conn->ctx, conn->jid);
+    if (str) {
+        xmpp_stanza_set_text(authdata, str);
+        xmpp_free(conn->ctx, str);
+    } else {
+        xmpp_stanza_release(authdata);
+        xmpp_stanza_release(iq);
+        xmpp_error(conn->ctx, "auth", "Cannot authenticate without resource");
+        xmpp_disconnect(conn);
+        return;
+    }
+    xmpp_stanza_add_child(child, authdata);
+    xmpp_stanza_release(authdata);
+
+    handler_add_id(conn, _handle_legacy, "_xmpp_auth1", NULL);
+    handler_add_timed(conn, _handle_missing_legacy, LEGACY_TIMEOUT, NULL);
+
+    xmpp_send(conn, iq);
+    xmpp_stanza_release(iq);
+    return;
+
+err_free:
+    xmpp_stanza_release(iq);
+err:
+    disconnect_mem_error(conn);
 }
 
 void auth_handle_component_open(xmpp_conn_t * const conn)

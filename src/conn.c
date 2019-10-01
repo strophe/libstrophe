@@ -140,6 +140,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx)
         conn->tls_trust = 0;
         conn->tls_failed = 0;
         conn->sasl_support = 0;
+        conn->auth_legacy_enabled = 0;
         conn->secured = 0;
 
         conn->bind_required = 0;
@@ -921,7 +922,8 @@ long xmpp_conn_get_flags(const xmpp_conn_t * const conn)
     flags = XMPP_CONN_FLAG_DISABLE_TLS * conn->tls_disabled |
             XMPP_CONN_FLAG_MANDATORY_TLS * conn->tls_mandatory |
             XMPP_CONN_FLAG_LEGACY_SSL * conn->tls_legacy_ssl |
-            XMPP_CONN_FLAG_TRUST_TLS * conn->tls_trust;
+            XMPP_CONN_FLAG_TRUST_TLS * conn->tls_trust |
+            XMPP_CONN_FLAG_LEGACY_AUTH * conn->auth_legacy_enabled;;
 
     return flags;
 }
@@ -939,6 +941,7 @@ long xmpp_conn_get_flags(const xmpp_conn_t * const conn)
  *    - XMPP_CONN_FLAG_MANDATORY_TLS
  *    - XMPP_CONN_FLAG_LEGACY_SSL
  *    - XMPP_CONN_FLAG_TRUST_TLS
+ *    - XMPP_CONN_FLAG_LEGACY_AUTH
  *
  *  @param conn a Strophe connection object
  *  @param flags ORed connection flags
@@ -965,6 +968,7 @@ int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags)
     conn->tls_mandatory = (flags & XMPP_CONN_FLAG_MANDATORY_TLS) ? 1 : 0;
     conn->tls_legacy_ssl = (flags & XMPP_CONN_FLAG_LEGACY_SSL) ? 1 : 0;
     conn->tls_trust = (flags & XMPP_CONN_FLAG_TRUST_TLS) ? 1 : 0;
+    conn->auth_legacy_enabled = (flags & XMPP_CONN_FLAG_LEGACY_AUTH) ? 1 : 0;
 
     return 0;
 }

@@ -172,6 +172,7 @@ struct _xmpp_conn_t {
     int tls_failed; /* set when tls fails, so we don't try again */
     int sasl_support; /* if true, field is a bitfield of supported 
                          mechanisms */
+    int auth_legacy_enabled;
     int secured; /* set when stream is secured with TLS */
 
     /* if server returns <bind/> or <session/> we must do them */

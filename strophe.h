@@ -169,6 +169,10 @@ typedef struct _xmpp_stanza_t xmpp_stanza_t;
  *  Trust server's certificate even if it is invalid.
  */
 #define XMPP_CONN_FLAG_TRUST_TLS     (1UL << 3)
+/** @def XMPP_CONN_FLAG_LEGACY_AUTH
+ *  Enable legacy authentication support.
+ */
+#define XMPP_CONN_FLAG_LEGACY_AUTH   (1UL << 4)
 
 /* connect callback */
 typedef enum {

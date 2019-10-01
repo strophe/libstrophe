@@ -1,4 +1,6 @@
 0.9.3
+	- Legacy authentication is disabled by default, can be enabled with
+	  connection flag XMPP_CONN_FLAG_LEGACY_AUTH
 	- Session is not established if it is optional
 	- Fixed a bug causing a reused connection not to cleanup properly
 	- Improved debug logging in OpenSSL module
