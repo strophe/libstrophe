@@ -756,10 +756,10 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
     char *bigbuf;
 
     va_start(ap, fmt);
-    len = xmpp_vsnprintf(buf, 1024, fmt, ap);
+    len = xmpp_vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
 
-    if (len >= 1024) {
+    if (len >= sizeof(buf)) {
         /* we need more space for this data, so we allocate a big
          * enough buffer and print to that */
         len++; /* account for trailing \0 */
@@ -780,7 +780,6 @@ void xmpp_send_raw_string(xmpp_conn_t * const conn,
         xmpp_free(conn->ctx, bigbuf);
     } else {
         xmpp_debug(conn->ctx, "conn", "SENT: %s", buf);
-
         xmpp_send_raw(conn, buf, len);
     }
 }
