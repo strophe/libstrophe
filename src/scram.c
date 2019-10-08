@@ -21,6 +21,8 @@
 
 #include "common.h"
 #include "sha1.h"
+#include "sha256.h"
+#include "sha512.h"
 #include "ostypes.h"
 
 #include "scram.h"
@@ -39,8 +41,28 @@ const struct hash_alg scram_sha1 = {
     (void (*)(void *, const uint8_t *, size_t))crypto_SHA1_Update,
     (void (*)(void *, uint8_t *))crypto_SHA1_Final};
 
+const struct hash_alg scram_sha256 = {
+    "SCRAM-SHA-256",
+    SASL_MASK_SCRAMSHA256,
+    SHA256_DIGEST_SIZE,
+    (void (*)(const uint8_t *, size_t, uint8_t *))sha256_hash,
+    (void (*)(void *))sha256_init,
+    (void (*)(void *, const uint8_t *, size_t))sha256_process,
+    (void (*)(void *, uint8_t *))sha256_done};
+
+const struct hash_alg scram_sha512 = {
+    "SCRAM-SHA-512",
+    SASL_MASK_SCRAMSHA512,
+    SHA512_DIGEST_SIZE,
+    (void (*)(const uint8_t *, size_t, uint8_t *))sha512_hash,
+    (void (*)(void *))sha512_init,
+    (void (*)(void *, const uint8_t *, size_t))sha512_process,
+    (void (*)(void *, uint8_t *))sha512_done};
+
 union common_hash_ctx {
     SHA1_CTX sha1;
+    sha256_context sha256;
+    sha512_context sha512;
 };
 
 static void crypto_HMAC(const struct hash_alg *alg,
@@ -53,7 +75,7 @@ static void crypto_HMAC(const struct hash_alg *alg,
     uint8_t key_pad[HMAC_BLOCK_SIZE];
     uint8_t key_ipad[HMAC_BLOCK_SIZE];
     uint8_t key_opad[HMAC_BLOCK_SIZE];
-    uint8_t sha_digest[SHA1_DIGEST_SIZE];
+    uint8_t sha_digest[SHA512_DIGEST_SIZE];
     int i;
     union common_hash_ctx ctx;
 
@@ -126,7 +148,7 @@ void SCRAM_ClientKey(const struct hash_alg *alg,
                      uint32_t i,
                      uint8_t *key)
 {
-    uint8_t salted[SHA1_DIGEST_SIZE];
+    uint8_t salted[SHA512_DIGEST_SIZE];
 
     /* XXX: Normalize(password) is omitted */
 
@@ -141,7 +163,7 @@ void SCRAM_ClientSignature(const struct hash_alg *alg,
                            size_t len,
                            uint8_t *sign)
 {
-    uint8_t stored[SHA1_DIGEST_SIZE];
+    uint8_t stored[SHA512_DIGEST_SIZE];
 
     alg->hash(ClientKey, alg->digest_size, stored);
     crypto_HMAC(alg, stored, alg->digest_size, AuthMessage, len, sign);

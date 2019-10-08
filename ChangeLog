@@ -1,4 +1,5 @@
 0.10.0
+	- SCRAM-SHA-256 and SCRAM-SHA-512 support
 	- c-ares support
 	- LibreSSL support
 	- examples/register implements XEP-0077

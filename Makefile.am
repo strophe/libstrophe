@@ -38,6 +38,8 @@ libstrophe_la_SOURCES = \
 	src/sasl.c \
 	src/scram.c \
 	src/sha1.c \
+	src/sha256.c \
+	src/sha512.c \
 	src/snprintf.c \
 	src/sock.c \
 	src/stanza.c \
@@ -53,7 +55,10 @@ libstrophe_la_SOURCES += \
 	src/resolver.h \
 	src/sasl.h \
 	src/scram.h \
+	src/sha.h \
 	src/sha1.h \
+	src/sha256.h \
+	src/sha512.h \
 	src/snprintf.h \
 	src/sock.h \
 	src/tls.h \
@@ -183,7 +188,8 @@ tests_test_resolver_LDFLAGS = -static
 tests_test_rand_SOURCES = tests/test_rand.c tests/test.c src/sha1.c
 tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 
-tests_test_scram_SOURCES = tests/test_scram.c tests/test.c src/sha1.c
+tests_test_scram_SOURCES = tests/test_scram.c tests/test.c src/sha1.c \
+	src/sha256.c src/sha512.c
 tests_test_scram_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 
 tests_test_sha1_SOURCES = tests/test_sha1.c src/sha1.c
