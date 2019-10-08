@@ -137,6 +137,8 @@ struct _xmpp_handlist_t {
 #define SASL_MASK_ANONYMOUS (1 << 2)
 #define SASL_MASK_SCRAMSHA1 (1 << 3)
 
+#define SASL_MASK_SCRAM (SASL_MASK_SCRAMSHA1)
+
 enum {
     XMPP_PORT_CLIENT = 5222,
     XMPP_PORT_CLIENT_LEGACY_SSL = 5223,
