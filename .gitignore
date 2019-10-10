@@ -55,6 +55,8 @@ tests/test_resolver
 tests/test_sasl
 tests/test_scram
 tests/test_sha1
+tests/test_sha256
+tests/test_sha512
 tests/test_snprintf
 tests/test_sock
 tests/test_stanza

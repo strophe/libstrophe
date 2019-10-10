@@ -140,6 +140,8 @@ examples_register_LDADD = $(STROPHE_LIBS)
 TESTS = \
 	tests/check_parser \
 	tests/test_sha1 \
+	tests/test_sha256 \
+	tests/test_sha512 \
 	tests/test_md5 \
 	tests/test_rand \
 	tests/test_scram \
@@ -194,6 +196,12 @@ tests_test_scram_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 
 tests_test_sha1_SOURCES = tests/test_sha1.c src/sha1.c
 tests_test_sha1_CFLAGS = -I$(top_srcdir)/src
+
+tests_test_sha256_SOURCES = tests/test_sha256.c tests/test.c src/sha256.c
+tests_test_sha256_CFLAGS = -I$(top_srcdir)/src
+
+tests_test_sha512_SOURCES = tests/test_sha512.c tests/test.c src/sha512.c
+tests_test_sha512_CFLAGS = -I$(top_srcdir)/src
 
 tests_test_md5_SOURCES = tests/test_md5.c tests/test.c src/md5.c
 tests_test_md5_CFLAGS = -I$(top_srcdir)/src
