@@ -31,6 +31,22 @@
 #include "tls.h"
 #include "sock.h"
 
+/*
+ * Redefine OPENSSL_VERSION_NUMBER for LibreSSL.
+ * LibreSSL and OpenSSL use different and incompatible version schemes. Solve
+ * this issue in the way how nginx project did.
+ */
+#if (defined LIBRESSL_VERSION_NUMBER && OPENSSL_VERSION_NUMBER == 0x20000000L)
+#undef OPENSSL_VERSION_NUMBER
+#if (LIBRESSL_VERSION_NUMBER >= 0x2080000fL)
+#define OPENSSL_VERSION_NUMBER  0x1010000fL
+#elif (LIBRESSL_VERSION_NUMBER >= 0x2070000fL)
+#define OPENSSL_VERSION_NUMBER  0x1000200fL
+#else
+#define OPENSSL_VERSION_NUMBER  0x1000107fL
+#endif
+#endif
+
 struct _tls {
     xmpp_ctx_t *ctx;
     sock_t sock;
