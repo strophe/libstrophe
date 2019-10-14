@@ -653,21 +653,21 @@ static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
     resolver_srv_rr_t *rr;
     HINSTANCE hdnsapi = NULL;
 
-    DNS_STATUS (WINAPI * pDnsQuery_A)(PCSTR, WORD, DWORD, PIP4_ARRAY, PDNS_RECORD*, PVOID*);
-    void (WINAPI * pDnsRecordListFree)(PDNS_RECORD, DNS_FREE_TYPE);
+    DNS_STATUS (WINAPI * pDnsQuery_A)(PCSTR, WORD, DWORD, PIP4_ARRAY, DNS_RECORDA**, PVOID*);
+    void (WINAPI * pDnsRecordListFree)(DNS_RECORDA*, DNS_FREE_TYPE);
 
     if (hdnsapi = LoadLibrary("dnsapi.dll")) {
         pDnsQuery_A = (void *)GetProcAddress(hdnsapi, "DnsQuery_A");
         pDnsRecordListFree = (void *)GetProcAddress(hdnsapi, "DnsRecordListFree");
 
         if (pDnsQuery_A && pDnsRecordListFree) {
-            PDNS_RECORD dnsrecords = NULL;
+            DNS_RECORDA *dnsrecords = NULL;
             DNS_STATUS error;
 
             error = pDnsQuery_A(fulldomain, DNS_TYPE_SRV, DNS_QUERY_STANDARD, NULL, &dnsrecords, NULL);
 
             if (error == 0) {
-                PDNS_RECORD current = dnsrecords;
+                DNS_RECORDA *current = dnsrecords;
 
                 while (current) {
                     if (current->wType == DNS_TYPE_SRV) {
