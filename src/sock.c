@@ -158,36 +158,31 @@ int sock_close(const sock_t sock)
 #endif
 }
 
-int sock_set_blocking(const sock_t sock)
+static int _sock_set_blocking_mode(sock_t sock, int blocking)
 {
 #ifdef _WIN32
-    u_long block = 0;
-    return ioctlsocket(sock, FIONBIO, &block);
-#else
-    int rc;
-
-    rc = fcntl(sock, F_GETFL, NULL);
-    if (rc >= 0) {
-        rc = fcntl(sock, F_SETFL, rc & (~O_NONBLOCK));
-    }
-    return rc;
-#endif
-}
-
-int sock_set_nonblocking(const sock_t sock)
-{
-#ifdef _WIN32
-    u_long nonblock = 1;
+    u_long nonblock = blocking ? 0 : 1;
     return ioctlsocket(sock, FIONBIO, &nonblock);
 #else
     int rc;
 
     rc = fcntl(sock, F_GETFL, NULL);
     if (rc >= 0) {
-        rc = fcntl(sock, F_SETFL, rc | O_NONBLOCK);
+        rc = blocking ? rc & (~O_NONBLOCK) : rc | O_NONBLOCK;
+        rc = fcntl(sock, F_SETFL, rc);
     }
     return rc;
 #endif
+}
+
+int sock_set_blocking(const sock_t sock)
+{
+    return _sock_set_blocking_mode(sock, 1);
+}
+
+int sock_set_nonblocking(const sock_t sock)
+{
+    return _sock_set_blocking_mode(sock, 0);
 }
 
 int sock_read(const sock_t sock, void * const buff, const size_t len)
