@@ -47,6 +47,7 @@
 
 #include "strophe.h"
 #include "common.h"
+#include "resolver.h"
 #include "util.h"
 
 /* Workaround for visual studio without va_copy support. */
@@ -63,6 +64,7 @@
  void xmpp_initialize(void)
 {
     sock_initialize();
+    resolver_initialize();
     tls_initialize();
 }
 
@@ -73,6 +75,7 @@
 void xmpp_shutdown(void)
 {
     tls_shutdown();
+    resolver_shutdown();
     sock_shutdown();
 }
 

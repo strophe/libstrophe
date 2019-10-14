@@ -1,4 +1,4 @@
-/* resolver.h
+/* resolver.c
  * strophe XMPP client library -- DNS resolver
  *
  * Copyright (C) 2015 Dmitry Podgorny <pasis.ua@gmail.com>
@@ -13,11 +13,15 @@
  *  DNS resolver.
  */
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(HAVE_CARES)
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>             /* res_query */
-#endif /* _WIN32 */
+#endif /* _WIN32 && HAVE_CARES */
+
+#ifdef HAVE_CARES
+#include <ares.h>
+#endif /* HAVE_CARES */
 
 #include <string.h>             /* strncpy */
 
@@ -31,6 +35,189 @@
 #define MESSAGE_T_SRV 33
 #define MESSAGE_C_IN 1
 
+/*******************************************************************************
+ * Forward declarations.
+ ******************************************************************************/
+
+#ifdef HAVE_CARES
+static int resolver_ares_srv_lookup_buf(xmpp_ctx_t *ctx,
+                                        const unsigned char *buf,
+                                        size_t len,
+                                        resolver_srv_rr_t **srv_rr_list);
+static int resolver_ares_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
+                                    resolver_srv_rr_t **srv_rr_list);
+#endif /* HAVE_CARES */
+
+#ifndef HAVE_CARES
+static int resolver_raw_srv_lookup_buf(xmpp_ctx_t *ctx,
+                                       const unsigned char *buf,
+                                       size_t len,
+                                       resolver_srv_rr_t **srv_rr_list);
+#endif /* !HAVE_CARES */
+
+#ifdef _WIN32
+static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
+                                     resolver_srv_rr_t **srv_rr_list);
+static int resolver_win32_srv_query(const char *fulldomain,
+                                    unsigned char *buf, size_t len);
+#endif /* _WIN32 */
+
+/*******************************************************************************
+ * Implementation.
+ ******************************************************************************/
+
+void resolver_initialize(void)
+{
+#ifdef HAVE_CARES
+    ares_library_init(ARES_LIB_INIT_ALL);
+#endif
+}
+
+void resolver_shutdown(void)
+{
+#ifdef HAVE_CARES
+    ares_library_cleanup();
+#endif
+}
+
+static void resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
+{
+    resolver_srv_rr_t *rr_head;
+    resolver_srv_rr_t *rr_current;
+    resolver_srv_rr_t *rr_next;
+    resolver_srv_rr_t *rr_prev;
+    int swap;
+
+    rr_head = *srv_rr_list;
+
+    if ((rr_head == NULL) || (rr_head->next == NULL)) {
+        /* Empty or single record list */
+        return;
+    }
+
+    do {
+        rr_prev = NULL;
+        rr_current = rr_head;
+        rr_next = rr_head->next;
+        swap = 0;
+        while (rr_next != NULL) {
+            /*
+             * RFC2052: A client MUST attempt to contact the target host
+             * with the lowest-numbered priority it can reach.
+             * RFC2052: When selecting a target host among the
+             * those that have the same priority, the chance of trying
+             * this one first SHOULD be proportional to its weight.
+             */
+            if ((rr_current->priority > rr_next->priority) ||
+                (rr_current->priority == rr_next->priority &&
+                 rr_current->weight < rr_next->weight))
+            {
+                /* Swap node */
+                swap = 1;
+                if (rr_prev != NULL) {
+                    rr_prev->next = rr_next;
+                } else {
+                    /* Swap head node */
+                    rr_head = rr_next;
+                }
+                rr_current->next = rr_next->next;
+                rr_next->next = rr_current;
+
+                rr_prev = rr_next;
+                rr_next = rr_current->next;
+            } else {
+                /* Next node */
+                rr_prev = rr_current;
+                rr_current = rr_next;
+                rr_next = rr_next->next;
+            }
+        }
+    } while (swap != 0);
+
+    *srv_rr_list = rr_head;
+}
+
+int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
+                            size_t len, resolver_srv_rr_t **srv_rr_list)
+{
+    int set;
+
+#ifdef HAVE_CARES
+    set = resolver_ares_srv_lookup_buf(ctx, buf, len, srv_rr_list);
+#else
+    set = resolver_raw_srv_lookup_buf(ctx, buf, len, srv_rr_list);
+#endif
+    resolver_srv_list_sort(srv_rr_list);
+
+    return set;
+}
+
+int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
+                        const char *domain, resolver_srv_rr_t **srv_rr_list)
+{
+#define RESOLVER_BUF_MAX 65536
+    unsigned char *buf;
+    char fulldomain[2048];
+    int len;
+    int set = XMPP_DOMAIN_NOT_FOUND;
+
+    (void)buf;
+    (void)len;
+
+    xmpp_snprintf(fulldomain, sizeof(fulldomain),
+                  "_%s._%s.%s", service, proto, domain);
+
+    *srv_rr_list = NULL;
+
+#ifdef HAVE_CARES
+    set = resolver_ares_srv_lookup(ctx, fulldomain, srv_rr_list);
+#else /* HAVE_CARES */
+
+#ifdef _WIN32
+    set = resolver_win32_srv_lookup(ctx, fulldomain, srv_rr_list);
+    if (set == XMPP_DOMAIN_FOUND)
+        return set;
+#endif /* _WIN32 */
+
+    buf = xmpp_alloc(ctx, RESOLVER_BUF_MAX);
+    if (buf == NULL)
+        return XMPP_DOMAIN_NOT_FOUND;
+
+#ifdef _WIN32
+    len = resolver_win32_srv_query(fulldomain, buf, RESOLVER_BUF_MAX);
+#else /* _WIN32 */
+    len = res_query(fulldomain, MESSAGE_C_IN, MESSAGE_T_SRV, buf,
+                    RESOLVER_BUF_MAX);
+#endif /* _WIN32 */
+
+    if (len > 0)
+        set = resolver_srv_lookup_buf(ctx, buf, (size_t)len, srv_rr_list);
+
+    xmpp_free(ctx, buf);
+
+#endif /* HAVE_CARES */
+
+    return set;
+}
+
+void resolver_srv_free(xmpp_ctx_t *ctx, resolver_srv_rr_t *srv_rr_list)
+{
+    resolver_srv_rr_t *rr;
+
+    while (srv_rr_list != NULL) {
+        rr = srv_rr_list->next;
+        xmpp_free(ctx, srv_rr_list);
+        srv_rr_list = rr;
+    }
+}
+
+#ifndef HAVE_CARES
+/*******************************************************************************
+ * Resolver raw implementation.
+ *
+ * This code is common for both unix and win32.
+ ******************************************************************************/
+
 struct message_header {
     uint16_t id;
     uint8_t octet2;
@@ -40,13 +227,6 @@ struct message_header {
     uint16_t nscount;
     uint16_t arcount;
 };
-
-#ifdef _WIN32
-static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
-                                     resolver_srv_rr_t **srv_rr_list);
-static int resolver_win32_srv_query(const char *fulldomain,
-                                    unsigned char *buf, size_t len);
-#endif /* _WIN32 */
 
 /* the same as ntohs(), but receives pointer to the value */
 static uint16_t xmpp_ntohs_ptr(const void *ptr)
@@ -160,63 +340,6 @@ static unsigned message_name_len(const unsigned char *buf, size_t buf_len,
     return message_name_get(buf, buf_len, buf_offset, NULL, SIZE_MAX);
 }
 
-static void resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
-{
-    resolver_srv_rr_t * rr_head;
-    resolver_srv_rr_t * rr_current;
-    resolver_srv_rr_t * rr_next;
-    resolver_srv_rr_t * rr_prev;
-    int swap;
-
-    rr_head = *srv_rr_list;
-
-    if ((rr_head == NULL) || (rr_head->next == NULL)) {
-        /* Empty or single record list */
-        return;
-    }
-
-    do {
-        rr_prev = NULL;
-        rr_current = rr_head;
-        rr_next = rr_head->next;
-        swap = 0;
-        while (rr_next != NULL) {
-            /*
-             * RFC2052: A client MUST attempt to contact the target host
-             * with the lowest-numbered priority it can reach.
-             * RFC2052: When selecting a target host among the
-             * those that have the same priority, the chance of trying
-             * this one first SHOULD be proportional to its weight.
-             */
-            if ((rr_current->priority > rr_next->priority) ||
-                (rr_current->priority == rr_next->priority &&
-                 rr_current->weight < rr_next->weight))
-            {
-                /* Swap node */
-                swap = 1;
-                if (rr_prev != NULL) {
-                    rr_prev->next = rr_next;
-                } else {
-                    /* Swap head node */
-                    rr_head = rr_next;
-                }
-                rr_current->next = rr_next->next;
-                rr_next->next = rr_current;
-
-                rr_prev = rr_next;
-                rr_next = rr_current->next;
-            } else {
-                /* Next node */
-                rr_prev = rr_current;
-                rr_current = rr_next;
-                rr_next = rr_next->next;
-            }
-        }
-    } while (swap != 0);
-
-    *srv_rr_list = rr_head;
-}
-
 #define BUF_OVERFLOW_CHECK(ptr, len) do {         \
     if ((ptr) >= (len)) {                         \
         if (*srv_rr_list != NULL)                 \
@@ -226,8 +349,10 @@ static void resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
     }                                             \
 } while (0)
 
-int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
-                            size_t len, resolver_srv_rr_t **srv_rr_list)
+static int resolver_raw_srv_lookup_buf(xmpp_ctx_t *ctx,
+                                       const unsigned char *buf,
+                                       size_t len,
+                                       resolver_srv_rr_t **srv_rr_list)
 {
     unsigned i;
     unsigned j;
@@ -292,52 +417,110 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
         }
         j += rdlength;
     }
-    resolver_srv_list_sort(srv_rr_list);
 
     return *srv_rr_list != NULL ? XMPP_DOMAIN_FOUND : XMPP_DOMAIN_NOT_FOUND;
 }
 
-int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
-                        const char *domain, resolver_srv_rr_t **srv_rr_list)
-{
-    char fulldomain[2048];
-    unsigned char buf[65535];
-    int len;
-    int set = XMPP_DOMAIN_NOT_FOUND;
+#endif /* !HAVE_CARES */
 
-    xmpp_snprintf(fulldomain, sizeof(fulldomain),
-                  "_%s._%s.%s", service, proto, domain);
+#ifdef HAVE_CARES
+/*******************************************************************************
+ * Resolver implementation using c-ares library.
+ ******************************************************************************/
+
+struct resolver_ares_ctx {
+    xmpp_ctx_t *ctx;
+    int result;
+    resolver_srv_rr_t *srv_rr_list;
+};
+
+static int resolver_ares_srv_lookup_buf(xmpp_ctx_t *ctx,
+                                        const unsigned char *buf,
+                                        size_t len,
+                                        resolver_srv_rr_t **srv_rr_list)
+{
+    struct ares_srv_reply *srv;
+    struct ares_srv_reply *item;
+    resolver_srv_rr_t *rr;
+    int rc;
 
     *srv_rr_list = NULL;
 
-#ifdef _WIN32
-    set = resolver_win32_srv_lookup(ctx, fulldomain, srv_rr_list);
-    if (set == XMPP_DOMAIN_FOUND)
-        return set;
-    len = resolver_win32_srv_query(fulldomain, buf, sizeof(buf));
-#else /* _WIN32 */
-    len = res_query(fulldomain, MESSAGE_C_IN, MESSAGE_T_SRV, buf, sizeof(buf));
-#endif /* _WIN32 */
+    rc = ares_parse_srv_reply(buf, len, &srv);
+    if (rc != ARES_SUCCESS)
+        return XMPP_DOMAIN_NOT_FOUND;
 
-    if (len > 0)
-        set = resolver_srv_lookup_buf(ctx, buf, (size_t)len, srv_rr_list);
-
-    return set;
-}
-
-void resolver_srv_free(xmpp_ctx_t *ctx, resolver_srv_rr_t *srv_rr_list)
-{
-    resolver_srv_rr_t *rr;
-
-    while (srv_rr_list != NULL) {
-        rr = srv_rr_list->next;
-        xmpp_free(ctx, srv_rr_list);
-        srv_rr_list = rr;
+    item = srv;
+    while (item != NULL) {
+        rr = xmpp_alloc(ctx, sizeof(*rr));
+        if (rr == NULL)
+            break;
+        rr->next = *srv_rr_list;
+        rr->priority = item->priority;
+        rr->weight = item->weight;
+        rr->port = item->port;
+        strncpy(rr->target, item->host, sizeof(rr->target) - 1);
+        rr->target[sizeof(rr->target) - 1] = '\0';
+        *srv_rr_list = rr;
+        item = item->next;
     }
+    ares_free_data(srv);
+
+    return *srv_rr_list == NULL ? XMPP_DOMAIN_NOT_FOUND : XMPP_DOMAIN_FOUND;
 }
 
-#ifdef _WIN32
+static void ares_srv_lookup_callback(void *arg, int status, int timeouts,
+                                     unsigned char *buf, int len)
+{
+    struct resolver_ares_ctx *actx = arg;
 
+    if (status != ARES_SUCCESS)
+        actx->result = XMPP_DOMAIN_NOT_FOUND;
+    else
+        actx->result = resolver_ares_srv_lookup_buf(actx->ctx, buf, len,
+                                                    &actx->srv_rr_list);
+}
+
+static int resolver_ares_srv_lookup(xmpp_ctx_t *ctx, const char *fulldomain,
+                                    resolver_srv_rr_t **srv_rr_list)
+{
+    struct resolver_ares_ctx actx;
+    ares_channel chan;
+    struct timeval tv;
+    struct timeval *tvp;
+    fd_set rfds;
+    fd_set wfds;
+    int nfds;
+    int rc;
+
+    actx.ctx = ctx;
+    actx.result = XMPP_DOMAIN_NOT_FOUND;
+    actx.srv_rr_list = NULL;
+
+    rc = ares_init(&chan);
+    if (rc == ARES_SUCCESS) {
+        ares_query(chan, fulldomain, MESSAGE_C_IN, MESSAGE_T_SRV,
+                   ares_srv_lookup_callback, &actx);
+        while (1) {
+            FD_ZERO(&rfds);
+            FD_ZERO(&wfds);
+            nfds = ares_fds(chan, &rfds, &wfds);
+            if (nfds == 0)
+                break;
+            tvp = ares_timeout(chan, NULL, &tv);
+            select(nfds, &rfds, &wfds, NULL, tvp);
+            ares_process(chan, &rfds, &wfds);
+        }
+        ares_destroy(chan);
+    }
+
+    *srv_rr_list = actx.srv_rr_list;
+    return actx.result;
+}
+
+#endif /* HAVE_CARES */
+
+#ifdef _WIN32
 /*******************************************************************************
  * Next part was copied from sock.c and contains old win32 code.
  *

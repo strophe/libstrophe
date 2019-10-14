@@ -33,6 +33,9 @@ typedef struct resolver_srv_rr_struc {
     struct resolver_srv_rr_struc *next;
 } resolver_srv_rr_t;
 
+void resolver_initialize(void);
+void resolver_shutdown(void);
+
 /** Perform lookup for RFC1035 message format.
  *  This function allocates all elements.
  *

@@ -21,6 +21,8 @@ AC_ARG_WITH([libxml2],
     [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing, expat is the default])])
 AC_ARG_ENABLE([tls],
     [AS_HELP_STRING([--disable-tls], [disable TLS support])])
+AC_ARG_ENABLE([cares],
+    [AS_HELP_STRING([--enable-cares], [use c-ares for DNS resolution])])
 
 if test "x$enable_tls" != xno; then
     PKG_CHECK_MODULES([openssl], [openssl],
@@ -84,6 +86,18 @@ AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
 
 AC_SEARCH_LIBS([socket], [socket])
 
+if test "x$enable_cares" = xyes; then
+    PKG_CHECK_MODULES([libcares], [libcares >= 1.7.0],
+        [
+            PC_REQUIRES="libcares ${PC_REQUIRES}"
+            RESOLV_CFLAGS=$libcares_CFLAGS
+            RESOLV_LIBS=$libcares_LIBS
+            AC_DEFINE([HAVE_CARES])
+        ],
+        [AC_MSG_ERROR([libcares not found])])
+        # TODO: if pkg-config doesn't find, check the library manually
+else
+
 AS_CASE([$PLATFORM],
     [bsd],     [RESOLV_LIBS=""],
     [qnx],     [RESOLV_LIBS="-lsocket"],
@@ -110,6 +124,8 @@ AC_LINK_IFELSE([AC_LANG_SOURCE([
 LIBS="${LIBS_TMP}"
 PC_LIBS="${RESOLV_LIBS} ${PC_LIBS}"
 
+fi
+
 m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
     [AC_ARG_WITH([pkgconfigdir],
         [AS_HELP_STRING([--with-pkgconfigdir],
@@ -126,6 +142,7 @@ AC_SUBST([PC_LIBS], [${PC_LIBS}])
 
 AC_SUBST(PARSER_CFLAGS)
 AC_SUBST(PARSER_LIBS)
+AC_SUBST(RESOLV_CFLAGS)
 AC_SUBST(RESOLV_LIBS)
 AC_CONFIG_FILES([Makefile libstrophe.pc])
 AC_OUTPUT
