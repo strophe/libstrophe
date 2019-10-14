@@ -260,7 +260,7 @@ static size_t message_name_append_safe(char *name, size_t name_len,
     copy_len = name_max > name_len ? name_max - name_len : 0;
     copy_len = xmpp_min(tail_len, copy_len);
     if (copy_len > 0)
-        strncpy(&name[name_len], tail, copy_len);
+        memcpy(&name[name_len], tail, copy_len);
 
     return name_len + tail_len;
 }
