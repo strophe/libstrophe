@@ -25,12 +25,16 @@ typedef int sock_t;
 typedef SOCKET sock_t;
 #endif
 
+typedef struct _xmpp_sock_t xmpp_sock_t;
+
 void sock_initialize(void);
 void sock_shutdown(void);
 
 int sock_error(void);
 
-sock_t sock_connect(const char * const host, const unsigned short port);
+xmpp_sock_t *sock_new(xmpp_ctx_t *ctx, const char *host, unsigned short port);
+void sock_free(xmpp_sock_t *xsock);
+sock_t sock_connect(xmpp_sock_t *xsock);
 int sock_close(const sock_t sock);
 
 int sock_set_blocking(const sock_t sock);

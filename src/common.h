@@ -160,6 +160,7 @@ struct _xmpp_conn_t {
     xmpp_stream_error_t *stream_error;
 
     sock_t sock;
+    xmpp_sock_t *xsock;
     int ka_timeout; /* TCP keepalive timeout */
     int ka_interval; /* TCP keepalive interval */
 

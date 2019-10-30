@@ -689,7 +689,8 @@ void conn_disconnect(xmpp_conn_t * const conn)
         tls_free(conn->tls);
         conn->tls = NULL;
     }
-    sock_close(conn->sock);
+    if (conn->sock >= 0)
+        sock_close(conn->sock);
 
     /* fire off connection handler */
     conn->conn_handler(conn, XMPP_CONN_DISCONNECT, conn->error,
@@ -1263,7 +1264,8 @@ static int _conn_connect(xmpp_conn_t * const conn,
     conn->domain = xmpp_strdup(conn->ctx, domain);
     if (!conn->domain) return XMPP_EMEM;
 
-    conn->sock = sock_connect(host, port);
+    conn->xsock = sock_new(conn->ctx, host, port);
+    conn->sock = sock_connect(conn->xsock);
     xmpp_debug(conn->ctx, "xmpp", "sock_connect() to %s:%u returned %d",
                host, port, conn->sock);
     if (conn->sock == -1) return XMPP_EINT;

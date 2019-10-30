@@ -51,6 +51,18 @@
 #include "common.h"
 #include "parser.h"
 
+static int _connect_next(xmpp_conn_t *conn)
+{
+    sock_close(conn->sock);
+    conn->sock = sock_connect(conn->xsock);
+    if (conn->sock < 0)
+        return -1;
+
+    conn->timeout_stamp = time_stamp();
+
+    return 0;
+}
+
 /** Run the event loop once.
  *  This function will run send any data that has been queued by
  *  xmpp_send and related functions and run through the Strophe even
@@ -180,6 +192,11 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
                 conn->connect_timeout)
                 FD_SET(conn->sock, &wfds);
             else {
+                ret = _connect_next(conn);
+                if (ret == 0) {
+                    FD_SET(conn->sock, &wfds);
+                    break;
+                }
                 conn->error = ETIMEDOUT;
                 xmpp_info(ctx, "xmpp", "Connection attempt timed out.");
                 conn_disconnect(conn);
@@ -238,6 +255,11 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 
                 /* check for error */
                 ret = sock_connect_error(conn->sock);
+                if (ret != 0) {
+                    ret = _connect_next(conn);
+                    if (ret == 0)
+                        break;
+                }
                 if (ret != 0) {
                     /* connection failed */
                     xmpp_debug(ctx, "xmpp", "connection failed, error %d", ret);

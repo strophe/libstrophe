@@ -33,8 +33,16 @@
 #include <fcntl.h>
 #endif
 
+#include "common.h"
 #include "sock.h"
 #include "snprintf.h"
+
+struct _xmpp_sock_t {
+    xmpp_ctx_t *ctx;
+    struct addrinfo *ainfo_list;
+    struct addrinfo *current;
+    sock_t sock;
+};
 
 void sock_initialize(void)
 {
@@ -69,12 +77,22 @@ static int _in_progress(int error)
 #endif
 }
 
-sock_t sock_connect(const char * const host, const unsigned short port)
+xmpp_sock_t *sock_new(xmpp_ctx_t *ctx, const char *host, unsigned short port)
 {
-    sock_t sock;
+    xmpp_sock_t *xsock;
     char service[6];
-    struct addrinfo *res, *ainfo, hints;
+    struct addrinfo hints;
     int err;
+
+    xsock = xmpp_alloc(ctx, sizeof *xsock);
+    if (xsock == NULL) {
+        xmpp_error(ctx, "sock", "Memory allocation error.");
+        return NULL;
+    }
+    xsock->ctx = ctx;
+    xsock->ainfo_list = NULL;
+    xsock->current = NULL;
+    xsock->sock = -1;
 
     xmpp_snprintf(service, 6, "%u", port);
 
@@ -86,11 +104,33 @@ sock_t sock_connect(const char * const host, const unsigned short port)
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_socktype = SOCK_STREAM;
 
-    err = getaddrinfo(host, service, &hints, &res);
-    if (err != 0)
-        return -1;
+    err = getaddrinfo(host, service, &hints, &xsock->ainfo_list);
+    if (err != 0) {
+        xmpp_free(ctx, xsock);
+        xsock = NULL;
+    }
+    return xsock;
+}
 
-    for (ainfo = res; ainfo != NULL; ainfo = ainfo->ai_next) {
+void sock_free(xmpp_sock_t *xsock)
+{
+    if (xsock->ainfo_list != NULL)
+        freeaddrinfo(xsock->ainfo_list);
+    xmpp_free(xsock->ctx, xsock);
+}
+
+sock_t sock_connect(xmpp_sock_t *xsock)
+{
+    struct addrinfo *ainfo;
+    sock_t sock = -1;
+    int err;
+
+    if (xsock->current == NULL)
+        ainfo = xsock->ainfo_list;
+    else
+        ainfo = xsock->current->ai_next;
+
+    for (; ainfo != NULL; ainfo = ainfo->ai_next) {
         sock = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
         if (sock < 0)
             continue;
@@ -103,9 +143,13 @@ sock_t sock_connect(const char * const host, const unsigned short port)
         }
         sock_close(sock);
     }
-    freeaddrinfo(res);
-    sock = ainfo == NULL ? -1 : sock;
 
+    xsock->sock = sock;
+    xsock->current = ainfo;
+    if (ainfo == NULL) {
+        freeaddrinfo(xsock->ainfo_list);
+        xsock->ainfo_list = NULL;
+    }
     return sock;
 }
 
