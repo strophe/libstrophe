@@ -118,7 +118,11 @@ tls_t *tls_new(xmpp_conn_t *conn)
 
         tls->ctx = conn->ctx;
         tls->sock = conn->sock;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         tls->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+#else
+        tls->ssl_ctx = SSL_CTX_new(TLS_client_method());
+#endif
         if (tls->ssl_ctx == NULL)
             goto err;
 
