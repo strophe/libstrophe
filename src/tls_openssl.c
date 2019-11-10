@@ -136,7 +136,18 @@ tls_t *tls_new(xmpp_conn_t *conn)
 
         SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
         SSL_CTX_set_mode(tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-        SSL_CTX_set_default_verify_paths(tls->ssl_ctx);
+
+        ret = SSL_CTX_set_default_verify_paths(tls->ssl_ctx);
+        if (ret == 0 && !conn->tls_trust) {
+            /*
+             * Returns 1 on success and 0 on failure. A missing default
+             * location is still treated as a success.
+             * Ignore errors when XMPP_CONN_FLAG_TRUST_TLS is set.
+             */
+            xmpp_error(tls->ctx, "tls",
+                       "SSL_CTX_set_default_verify_paths() failed");
+            goto err_free_ctx;
+        }
 
         tls->ssl = SSL_new(tls->ssl_ctx);
         if (tls->ssl == NULL)
