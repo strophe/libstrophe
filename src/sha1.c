@@ -234,7 +234,6 @@ void crypto_SHA1_Final(SHA1_CTX* context, uint8_t* digest)
     }
     
     /* Wipe variables */
-    i = 0;
     memset(context->buffer, 0, 64);
     memset(context->state, 0, 20);
     memset(context->count, 0, 8);
