@@ -15,6 +15,7 @@ AS_CASE([$host_os],
     [*nto*|*qnx*], [PLATFORM="qnx"],
     [*solaris*],   [PLATFORM="solaris"],
     [*android*],   [PLATFORM="android"],
+    [*haiku*],     [PLATFORM="haiku"],
                    [PLATFORM="nix"])
 
 AC_ARG_WITH([libxml2],
@@ -84,7 +85,7 @@ fi
 
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
 
-AC_SEARCH_LIBS([socket], [socket])
+AC_SEARCH_LIBS([socket], [network socket])
 
 if test "x$enable_cares" = xyes; then
     PKG_CHECK_MODULES([libcares], [libcares >= 1.7.0],
@@ -103,6 +104,7 @@ AS_CASE([$PLATFORM],
     [qnx],     [RESOLV_LIBS="-lsocket"],
     [solaris], [RESOLV_LIBS="-lresolv -lsocket -lnsl"],
     [android], [RESOLV_LIBS=""],
+    [haiku],   [RESOLV_LIBS="-lnetwork"],
                [RESOLV_LIBS="-lresolv"])
 
 LIBS_TMP="${LIBS}"
