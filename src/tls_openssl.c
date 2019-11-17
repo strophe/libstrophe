@@ -110,6 +110,10 @@ tls_t *tls_new(xmpp_conn_t *conn)
 
     if (tls) {
         int ret;
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+        /* Hostname verification is supported in OpenSSL 1.0.2 and newer. */
+        X509_VERIFY_PARAM *param;
+#endif
         memset(tls, 0, sizeof(*tls));
 
         tls->ctx = conn->ctx;
@@ -139,7 +143,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
         SSL_set_verify(tls->ssl, mode, 0);
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
         /* Hostname verification is supported in OpenSSL 1.0.2 and newer. */
-        X509_VERIFY_PARAM *param = SSL_get0_param(tls->ssl);
+        param = SSL_get0_param(tls->ssl);
 
         /*
          * Allow only complete wildcards.  RFC 6125 discourages wildcard usage
