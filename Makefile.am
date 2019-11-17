@@ -11,7 +11,8 @@ SSL_LIBS = @openssl_LIBS@
 RESOLV_CFLAGS = @RESOLV_CFLAGS@
 RESOLV_LIBS = @RESOLV_LIBS@
 
-STROPHE_FLAGS = -I$(top_srcdir) -Wall -Wextra -Wno-unused-parameter
+WARNING_FLAGS = @WARNING_FLAGS@
+STROPHE_FLAGS = -I$(top_srcdir) $(WARNING_FLAGS)
 STROPHE_LIBS = libstrophe.la
 
 ## Main build targets

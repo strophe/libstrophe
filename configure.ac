@@ -18,6 +18,12 @@ AS_CASE([$host_os],
     [*haiku*],     [PLATFORM="haiku"],
                    [PLATFORM="nix"])
 
+WARNING_FLAGS="-Wall"
+
+AS_CASE([$PLATFORM],
+    [haiku],   [],
+               [WARNING_FLAGS="$WARNING_FLAGS -Wextra -Wno-unused-parameter"])
+
 AC_ARG_WITH([libxml2],
     [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing, expat is the default])])
 AC_ARG_ENABLE([tls],
@@ -146,5 +152,6 @@ AC_SUBST(PARSER_CFLAGS)
 AC_SUBST(PARSER_LIBS)
 AC_SUBST(RESOLV_CFLAGS)
 AC_SUBST(RESOLV_LIBS)
+AC_SUBST(WARNING_FLAGS)
 AC_CONFIG_FILES([Makefile libstrophe.pc])
 AC_OUTPUT
