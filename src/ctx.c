@@ -51,7 +51,7 @@
 #include "util.h"
 
 /* Workaround for visual studio without va_copy support. */
-#if defined(_MSC_VER) && _MSC_VER < 1800
+#if defined(_MSC_VER) && _MSC_VER < 1800 || defined(__HAIKU__)
 #define va_copy(d,s) ((d) = (s))
 #endif
 
