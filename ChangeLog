@@ -1,3 +1,7 @@
+0.10.0
+	- c-ares support
+	- LibreSSL support
+
 0.9.3
 	- PLAIN mechanism is used only when no other mechanisms are supported
 	- Legacy authentication is disabled by default, can be enabled with
