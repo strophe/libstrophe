@@ -289,25 +289,32 @@ int xmpp_rand(xmpp_rand_t *rand)
     return result;
 }
 
+static void rand_byte2hex(unsigned char byte, char *hex)
+{
+    static const char hex_tbl[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                                      '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+    hex[0] = hex_tbl[(byte >> 4) & 0x0f];
+    hex[1] = hex_tbl[byte & 0x0f];
+}
+
 void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len)
 {
     size_t i;
-    size_t rand_len = len / 2;
-#ifndef _MSC_VER
-    unsigned char rand_buf[rand_len];
-#else
-    unsigned char *rand_buf = (unsigned char *)_alloca(rand_len);
-#endif
+    const size_t rand_len = len / 2;
 
-    /* current implementation returns printable HEX representation of
-     * a random buffer, however base64 encoding can be used instead;
-     * the only problem is that base64_encode() allocates memory and
-     * as result can fail.
+    /*
+     * We don't want to use any allocation here, because this function
+     * can't fail. Also we want to avoid VLA.
+     * Current implementation uses half of the output buffer for random buffer
+     * generation and then converts it to HEX representation.
      */
 
-    xmpp_rand_bytes(rand, rand_buf, rand_len);
-    for (i = 0; i < rand_len; ++i) {
-        xmpp_snprintf(output + i * 2, len, "%02x", rand_buf[i]);
-        len -= 2;
+    if (rand_len > 0) {
+        xmpp_rand_bytes(rand, (unsigned char *)output, rand_len);
+        for (i = rand_len; i > 0; --i)
+            rand_byte2hex(output[i - 1], &output[(i - 1) * 2]);
     }
+    if (len > 0)
+        output[len - 1] = '\0';
 }
