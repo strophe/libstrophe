@@ -854,11 +854,10 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_name_and_ns(xmpp_stanza_t * const stanza
 {
     xmpp_stanza_t *child;
     const char *child_ns;
-    const char *child_name;
 
     for (child = stanza->children; child; child = child->next) {
-        child_name = xmpp_stanza_get_name(child);
-        if (child_name && strcmp(name, child_name) == 0) {
+        if (child->type == XMPP_STANZA_TAG &&
+            (strcmp(name, xmpp_stanza_get_name(child)) == 0)) {
             child_ns = xmpp_stanza_get_ns(child);
             if (child_ns && strcmp(ns, child_ns) == 0) {
                 break;
