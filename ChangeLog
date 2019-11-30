@@ -1,6 +1,8 @@
 0.10.0
 	- c-ares support
 	- LibreSSL support
+	- New API:
+		- xmpp_stanza_get_child_by_name_and_ns()
 
 0.9.3
 	- PLAIN mechanism is used only when no other mechanisms are supported
