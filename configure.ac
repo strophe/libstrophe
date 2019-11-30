@@ -71,7 +71,7 @@ if test "x$with_libxml2" != xno -a "x$with_parser" = x; then
                 [
                     with_parser="libxml2"
                     libxml2_CFLAGS="-I${includedir}/libxml2"
-                    libxml2_LIBS="-lxml2"
+                    libxml2_LIBS="-lxml2 -lm"
                     PC_LIBS="${libxml2_LIBS} ${PC_LIBS}"
                     PC_CFLAGS="${libxml2_CFLAGS} ${PC_CFLAGS}"
                 ])
