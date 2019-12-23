@@ -153,6 +153,11 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (tls->ssl == NULL)
             goto err_free_ctx;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        /* Enable SNI. */
+        SSL_set_tlsext_host_name(tls->ssl, conn->domain);
+#endif
+
         /* Trust server's certificate when user sets the flag explicitly. */
         mode = conn->tls_trust ? SSL_VERIFY_NONE : SSL_VERIFY_PEER;
         SSL_set_verify(tls->ssl, mode, 0);
