@@ -183,6 +183,8 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
 static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
                          struct MD5Context *ctx)
 {
+    (void) ctx; // unused
+
     register uint32_t a, b, c, d, i;
     uint32_t in[16];
     

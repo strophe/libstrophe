@@ -26,6 +26,8 @@ int handle_reply(xmpp_conn_t * const conn,
     xmpp_stanza_t *query, *item;
     const char *type;
 
+    (void) userdata;
+
     type = xmpp_stanza_get_type(stanza);
     if (strcmp(type, "error") == 0)
 	fprintf(stderr, "ERROR: query failed\n");
@@ -48,6 +50,9 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 		  const int error, xmpp_stream_error_t * const stream_error,
 		  void * const userdata)
 {
+    (void) error;
+    (void) stream_error;
+
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     xmpp_stanza_t *iq, *query;
 

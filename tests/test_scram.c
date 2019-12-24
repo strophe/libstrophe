@@ -133,7 +133,7 @@ static void test_scram(void)
     }
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
     test_df();
     test_scram();

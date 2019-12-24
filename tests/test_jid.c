@@ -112,7 +112,7 @@ int test_jid_new(xmpp_ctx_t *ctx)
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
     xmpp_ctx_t *ctx;
     int ret;

@@ -171,6 +171,8 @@ static void _digest_to_hex(const char *digest, char *hex)
 static char *_add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key, 
 		      char *buf, int *len, int quote)
 {
+    UNUSED(len);
+
     int olen,nlen;
     int keylen, valuelen;
     const char *value, *qvalue;
@@ -367,6 +369,8 @@ char *sasl_scram_sha1(xmpp_ctx_t *ctx, const char *challenge,
                       const char *first_bare, const char *jid,
                       const char *password)
 {
+    UNUSED(jid);
+
     uint8_t key[SHA1_DIGEST_SIZE];
     uint8_t sign[SHA1_DIGEST_SIZE];
     char *r = NULL;

@@ -1006,6 +1006,8 @@ int xmpp_conn_is_secured(xmpp_conn_t * const conn)
 static int _disconnect_cleanup(xmpp_conn_t * const conn,
                                void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_debug(conn->ctx, "xmpp",
                "disconnection forced by cleanup timeout");
 
@@ -1159,6 +1161,8 @@ static void _handle_stream_start(char *name, char **attrs,
 static void _handle_stream_end(char *name,
                                void * const userdata)
 {
+    UNUSED(name);
+
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
 
     /* stream is over */

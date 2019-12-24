@@ -3,6 +3,9 @@
 
 int main(int argc, char **argv)
 {
+    (void) argc;
+    (void) argv;
+
     xmpp_ctx_t *ctx;
     char *uuid;
     int rc = 0;

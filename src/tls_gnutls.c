@@ -142,5 +142,6 @@ int tls_write(tls_t *tls, const void * const buff, const size_t len)
 
 int tls_clear_pending_write(tls_t *tls)
 {
+    UNUSED(tls);
     return 0;
 }

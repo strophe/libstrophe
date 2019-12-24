@@ -23,18 +23,21 @@ static int mem_realloc_called = 0;
 
 void *my_alloc(const size_t size, void * const userdata)
 {
+    (void) userdata;
     mem_alloc_called++;
     return malloc(size);
 }
 
 void my_free(void *p, void * const userdata)
 {
+    (void) userdata;
     mem_free_called++;
     return free(p);
 }
 
 void *my_realloc(void *p, const size_t size, void * const userdata)
 {
+    (void) userdata;
     mem_realloc_called++;
     return realloc(p, size);
 }
@@ -47,7 +50,7 @@ void my_logger(void * const userdata, const xmpp_log_level_t level,
 	log_called++;
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
     xmpp_ctx_t *ctx;
     xmpp_mem_t mymem;

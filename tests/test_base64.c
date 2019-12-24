@@ -128,7 +128,7 @@ static const unsigned char bin_data[] = {
     0x6d, 0x00,
 };
 
-int main(int argc, char *argv[])
+int main(void)
 {
     xmpp_ctx_t *ctx;
     unsigned char *udec;

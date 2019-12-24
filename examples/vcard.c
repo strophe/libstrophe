@@ -167,6 +167,8 @@ exit:
 
 static int timedout(xmpp_conn_t * const conn, void * const userdata)
 {
+    (void) userdata;
+
     fprintf(stderr, "Timeout reached.\n");
     xmpp_disconnect(conn);
 

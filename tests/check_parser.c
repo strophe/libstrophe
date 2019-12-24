@@ -42,6 +42,8 @@ static void create_destroy(void)
 int cbtest_got_start = 0;
 void cbtest_handle_start(char *name, char **attrs, void *userdata)
 {
+    (void) attrs;
+    (void) userdata;
     if (strcmp(name, "stream") == 0)
         cbtest_got_start = 1;
 }
@@ -49,6 +51,7 @@ void cbtest_handle_start(char *name, char **attrs, void *userdata)
 int cbtest_got_end = 0;
 void cbtest_handle_end(char *name, void *userdata)
 {
+    (void) userdata;
     if (strcmp(name, "stream") == 0)
         cbtest_got_end = 1;
 }
@@ -56,6 +59,7 @@ void cbtest_handle_end(char *name, void *userdata)
 int cbtest_got_stanza = 0;
 void cbtest_handle_stanza(xmpp_stanza_t *stanza, void *userdata)
 {
+    (void) userdata;
     if (strcmp(xmpp_stanza_get_name(stanza), "message") == 0)
         cbtest_got_stanza = 1;
 }

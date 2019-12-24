@@ -110,6 +110,8 @@ static int _handle_error(xmpp_conn_t * const conn,
     xmpp_stanza_t *child;
     const char *name;
 
+    UNUSED(userdata);
+
     /* free old stream error if it's still there */
     if (conn->stream_error) {
 	xmpp_stanza_release(conn->stream_error->stanza);
@@ -200,6 +202,8 @@ static int _handle_error(xmpp_conn_t * const conn,
 static int _handle_missing_features(xmpp_conn_t * const conn,
 				    void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_debug(conn->ctx, "xmpp", "didn't get stream features");
 
     /* legacy auth will be attempted */
@@ -214,6 +218,8 @@ static int _handle_features(xmpp_conn_t * const conn,
 			    xmpp_stanza_t * const stanza,
 			    void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_stanza_t *child, *mech;
     const char *ns;
     char *text;
@@ -287,6 +293,8 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
 			      xmpp_stanza_t * const stanza,
 			      void * const userdata)
 {
+    UNUSED(userdata);
+
     const char *name;
 
     name = xmpp_stanza_get_name(stanza);
@@ -347,6 +355,8 @@ static int _handle_digestmd5_challenge(xmpp_conn_t * const conn,
 			      xmpp_stanza_t * const stanza,
 			      void * const userdata)
 {
+    UNUSED(userdata);
+
     char *text;
     char *response;
     xmpp_stanza_t *auth, *authdata;
@@ -404,6 +414,8 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t * const conn,
 			      xmpp_stanza_t * const stanza,
 			      void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_stanza_t *auth;
     const char *name;
 
@@ -787,6 +799,8 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 				 xmpp_stanza_t * const stanza,
 				 void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_stanza_t *bind, *session, *iq, *res, *text, *opt;
     const char *ns;
     char *resource;
@@ -891,6 +905,8 @@ static int _handle_features_sasl(xmpp_conn_t * const conn,
 static int _handle_missing_features_sasl(xmpp_conn_t * const conn,
 					 void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_error(conn->ctx, "xmpp", "Did not receive stream features "\
 	       "after SASL authentication.");
     xmpp_disconnect(conn);
@@ -901,6 +917,8 @@ static int _handle_bind(xmpp_conn_t * const conn,
 			xmpp_stanza_t * const stanza,
 			void * const userdata)
 {
+    UNUSED(userdata);
+
     const char *type;
     xmpp_stanza_t *iq, *session;
 
@@ -972,6 +990,8 @@ static int _handle_bind(xmpp_conn_t * const conn,
 static int _handle_missing_bind(xmpp_conn_t * const conn,
 				void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to bind request.");
     xmpp_disconnect(conn);
     return 0;
@@ -981,6 +1001,8 @@ static int _handle_session(xmpp_conn_t * const conn,
 			   xmpp_stanza_t * const stanza,
 			   void * const userdata)
 {
+    UNUSED(userdata);
+
     const char *type;
 
     /* delete missing session handler */
@@ -1009,6 +1031,8 @@ static int _handle_session(xmpp_conn_t * const conn,
 static int _handle_missing_session(xmpp_conn_t * const conn,
 				   void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to session request.");
     xmpp_disconnect(conn);
     return 0;
@@ -1017,6 +1041,8 @@ static int _handle_missing_session(xmpp_conn_t * const conn,
 static int _handle_missing_legacy(xmpp_conn_t * const conn,
 				  void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to legacy "\
 	       "authentication request.");
     xmpp_disconnect(conn);
@@ -1027,6 +1053,8 @@ static int _handle_legacy(xmpp_conn_t * const conn,
 			  xmpp_stanza_t * const stanza,
 			  void * const userdata)
 {
+    UNUSED(userdata);
+
     const char *type;
     const char *name;
 
@@ -1224,6 +1252,8 @@ int _handle_component_hs_response(xmpp_conn_t * const conn,
             xmpp_stanza_t * const stanza,
             void * const userdata)
 {
+    UNUSED(userdata);
+
     const char *name;
 
     xmpp_timed_handler_delete(conn, _handle_missing_handshake);
@@ -1252,6 +1282,8 @@ int _handle_component_hs_response(xmpp_conn_t * const conn,
 
 int _handle_missing_handshake(xmpp_conn_t * const conn, void * const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to handshake request.");
     xmpp_disconnect(conn);
     return 0;

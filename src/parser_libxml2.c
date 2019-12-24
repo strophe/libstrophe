@@ -110,6 +110,11 @@ static void _start_element(void *userdata,
                            const xmlChar **namespaces, int nattrs,
                            int ndefaulted, const xmlChar **attrs)
 {
+    UNUSED(prefix);
+    UNUSED(nnamespaces);
+    UNUSED(namespaces);
+    UNUSED(ndefaulted);
+
     parser_t *parser = (parser_t *)userdata;
     xmpp_stanza_t *child;
     char **cbattrs;
@@ -166,6 +171,9 @@ static void _start_element(void *userdata,
 static void _end_element(void *userdata, const xmlChar *name,
                          const xmlChar *prefix, const xmlChar *uri)
 {
+    UNUSED(prefix);
+    UNUSED(uri);
+
     parser_t *parser = (parser_t *)userdata;
 
     parser->depth--;

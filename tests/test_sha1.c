@@ -39,7 +39,7 @@ static void digest_to_hex(const uint8_t *digest, char *output)
     *(c - 1) = '\0';
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
     int k;
     SHA1_CTX context;

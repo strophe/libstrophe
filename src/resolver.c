@@ -472,6 +472,8 @@ static int resolver_ares_srv_lookup_buf(xmpp_ctx_t *ctx,
 static void ares_srv_lookup_callback(void *arg, int status, int timeouts,
                                      unsigned char *buf, int len)
 {
+    (void) timeouts;    
+
     struct resolver_ares_ctx *actx = arg;
 
     if (status != ARES_SUCCESS)
