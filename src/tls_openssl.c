@@ -153,7 +153,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (tls->ssl == NULL)
             goto err_free_ctx;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if OPENSSL_VERSION_NUMBER >= 0x0908060L && !defined(OPENSSL_NO_TLSEXT)
         /* Enable SNI. */
         SSL_set_tlsext_host_name(tls->ssl, conn->domain);
 #endif
