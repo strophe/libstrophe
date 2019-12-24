@@ -123,16 +123,19 @@ int xmpp_version_check(int major, int minor)
  */
 static void *_malloc(const size_t size, void *const userdata)
 {
+    UNUSED(userdata);
     return malloc(size);
 }
 
 static void _free(void *p, void *const userdata)
 {
+    UNUSED(userdata);
     free(p);
 }
 
 static void *_realloc(void *p, const size_t size, void *const userdata)
 {
+    UNUSED(userdata);
     return realloc(p, size);
 }
 

@@ -130,6 +130,8 @@ struct _xmpp_handlist_t {
     } u;
 };
 
+#define UNUSED(x) ((void)(x))
+
 #define MAX_DOMAIN_LEN 256
 
 #define SASL_MASK_PLAIN (1 << 0)

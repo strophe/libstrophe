@@ -106,6 +106,8 @@ static int iq_reg2_cb(xmpp_conn_t *const conn,
 {
     const char *type;
 
+    (void)userdata;
+
     type = xmpp_stanza_get_type(stanza);
     if (!type || strcmp(type, "error") == 0) {
         fprintf(stderr, "DEBUG: error during registration\n");
@@ -166,6 +168,9 @@ static int _handle_error(xmpp_conn_t *const conn,
                          xmpp_stanza_t *const stanza,
                          void *const userdata)
 {
+    (void)stanza;
+    (void)userdata;
+
     fprintf(stderr, "DEBUG: received stream error\n");
     xmpp_disconnect(conn);
 
@@ -177,6 +182,8 @@ static int _handle_proceedtls_default(xmpp_conn_t *const conn,
                                       void *const userdata)
 {
     const char *name = xmpp_stanza_get_name(stanza);
+
+    (void)userdata;
 
     if (strcmp(name, "proceed") == 0) {
         fprintf(stderr, "DEBUG: proceeding with TLS\n");
@@ -195,6 +202,8 @@ static int _handle_proceedtls_default(xmpp_conn_t *const conn,
 static int _handle_missing_features(xmpp_conn_t *const conn,
                                     void *const userdata)
 {
+    (void)userdata;
+
     fprintf(stderr, "DEBUG: timeout\n");
     xmpp_disconnect(conn);
 
@@ -262,6 +271,9 @@ static void conn_handler(xmpp_conn_t *const conn,
 {
     xmpp_reg_t *reg = (xmpp_reg_t *)userdata;
     int secured;
+
+    (void)error;
+    (void)stream_error;
 
     if (status == XMPP_CONN_RAW_CONNECT) {
         fprintf(stderr, "DEBUG: raw connection established\n");

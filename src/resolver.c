@@ -500,6 +500,8 @@ static void ares_srv_lookup_callback(
 {
     struct resolver_ares_ctx *actx = arg;
 
+    (void)timeouts;
+
     if (status != ARES_SUCCESS)
         actx->result = XMPP_DOMAIN_NOT_FOUND;
     else

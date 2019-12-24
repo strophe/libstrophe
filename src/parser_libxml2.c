@@ -123,6 +123,11 @@ static void _start_element(void *userdata,
     xmpp_stanza_t *child;
     char **cbattrs;
 
+    UNUSED(prefix);
+    UNUSED(nnamespaces);
+    UNUSED(namespaces);
+    UNUSED(ndefaulted);
+
     if (parser->depth == 0) {
         /* notify the owner */
         if (parser->startcb) {
@@ -177,6 +182,9 @@ static void _end_element(void *userdata,
                          const xmlChar *uri)
 {
     parser_t *parser = (parser_t *)userdata;
+
+    UNUSED(prefix);
+    UNUSED(uri);
 
     parser->depth--;
 

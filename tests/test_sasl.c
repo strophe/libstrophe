@@ -80,7 +80,7 @@ int test_digest_md5(xmpp_ctx_t *ctx)
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main()
 {
     xmpp_ctx_t *ctx;
     int ret;

@@ -170,7 +170,7 @@ static int srv_rr_list_len(resolver_srv_rr_t *list)
     return nr;
 }
 
-int main(int argc, char **argv)
+int main()
 {
     xmpp_ctx_t *ctx;
     xmpp_rand_t *rand;

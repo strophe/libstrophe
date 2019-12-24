@@ -28,6 +28,9 @@ void conn_handler(xmpp_conn_t *const conn,
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     int secured;
 
+    (void)error;
+    (void)stream_error;
+
     if (status == XMPP_CONN_CONNECT) {
         fprintf(stderr, "DEBUG: connected\n");
         secured = xmpp_conn_is_secured(conn);

@@ -57,7 +57,7 @@ static const struct {
     },
 };
 
-int main(int argc, char **argv)
+int main()
 {
     struct MD5Context ctx;
     unsigned char digest[16];

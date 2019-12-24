@@ -184,6 +184,8 @@ static char *_add_key(xmpp_ctx_t *ctx,
     const char *value, *qvalue;
     char *c;
 
+    UNUSED(len);
+
     /* allocate a zero-length string if necessary */
     if (buf == NULL) {
         buf = xmpp_alloc(ctx, 1);
@@ -404,6 +406,8 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     char *result = NULL;
     size_t response_len;
     size_t auth_len;
+
+    UNUSED(jid);
 
     tmp = xmpp_strdup(ctx, challenge);
     if (!tmp) {

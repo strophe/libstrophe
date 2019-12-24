@@ -40,7 +40,7 @@ int wait_for_connect(sock_t sock)
     return -1;
 }
 
-int main(int argc, char **argv)
+int main()
 {
     sock_t sock;
     int err;

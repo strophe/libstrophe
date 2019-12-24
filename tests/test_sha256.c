@@ -10,7 +10,7 @@
 #include "sha256.h"
 #include "test.h"
 
-int main(int argc, char **argv)
+int main()
 {
     static const struct {
         const char *msg;

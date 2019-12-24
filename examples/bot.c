@@ -126,6 +126,9 @@ void conn_handler(xmpp_conn_t *const conn,
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
 
+    (void)error;
+    (void)stream_error;
+
     if (status == XMPP_CONN_CONNECT) {
         xmpp_stanza_t *pres;
         fprintf(stderr, "DEBUG: connected\n");

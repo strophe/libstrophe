@@ -22,7 +22,7 @@ WARNING_FLAGS="-Wall"
 
 AS_CASE([$PLATFORM],
     [haiku],   [],
-               [WARNING_FLAGS="$WARNING_FLAGS -Wextra -Wno-unused-parameter"])
+               [WARNING_FLAGS="$WARNING_FLAGS -Wextra"])
 
 AC_ARG_WITH([libxml2],
     [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing, expat is the default])])

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <strophe.h>
 
-int main(int argc, char **argv)
+int main()
 {
     xmpp_ctx_t *ctx;
     char *uuid;

@@ -1065,6 +1065,8 @@ int xmpp_conn_is_disconnected(xmpp_conn_t *const conn)
 /* timed handler for cleanup if normal disconnect procedure takes too long */
 static int _disconnect_cleanup(xmpp_conn_t *const conn, void *const userdata)
 {
+    UNUSED(userdata);
+
     xmpp_debug(conn->ctx, "xmpp", "disconnection forced by cleanup timeout");
 
     conn_disconnect(conn);
@@ -1228,6 +1230,8 @@ static void _handle_stream_start(char *name, char **attrs, void *const userdata)
 static void _handle_stream_end(char *name, void *const userdata)
 {
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
+
+    UNUSED(name);
 
     /* stream is over */
     xmpp_debug(conn->ctx, "xmpp", "RECV: </stream:stream>");

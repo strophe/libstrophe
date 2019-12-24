@@ -203,6 +203,8 @@ void tls_free(tls_t *tls)
 
 int tls_set_credentials(tls_t *tls, const char *cafilename)
 {
+    UNUSED(tls);
+    UNUSED(cafilename);
     return -1;
 }
 
@@ -305,6 +307,7 @@ int tls_write(tls_t *tls, const void *const buff, const size_t len)
 
 int tls_clear_pending_write(tls_t *tls)
 {
+    UNUSED(tls);
     return 0;
 }
 

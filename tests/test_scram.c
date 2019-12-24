@@ -203,7 +203,7 @@ static void test_hmac(const struct hash_alg *alg)
     }
 }
 
-int main(int argc, char **argv)
+int main()
 {
     test_df(&scram_sha1);
     test_scram(&scram_sha1);
