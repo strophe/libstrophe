@@ -77,6 +77,7 @@ noinst_HEADERS = strophepp.h
 pkgconfig_DATA = libstrophe.pc
 
 EXTRA_DIST = \
+	_clang-format \
 	Doxyfile \
 	GPL-LICENSE.txt \
 	LICENSE.txt \
@@ -193,3 +194,8 @@ tests_test_string_SOURCES = tests/test_string.c tests/test.h
 tests_test_string_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_string_LDADD = $(STROPHE_LIBS)
 tests_test_string_LDFLAGS = -static
+
+format:
+	@echo "   * run clang-format on all sources"
+	@dos2unix -q src/*.[ch] *.h tests/*.[ch] examples/*.c
+	@clang-format -i src/*.[ch] *.h tests/*.[ch] examples/*.c
