@@ -19,9 +19,11 @@
 #define KA_INTERVAL 1
 
 /* define a handler for connection events */
-void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
-                  const int error, xmpp_stream_error_t * const stream_error,
-                  void * const userdata)
+void conn_handler(xmpp_conn_t *const conn,
+                  const xmpp_conn_event_t status,
+                  const int error,
+                  xmpp_stream_error_t *const stream_error,
+                  void *const userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     int secured;
@@ -32,8 +34,7 @@ void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
         fprintf(stderr, "DEBUG: connection is %s.\n",
                 secured ? "secured" : "NOT secured");
         xmpp_disconnect(conn);
-    }
-    else {
+    } else {
         fprintf(stderr, "DEBUG: disconnected\n");
         xmpp_stop(ctx);
     }
@@ -70,7 +71,7 @@ int main(int argc, char **argv)
                         "  --legacy-ssl         Use old style SSL.\n"
                         "  --tcp-keepalive      Configure TCP keepalive.\n\n"
                         "Note: --disable-tls conflicts with --mandatory-tls or "
-                              "--legacy-ssl\n");
+                        "--legacy-ssl\n");
         return 1;
     }
 
@@ -87,8 +88,9 @@ int main(int argc, char **argv)
     /* init library */
     xmpp_initialize();
 
+    /* pass NULL instead to silence output */
+    log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG);
     /* create a context */
-    log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG); /* pass NULL instead to silence output */
     ctx = xmpp_ctx_new(NULL, log);
 
     /* create a connection */
@@ -97,7 +99,8 @@ int main(int argc, char **argv)
     /* configure connection properties (optional) */
     xmpp_conn_set_flags(conn, flags);
     /* configure TCP keepalive (optional) */
-    if (tcp_keepalive) xmpp_conn_set_keepalive(conn, KA_TIMEOUT, KA_INTERVAL);
+    if (tcp_keepalive)
+        xmpp_conn_set_keepalive(conn, KA_TIMEOUT, KA_INTERVAL);
 
     /* setup authentication information */
     xmpp_conn_set_jid(conn, jid);

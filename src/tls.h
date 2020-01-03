@@ -1,7 +1,7 @@
 /* tls.h
 ** strophe XMPP client library -- TLS abstraction header
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -35,8 +35,8 @@ int tls_stop(tls_t *tls);
 int tls_error(tls_t *tls);
 
 int tls_pending(tls_t *tls);
-int tls_read(tls_t *tls, void * const buff, const size_t len);
-int tls_write(tls_t *tls, const void * const buff, const size_t len);
+int tls_read(tls_t *tls, void *const buff, const size_t len);
+int tls_write(tls_t *tls, const void *const buff, const size_t len);
 
 int tls_clear_pending_write(tls_t *tls);
 int tls_is_recoverable(int error);

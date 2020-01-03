@@ -76,8 +76,8 @@ static void vcard_photo(vcard_t *vc, xmpp_stanza_t *stanza)
     xmpp_free(vc->ctx, img);
 }
 
-static void vcard_print_string(vcard_t *vc, xmpp_stanza_t *stanza,
-                               const char *info)
+static void
+vcard_print_string(vcard_t *vc, xmpp_stanza_t *stanza, const char *info)
 {
     char *s = xmpp_stanza_get_text(stanza);
 
@@ -140,14 +140,9 @@ static vcard_cb_t vcard_cb_get(xmpp_stanza_t *stanza)
         const char *tag;
         vcard_cb_t cb;
     } vcard_tbl[] = {
-        { "PHOTO", vcard_photo },
-        { "BDAY", vcard_bday },
-        { "DESC", vcard_desc },
-        { "EMAIL", vcard_email },
-        { "FN", vcard_fn },
-        { "N", vcard_name },
-        { "NICKNAME", vcard_nick },
-        { "URL", vcard_url },
+        {"PHOTO", vcard_photo},   {"BDAY", vcard_bday}, {"DESC", vcard_desc},
+        {"EMAIL", vcard_email},   {"FN", vcard_fn},     {"N", vcard_name},
+        {"NICKNAME", vcard_nick}, {"URL", vcard_url},
     };
 
     tag = xmpp_stanza_get_name(stanza);
@@ -165,7 +160,7 @@ exit:
     return cb;
 }
 
-static int timedout(xmpp_conn_t * const conn, void * const userdata)
+static int timedout(xmpp_conn_t *const conn, void *const userdata)
 {
     fprintf(stderr, "Timeout reached.\n");
     xmpp_disconnect(conn);
@@ -173,8 +168,9 @@ static int timedout(xmpp_conn_t * const conn, void * const userdata)
     return 0;
 }
 
-static int recv_vcard(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza,
-                      void * const userdata)
+static int recv_vcard(xmpp_conn_t *const conn,
+                      xmpp_stanza_t *const stanza,
+                      void *const userdata)
 {
     vcard_t *vc = userdata;
     vcard_cb_t cb;
@@ -213,16 +209,17 @@ exit:
 static void send_vcard_req(xmpp_conn_t *conn, const char *to, const char *id)
 {
     printf("Requesting vCard from %s.\n", to);
-    xmpp_send_raw_string(conn, "<iq from='%s' to='%s' type='get' id='%s'>"
-                               "<vCard xmlns='vcard-temp'/></iq>",
-                               xmpp_conn_get_bound_jid(conn), to, id);
+    xmpp_send_raw_string(conn,
+                         "<iq from='%s' to='%s' type='get' id='%s'>"
+                         "<vCard xmlns='vcard-temp'/></iq>",
+                         xmpp_conn_get_bound_jid(conn), to, id);
 }
 
-static void conn_handler(xmpp_conn_t * const conn,
+static void conn_handler(xmpp_conn_t *const conn,
                          const xmpp_conn_event_t status,
                          const int error,
-                         xmpp_stream_error_t * const stream_error,
-                         void * const userdata)
+                         xmpp_stream_error_t *const stream_error,
+                         void *const userdata)
 {
     vcard_t *vc = userdata;
 
@@ -235,25 +232,26 @@ static void conn_handler(xmpp_conn_t * const conn,
             fprintf(stderr, "Disconnected with error=%d.\n", error);
         if (stream_error != NULL)
             fprintf(stderr, "Stream error type=%d text=%s.\n",
-                            stream_error->type, stream_error->text);
+                    stream_error->type, stream_error->text);
         xmpp_stop(vc->ctx);
     }
 }
 
 int main(int argc, char **argv)
 {
-    xmpp_log_t  *log;
-    xmpp_ctx_t  *ctx;
+    xmpp_log_t *log;
+    xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
-    const char  *jid;
-    const char  *pass;
-    char        *prog;
-    vcard_t      vcard;
+    const char *jid;
+    const char *pass;
+    char *prog;
+    vcard_t vcard;
 
     if (argc < 4 || argc > 5) {
         prog = argc > 0 ? strdup(argv[0]) : NULL;
         printf("Usage: %s <login-jid> <password> <recipient-jid> "
-               "[image-file]\n\n", prog == NULL ? "vcard" : basename(prog));
+               "[image-file]\n\n",
+               prog == NULL ? "vcard" : basename(prog));
         printf("If vCard contains a photo it will be stored to "
                "image-file. If you don't provide the image-file "
                "default filename will be generated.\n");
@@ -281,4 +279,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

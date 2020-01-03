@@ -38,7 +38,7 @@
  *
  *  @return a new allocates string with the same data as s or NULL on error
  */
-char *xmpp_strdup(const xmpp_ctx_t * const ctx, const char * const s)
+char *xmpp_strdup(const xmpp_ctx_t *const ctx, const char *const s)
 {
     size_t len;
     char *copy;
@@ -135,7 +135,7 @@ uint64_t time_elapsed(uint64_t t1, uint64_t t2)
  *
  *  @param conn a Strophe connection object
  */
-void disconnect_mem_error(xmpp_conn_t * const conn)
+void disconnect_mem_error(xmpp_conn_t *const conn)
 {
     xmpp_error(conn->ctx, "xmpp", "Memory allocation error");
     xmpp_disconnect(conn);

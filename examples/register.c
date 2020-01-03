@@ -36,9 +36,8 @@ typedef struct {
 
 #define FEATURES_TIMEOUT 5000 /* 5 seconds */
 
-static void iq_reg_send_form(xmpp_reg_t *reg,
-                             xmpp_conn_t *conn,
-                             xmpp_stanza_t *stanza)
+static void
+iq_reg_send_form(xmpp_reg_t *reg, xmpp_conn_t *conn, xmpp_stanza_t *stanza)
 {
     xmpp_ctx_t *ctx = reg->ctx;
     xmpp_stanza_t *query;
@@ -101,9 +100,9 @@ static void iq_reg_send_form(xmpp_reg_t *reg,
     }
 }
 
-static int iq_reg2_cb(xmpp_conn_t * const conn,
-                      xmpp_stanza_t * const stanza,
-                      void * const userdata)
+static int iq_reg2_cb(xmpp_conn_t *const conn,
+                      xmpp_stanza_t *const stanza,
+                      void *const userdata)
 {
     const char *type;
 
@@ -126,9 +125,9 @@ quit:
     return 0;
 }
 
-static int iq_reg_cb(xmpp_conn_t * const conn,
-                     xmpp_stanza_t * const stanza,
-                     void * const userdata)
+static int iq_reg_cb(xmpp_conn_t *const conn,
+                     xmpp_stanza_t *const stanza,
+                     void *const userdata)
 {
     xmpp_reg_t *reg = (xmpp_reg_t *)userdata;
     xmpp_stanza_t *registered = NULL;
@@ -163,9 +162,9 @@ quit:
     return 0;
 }
 
-static int _handle_error(xmpp_conn_t * const conn,
-                         xmpp_stanza_t * const stanza,
-                         void * const userdata)
+static int _handle_error(xmpp_conn_t *const conn,
+                         xmpp_stanza_t *const stanza,
+                         void *const userdata)
 {
     fprintf(stderr, "DEBUG: received stream error\n");
     xmpp_disconnect(conn);
@@ -173,9 +172,9 @@ static int _handle_error(xmpp_conn_t * const conn,
     return 0;
 }
 
-static int _handle_proceedtls_default(xmpp_conn_t * const conn,
-                                      xmpp_stanza_t * const stanza,
-                                      void * const userdata)
+static int _handle_proceedtls_default(xmpp_conn_t *const conn,
+                                      xmpp_stanza_t *const stanza,
+                                      void *const userdata)
 {
     const char *name = xmpp_stanza_get_name(stanza);
 
@@ -193,8 +192,8 @@ static int _handle_proceedtls_default(xmpp_conn_t * const conn,
     return 0;
 }
 
-static int _handle_missing_features(xmpp_conn_t * const conn,
-                                    void * const userdata)
+static int _handle_missing_features(xmpp_conn_t *const conn,
+                                    void *const userdata)
 {
     fprintf(stderr, "DEBUG: timeout\n");
     xmpp_disconnect(conn);
@@ -202,9 +201,9 @@ static int _handle_missing_features(xmpp_conn_t * const conn,
     return 0;
 }
 
-static int _handle_features(xmpp_conn_t * const conn,
-                            xmpp_stanza_t * const stanza,
-                            void * const userdata)
+static int _handle_features(xmpp_conn_t *const conn,
+                            xmpp_stanza_t *const stanza,
+                            void *const userdata)
 {
     xmpp_reg_t *reg = (xmpp_reg_t *)userdata;
     xmpp_ctx_t *ctx = reg->ctx;
@@ -221,8 +220,8 @@ static int _handle_features(xmpp_conn_t * const conn,
         child = xmpp_stanza_new(ctx);
         xmpp_stanza_set_name(child, "starttls");
         xmpp_stanza_set_ns(child, XMPP_NS_TLS);
-        xmpp_handler_add(conn, _handle_proceedtls_default,
-                         XMPP_NS_TLS, NULL, NULL, NULL);
+        xmpp_handler_add(conn, _handle_proceedtls_default, XMPP_NS_TLS, NULL,
+                         NULL, NULL);
         xmpp_send(conn, child);
         xmpp_stanza_release(child);
         return 0;
@@ -255,11 +254,11 @@ static int _handle_features(xmpp_conn_t * const conn,
     return 0;
 }
 
-static void conn_handler(xmpp_conn_t * const conn,
+static void conn_handler(xmpp_conn_t *const conn,
                          const xmpp_conn_event_t status,
                          const int error,
-                         xmpp_stream_error_t * const stream_error,
-                         void * const userdata)
+                         xmpp_stream_error_t *const stream_error,
+                         void *const userdata)
 {
     xmpp_reg_t *reg = (xmpp_reg_t *)userdata;
     int secured;
@@ -274,14 +273,14 @@ static void conn_handler(xmpp_conn_t * const conn,
                 secured ? "secured" : "NOT secured");
 
         /* setup handler for stream:error */
-        xmpp_handler_add(conn, _handle_error, XMPP_NS_STREAMS,
-                         "error", NULL, NULL);
+        xmpp_handler_add(conn, _handle_error, XMPP_NS_STREAMS, "error", NULL,
+                         NULL);
 
         /* setup handlers for incoming <stream:features> */
-        xmpp_handler_add(conn, _handle_features, XMPP_NS_STREAMS,
-                         "features", NULL, reg);
-        xmpp_timed_handler_add(conn, _handle_missing_features,
-                               FEATURES_TIMEOUT, NULL);
+        xmpp_handler_add(conn, _handle_features, XMPP_NS_STREAMS, "features",
+                         NULL, reg);
+        xmpp_timed_handler_add(conn, _handle_missing_features, FEATURES_TIMEOUT,
+                               NULL);
     } else {
         fprintf(stderr, "DEBUG: disconnected\n");
         xmpp_stop(reg->ctx);

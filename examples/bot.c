@@ -22,12 +22,13 @@
 
 #include <strophe.h>
 
-
-int version_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
+int version_handler(xmpp_conn_t *const conn,
+                    xmpp_stanza_t *const stanza,
+                    void *const userdata)
 {
     xmpp_stanza_t *reply, *query, *name, *version, *text;
     const char *ns;
-    xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
+    xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
 
     printf("Received version request from %s\n", xmpp_stanza_get_from(stanza));
 
@@ -69,10 +70,11 @@ int version_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
     return 1;
 }
 
-
-int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void * const userdata)
+int message_handler(xmpp_conn_t *const conn,
+                    xmpp_stanza_t *const stanza,
+                    void *const userdata)
 {
-    xmpp_ctx_t *ctx = (xmpp_ctx_t*)userdata;
+    xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     xmpp_stanza_t *body, *reply;
     const char *type;
     char *intext, *replytext;
@@ -87,7 +89,8 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 
     intext = xmpp_stanza_get_text(body);
 
-    printf("Incoming message from %s: %s\n", xmpp_stanza_get_from(stanza), intext);
+    printf("Incoming message from %s: %s\n", xmpp_stanza_get_from(stanza),
+           intext);
 
     reply = xmpp_stanza_reply(stanza);
     if (xmpp_stanza_get_type(reply) == NULL)
@@ -97,7 +100,7 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
         replytext = strdup("bye!");
         quit = 1;
     } else {
-        replytext = (char *) malloc(strlen(" to you too!") + strlen(intext) + 1);
+        replytext = (char *)malloc(strlen(" to you too!") + strlen(intext) + 1);
         strcpy(replytext, intext);
         strcat(replytext, " to you too!");
     }
@@ -115,24 +118,26 @@ int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanza, void
 }
 
 /* define a handler for connection events */
-void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
-                  const int error, xmpp_stream_error_t * const stream_error,
-                  void * const userdata)
+void conn_handler(xmpp_conn_t *const conn,
+                  const xmpp_conn_event_t status,
+                  const int error,
+                  xmpp_stream_error_t *const stream_error,
+                  void *const userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
 
     if (status == XMPP_CONN_CONNECT) {
-        xmpp_stanza_t* pres;
+        xmpp_stanza_t *pres;
         fprintf(stderr, "DEBUG: connected\n");
-        xmpp_handler_add(conn, version_handler, "jabber:iq:version", "iq", NULL, ctx);
+        xmpp_handler_add(conn, version_handler, "jabber:iq:version", "iq", NULL,
+                         ctx);
         xmpp_handler_add(conn, message_handler, NULL, "message", NULL, ctx);
 
         /* Send initial <presence/> so that we appear online to contacts */
         pres = xmpp_presence_new(ctx);
         xmpp_send(conn, pres);
         xmpp_stanza_release(pres);
-    }
-    else {
+    } else {
         fprintf(stderr, "DEBUG: disconnected\n");
         xmpp_stop(ctx);
     }
@@ -157,8 +162,9 @@ int main(int argc, char **argv)
     /* init library */
     xmpp_initialize();
 
+    /* pass NULL instead to silence output */
+    log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG);
     /* create a context */
-    log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG); /* pass NULL instead to silence output */
     ctx = xmpp_ctx_new(NULL, log);
 
     /* create a connection */

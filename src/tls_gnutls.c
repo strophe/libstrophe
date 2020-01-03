@@ -79,8 +79,8 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
     int err;
 
     /* set trusted credentials -- takes a .pem filename */
-    err = gnutls_certificate_set_x509_trust_file(tls->cred,
-            cafilename, GNUTLS_X509_FMT_PEM);
+    err = gnutls_certificate_set_x509_trust_file(tls->cred, cafilename,
+                                                 GNUTLS_X509_FMT_PEM);
     if (err >= 0) {
         err = gnutls_credentials_set(tls->session, GNUTLS_CRD_CERTIFICATE,
                                      tls->cred);
@@ -117,10 +117,10 @@ int tls_is_recoverable(int error)
 
 int tls_pending(tls_t *tls)
 {
-    return gnutls_record_check_pending (tls->session);
+    return gnutls_record_check_pending(tls->session);
 }
 
-int tls_read(tls_t *tls, void * const buff, const size_t len)
+int tls_read(tls_t *tls, void *const buff, const size_t len)
 {
     int ret;
 
@@ -130,7 +130,7 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
     return ret;
 }
 
-int tls_write(tls_t *tls, const void * const buff, const size_t len)
+int tls_write(tls_t *tls, const void *const buff, const size_t len)
 {
     int ret;
 
