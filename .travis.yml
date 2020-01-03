@@ -1,15 +1,24 @@
 language: c
 install:
-    - sudo apt-get update
-    - sudo apt-get -y install libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libc-ares-dev
+  - sudo apt-get update
+  - sudo apt-get -y install libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libc-ares-dev dos2unix
+stages:
+  - style
+  - test
 before_script:
-    - ./bootstrap.sh
-script:
-    - ./configure ${CONFIGURE_OPT} CFLAGS="-Werror" && make && make check
+  - ./bootstrap.sh
 env:
-    - CONFIGURE_OPT="--without-libxml2"
-    - CONFIGURE_OPT="--with-libxml2"
-    - CONFIGURE_OPT="--disable-tls"
-    - CONFIGURE_OPT="--enable-cares"
+  - CONFIGURE_OPT="--without-libxml2"
+  - CONFIGURE_OPT="--with-libxml2"
+  - CONFIGURE_OPT="--disable-tls"
+  - CONFIGURE_OPT="--enable-cares"
+script: ./configure ${CONFIGURE_OPT} CFLAGS="-Werror" && make && make check
+jobs:
+  include:
+    - stage: style
+      name: "Check code style"
+      script: ./configure && make format && git diff --exit-code
+      env:
+        - CONFIGURE_OPT=""
 matrix:
     fast_finish: true
