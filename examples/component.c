@@ -19,19 +19,19 @@
 
 #include <strophe.h>
 
-
 /* define a handler for connection events */
-void conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
-                  const int error, xmpp_stream_error_t * const stream_error,
-                  void * const userdata)
+void conn_handler(xmpp_conn_t *const conn,
+                  const xmpp_conn_event_t status,
+                  const int error,
+                  xmpp_stream_error_t *const stream_error,
+                  void *const userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
 
     if (status == XMPP_CONN_CONNECT) {
         fprintf(stderr, "DEBUG: connected\n");
         xmpp_disconnect(conn);
-    }
-    else {
+    } else {
         fprintf(stderr, "DEBUG: disconnected\n");
         xmpp_stop(ctx);
     }
@@ -56,19 +56,20 @@ int main(int argc, char **argv)
     host = argv[3];
 
     if (argc == 5) {
-        short tmp_port = (short) strtol(argv[4], &port_err, 10);
+        short tmp_port = (short)strtol(argv[4], &port_err, 10);
         if (tmp_port < 0 || *port_err != '\0') {
             fprintf(stderr, "Invalid value of <port> [%s].\n", argv[4]);
             return 1;
         }
-        port = (unsigned short) tmp_port;
+        port = (unsigned short)tmp_port;
     }
 
     /* init library */
     xmpp_initialize();
 
     /* create a context */
-    log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG); /* pass NULL instead to silence output */
+    log = xmpp_get_default_logger(
+        XMPP_LEVEL_DEBUG); /* pass NULL instead to silence output */
     ctx = xmpp_ctx_new(NULL, log);
 
     /* create a connection */
@@ -94,4 +95,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

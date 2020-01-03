@@ -46,8 +46,10 @@ void resolver_shutdown(void);
  *
  *  @return XMPP_DOMAIN_FOUND on success or XMPP_DOMAIN_NOT_FOUND on fail
  */
-int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
-                            size_t len, resolver_srv_rr_t **srv_rr_list);
+int resolver_srv_lookup_buf(xmpp_ctx_t *ctx,
+                            const unsigned char *buf,
+                            size_t len,
+                            resolver_srv_rr_t **srv_rr_list);
 /** Resolve SRV record.
  *
  *  @param ctx a Strophe context object
@@ -58,8 +60,11 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx, const unsigned char *buf,
  *
  *  @return XMPP_DOMAIN_FOUND on success or XMPP_DOMAIN_NOT_FOUND on fail
  */
-int resolver_srv_lookup(xmpp_ctx_t *ctx, const char *service, const char *proto,
-                        const char *domain, resolver_srv_rr_t **srv_rr_list);
+int resolver_srv_lookup(xmpp_ctx_t *ctx,
+                        const char *service,
+                        const char *proto,
+                        const char *domain,
+                        resolver_srv_rr_t **srv_rr_list);
 
 /** Release a list returned by resolver_srv_lookup() or
  *  resolver_srv_lookup_buf().

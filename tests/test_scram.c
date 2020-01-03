@@ -25,12 +25,12 @@
  * Test vectors for derivation function (RFC6070).
  */
 static const struct {
-    char *P;      /* text */
-    char *S;      /* salt */
+    char *P; /* text */
+    char *S; /* salt */
     size_t P_len;
     size_t S_len;
-    uint32_t c;   /* i */
-    char *DK;     /* resulting digest */
+    uint32_t c; /* i */
+    char *DK;   /* resulting digest */
 } df_vectors[] = {
     {
         .P = "password",
@@ -115,14 +115,13 @@ static void test_scram(void)
     printf("SCRAM_SHA1_ClientKey and SCRAM_SHA1_ClientSignature tests.\n");
     for (i = 0; i < ARRAY_SIZE(scram_vectors); ++i) {
         printf("Test #%d: ", (int)i + 1);
-        snprintf(auth, sizeof(auth), "%s,%s,%s",
-                 scram_vectors[i].initial + 3, scram_vectors[i].challenge,
-                 scram_vectors[i].response);
+        snprintf(auth, sizeof(auth), "%s,%s,%s", scram_vectors[i].initial + 3,
+                 scram_vectors[i].challenge, scram_vectors[i].response);
         test_hex_to_bin(scram_vectors[i].salt, salt, &salt_len);
 
         SCRAM_SHA1_ClientKey((uint8_t *)scram_vectors[i].password,
-                             strlen(scram_vectors[i].password),
-                             salt, salt_len, scram_vectors[i].i, key);
+                             strlen(scram_vectors[i].password), salt, salt_len,
+                             scram_vectors[i].i, key);
         SCRAM_SHA1_ClientSignature(key, (uint8_t *)auth, strlen(auth), sign);
         for (j = 0; j < SHA1_DIGEST_SIZE; j++) {
             sign[j] ^= key[j];

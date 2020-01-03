@@ -1,7 +1,7 @@
 /* event.c
 ** strophe XMPP client library -- event loop and management
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -38,7 +38,7 @@
 #include <sys/select.h>
 #include <errno.h>
 #include <unistd.h>
-#define _sleep(x) usleep((x) * 1000)
+#define _sleep(x) usleep((x)*1000)
 #else
 #include <winsock2.h>
 #ifndef ETIMEDOUT
@@ -88,7 +88,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     uint64_t usec;
     int tls_read_bytes = 0;
 
-    if (ctx->loop_status == XMPP_LOOP_QUIT) return;
+    if (ctx->loop_status == XMPP_LOOP_QUIT)
+        return;
 
     /* send queued data */
     connitem = ctx->connlist;
@@ -141,7 +142,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
             /* pop the top item */
             conn->send_queue_head = sq;
             /* if we've sent everything update the tail */
-            if (!sq) conn->send_queue_tail = NULL;
+            if (!sq)
+                conn->send_queue_tail = NULL;
         }
 
         /* tear down connection on error */
@@ -161,7 +163,6 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
         if (connitem->conn->reset_parser)
             conn_parser_reset(connitem->conn);
     }
-
 
     /* fire any ready timed handlers, then make sure we don't wait past
        the time when timed handlers need to be called */
@@ -217,7 +218,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 
     /* check for events */
     if (max > 0)
-        ret = select(max + 1, &rfds,  &wfds, NULL, &tv);
+        ret = select(max + 1, &rfds, &wfds, NULL, &tv);
     else {
         if (timeout > 0)
             _sleep(timeout);
@@ -233,7 +234,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
     }
 
     /* no events happened */
-    if (ret == 0 && tls_read_bytes == 0) return;
+    if (ret == 0 && tls_read_bytes == 0)
+        return;
 
     /* process events */
     connitem = ctx->connlist;
@@ -261,29 +263,35 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 
             break;
         case XMPP_STATE_CONNECTED:
-            if (FD_ISSET(conn->sock, &rfds) || (conn->tls && tls_pending(conn->tls))) {
+            if (FD_ISSET(conn->sock, &rfds) ||
+                (conn->tls && tls_pending(conn->tls))) {
                 if (conn->tls) {
                     ret = tls_read(conn->tls, buf, STROPE_MESSAGE_BUFFER_SIZE);
                 } else {
-                    ret = sock_read(conn->sock, buf, STROPE_MESSAGE_BUFFER_SIZE);
+                    ret =
+                        sock_read(conn->sock, buf, STROPE_MESSAGE_BUFFER_SIZE);
                 }
 
                 if (ret > 0) {
                     ret = parser_feed(conn->parser, buf, ret);
                     if (!ret) {
                         xmpp_debug(ctx, "xmpp", "parse error [%s]", buf);
-                        xmpp_send_error(conn, XMPP_SE_INVALID_XML, "parse error");
+                        xmpp_send_error(conn, XMPP_SE_INVALID_XML,
+                                        "parse error");
                     }
                 } else {
                     if (conn->tls) {
                         if (!tls_is_recoverable(tls_error(conn->tls))) {
-                            xmpp_debug(ctx, "xmpp", "Unrecoverable TLS error, %d.", tls_error(conn->tls));
+                            xmpp_debug(ctx, "xmpp",
+                                       "Unrecoverable TLS error, %d.",
+                                       tls_error(conn->tls));
                             conn->error = tls_error(conn->tls);
                             conn_disconnect(conn);
                         }
                     } else {
                         /* return of 0 means socket closed by server */
-                        xmpp_debug(ctx, "xmpp", "Socket closed by remote host.");
+                        xmpp_debug(ctx, "xmpp",
+                                   "Socket closed by remote host.");
                         conn->error = ECONNRESET;
                         conn_disconnect(conn);
                     }
@@ -314,7 +322,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
  */
 void xmpp_run(xmpp_ctx_t *ctx)
 {
-    if (ctx->loop_status != XMPP_LOOP_NOTSTARTED) return;
+    if (ctx->loop_status != XMPP_LOOP_NOTSTARTED)
+        return;
 
     ctx->loop_status = XMPP_LOOP_RUNNING;
     while (ctx->loop_status == XMPP_LOOP_RUNNING) {

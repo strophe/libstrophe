@@ -1,7 +1,7 @@
 /* hash.h
 ** strophe XMPP client library -- hash table interface
-** 
-** Copyright (C) 2005-2009 Collecta, Inc. 
+**
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -18,23 +18,23 @@
 
 typedef struct _hash_t hash_t;
 
-typedef void (*hash_free_func)(const xmpp_ctx_t * const ctx, void *p);
+typedef void (*hash_free_func)(const xmpp_ctx_t *const ctx, void *p);
 
 /** allocate and initialize a new hash table */
-hash_t *hash_new(xmpp_ctx_t * const ctx, const int size,
-		 hash_free_func free_func);
+hash_t *
+hash_new(xmpp_ctx_t *const ctx, const int size, hash_free_func free_func);
 
 /** allocate a new reference to an existing hash table */
-hash_t *hash_clone(hash_t * const table);
+hash_t *hash_clone(hash_t *const table);
 
 /** release a hash table when no longer needed */
-void hash_release(hash_t * const table);
+void hash_release(hash_t *const table);
 
 /** add a key, value pair to a hash table.
  *  each key can appear only once; the value of any
  *  identical key will be replaced
  */
-int hash_add(hash_t *table, const char * const key, void *data);
+int hash_add(hash_t *table, const char *const key, void *data);
 
 /** look up a key in a hash table */
 void *hash_get(hash_t *table, const char *key);
@@ -56,6 +56,6 @@ void hash_iter_release(hash_iterator_t *iter);
 
 /** return the next hash table key from the iterator.
     the returned key should not be freed */
-const char * hash_iter_next(hash_iterator_t *iter);
+const char *hash_iter_next(hash_iterator_t *iter);
 
 #endif /* __LIBXMPPP_HASH_H__ */

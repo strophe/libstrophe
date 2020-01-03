@@ -29,19 +29,19 @@
 #include "md5.h"
 
 /* little-endian word access macros */
-#define GET_32BIT_LSB_FIRST(cp) \
-    (((uint32_t)(unsigned char)(cp)[0]) | \
-     ((uint32_t)(unsigned char)(cp)[1] << 8 ) | \
+#define GET_32BIT_LSB_FIRST(cp)                 \
+    (((uint32_t)(unsigned char)(cp)[0]) |       \
+     ((uint32_t)(unsigned char)(cp)[1] << 8) |  \
      ((uint32_t)(unsigned char)(cp)[2] << 16) | \
      ((uint32_t)(unsigned char)(cp)[3] << 24))
 
-#define PUT_32BIT_LSB_FIRST(cp, value) \
-    do { \
-        (cp)[0] = (value) & 0xFF; \
-        (cp)[1] = ((value) >> 8)  & 0xFF; \
+#define PUT_32BIT_LSB_FIRST(cp, value)    \
+    do {                                  \
+        (cp)[0] = (value)&0xFF;           \
+        (cp)[1] = ((value) >> 8) & 0xFF;  \
         (cp)[2] = ((value) >> 16) & 0xFF; \
         (cp)[3] = ((value) >> 24) & 0xFF; \
-    } while(0)
+    } while (0)
 
 static void MD5Transform(uint32_t buf[4], const unsigned char inext[64]);
 
@@ -74,10 +74,10 @@ void MD5Update(struct MD5Context *ctx, unsigned char const *buf, uint32_t len)
 
     t = ctx->bits[0];
     if ((ctx->bits[0] = (t + ((uint32_t)len << 3)) & 0xffffffff) < t)
-        ctx->bits[1]++;         /* Carry from low to high */
+        ctx->bits[1]++; /* Carry from low to high */
     ctx->bits[1] += len >> 29;
 
-    t = (t >> 3) & 0x3f;        /* Bytes already in shsInfo->data */
+    t = (t >> 3) & 0x3f; /* Bytes already in shsInfo->data */
 
     /* Handle any leading odd-sized chunks */
 
@@ -109,7 +109,7 @@ void MD5Update(struct MD5Context *ctx, unsigned char const *buf, uint32_t len)
 }
 
 /*
- * Final wrapup - pad to 64-byte boundary with the bit pattern 
+ * Final wrapup - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
 void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
@@ -150,7 +150,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
     PUT_32BIT_LSB_FIRST(digest + 4, ctx->buf[1]);
     PUT_32BIT_LSB_FIRST(digest + 8, ctx->buf[2]);
     PUT_32BIT_LSB_FIRST(digest + 12, ctx->buf[3]);
-    memset(ctx, 0, sizeof(*ctx));       /* In case it's sensitive */
+    memset(ctx, 0, sizeof(*ctx)); /* In case it's sensitive */
 }
 
 /* The four core functions - F1 is optimized somewhat */
@@ -172,7 +172,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
         w = w<<s | w>>(32-s),  printf(" - w: %x\n", w), w += x )
 */
 #define MD5STEP(f, w, x, y, z, data, s) \
-        ( w += f(x, y, z) + data, w = w<<s | w>>(32-s), w += x )
+    (w += f(x, y, z) + data, w = w << s | w >> (32 - s), w += x)
 
 /*
  * The core of the MD5 algorithm, this alters an existing MD5 hash to
@@ -183,9 +183,9 @@ static void MD5Transform(uint32_t buf[4], const unsigned char inext[64])
 {
     register uint32_t a, b, c, d, i;
     uint32_t in[16];
-    
+
     for (i = 0; i < 16; i++)
-      in[i] = GET_32BIT_LSB_FIRST(inext + 4 * i);
+        in[i] = GET_32BIT_LSB_FIRST(inext + 4 * i);
 
     a = buf[0];
     b = buf[1];

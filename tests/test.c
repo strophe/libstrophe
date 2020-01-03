@@ -16,9 +16,9 @@
 
 static uint8_t char_to_bin(char c)
 {
-    return c <= '9' ? (uint8_t)(c - '0') :
-           c <= 'Z' ? (uint8_t)(c - 'A' + 10) :
-                      (uint8_t)(c - 'a' + 10);
+    return c <= '9'
+               ? (uint8_t)(c - '0')
+               : c <= 'Z' ? (uint8_t)(c - 'A' + 10) : (uint8_t)(c - 'a' + 10);
 }
 
 void test_hex_to_bin(const char *hex, uint8_t *bin, size_t *bin_len)

@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-
 #include "strophe.h"
 #include "ostypes.h"
 #include "sock.h"
@@ -54,35 +53,33 @@ struct _xmpp_ctx_t {
     unsigned long timeout;
 };
 
-
 /* convenience functions for accessing the context */
-void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size);
-void *xmpp_realloc(const xmpp_ctx_t * const ctx, void *p, 
-                   const size_t size);
-char *xmpp_strdup(const xmpp_ctx_t * const ctx, const char * const s);
+void *xmpp_alloc(const xmpp_ctx_t *const ctx, const size_t size);
+void *xmpp_realloc(const xmpp_ctx_t *const ctx, void *p, const size_t size);
+char *xmpp_strdup(const xmpp_ctx_t *const ctx, const char *const s);
 
-void xmpp_log(const xmpp_ctx_t * const ctx,
+void xmpp_log(const xmpp_ctx_t *const ctx,
               const xmpp_log_level_t level,
-              const char * const area,
-              const char * const fmt,
+              const char *const area,
+              const char *const fmt,
               va_list ap);
 
 /* wrappers for xmpp_log at specific levels */
-void xmpp_error(const xmpp_ctx_t * const ctx,
-                const char * const area,
-                const char * const fmt,
+void xmpp_error(const xmpp_ctx_t *const ctx,
+                const char *const area,
+                const char *const fmt,
                 ...);
-void xmpp_warn(const xmpp_ctx_t * const ctx,
-                const char * const area,
-                const char * const fmt,
-                ...);
-void xmpp_info(const xmpp_ctx_t * const ctx,
-                const char * const area,
-                const char * const fmt,
-                ...);
-void xmpp_debug(const xmpp_ctx_t * const ctx,
-                const char * const area,
-                const char * const fmt,
+void xmpp_warn(const xmpp_ctx_t *const ctx,
+               const char *const area,
+               const char *const fmt,
+               ...);
+void xmpp_info(const xmpp_ctx_t *const ctx,
+               const char *const area,
+               const char *const fmt,
+               ...);
+void xmpp_debug(const xmpp_ctx_t *const ctx,
+                const char *const area,
+                const char *const fmt,
                 ...);
 
 /** connection **/
@@ -135,7 +132,7 @@ struct _xmpp_handlist_t {
 
 #define MAX_DOMAIN_LEN 256
 
-#define SASL_MASK_PLAIN     (1 << 0)
+#define SASL_MASK_PLAIN (1 << 0)
 #define SASL_MASK_DIGESTMD5 (1 << 1)
 #define SASL_MASK_ANONYMOUS (1 << 2)
 #define SASL_MASK_SCRAMSHA1 (1 << 3)
@@ -146,7 +143,7 @@ enum {
     XMPP_PORT_COMPONENT = 5347,
 };
 
-typedef void (*xmpp_open_handler)(xmpp_conn_t * const conn);
+typedef void (*xmpp_open_handler)(xmpp_conn_t *const conn);
 
 struct _xmpp_conn_t {
     unsigned int ref;
@@ -160,7 +157,7 @@ struct _xmpp_conn_t {
     xmpp_stream_error_t *stream_error;
 
     sock_t sock;
-    int ka_timeout; /* TCP keepalive timeout */
+    int ka_timeout;  /* TCP keepalive timeout */
     int ka_interval; /* TCP keepalive interval */
 
     tls_t *tls;
@@ -169,8 +166,8 @@ struct _xmpp_conn_t {
     int tls_mandatory;
     int tls_legacy_ssl;
     int tls_trust;
-    int tls_failed; /* set when tls fails, so we don't try again */
-    int sasl_support; /* if true, field is a bitfield of supported 
+    int tls_failed;   /* set when tls fails, so we don't try again */
+    int sasl_support; /* if true, field is a bitfield of supported
                          mechanisms */
     int auth_legacy_enabled;
     int secured; /* set when stream is secured with TLS */
@@ -207,7 +204,7 @@ struct _xmpp_conn_t {
 
     /* user handlers only get called after authentication */
     int authenticated;
-    
+
     /* connection events handler */
     xmpp_conn_handler conn_handler;
     void *userdata;
@@ -218,14 +215,13 @@ struct _xmpp_conn_t {
     xmpp_handlist_t *handlers;
 };
 
-void conn_disconnect(xmpp_conn_t * const conn);
-void conn_disconnect_clean(xmpp_conn_t * const conn);
-void conn_established(xmpp_conn_t * const conn);
-void conn_open_stream(xmpp_conn_t * const conn);
-int conn_tls_start(xmpp_conn_t * const conn);
-void conn_prepare_reset(xmpp_conn_t * const conn, xmpp_open_handler handler);
-void conn_parser_reset(xmpp_conn_t * const conn);
-
+void conn_disconnect(xmpp_conn_t *const conn);
+void conn_disconnect_clean(xmpp_conn_t *const conn);
+void conn_established(xmpp_conn_t *const conn);
+void conn_open_stream(xmpp_conn_t *const conn);
+int conn_tls_start(xmpp_conn_t *const conn);
+void conn_prepare_reset(xmpp_conn_t *const conn, xmpp_open_handler handler);
+void conn_parser_reset(xmpp_conn_t *const conn);
 
 typedef enum {
     XMPP_STANZA_UNKNOWN,
@@ -238,7 +234,7 @@ struct _xmpp_stanza_t {
     xmpp_ctx_t *ctx;
 
     xmpp_stanza_type_t type;
-    
+
     xmpp_stanza_t *prev;
     xmpp_stanza_t *next;
     xmpp_stanza_t *children;
@@ -250,33 +246,32 @@ struct _xmpp_stanza_t {
 };
 
 /* handler management */
-void handler_fire_stanza(xmpp_conn_t * const conn,
-                         xmpp_stanza_t * const stanza);
-uint64_t handler_fire_timed(xmpp_ctx_t * const ctx);
+void handler_fire_stanza(xmpp_conn_t *const conn, xmpp_stanza_t *const stanza);
+uint64_t handler_fire_timed(xmpp_ctx_t *const ctx);
 void handler_reset_timed(xmpp_conn_t *conn, int user_only);
-void handler_add_timed(xmpp_conn_t * const conn,
+void handler_add_timed(xmpp_conn_t *const conn,
                        xmpp_timed_handler handler,
                        const unsigned long period,
-                       void * const userdata);
-void handler_add_id(xmpp_conn_t * const conn,
+                       void *const userdata);
+void handler_add_id(xmpp_conn_t *const conn,
                     xmpp_handler handler,
-                    const char * const id,
-                    void * const userdata);
-void handler_add(xmpp_conn_t * const conn,
+                    const char *const id,
+                    void *const userdata);
+void handler_add(xmpp_conn_t *const conn,
                  xmpp_handler handler,
-                 const char * const ns,
-                 const char * const name,
-                 const char * const type,
-                 void * const userdata);
+                 const char *const ns,
+                 const char *const name,
+                 const char *const type,
+                 void *const userdata);
 void handler_system_delete_all(xmpp_conn_t *conn);
 
 /* utility functions */
-void disconnect_mem_error(xmpp_conn_t * const conn);
+void disconnect_mem_error(xmpp_conn_t *const conn);
 
 /* auth functions */
-void auth_handle_open(xmpp_conn_t * const conn);
-void auth_handle_component_open(xmpp_conn_t * const conn);
-void auth_handle_open_raw(xmpp_conn_t * const conn);
-void auth_handle_open_stub(xmpp_conn_t * const conn);
+void auth_handle_open(xmpp_conn_t *const conn);
+void auth_handle_component_open(xmpp_conn_t *const conn);
+void auth_handle_open_raw(xmpp_conn_t *const conn);
+void auth_handle_open_stub(xmpp_conn_t *const conn);
 
 #endif /* __LIBSTROPHE_COMMON_H__ */

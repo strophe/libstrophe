@@ -55,8 +55,8 @@ int main(int argc, char **argv)
     }
 
     domain = argv[1];
-    snprintf(fulldomain, sizeof(fulldomain), "_%s._%s.%s",
-             service, proto, domain);
+    snprintf(fulldomain, sizeof(fulldomain), "_%s._%s.%s", service, proto,
+             domain);
     errno = 0;
     len = res_query(fulldomain, C_IN, T_SRV, buf, sizeof(buf));
 

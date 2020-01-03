@@ -1,7 +1,7 @@
 /* tls_openssl.c
 ** strophe XMPP client library -- TLS abstraction openssl impl.
 **
-** Copyright (C) 2005-008 Collecta, Inc. 
+** Copyright (C) 2005-008 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -13,7 +13,7 @@
  *  TLS implementation with OpenSSL.
  */
 
-#include <errno.h>   /* EINTR */
+#include <errno.h> /* EINTR */
 #include <string.h>
 
 #ifndef _WIN32
@@ -39,11 +39,11 @@
 #if (defined LIBRESSL_VERSION_NUMBER && OPENSSL_VERSION_NUMBER == 0x20000000L)
 #undef OPENSSL_VERSION_NUMBER
 #if (LIBRESSL_VERSION_NUMBER >= 0x2080000fL)
-#define OPENSSL_VERSION_NUMBER  0x1010000fL
+#define OPENSSL_VERSION_NUMBER 0x1010000fL
 #elif (LIBRESSL_VERSION_NUMBER >= 0x2070000fL)
-#define OPENSSL_VERSION_NUMBER  0x1000200fL
+#define OPENSSL_VERSION_NUMBER 0x1000200fL
 #else
-#define OPENSSL_VERSION_NUMBER  0x1000107fL
+#define OPENSSL_VERSION_NUMBER 0x1000107fL
 #endif
 #endif
 
@@ -169,9 +169,11 @@ tls_t *tls_new(xmpp_conn_t *conn)
          * Allow only complete wildcards.  RFC 6125 discourages wildcard usage
          * completely, and lists internationalized domain names as a reason
          * against partial wildcards.
-         * See https://tools.ietf.org/html/rfc6125#section-7.2 for more information.
+         * See https://tools.ietf.org/html/rfc6125#section-7.2 for more
+         * information.
          */
-        X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+        X509_VERIFY_PARAM_set_hostflags(param,
+                                        X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
         X509_VERIFY_PARAM_set1_host(param, conn->domain, 0);
 #endif
 
@@ -271,10 +273,9 @@ int tls_stop(tls_t *tls)
 
 int tls_is_recoverable(int error)
 {
-    return (error == SSL_ERROR_NONE || error == SSL_ERROR_WANT_READ
-            || error == SSL_ERROR_WANT_WRITE
-            || error == SSL_ERROR_WANT_CONNECT
-            || error == SSL_ERROR_WANT_ACCEPT);
+    return (error == SSL_ERROR_NONE || error == SSL_ERROR_WANT_READ ||
+            error == SSL_ERROR_WANT_WRITE || error == SSL_ERROR_WANT_CONNECT ||
+            error == SSL_ERROR_WANT_ACCEPT);
 }
 
 int tls_pending(tls_t *tls)
@@ -282,7 +283,7 @@ int tls_pending(tls_t *tls)
     return SSL_pending(tls->ssl);
 }
 
-int tls_read(tls_t *tls, void * const buff, const size_t len)
+int tls_read(tls_t *tls, void *const buff, const size_t len)
 {
     int ret;
 
@@ -292,7 +293,7 @@ int tls_read(tls_t *tls, void * const buff, const size_t len)
     return ret;
 }
 
-int tls_write(tls_t *tls, const void * const buff, const size_t len)
+int tls_write(tls_t *tls, const void *const buff, const size_t len)
 {
     int ret;
 
@@ -315,7 +316,8 @@ static void _tls_sock_wait(tls_t *tls, int error)
     int nfds;
     int ret;
 
-    if (error == SSL_ERROR_NONE) return;
+    if (error == SSL_ERROR_NONE)
+        return;
 
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
@@ -323,8 +325,9 @@ static void _tls_sock_wait(tls_t *tls, int error)
         FD_SET(tls->sock, &rfds);
     if (error == SSL_ERROR_WANT_WRITE)
         FD_SET(tls->sock, &wfds);
-    nfds = (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE) ?
-           tls->sock + 1 : 0;
+    nfds = (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE)
+               ? tls->sock + 1
+               : 0;
     do {
         tv.tv_sec = TLS_TIMEOUT_SEC;
         tv.tv_usec = TLS_TIMEOUT_USEC;

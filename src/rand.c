@@ -20,15 +20,15 @@
  */
 
 #include <assert.h>
-#include <string.h>     /* memeset */
-#include <time.h>       /* clock, time */
+#include <string.h> /* memeset */
+#include <time.h>   /* clock, time */
 
-#include "common.h"     /* xmpp_alloc, xmpp_free */
-#include "ostypes.h"    /* uint8_t, uint32_t, size_t */
+#include "common.h"  /* xmpp_alloc, xmpp_free */
+#include "ostypes.h" /* uint8_t, uint32_t, size_t */
 #include "sha1.h"
-#include "snprintf.h"   /* xmpp_snprintf */
+#include "snprintf.h" /* xmpp_snprintf */
 
-#include "rand.h"       /* xmpp_rand_t */
+#include "rand.h" /* xmpp_rand_t */
 
 #define outlen SHA1_DIGEST_SIZE
 #define seedlen (440 / 8)
@@ -55,15 +55,15 @@ struct _xmpp_rand_t {
 };
 
 /* returns smallest number mupliple of y that not less than x */
-#define round_up(x, y) (((x) + (y) - 1) / (y) * (y))
+#define round_up(x, y) (((x) + (y)-1) / (y) * (y))
 /* returns smallest integer number that not less than x/y */
-#define div_round_up(x, y) (((x) + (y) - 1) / (y))
+#define div_round_up(x, y) (((x) + (y)-1) / (y))
 
 /* adds two arrays as numbers in big-endian representation and stores
  * result in the first one.
  */
-static void arr_add(uint8_t *arr1, size_t arr1_len,
-                    uint8_t *arr2, size_t arr2_len)
+static void
+arr_add(uint8_t *arr1, size_t arr1_len, uint8_t *arr2, size_t arr2_len)
 {
     size_t i;
     uint32_t acc;
@@ -89,8 +89,10 @@ static void store_be32(uint32_t val, uint8_t be[4])
     be[3] = (uint8_t)(val & 0xff);
 }
 
-static void Hash_df(uint8_t *input_string, size_t input_string_len,
-                    uint8_t *output_string, size_t no_of_bytes_to_return)
+static void Hash_df(uint8_t *input_string,
+                    size_t input_string_len,
+                    uint8_t *output_string,
+                    size_t no_of_bytes_to_return)
 {
     uint8_t counter;
     uint8_t temp[round_up(seedlen, outlen)];
@@ -119,7 +121,8 @@ static void Hash_df(uint8_t *input_string, size_t input_string_len,
 static void Hash_DRBG_Instantiate(Hash_DRBG_CTX *ctx,
                                   uint8_t *entropy_input,
                                   size_t entropy_input_len,
-                                  uint8_t *nonce, size_t nonce_len)
+                                  uint8_t *nonce,
+                                  size_t nonce_len)
 {
     uint8_t seed_material[ENTROPY_MAX + NONCE_MAX];
     uint8_t seed0[seedlen + 1];
@@ -162,8 +165,8 @@ static void Hash_DRBG_Reseed(Hash_DRBG_CTX *ctx,
     ctx->reseed_counter = 1;
 }
 
-static void Hashgen(uint8_t *V, uint8_t *output,
-                    size_t requested_number_of_bytes)
+static void
+Hashgen(uint8_t *V, uint8_t *output, size_t requested_number_of_bytes)
 {
     uint8_t data[seedlen];
     uint8_t W[GENERATE_MAX];
@@ -187,7 +190,8 @@ static void Hashgen(uint8_t *V, uint8_t *output,
 }
 
 /* assume additional_input is zero length string */
-static int Hash_DRBG_Generate(Hash_DRBG_CTX *ctx, uint8_t *output,
+static int Hash_DRBG_Generate(Hash_DRBG_CTX *ctx,
+                              uint8_t *output,
                               size_t requested_number_of_bytes)
 {
     uint8_t H[outlen];
@@ -211,14 +215,14 @@ static int Hash_DRBG_Generate(Hash_DRBG_CTX *ctx, uint8_t *output,
     return 0;
 }
 
-#define ENTROPY_ACCUMULATE(ptr, last, type, arg)    \
-do {                                                \
-    type __arg = (type)(arg);                       \
-    if ((char*)ptr + sizeof(__arg) < (char*)last) { \
-        *(type*)ptr = __arg;                        \
-        ptr = (void*)((char*)ptr + sizeof(__arg));  \
-    }                                               \
-} while (0)
+#define ENTROPY_ACCUMULATE(ptr, last, type, arg)          \
+    do {                                                  \
+        type __arg = (type)(arg);                         \
+        if ((char *)ptr + sizeof(__arg) < (char *)last) { \
+            *(type *)ptr = __arg;                         \
+            ptr = (void *)((char *)ptr + sizeof(__arg));  \
+        }                                                 \
+    } while (0)
 
 static void xmpp_rand_reseed(xmpp_rand_t *rand)
 {
@@ -291,8 +295,8 @@ int xmpp_rand(xmpp_rand_t *rand)
 
 static void rand_byte2hex(unsigned char byte, char *hex)
 {
-    static const char hex_tbl[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                                      '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    static const char hex_tbl[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     hex[0] = hex_tbl[(byte >> 4) & 0x0f];
     hex[1] = hex_tbl[byte & 0x0f];

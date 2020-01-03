@@ -21,14 +21,17 @@
 #include "rand.c"
 
 /* stubs to build test without whole libstrophe */
-void *xmpp_alloc(const xmpp_ctx_t * const ctx, const size_t size) {
+void *xmpp_alloc(const xmpp_ctx_t *const ctx, const size_t size)
+{
     return NULL;
 }
-void xmpp_free(const xmpp_ctx_t * const ctx, void *p) { }
-int xmpp_snprintf (char *str, size_t count, const char *fmt, ...) {
+void xmpp_free(const xmpp_ctx_t *const ctx, void *p) {}
+int xmpp_snprintf(char *str, size_t count, const char *fmt, ...)
+{
     return 0;
 }
-uint64_t time_stamp(void) {
+uint64_t time_stamp(void)
+{
     return 0;
 }
 
@@ -121,8 +124,8 @@ int main()
                         &entropy_input_len);
         test_hex_to_bin(test_vectors[i].nonce, nonce, &nonce_len);
 
-        Hash_DRBG_Instantiate(&ctx, entropy_input, entropy_input_len,
-                              nonce, nonce_len);
+        Hash_DRBG_Instantiate(&ctx, entropy_input, entropy_input_len, nonce,
+                              nonce_len);
         COMPARE(test_vectors[i].V1, test_bin_to_hex(ctx.V, sizeof(ctx.V)));
         COMPARE(test_vectors[i].C1, test_bin_to_hex(ctx.C, sizeof(ctx.C)));
         assert(ctx.reseed_counter == 1);

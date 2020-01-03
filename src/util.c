@@ -1,7 +1,7 @@
 /* util.c
 ** strophe XMPP client library -- various utility functions
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -38,7 +38,7 @@
  *
  *  @return a new allocates string with the same data as s or NULL on error
  */
-char *xmpp_strdup(const xmpp_ctx_t * const ctx, const char * const s)
+char *xmpp_strdup(const xmpp_ctx_t *const ctx, const char *const s)
 {
     size_t len;
     char *copy;
@@ -88,7 +88,7 @@ uint64_t time_stamp(void)
 {
 #if defined(_XBOX_ONE)
     uint64_t SystemTime;
-    GetSystemTimeAsFileTime((FILETIME*)&SystemTime);
+    GetSystemTimeAsFileTime((FILETIME *)&SystemTime);
     /* Convert 100 nanosec ticks to milliseconds */
     return (SystemTime / 10000);
 #elif defined(_WIN32)
@@ -119,12 +119,12 @@ uint64_t time_elapsed(uint64_t t1, uint64_t t2)
 
 /** Disconnect the stream with a memory error.
  *  This is a convenience function used internally by various parts of
- *  the Strophe library for terminating the connection because of a 
+ *  the Strophe library for terminating the connection because of a
  *  memory error.
  *
  *  @param conn a Strophe connection object
  */
-void disconnect_mem_error(xmpp_conn_t * const conn)
+void disconnect_mem_error(xmpp_conn_t *const conn)
 {
     xmpp_error(conn->ctx, "xmpp", "Memory allocation error");
     xmpp_disconnect(conn);

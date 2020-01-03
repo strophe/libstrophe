@@ -16,8 +16,8 @@
 #ifndef __LIBSTROPHE_RAND_H__
 #define __LIBSTROPHE_RAND_H__
 
-#include <stddef.h>     /* size_t */
-#include "strophe.h"    /* xmpp_ctx_t */
+#include <stddef.h>  /* size_t */
+#include "strophe.h" /* xmpp_ctx_t */
 
 typedef struct _xmpp_rand_t xmpp_rand_t;
 

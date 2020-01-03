@@ -16,7 +16,7 @@
 #ifndef __LIBSTROPHE_STROPHE_H__
 #define __LIBSTROPHE_STROPHE_H__
 
-#include <stddef.h>     /* size_t */
+#include <stddef.h> /* size_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,7 +79,7 @@ extern "C" {
 #define XMPP_EOK 0
 /** @def XMPP_EMEM
  *  Memory related failure error code.
- *  
+ *
  *  This is returned on allocation errors and signals that the host may
  *  be out of memory.
  */
@@ -114,18 +114,18 @@ typedef struct _xmpp_log_t xmpp_log_t;
 /* opaque run time context containing the above hooks */
 typedef struct _xmpp_ctx_t xmpp_ctx_t;
 
-xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t * const mem, 
-			 const xmpp_log_t * const log);
-void xmpp_ctx_free(xmpp_ctx_t * const ctx);
+xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *const mem,
+                         const xmpp_log_t *const log);
+void xmpp_ctx_free(xmpp_ctx_t *const ctx);
 
 /* free some blocks returned by other APIs, for example the
    buffer you get from xmpp_stanza_to_text */
-void xmpp_free(const xmpp_ctx_t * const ctx, void *p);
+void xmpp_free(const xmpp_ctx_t *const ctx, void *p);
 
 struct _xmpp_mem_t {
-    void *(*alloc)(const size_t size, void * const userdata);
-    void (*free)(void *p, void * const userdata);
-    void *(*realloc)(void *p, const size_t size, void * const userdata);
+    void *(*alloc)(const size_t size, void *const userdata);
+    void (*free)(void *p, void *const userdata);
+    void *(*realloc)(void *p, const size_t size, void *const userdata);
     void *userdata;
 };
 
@@ -136,16 +136,12 @@ typedef enum {
     XMPP_LEVEL_ERROR
 } xmpp_log_level_t;
 
-typedef enum {
-    XMPP_UNKNOWN,
-    XMPP_CLIENT,
-    XMPP_COMPONENT
-} xmpp_conn_type_t;
+typedef enum { XMPP_UNKNOWN, XMPP_CLIENT, XMPP_COMPONENT } xmpp_conn_type_t;
 
-typedef void (*xmpp_log_handler)(void * const userdata, 
-				 const xmpp_log_level_t level,
-				 const char * const area,
-				 const char * const msg);
+typedef void (*xmpp_log_handler)(void *const userdata,
+                                 const xmpp_log_level_t level,
+                                 const char *const area,
+                                 const char *const msg);
 
 struct _xmpp_log_t {
     xmpp_log_handler handler;
@@ -162,17 +158,17 @@ typedef struct _xmpp_conn_t xmpp_conn_t;
 typedef struct _xmpp_stanza_t xmpp_stanza_t;
 
 /* connection flags */
-#define XMPP_CONN_FLAG_DISABLE_TLS   (1UL << 0)
+#define XMPP_CONN_FLAG_DISABLE_TLS (1UL << 0)
 #define XMPP_CONN_FLAG_MANDATORY_TLS (1UL << 1)
-#define XMPP_CONN_FLAG_LEGACY_SSL    (1UL << 2)
+#define XMPP_CONN_FLAG_LEGACY_SSL (1UL << 2)
 /** @def XMPP_CONN_FLAG_TRUST_TLS
  *  Trust server's certificate even if it is invalid.
  */
-#define XMPP_CONN_FLAG_TRUST_TLS     (1UL << 3)
+#define XMPP_CONN_FLAG_TRUST_TLS (1UL << 3)
 /** @def XMPP_CONN_FLAG_LEGACY_AUTH
  *  Enable legacy authentication support.
  */
-#define XMPP_CONN_FLAG_LEGACY_AUTH   (1UL << 4)
+#define XMPP_CONN_FLAG_LEGACY_AUTH (1UL << 4)
 
 /* connect callback */
 typedef enum {
@@ -215,98 +211,101 @@ typedef struct {
     xmpp_stanza_t *stanza;
 } xmpp_stream_error_t;
 
-typedef void (*xmpp_conn_handler)(xmpp_conn_t * const conn, 
-				  const xmpp_conn_event_t event,
-				  const int error,
-				  xmpp_stream_error_t * const stream_error,
-				  void * const userdata);
+typedef void (*xmpp_conn_handler)(xmpp_conn_t *const conn,
+                                  const xmpp_conn_event_t event,
+                                  const int error,
+                                  xmpp_stream_error_t *const stream_error,
+                                  void *const userdata);
 
-void xmpp_send_error(xmpp_conn_t * const conn, xmpp_error_type_t const type, char * const text);
-xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t * const ctx);
-xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t * const conn);
-int xmpp_conn_release(xmpp_conn_t * const conn);
+void xmpp_send_error(xmpp_conn_t *const conn,
+                     xmpp_error_type_t const type,
+                     char *const text);
+xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *const ctx);
+xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *const conn);
+int xmpp_conn_release(xmpp_conn_t *const conn);
 
-long xmpp_conn_get_flags(const xmpp_conn_t * const conn);
-int xmpp_conn_set_flags(xmpp_conn_t * const conn, long flags);
-const char *xmpp_conn_get_jid(const xmpp_conn_t * const conn);
-const char *xmpp_conn_get_bound_jid(const xmpp_conn_t * const conn);
-void xmpp_conn_set_jid(xmpp_conn_t * const conn, const char * const jid);
-const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
-void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);
-xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t * const conn);
-void xmpp_conn_disable_tls(xmpp_conn_t * const conn);
-int xmpp_conn_is_secured(xmpp_conn_t * const conn);
-void xmpp_conn_set_keepalive(xmpp_conn_t * const conn, int timeout, int interval);
-int xmpp_conn_is_connecting(xmpp_conn_t * const conn);
-int xmpp_conn_is_connected(xmpp_conn_t * const conn);
-int xmpp_conn_is_disconnected(xmpp_conn_t * const conn);
+long xmpp_conn_get_flags(const xmpp_conn_t *const conn);
+int xmpp_conn_set_flags(xmpp_conn_t *const conn, long flags);
+const char *xmpp_conn_get_jid(const xmpp_conn_t *const conn);
+const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *const conn);
+void xmpp_conn_set_jid(xmpp_conn_t *const conn, const char *const jid);
+const char *xmpp_conn_get_pass(const xmpp_conn_t *const conn);
+void xmpp_conn_set_pass(xmpp_conn_t *const conn, const char *const pass);
+xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *const conn);
+void xmpp_conn_disable_tls(xmpp_conn_t *const conn);
+int xmpp_conn_is_secured(xmpp_conn_t *const conn);
+void xmpp_conn_set_keepalive(xmpp_conn_t *const conn,
+                             int timeout,
+                             int interval);
+int xmpp_conn_is_connecting(xmpp_conn_t *const conn);
+int xmpp_conn_is_connected(xmpp_conn_t *const conn);
+int xmpp_conn_is_disconnected(xmpp_conn_t *const conn);
 
-int xmpp_connect_client(xmpp_conn_t * const conn, 
-			  const char * const altdomain,
-			  unsigned short altport,
-			  xmpp_conn_handler callback,
-			  void * const userdata);
+int xmpp_connect_client(xmpp_conn_t *const conn,
+                        const char *const altdomain,
+                        unsigned short altport,
+                        xmpp_conn_handler callback,
+                        void *const userdata);
 
-int xmpp_connect_component(xmpp_conn_t * const conn, const char * const server,
-                           unsigned short port, xmpp_conn_handler callback,
-                           void * const userdata);
+int xmpp_connect_component(xmpp_conn_t *const conn,
+                           const char *const server,
+                           unsigned short port,
+                           xmpp_conn_handler callback,
+                           void *const userdata);
 
-int xmpp_connect_raw(xmpp_conn_t * const conn,
-                     const char * const altdomain,
+int xmpp_connect_raw(xmpp_conn_t *const conn,
+                     const char *const altdomain,
                      unsigned short altport,
                      xmpp_conn_handler callback,
-                     void * const userdata);
-int xmpp_conn_open_stream_default(xmpp_conn_t * const conn);
-int xmpp_conn_open_stream(xmpp_conn_t * const conn, char **attributes,
+                     void *const userdata);
+int xmpp_conn_open_stream_default(xmpp_conn_t *const conn);
+int xmpp_conn_open_stream(xmpp_conn_t *const conn,
+                          char **attributes,
                           size_t attributes_len);
-int xmpp_conn_tls_start(xmpp_conn_t * const conn);
+int xmpp_conn_tls_start(xmpp_conn_t *const conn);
 
-void xmpp_disconnect(xmpp_conn_t * const conn);
+void xmpp_disconnect(xmpp_conn_t *const conn);
 
-void xmpp_send(xmpp_conn_t * const conn,
-	       xmpp_stanza_t * const stanza);
+void xmpp_send(xmpp_conn_t *const conn, xmpp_stanza_t *const stanza);
 
-void xmpp_send_raw_string(xmpp_conn_t * const conn, 
-			  const char * const fmt, ...);
-void xmpp_send_raw(xmpp_conn_t * const conn, 
-		   const char * const data, const size_t len);
-
+void xmpp_send_raw_string(xmpp_conn_t *const conn, const char *const fmt, ...);
+void xmpp_send_raw(xmpp_conn_t *const conn,
+                   const char *const data,
+                   const size_t len);
 
 /* handlers */
 
 /* if the handle returns false it is removed */
-typedef int (*xmpp_timed_handler)(xmpp_conn_t * const conn, 
-				  void * const userdata);
+typedef int (*xmpp_timed_handler)(xmpp_conn_t *const conn,
+                                  void *const userdata);
 
-void xmpp_timed_handler_add(xmpp_conn_t * const conn,
-			    xmpp_timed_handler handler,
-			    const unsigned long period,
-			    void * const userdata);
-void xmpp_timed_handler_delete(xmpp_conn_t * const conn,
-			       xmpp_timed_handler handler);
-
+void xmpp_timed_handler_add(xmpp_conn_t *const conn,
+                            xmpp_timed_handler handler,
+                            const unsigned long period,
+                            void *const userdata);
+void xmpp_timed_handler_delete(xmpp_conn_t *const conn,
+                               xmpp_timed_handler handler);
 
 /* if the handler returns false it is removed */
-typedef int (*xmpp_handler)(xmpp_conn_t * const conn,
-			     xmpp_stanza_t * const stanza,
-			     void * const userdata);
+typedef int (*xmpp_handler)(xmpp_conn_t *const conn,
+                            xmpp_stanza_t *const stanza,
+                            void *const userdata);
 
-void xmpp_handler_add(xmpp_conn_t * const conn,
-		      xmpp_handler handler,
-		      const char * const ns,
-		      const char * const name,
-		      const char * const type,
-		      void * const userdata);
-void xmpp_handler_delete(xmpp_conn_t * const conn,
-			 xmpp_handler handler);
+void xmpp_handler_add(xmpp_conn_t *const conn,
+                      xmpp_handler handler,
+                      const char *const ns,
+                      const char *const name,
+                      const char *const type,
+                      void *const userdata);
+void xmpp_handler_delete(xmpp_conn_t *const conn, xmpp_handler handler);
 
-void xmpp_id_handler_add(xmpp_conn_t * const conn,
-			 xmpp_handler handler,
-			 const char * const id,
-			 void * const userdata);
-void xmpp_id_handler_delete(xmpp_conn_t * const conn,
-			    xmpp_handler handler,
-			    const char * const id);
+void xmpp_id_handler_add(xmpp_conn_t *const conn,
+                         xmpp_handler handler,
+                         const char *const id,
+                         void *const userdata);
+void xmpp_id_handler_delete(xmpp_conn_t *const conn,
+                            xmpp_handler handler,
+                            const char *const id);
 
 /*
 void xmpp_register_stanza_handler(conn, stanza, xmlns, type, handler)
@@ -318,91 +317,95 @@ void xmpp_register_stanza_handler(conn, stanza, xmlns, type, handler)
 xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx);
 
 /* clone a stanza */
-xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t * const stanza);
+xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t *const stanza);
 
 /* copies a stanza and all children */
-xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza);
+xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t *const stanza);
 
 /* free a stanza object and it's contents */
-int xmpp_stanza_release(xmpp_stanza_t * const stanza);
+int xmpp_stanza_release(xmpp_stanza_t *const stanza);
 
-xmpp_ctx_t *xmpp_stanza_get_context(const xmpp_stanza_t * const stanza);
+xmpp_ctx_t *xmpp_stanza_get_context(const xmpp_stanza_t *const stanza);
 
-int xmpp_stanza_is_text(xmpp_stanza_t * const stanza);
-int xmpp_stanza_is_tag(xmpp_stanza_t * const stanza);
+int xmpp_stanza_is_text(xmpp_stanza_t *const stanza);
+int xmpp_stanza_is_tag(xmpp_stanza_t *const stanza);
 
 /* marshall a stanza into text for transmission or display */
-int xmpp_stanza_to_text(xmpp_stanza_t *stanza, 
-			char ** const buf, size_t * const buflen);
+int xmpp_stanza_to_text(xmpp_stanza_t *stanza,
+                        char **const buf,
+                        size_t *const buflen);
 
-xmpp_stanza_t *xmpp_stanza_get_children(xmpp_stanza_t * const stanza);
-xmpp_stanza_t *xmpp_stanza_get_child_by_name(xmpp_stanza_t * const stanza, 
-					     const char * const name);
-xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t * const stanza,
-					   const char * const ns);
-xmpp_stanza_t *xmpp_stanza_get_child_by_name_and_ns(xmpp_stanza_t * const stanza,
-                                                    const char * const name,
-                                                    const char * const ns);
-xmpp_stanza_t *xmpp_stanza_get_next(xmpp_stanza_t * const stanza);
+xmpp_stanza_t *xmpp_stanza_get_children(xmpp_stanza_t *const stanza);
+xmpp_stanza_t *xmpp_stanza_get_child_by_name(xmpp_stanza_t *const stanza,
+                                             const char *const name);
+xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t *const stanza,
+                                           const char *const ns);
+xmpp_stanza_t *xmpp_stanza_get_child_by_name_and_ns(xmpp_stanza_t *const stanza,
+                                                    const char *const name,
+                                                    const char *const ns);
+xmpp_stanza_t *xmpp_stanza_get_next(xmpp_stanza_t *const stanza);
 int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child);
 
-const char *xmpp_stanza_get_attribute(xmpp_stanza_t * const stanza,
-				      const char * const name);
-int xmpp_stanza_get_attribute_count(xmpp_stanza_t * const stanza);
-int xmpp_stanza_get_attributes(xmpp_stanza_t * const stanza,
-			       const char **attr, int attrlen);
+const char *xmpp_stanza_get_attribute(xmpp_stanza_t *const stanza,
+                                      const char *const name);
+int xmpp_stanza_get_attribute_count(xmpp_stanza_t *const stanza);
+int xmpp_stanza_get_attributes(xmpp_stanza_t *const stanza,
+                               const char **attr,
+                               int attrlen);
 /* concatenate all child text nodes.  this function
  * returns a string that must be freed by the caller */
-char *xmpp_stanza_get_text(xmpp_stanza_t * const stanza);
-const char *xmpp_stanza_get_text_ptr(xmpp_stanza_t * const stanza);
-const char *xmpp_stanza_get_name(xmpp_stanza_t * const stanza);
+char *xmpp_stanza_get_text(xmpp_stanza_t *const stanza);
+const char *xmpp_stanza_get_text_ptr(xmpp_stanza_t *const stanza);
+const char *xmpp_stanza_get_name(xmpp_stanza_t *const stanza);
 /* set_attribute adds/replaces attributes */
-int xmpp_stanza_set_attribute(xmpp_stanza_t * const stanza, 
-			      const char * const key,
-			      const char * const value);
-int xmpp_stanza_set_name(xmpp_stanza_t *stanza,
-			 const char * const name);
-int xmpp_stanza_set_text(xmpp_stanza_t *stanza,
-			 const char * const text);
+int xmpp_stanza_set_attribute(xmpp_stanza_t *const stanza,
+                              const char *const key,
+                              const char *const value);
+int xmpp_stanza_set_name(xmpp_stanza_t *stanza, const char *const name);
+int xmpp_stanza_set_text(xmpp_stanza_t *stanza, const char *const text);
 int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
-				   const char * const text, 
-				   const size_t size);
-int xmpp_stanza_del_attribute(xmpp_stanza_t * const stanza,
-                              const char * const name);
+                                   const char *const text,
+                                   const size_t size);
+int xmpp_stanza_del_attribute(xmpp_stanza_t *const stanza,
+                              const char *const name);
 
 /* common stanza helpers */
-const char *xmpp_stanza_get_ns(xmpp_stanza_t * const stanza);
-const char *xmpp_stanza_get_type(xmpp_stanza_t * const stanza);
-const char *xmpp_stanza_get_id(xmpp_stanza_t * const stanza);
-const char *xmpp_stanza_get_to(xmpp_stanza_t * const stanza);
-const char *xmpp_stanza_get_from(xmpp_stanza_t * const stanza);
-int xmpp_stanza_set_ns(xmpp_stanza_t * const stanza, const char * const ns);
-int xmpp_stanza_set_id(xmpp_stanza_t * const stanza, const char * const id);
-int xmpp_stanza_set_type(xmpp_stanza_t * const stanza, const char * const type);
-int xmpp_stanza_set_to(xmpp_stanza_t * const stanza, const char * const to);
-int xmpp_stanza_set_from(xmpp_stanza_t * const stanza, const char * const from);
+const char *xmpp_stanza_get_ns(xmpp_stanza_t *const stanza);
+const char *xmpp_stanza_get_type(xmpp_stanza_t *const stanza);
+const char *xmpp_stanza_get_id(xmpp_stanza_t *const stanza);
+const char *xmpp_stanza_get_to(xmpp_stanza_t *const stanza);
+const char *xmpp_stanza_get_from(xmpp_stanza_t *const stanza);
+int xmpp_stanza_set_ns(xmpp_stanza_t *const stanza, const char *const ns);
+int xmpp_stanza_set_id(xmpp_stanza_t *const stanza, const char *const id);
+int xmpp_stanza_set_type(xmpp_stanza_t *const stanza, const char *const type);
+int xmpp_stanza_set_to(xmpp_stanza_t *const stanza, const char *const to);
+int xmpp_stanza_set_from(xmpp_stanza_t *const stanza, const char *const from);
 
 /* allocate and initialize a stanza in reply to another */
-xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t * const stanza);
+xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t *const stanza);
 
 /* stanza subclasses */
-xmpp_stanza_t *xmpp_message_new(xmpp_ctx_t *ctx, const char * const type,
-                                const char * const to, const char * const id);
+xmpp_stanza_t *xmpp_message_new(xmpp_ctx_t *ctx,
+                                const char *const type,
+                                const char *const to,
+                                const char *const id);
 char *xmpp_message_get_body(xmpp_stanza_t *msg);
-int xmpp_message_set_body(xmpp_stanza_t *msg, const char * const text);
+int xmpp_message_set_body(xmpp_stanza_t *msg, const char *const text);
 
-xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char * const type,
-                           const char * const id);
+xmpp_stanza_t *
+xmpp_iq_new(xmpp_ctx_t *ctx, const char *const type, const char *const id);
 xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx);
-xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t const type,
-                              const char * const text);
+xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx,
+                              xmpp_error_type_t const type,
+                              const char *const text);
 
 /* jid */
 
 /* these return new strings that must be xmpp_free()'d */
-char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
-                                    const char *domain,
-                                    const char *resource);
+char *xmpp_jid_new(xmpp_ctx_t *ctx,
+                   const char *node,
+                   const char *domain,
+                   const char *resource);
 char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid);
 char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid);
 char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid);
@@ -410,10 +413,10 @@ char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid);
 
 /* event loop */
 
-void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long  timeout);
+void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
-void xmpp_ctx_set_timeout(xmpp_ctx_t * const ctx, const unsigned long timeout);
+void xmpp_ctx_set_timeout(xmpp_ctx_t *const ctx, const unsigned long timeout);
 
 /* UUID */
 
@@ -429,7 +432,8 @@ char *xmpp_uuid_gen(xmpp_ctx_t *ctx);
 typedef struct _xmpp_sha1_t xmpp_sha1_t;
 
 char *xmpp_sha1(xmpp_ctx_t *ctx, const unsigned char *data, size_t len);
-void xmpp_sha1_digest(const unsigned char *data, size_t len,
+void xmpp_sha1_digest(const unsigned char *data,
+                      size_t len,
                       unsigned char *digest);
 
 xmpp_sha1_t *xmpp_sha1_new(xmpp_ctx_t *ctx);
@@ -442,10 +446,14 @@ void xmpp_sha1_to_digest(xmpp_sha1_t *sha1, unsigned char *digest);
 
 /* Base64 */
 
-char *xmpp_base64_encode(xmpp_ctx_t *ctx, const unsigned char *data, size_t len);
+char *
+xmpp_base64_encode(xmpp_ctx_t *ctx, const unsigned char *data, size_t len);
 char *xmpp_base64_decode_str(xmpp_ctx_t *ctx, const char *base64, size_t len);
-void xmpp_base64_decode_bin(xmpp_ctx_t *ctx, const char *base64, size_t len,
-                            unsigned char **out, size_t *outlen);
+void xmpp_base64_decode_bin(xmpp_ctx_t *ctx,
+                            const char *base64,
+                            size_t len,
+                            unsigned char **out,
+                            size_t *outlen);
 
 #ifdef __cplusplus
 }

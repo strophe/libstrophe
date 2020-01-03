@@ -1,7 +1,7 @@
 /* jid.c
 ** strophe XMPP client library -- helper functions for parsing JIDs
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -28,15 +28,17 @@
  *  @return an allocated string with the full JID or NULL if no domain
  *      is specified
  */
-char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
-				    const char *domain,
-				    const char *resource)
+char *xmpp_jid_new(xmpp_ctx_t *ctx,
+                   const char *node,
+                   const char *domain,
+                   const char *resource)
 {
     char *result;
     size_t len, nlen, dlen, rlen;
 
     /* jid must at least have a domain */
-    if (domain == NULL) return NULL;
+    if (domain == NULL)
+        return NULL;
 
     /* accumulate lengths */
     dlen = strlen(domain);
@@ -47,23 +49,23 @@ char *xmpp_jid_new(xmpp_ctx_t *ctx, const char *node,
     /* concat components */
     result = xmpp_alloc(ctx, len + 1);
     if (result != NULL) {
-	if (node != NULL) {
-	    memcpy(result, node, nlen - 1);
-	    result[nlen-1] = '@';
-	}
+        if (node != NULL) {
+            memcpy(result, node, nlen - 1);
+            result[nlen - 1] = '@';
+        }
         memcpy(result + nlen, domain, dlen);
-	if (resource != NULL) {
-	    result[nlen+dlen] = '/';
-	    memcpy(result+nlen+dlen+1, resource, rlen - 1);
-	}
-	result[len] = '\0';
+        if (resource != NULL) {
+            result[nlen + dlen] = '/';
+            memcpy(result + nlen + dlen + 1, resource, rlen - 1);
+        }
+        result[len] = '\0';
     }
 
     return result;
 }
 
 /** Create a bare JID from a JID.
- *  
+ *
  *  @param ctx the Strophe context object
  *  @param jid the JID
  *
@@ -77,15 +79,15 @@ char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid)
     len = strcspn(jid, "/");
     result = xmpp_alloc(ctx, len + 1);
     if (result != NULL) {
-	memcpy(result, jid, len);
-	result[len] = '\0';
+        memcpy(result, jid, len);
+        result[len] = '\0';
     }
 
     return result;
 }
 
 /** Create a node string from a JID.
- *  
+ *
  *  @param ctx a Strophe context object
  *  @param jid the JID
  *
@@ -99,11 +101,11 @@ char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid)
 
     c = strchr(jid, '@');
     if (c != NULL) {
-	result = xmpp_alloc(ctx, (c-jid) + 1);
-	if (result != NULL) {
-	    memcpy(result, jid, (c-jid));
-	    result[c-jid] = '\0';
-	}
+        result = xmpp_alloc(ctx, (c - jid) + 1);
+        if (result != NULL) {
+            memcpy(result, jid, (c - jid));
+            result[c - jid] = '\0';
+        }
     }
 
     return result;
@@ -124,17 +126,17 @@ char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
 
     c = strchr(jid, '@');
     if (c == NULL) {
-	/* no node, assume domain */
-	c = jid;
+        /* no node, assume domain */
+        c = jid;
     } else {
-	/* advance past the separator */
-	c++;
+        /* advance past the separator */
+        c++;
     }
     dlen = strcspn(c, "/"); /* do not include resource */
     result = xmpp_alloc(ctx, dlen + 1);
     if (result != NULL) {
-	memcpy(result, c, dlen);
-	result[dlen] = '\0';
+        memcpy(result, c, dlen);
+        result[dlen] = '\0';
     }
 
     return result;
@@ -145,7 +147,7 @@ char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
  *  @param ctx a Strophe context object
  *  @param jid the JID
  *
- *  @return an allocated string with the resource or NULL if no resource 
+ *  @return an allocated string with the resource or NULL if no resource
  *      is found or an error occurs
  */
 char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid)

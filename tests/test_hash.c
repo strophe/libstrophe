@@ -1,7 +1,7 @@
 /* test_hash.c
 ** libstrophe XMPP client library -- self-test for the hash-table implementation
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -22,12 +22,8 @@
 #define TESTSIZE 500
 
 /* static test data */
-const char *keys[] = {
-  "foo", "bar", "baz", "quux", "xyzzy"
-};
-const char *values[] = {
-  "wuzzle", "mug", "canonical", "rosebud", "lottery"
-};
+const char *keys[] = {"foo", "bar", "baz", "quux", "xyzzy"};
+const char *values[] = {"wuzzle", "mug", "canonical", "rosebud", "lottery"};
 const int nkeys = ARRAY_SIZE(keys);
 
 int main(int argc, char **argv)
@@ -43,10 +39,10 @@ int main(int argc, char **argv)
 
     /* initialize random numbers */
     if (argc > 2) {
-	/* use a seed from the command line */
-	seed = (unsigned int)atoi(argv[1]);
+        /* use a seed from the command line */
+        seed = (unsigned int)atoi(argv[1]);
     } else {
-	seed = (unsigned int)clock();
+        seed = (unsigned int)clock();
     }
     /* using random seed 'seed' */
     srand(seed);
@@ -54,37 +50,42 @@ int main(int argc, char **argv)
     /* allocate a default context */
     ctx = xmpp_ctx_new(NULL, NULL);
     if (ctx == NULL) {
-	/* ctx allocation failed! */
-	return -1;
+        /* ctx allocation failed! */
+        return -1;
     }
 
     /* allocate a hash table */
     table = hash_new(ctx, TABLESIZE, xmpp_free);
     if (table == NULL) {
-	/* table allocation failed! */
-	return 1;
+        /* table allocation failed! */
+        return 1;
     }
 
     /* test insertion */
     for (i = 0; i < nkeys; i++) {
-	err = hash_add(table, keys[i], xmpp_strdup(ctx, values[i]));
-	if (err) return err;
+        err = hash_add(table, keys[i], xmpp_strdup(ctx, values[i]));
+        if (err)
+            return err;
     }
 
     /* test key count */
     if (hash_num_keys(table) != nkeys) {
-	/* wrong number of keys in table! */
-	return 1;
+        /* wrong number of keys in table! */
+        return 1;
     }
 
     /* test replacing old values */
     for (i = 0; i < nkeys; i++) {
         err = hash_add(table, keys[0], xmpp_strdup(ctx, values[i]));
-        if (err) return err;
-        if (hash_num_keys(table) != nkeys) return 1;
+        if (err)
+            return err;
+        if (hash_num_keys(table) != nkeys)
+            return 1;
         result = hash_get(table, keys[0]);
-        if (result == NULL) return 1;
-        if (strcmp(result, values[i]) != 0) return 1;
+        if (result == NULL)
+            return 1;
+        if (strcmp(result, values[i]) != 0)
+            return 1;
     }
     /* restore value for the 1st key */
     hash_add(table, keys[0], xmpp_strdup(ctx, values[0]));
@@ -94,36 +95,36 @@ int main(int argc, char **argv)
 
     /* test lookup */
     for (i = 0; i < nkeys; i++) {
-	result = hash_get(clone, keys[i]);
-	if (result == NULL) {
-	    /* lookup failed! */
-	    return 1;
-	}
-	if (strcmp(values[i], result)) {
-	    /* lookup returned incorrect value! */
-	    return 1;
-	}
+        result = hash_get(clone, keys[i]);
+        if (result == NULL) {
+            /* lookup failed! */
+            return 1;
+        }
+        if (strcmp(values[i], result)) {
+            /* lookup returned incorrect value! */
+            return 1;
+        }
     }
 
     /* test key iterator */
     iter = hash_iter_new(clone);
     if (iter == NULL) {
-	/* iterator allocation failed! */
-	return 1;
+        /* iterator allocation failed! */
+        return 1;
     }
     for (i = 0; i < nkeys; i++) {
-	key = hash_iter_next(iter);
-	printf("key: '%s'\n", key);
+        key = hash_iter_next(iter);
+        printf("key: '%s'\n", key);
     }
     key = hash_iter_next(iter);
     if (key != NULL) {
-	/* extra keys returned! */
-	return 1;
+        /* extra keys returned! */
+        return 1;
     }
     key = hash_iter_next(iter);
     if (key != NULL) {
-	/* extra keys returned! */
-	return 1;
+        /* extra keys returned! */
+        return 1;
     }
     hash_iter_release(iter);
 
@@ -132,14 +133,19 @@ int main(int argc, char **argv)
 
     /* test drops */
     hash_drop(clone, keys[2]);
-    if (hash_get(clone, keys[2]) != NULL) return 1;
+    if (hash_get(clone, keys[2]) != NULL)
+        return 1;
     hash_drop(clone, keys[1]);
     hash_drop(clone, keys[4]);
-    if (hash_get(clone, keys[4]) != NULL) return 1;
-    if (hash_get(clone, keys[1]) != NULL) return 1;
+    if (hash_get(clone, keys[4]) != NULL)
+        return 1;
+    if (hash_get(clone, keys[1]) != NULL)
+        return 1;
     /* keys 0,3 should still be available */
-    if (hash_get(clone, keys[0]) == NULL) return 1;
-    if (hash_get(clone, keys[3]) == NULL) return 1;
+    if (hash_get(clone, keys[0]) == NULL)
+        return 1;
+    if (hash_get(clone, keys[3]) == NULL)
+        return 1;
 
     /* release our clone */
     hash_release(clone);

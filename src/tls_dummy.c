@@ -1,7 +1,7 @@
 /* tls_dummy.c
 ** strophe XMPP client library -- TLS abstraction dummy impl.
 **
-** Copyright (C) 2005-2009 Collecta, Inc. 
+** Copyright (C) 2005-2009 Collecta, Inc.
 **
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
@@ -70,12 +70,12 @@ int tls_pending(tls_t *tls)
     return 0;
 }
 
-int tls_read(tls_t *tls, void * const buff, const size_t len)
+int tls_read(tls_t *tls, void *const buff, const size_t len)
 {
     return -1;
 }
 
-int tls_write(tls_t *tls, const void * const buff, const size_t len)
+int tls_write(tls_t *tls, const void *const buff, const size_t len)
 {
     return -1;
 }
