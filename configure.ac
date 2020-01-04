@@ -31,6 +31,9 @@ AC_ARG_ENABLE([tls],
 AC_ARG_ENABLE([cares],
     [AS_HELP_STRING([--enable-cares], [use c-ares for DNS resolution])])
 
+AC_SEARCH_LIBS([socket], [network socket])
+#AC_CHECK_FUNCS([snprintf vsnprintf])
+
 if test "x$enable_tls" != xno; then
     PKG_CHECK_MODULES([openssl], [openssl],
         [PC_REQUIRES="openssl ${PC_REQUIRES}"],
@@ -90,8 +93,6 @@ else
 fi
 
 AC_MSG_NOTICE([libstrophe will use the $with_parser XML parser])
-
-AC_SEARCH_LIBS([socket], [network socket])
 
 if test "x$enable_cares" = xyes; then
     PKG_CHECK_MODULES([libcares], [libcares >= 1.7.0],
