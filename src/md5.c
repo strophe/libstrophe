@@ -43,8 +43,7 @@
         (cp)[3] = ((value) >> 24) & 0xFF; \
     } while(0)
 
-static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
-                         struct MD5Context *ctx);
+static void MD5Transform(uint32_t buf[4], const unsigned char inext[64]);
 
 /*
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
@@ -91,7 +90,7 @@ void MD5Update(struct MD5Context *ctx, unsigned char const *buf, uint32_t len)
             return;
         }
         memcpy(p, buf, t);
-        MD5Transform(ctx->buf, ctx->in, ctx);
+        MD5Transform(ctx->buf, ctx->in);
         buf += t;
         len -= t;
     }
@@ -99,7 +98,7 @@ void MD5Update(struct MD5Context *ctx, unsigned char const *buf, uint32_t len)
 
     while (len >= 64) {
         memcpy(ctx->in, buf, 64);
-        MD5Transform(ctx->buf, ctx->in, ctx);
+        MD5Transform(ctx->buf, ctx->in);
         buf += 64;
         len -= 64;
     }
@@ -133,7 +132,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
     if (count < 8) {
         /* Two lots of padding:  Pad the first block to 64 bytes */
         memset(p, 0, count);
-        MD5Transform(ctx->buf, ctx->in, ctx);
+        MD5Transform(ctx->buf, ctx->in);
 
         /* Now fill the next block with 56 bytes */
         memset(ctx->in, 0, 56);
@@ -146,7 +145,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
     PUT_32BIT_LSB_FIRST(ctx->in + 56, ctx->bits[0]);
     PUT_32BIT_LSB_FIRST(ctx->in + 60, ctx->bits[1]);
 
-    MD5Transform(ctx->buf, ctx->in, ctx);
+    MD5Transform(ctx->buf, ctx->in);
     PUT_32BIT_LSB_FIRST(digest, ctx->buf[0]);
     PUT_32BIT_LSB_FIRST(digest + 4, ctx->buf[1]);
     PUT_32BIT_LSB_FIRST(digest + 8, ctx->buf[2]);
@@ -180,8 +179,7 @@ void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
  * reflect the addition of 16 longwords of new data.  MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
-static void MD5Transform(uint32_t buf[4], const unsigned char inext[64],
-                         struct MD5Context *ctx)
+static void MD5Transform(uint32_t buf[4], const unsigned char inext[64])
 {
     register uint32_t a, b, c, d, i;
     uint32_t in[16];
