@@ -41,7 +41,7 @@ static void digest_to_hex(const uint8_t *digest, char *output)
 
 int main(int argc, char** argv)
 {
-    int k;
+    size_t k;
     SHA1_CTX context;
     uint8_t digest[20];
     char output[80];
