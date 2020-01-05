@@ -75,7 +75,7 @@ static void crypto_HMAC(const struct hash_alg *alg,
     uint8_t key_pad[HMAC_BLOCK_SIZE];
     uint8_t key_ipad[HMAC_BLOCK_SIZE];
     uint8_t key_opad[HMAC_BLOCK_SIZE];
-    uint8_t sha_digest[SHA512_DIGEST_SIZE];
+    uint8_t sha_digest[SCRAM_DIGEST_SIZE];
     int i;
     union common_hash_ctx ctx;
 
@@ -148,7 +148,7 @@ void SCRAM_ClientKey(const struct hash_alg *alg,
                      uint32_t i,
                      uint8_t *key)
 {
-    uint8_t salted[SHA512_DIGEST_SIZE];
+    uint8_t salted[SCRAM_DIGEST_SIZE];
 
     /* XXX: Normalize(password) is omitted */
 
@@ -163,7 +163,7 @@ void SCRAM_ClientSignature(const struct hash_alg *alg,
                            size_t len,
                            uint8_t *sign)
 {
-    uint8_t stored[SHA512_DIGEST_SIZE];
+    uint8_t stored[SCRAM_DIGEST_SIZE];
 
     alg->hash(ClientKey, alg->digest_size, stored);
     crypto_HMAC(alg, stored, alg->digest_size, AuthMessage, len, sign);

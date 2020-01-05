@@ -82,9 +82,9 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *const conn,
 static int _handle_digestmd5_rspauth(xmpp_conn_t *const conn,
                                      xmpp_stanza_t *const stanza,
                                      void *const userdata);
-static int _handle_scram_sha1_challenge(xmpp_conn_t *const conn,
-                                        xmpp_stanza_t *const stanza,
-                                        void *const userdata);
+static int _handle_scram_challenge(xmpp_conn_t *const conn,
+                                   xmpp_stanza_t *const stanza,
+                                   void *const userdata);
 static char *_make_scram_init_msg(xmpp_conn_t *const conn);
 
 static int _handle_missing_features_sasl(xmpp_conn_t *const conn,
@@ -440,18 +440,18 @@ struct scram_user_data {
 };
 
 /* handle the challenge phase of SCRAM-SHA-1 auth */
-static int _handle_scram_sha1_challenge(xmpp_conn_t *const conn,
-                                        xmpp_stanza_t *const stanza,
-                                        void *const userdata)
+static int _handle_scram_challenge(xmpp_conn_t *const conn,
+                                   xmpp_stanza_t *const stanza,
+                                   void *const userdata)
 {
     char *text;
     char *response;
     xmpp_stanza_t *auth;
     xmpp_stanza_t *authdata;
     const char *name;
-    const char *scram_name;
     char *challenge;
     struct scram_user_data *scram_ctx = (struct scram_user_data *)userdata;
+    int rc;
 
     name = xmpp_stanza_get_name(stanza);
     xmpp_debug(conn->ctx, "xmpp", "handle %s (challenge) called for %s",
@@ -491,14 +491,24 @@ static int _handle_scram_sha1_challenge(xmpp_conn_t *const conn,
         xmpp_send(conn, auth);
         xmpp_stanza_release(auth);
 
+        rc = 1; /* Keep handler */
     } else {
-        scram_name = scram_ctx->alg->scram_name;
+        /*
+         * Free scram_ctx after calling _handle_sasl_result(). If authentication
+         * fails, we want to try other mechanism which may be different SCRAM
+         * mechanism. If we freed scram_ctx before the function, _auth() would
+         * be able to allocate new scram_ctx object with the same address and
+         * handler_add() would consider new SCRAM handler as duplicate, because
+         * current handler is not removed yet. As result, libstrophe wouldn't
+         * handle incoming challenge stanza.
+         */
+        rc = _handle_sasl_result(conn, stanza,
+                                 (void *)scram_ctx->alg->scram_name);
         xmpp_free(conn->ctx, scram_ctx->scram_init);
         xmpp_free(conn->ctx, scram_ctx);
-        return _handle_sasl_result(conn, stanza, (void *)scram_name);
     }
 
-    return 1;
+    return rc;
 
 err_release_auth:
     xmpp_stanza_release(auth);
@@ -694,8 +704,8 @@ static void _auth(xmpp_conn_t *const conn)
         xmpp_stanza_add_child(auth, authdata);
         xmpp_stanza_release(authdata);
 
-        handler_add(conn, _handle_scram_sha1_challenge, XMPP_NS_SASL, NULL,
-                    NULL, (void *)scram_ctx);
+        handler_add(conn, _handle_scram_challenge, XMPP_NS_SASL, NULL, NULL,
+                    (void *)scram_ctx);
 
         xmpp_send(conn, auth);
         xmpp_stanza_release(auth);

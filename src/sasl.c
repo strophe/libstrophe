@@ -21,7 +21,6 @@
 #include "ostypes.h"
 #include "sasl.h"
 #include "md5.h"
-#include "sha1.h"
 #include "scram.h"
 #include "rand.h"
 #include "util.h"
@@ -379,7 +378,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
     return response;
 }
 
-/** generate auth response string for the SASL SCRAM-SHA-1 mechanism */
+/** generate auth response string for the SASL SCRAM mechanism */
 char *sasl_scram(xmpp_ctx_t *ctx,
                  const struct hash_alg *alg,
                  const char *challenge,
@@ -387,8 +386,8 @@ char *sasl_scram(xmpp_ctx_t *ctx,
                  const char *jid,
                  const char *password)
 {
-    uint8_t key[SHA1_DIGEST_SIZE];
-    uint8_t sign[SHA1_DIGEST_SIZE];
+    uint8_t key[SCRAM_DIGEST_SIZE];
+    uint8_t sign[SCRAM_DIGEST_SIZE];
     char *r = NULL;
     char *s = NULL;
     char *i = NULL;
@@ -439,7 +438,8 @@ char *sasl_scram(xmpp_ctx_t *ctx,
         goto out_sval;
     }
 
-    response_len = 39 + strlen(r);
+    /* "c=biws," + r + ",p=" + sign_b64 + '\0' */
+    response_len = 7 + strlen(r) + 3 + ((alg->digest_size + 2) / 3 * 4) + 1;
     response = xmpp_alloc(ctx, response_len);
     if (!response) {
         goto out_auth;
@@ -454,11 +454,12 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     SCRAM_ClientSignature(alg, key, (uint8_t *)auth, strlen(auth), sign);
     SCRAM_ClientProof(alg, sign, key, sign);
 
-    sign_b64 = xmpp_base64_encode(ctx, sign, sizeof(sign));
+    sign_b64 = xmpp_base64_encode(ctx, sign, alg->digest_size);
     if (!sign_b64) {
         goto out_response;
     }
 
+    /* Check for buffer overflow */
     if (strlen(response) + strlen(sign_b64) + 3 + 1 > response_len) {
         xmpp_free(ctx, sign_b64);
         goto out_response;

@@ -1,5 +1,5 @@
 /* scram.h
- * strophe XMPP client library -- SCRAM-SHA1 helper functions
+ * strophe XMPP client library -- SCRAM helper functions
  *
  * Copyright (C) 2013 Dmitry Podgorny <pasis.ua@gmail.com>
  *
@@ -10,7 +10,7 @@
  */
 
 /** @file
- *  SCRAM-SHA1 helper functions.
+ *  SCRAM helper functions.
  */
 
 #ifndef __LIBSTROPHE_SCRAM_H__
@@ -18,6 +18,10 @@
 
 /* make sure the stdint.h types are available */
 #include "ostypes.h"
+
+/* Maximum possible digest size. Used for buffers allocation. */
+#include "sha512.h"
+#define SCRAM_DIGEST_SIZE SHA512_DIGEST_SIZE
 
 struct hash_alg {
     const char *scram_name;
