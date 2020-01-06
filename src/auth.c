@@ -24,7 +24,7 @@
 #include "rand.h"
 
 #ifdef _MSC_VER
-#define strcasecmp stricmp
+#define strcasecmp _stricmp
 #endif
 
 /* TODO: these should configurable at runtime on a per connection basis  */
