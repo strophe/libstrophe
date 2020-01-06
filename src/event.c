@@ -41,9 +41,15 @@
 #define _sleep(x) usleep((x) * 1000)
 #else
 #include <winsock2.h>
+#ifndef ETIMEDOUT
 #define ETIMEDOUT WSAETIMEDOUT
+#endif
+#ifndef ECONNRESET
 #define ECONNRESET WSAECONNRESET
+#endif
+#ifndef ECONNABORTED
 #define ECONNABORTED WSAECONNABORTED
+#endif
 #define _sleep(x) Sleep(x)
 #endif
 
