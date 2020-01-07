@@ -326,6 +326,8 @@ xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t * const stanza);
 /* free a stanza object and it's contents */
 int xmpp_stanza_release(xmpp_stanza_t * const stanza);
 
+xmpp_ctx_t *xmpp_stanza_get_context(const xmpp_stanza_t * const stanza);
+
 int xmpp_stanza_is_text(xmpp_stanza_t * const stanza);
 int xmpp_stanza_is_tag(xmpp_stanza_t * const stanza);
 

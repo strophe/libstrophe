@@ -188,6 +188,19 @@ int xmpp_stanza_release(xmpp_stanza_t * const stanza)
     return released;
 }
 
+/** Get the strophe context that the stanza is associated with.
+ *
+ *  @param stanza a Strophe stanza object
+ *
+ *  @return a Strophe context
+ *
+ *  @ingroup Stanza
+ */
+xmpp_ctx_t *xmpp_stanza_get_context(const xmpp_stanza_t * const stanza)
+{
+    return stanza->ctx;
+}
+
 /** Determine if a stanza is a text node.
  *  
  *  @param stanza a Strophe stanza object
