@@ -1002,6 +1002,37 @@ int xmpp_conn_is_secured(xmpp_conn_t * const conn)
     return conn->secured && !conn->tls_failed && conn->tls != NULL ? 1 : 0;
 }
 
+/**
+ *  @return TRUE if connection is in connecting state and FALSE otherwise
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_is_connecting(xmpp_conn_t * const conn)
+{
+    return conn->state == XMPP_STATE_CONNECTING ? 1 : 0;
+}
+
+/**
+ *  @return TRUE if connection is in connected state and FALSE otherwise
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_is_connected(xmpp_conn_t * const conn)
+{
+    return conn->state == XMPP_STATE_CONNECTED ? 1 : 0;
+}
+
+/**
+ *  @return TRUE if connection is in disconnected state and FALSE otherwise
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_is_disconnected(xmpp_conn_t * const conn)
+{
+    return conn->state == XMPP_STATE_DISCONNECTED ? 1 : 0;
+}
+
+
 /* timed handler for cleanup if normal disconnect procedure takes too long */
 static int _disconnect_cleanup(xmpp_conn_t * const conn,
                                void * const userdata)
