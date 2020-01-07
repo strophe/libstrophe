@@ -23,9 +23,6 @@
 #include "common.h"
 #include "parser.h"
 
-/* Use the Unit Separator to delimit namespace and name in our XML*/
-#define NAMESPACE_SEP ('\x1F')
-
 /* Allocate inner text by this number bytes more. Expat splits string
  * "new\nline" into 3 strings: "new" "\n" "line". Expecting this pattern,
  * we can leave few bytes in the inner_text for "\n". It should reduce
@@ -48,6 +45,46 @@ struct _parser_t {
     int inner_text_used;
 };
 
+/* Use the Unit Separator to delimit namespace and name in our XML */
+const XML_Char namespace_sep = '\x1F';
+
+/*
+ * Cached strophe ctx. It is used for memory suite.
+ * Note, expat doesn't support userdata in memory suite, therefore,
+ * we can support only one strophe context. If user creates more than one
+ * context, this module will fallback to default library allocator for all
+ * contexts other than mem_ctx.
+ */
+static xmpp_ctx_t *mem_ctx = NULL;
+
+static void *parser_mem_malloc(size_t size)
+{
+    if (mem_ctx != NULL)
+        return xmpp_alloc(mem_ctx, size);
+    else
+        return NULL;
+}
+
+static void *parser_mem_realloc(void *ptr, size_t size)
+{
+    if (mem_ctx != NULL)
+        return xmpp_realloc(mem_ctx, ptr, size);
+    else
+        return NULL;
+}
+
+static void parser_mem_free(void *ptr)
+{
+    if (mem_ctx != NULL)
+        xmpp_free(mem_ctx, ptr);
+}
+
+static const XML_Memory_Handling_Suite parser_mem_suite = {
+    .malloc_fcn = &parser_mem_malloc,
+    .realloc_fcn = &parser_mem_realloc,
+    .free_fcn = &parser_mem_free,
+};
+
 /* return allocated string with the name from a delimited
  * namespace/name string */
 static char *_xml_name(xmpp_ctx_t *ctx, const char *nsname)
@@ -56,7 +93,7 @@ static char *_xml_name(xmpp_ctx_t *ctx, const char *nsname)
     const char *c;
     size_t len;
 
-    c = strchr(nsname, NAMESPACE_SEP);
+    c = strchr(nsname, namespace_sep);
     if (c == NULL) return xmpp_strdup(ctx, nsname);
 
     c++;
@@ -76,7 +113,7 @@ static char *_xml_namespace(xmpp_ctx_t *ctx, const char *nsname)
     char *result = NULL;
     const char *c;
 
-    c = strchr(nsname, NAMESPACE_SEP);
+    c = strchr(nsname, namespace_sep);
     if (c != NULL) {
 	result = xmpp_alloc(ctx, (c-nsname) + 1);
 	if (result != NULL) {
@@ -273,22 +310,37 @@ void parser_free(parser_t *parser)
 /* shuts down and restarts XML parser.  true on success */
 int parser_reset(parser_t *parser)
 {
-    if (parser->expat)
-	XML_ParserFree(parser->expat);
+    XML_Bool ret;
+    const XML_Memory_Handling_Suite *mem = NULL;
 
-    if (parser->stanza) 
-	xmpp_stanza_release(parser->stanza);
+    if (parser->expat) {
+        ret = XML_ParserReset(parser->expat, NULL);
+        if (ret != XML_TRUE) {
+            XML_ParserFree(parser->expat);
+            parser->expat = NULL;
+        }
+    } else {
+        if (mem_ctx == NULL)
+            mem_ctx = parser->ctx;
+        if (parser->ctx == mem_ctx)
+            mem = &parser_mem_suite;
+        parser->expat = XML_ParserCreate_MM(NULL, mem, &namespace_sep);
+    }
 
-    parser->expat = XML_ParserCreateNS(NULL, NAMESPACE_SEP);
-    if (!parser->expat) return 0;
-
-    parser->depth = 0;
-    parser->stanza = NULL;
+    if (parser->stanza) {
+        xmpp_stanza_release(parser->stanza);
+        parser->stanza = NULL;
+    }
 
     if (parser->inner_text) {
-        xmpp_free (parser->ctx, parser->inner_text);
+        xmpp_free(parser->ctx, parser->inner_text);
         parser->inner_text = NULL;
     }
+
+    if (!parser->expat)
+        return 0;
+
+    parser->depth = 0;
 
     XML_SetUserData(parser->expat, parser);
     XML_SetElementHandler(parser->expat, _start_element, _end_element);
