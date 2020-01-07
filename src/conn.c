@@ -254,6 +254,12 @@ int xmpp_conn_release(xmpp_conn_t * const conn)
     else {
         ctx = conn->ctx;
 
+        if (conn->state == XMPP_STATE_CONNECTING ||
+            conn->state == XMPP_STATE_CONNECTED)
+        {
+            conn_disconnect(conn);
+        }
+
         /* remove connection from context's connlist */
         if (ctx->connlist->conn == conn) {
             item = ctx->connlist;
