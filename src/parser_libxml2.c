@@ -20,7 +20,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
-#include <strophe.h>
+#include "strophe.h"
 #include "common.h"
 #include "parser.h"
 

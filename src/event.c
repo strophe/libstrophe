@@ -53,7 +53,7 @@
 #define _sleep(x) Sleep(x)
 #endif
 
-#include <strophe.h>
+#include "strophe.h"
 #include "common.h"
 #include "parser.h"
 
