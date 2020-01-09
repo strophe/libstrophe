@@ -130,7 +130,7 @@ struct _xmpp_handlist_t {
             char *name;
             char *type;
         };
-    };
+    } u;
 };
 
 #define MAX_DOMAIN_LEN 256
