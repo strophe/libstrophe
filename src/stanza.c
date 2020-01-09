@@ -632,22 +632,29 @@ int xmpp_stanza_set_ns(xmpp_stanza_t * const stanza,
 }
 
 /** Add a child stanza to a stanza object.
- *  This function clones the child and appends it to the stanza object's
- *  children.
+ *  If do_clone is TRUE, user keeps reference to the child stanza and must call
+ *  xmpp_stanza_release() to release the reference. If do_clone is FALSE, user
+ *  transfers ownership and must not neither call xmpp_stanza_release() for
+ *  the child stanza nor use it.
  *
  *  @param stanza a Strophe stanza object
  *  @param child the child stanza object
+ *  @param do_clone TRUE to increase ref count of child (default for
+ *                  xmpp_stanza_add_child())
  *
  *  @return XMPP_EOK (0) on success or a number less than 0 on failure
  *
  *  @ingroup Stanza
  */
-int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child)
+int xmpp_stanza_add_child_ex(xmpp_stanza_t *stanza, xmpp_stanza_t *child,
+                             int do_clone)
 {
     xmpp_stanza_t *s;
 
-    /* get a reference to the child */
-    xmpp_stanza_clone(child);
+    if (do_clone) {
+        /* get a reference to the child */
+        xmpp_stanza_clone(child);
+    }
 
     child->parent = stanza;
 
@@ -661,6 +668,22 @@ int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child)
     }
 
     return XMPP_EOK;
+}
+
+/** Add a child stanza to a stanza object.
+ *  This function clones the child and appends it to the stanza object's
+ *  children.
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param child the child stanza object
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Stanza
+ */
+int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child)
+{
+    return xmpp_stanza_add_child_ex(stanza, child, 1);
 }
 
 /** Set the text data for a text stanza.

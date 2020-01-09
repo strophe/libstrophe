@@ -6,6 +6,7 @@
 		- xmpp_conn_is_connecting()
 		- xmpp_conn_is_connected()
 		- xmpp_conn_is_disconnected()
+		- xmpp_stanza_add_child_ex()
 		- xmpp_stanza_get_context()
 
 0.9.3
