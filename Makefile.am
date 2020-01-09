@@ -139,6 +139,7 @@ TESTS = \
 	tests/test_jid \
 	tests/test_snprintf \
 	tests/test_string \
+	tests/test_stanza \
 	tests/test_resolver
 
 check_PROGRAMS = $(TESTS)
@@ -193,3 +194,8 @@ tests_test_string_SOURCES = tests/test_string.c tests/test.h
 tests_test_string_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_string_LDADD = $(STROPHE_LIBS)
 tests_test_string_LDFLAGS = -static
+
+tests_test_stanza_SOURCES = tests/test_stanza.c
+tests_test_stanza_CFLAGS = $(STROPHE_FLAGS)
+tests_test_stanza_LDADD = $(STROPHE_LIBS)
+tests_test_stanza_LDFLAGS = -static
