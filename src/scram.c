@@ -27,7 +27,7 @@
 
 #include "scram.h"
 
-#define HMAC_BLOCK_SIZE 64
+#define HMAC_BLOCK_SIZE_MAX 128
 
 static const uint8_t ipad = 0x36;
 static const uint8_t opad = 0x5C;
@@ -72,33 +72,37 @@ static void crypto_HMAC(const struct hash_alg *alg,
                         size_t len,
                         uint8_t *digest)
 {
-    uint8_t key_pad[HMAC_BLOCK_SIZE];
-    uint8_t key_ipad[HMAC_BLOCK_SIZE];
-    uint8_t key_opad[HMAC_BLOCK_SIZE];
+    uint8_t key_pad[HMAC_BLOCK_SIZE_MAX];
+    uint8_t key_ipad[HMAC_BLOCK_SIZE_MAX];
+    uint8_t key_opad[HMAC_BLOCK_SIZE_MAX];
     uint8_t sha_digest[SCRAM_DIGEST_SIZE];
-    int i;
+    size_t blocksize;
+    size_t i;
     union common_hash_ctx ctx;
 
-    memset(key_pad, 0, sizeof(key_pad));
-    if (key_len <= HMAC_BLOCK_SIZE) {
+    assert(alg->digest_size <= HMAC_BLOCK_SIZE_MAX);
+    blocksize = alg->digest_size < 48 ? 64 : 128;
+
+    memset(key_pad, 0, blocksize);
+    if (key_len <= blocksize) {
         memcpy(key_pad, key, key_len);
     } else {
         /* according to RFC2104 */
         alg->hash(key, key_len, key_pad);
     }
 
-    for (i = 0; i < HMAC_BLOCK_SIZE; i++) {
+    for (i = 0; i < blocksize; i++) {
         key_ipad[i] = key_pad[i] ^ ipad;
         key_opad[i] = key_pad[i] ^ opad;
     }
 
     alg->init((void *)&ctx);
-    alg->update((void *)&ctx, key_ipad, HMAC_BLOCK_SIZE);
+    alg->update((void *)&ctx, key_ipad, blocksize);
     alg->update((void *)&ctx, text, len);
     alg->final((void *)&ctx, sha_digest);
 
     alg->init((void *)&ctx);
-    alg->update((void *)&ctx, key_opad, HMAC_BLOCK_SIZE);
+    alg->update((void *)&ctx, key_opad, blocksize);
     alg->update((void *)&ctx, sha_digest, alg->digest_size);
     alg->final((void *)&ctx, digest);
 }
