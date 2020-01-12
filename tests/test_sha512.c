@@ -10,11 +10,19 @@
 #include "sha512.h"
 #include "test.h"
 
+static const uint8_t hash_1m_a[SHA512_DIGEST_SIZE] = {
+    0xe7, 0x18, 0x48, 0x3d, 0x0c, 0xe7, 0x69, 0x64, 0x4e, 0x2e, 0x42,
+    0xc7, 0xbc, 0x15, 0xb4, 0x63, 0x8e, 0x1f, 0x98, 0xb1, 0x3b, 0x20,
+    0x44, 0x28, 0x56, 0x32, 0xa8, 0x03, 0xaf, 0xa9, 0x73, 0xeb, 0xde,
+    0x0f, 0xf2, 0x44, 0x87, 0x7e, 0xa6, 0x0a, 0x4c, 0xb0, 0x43, 0x2c,
+    0xe5, 0x77, 0xc3, 0x1b, 0xeb, 0x00, 0x9c, 0x5c, 0x2c, 0x49, 0xaa,
+    0x2e, 0x4e, 0xad, 0xb2, 0x17, 0xad, 0x8c, 0xc0, 0x9b};
+
 int main(int argc, char **argv)
 {
     static const struct {
         const char *msg;
-        uint8_t hash[64];
+        uint8_t hash[SHA512_DIGEST_SIZE];
     } tests[] = {
         {"abc",
          {0xdd, 0xaf, 0x35, 0xa1, 0x93, 0x61, 0x7a, 0xba, 0xcc, 0x41, 0x73,
@@ -34,17 +42,24 @@ int main(int argc, char **argv)
     };
 
     size_t i;
-    uint8_t tmp[64];
+    uint8_t tmp[SHA512_DIGEST_SIZE];
     sha512_context md;
 
-    for (i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
+    for (i = 0; i < ARRAY_SIZE(tests); i++) {
         sha512_init(&md);
         sha512_process(&md, (uint8_t *)tests[i].msg, strlen(tests[i].msg));
         sha512_done(&md, tmp);
-        COMPARE_BUF(tmp, sizeof(tmp), tests[i].hash, sizeof(tests[i].hash));
+        COMPARE_BUF(tests[i].hash, sizeof(tests[i].hash), tmp, sizeof(tmp));
     }
+
+    /* special case: one million repetitions of the character 'a' */
+    sha512_init(&md);
+    for (i = 0; i < 1000000U; ++i)
+        sha512_process(&md, (uint8_t *)"a", 1);
+    sha512_done(&md, tmp);
+    COMPARE_BUF(hash_1m_a, sizeof(hash_1m_a), tmp, sizeof(tmp));
 
     /* success */
     fprintf(stdout, "ok\n");
-    return (0);
+    return 0;
 }
