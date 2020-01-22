@@ -23,6 +23,14 @@
 #include <ares.h>
 #endif /* HAVE_CARES */
 
+/* for timeval */
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <sys/time.h>
+#include <time.h>
+#endif
+
 #include <string.h>             /* strncpy */
 
 #include "ostypes.h"
