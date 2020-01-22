@@ -21,6 +21,14 @@
 
 #ifdef HAVE_CARES
 #include <ares.h>
+/* for select(2) */
+#ifdef _WIN32
+#include <winsock2.h>
+#else /* _WIN32 */
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif /* !_WIN32 */
 #endif /* HAVE_CARES */
 
 #include <string.h>             /* strncpy */
