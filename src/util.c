@@ -86,13 +86,24 @@ char *xmpp_strtok_r(char *s, const char *delim, char **saveptr)
  */
 uint64_t time_stamp(void)
 {
-#if defined(_XBOX_ONE)
-    uint64_t SystemTime;
-    GetSystemTimeAsFileTime((FILETIME*)&SystemTime);
-    /* Convert 100 nanosec ticks to milliseconds */
-    return (SystemTime / 10000);
-#elif defined(_WIN32)
-    return timeGetTime();
+#if defined(_WIN32) || defined(_XBOX_ONE)
+
+#ifndef __GNUC__
+#define EPOCHFILETIME (116444736000000000i64)
+#else
+#define EPOCHFILETIME (116444736000000000LL)
+#endif
+
+    FILETIME ft;
+    LARGE_INTEGER li;
+    __int64 t;
+
+    GetSystemTimeAsFileTime(&ft);
+    li.LowPart = ft.dwLowDateTime;
+    li.HighPart = ft.dwHighDateTime;
+    t = li.QuadPart;              /* In 100-nanosecond intervals */
+    t -= EPOCHFILETIME;           /* Offset to the Epoch time */
+    return (uint64_t)(t / 10000); /* Convert to milliseconds */
 #else
     struct timeval tv;
 
