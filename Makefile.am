@@ -77,7 +77,6 @@ libstrophe_la_SOURCES += src/parser_libxml2.c
 endif
 
 include_HEADERS = strophe.h
-noinst_HEADERS = strophepp.h
 
 pkgconfig_DATA = libstrophe.pc
 
