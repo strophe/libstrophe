@@ -14,7 +14,7 @@ int main()
 {
     static const struct {
         const char *msg;
-        unsigned char hash[32];
+        unsigned char hash[SHA256_DIGEST_SIZE];
     } tests[] = {
         {"abc",
          {0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea, 0x41, 0x41, 0x40,
@@ -27,7 +27,7 @@ int main()
     };
 
     int i;
-    unsigned char tmp[32];
+    unsigned char tmp[SHA256_DIGEST_SIZE];
     sha256_context md;
 
     for (i = 0; i < (int)(sizeof(tests) / sizeof(tests[0])); i++) {

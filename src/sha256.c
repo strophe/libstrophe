@@ -113,7 +113,6 @@ static void sha256_compress(sha256_context *md, const uint8_t *buf)
     for (i = 0; i < 8; i++) {
         md->state[i] = md->state[i] + S[i];
     }
-    return;
 }
 
 void sha256_init(sha256_context *md)
@@ -128,7 +127,6 @@ void sha256_init(sha256_context *md)
     md->state[5] = 0x9B05688CUL;
     md->state[6] = 0x1F83D9ABUL;
     md->state[7] = 0x5BE0CD19UL;
-    return;
 }
 
 void sha256_process(sha256_context *md, const uint8_t *in, size_t inlen)
@@ -160,7 +158,6 @@ void sha256_process(sha256_context *md, const uint8_t *in, size_t inlen)
             }
         }
     }
-    return;
 }
 
 void sha256_done(sha256_context *md, uint8_t *out)
@@ -175,7 +172,7 @@ void sha256_done(sha256_context *md, uint8_t *out)
     md->length += md->curlen * 8;
 
     /* append the '1' bit */
-    md->buf[md->curlen++] = (unsigned char)0x80;
+    md->buf[md->curlen++] = (uint8_t)0x80;
 
     /* if the length is currently above 56 bytes we append zeros
      * then compress.  Then we can fall back to padding zeros and length
@@ -183,7 +180,7 @@ void sha256_done(sha256_context *md, uint8_t *out)
      */
     if (md->curlen > 56) {
         while (md->curlen < 64) {
-            md->buf[md->curlen++] = (unsigned char)0;
+            md->buf[md->curlen++] = (uint8_t)0;
         }
         sha256_compress(md, md->buf);
         md->curlen = 0;
@@ -191,7 +188,7 @@ void sha256_done(sha256_context *md, uint8_t *out)
 
     /* pad upto 56 bytes of zeroes */
     while (md->curlen < 56) {
-        md->buf[md->curlen++] = (unsigned char)0;
+        md->buf[md->curlen++] = (uint8_t)0;
     }
 
     /* store length */
@@ -202,7 +199,6 @@ void sha256_done(sha256_context *md, uint8_t *out)
     for (i = 0; i < 8; i++) {
         STORE32H(md->state[i], out + (4 * i));
     }
-    return;
 }
 
 void sha256_hash(const uint8_t *data, size_t len, uint8_t *digest)

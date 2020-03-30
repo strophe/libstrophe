@@ -101,8 +101,6 @@ static void sha512_compress(sha512_context *md, const uint8_t *buf)
     for (i = 0; i < 8; i++) {
         md->state[i] = md->state[i] + S[i];
     }
-
-    return;
 }
 
 void sha512_init(sha512_context *md)
@@ -117,7 +115,6 @@ void sha512_init(sha512_context *md)
     md->state[5] = CONST64(0x9b05688c2b3e6c1f);
     md->state[6] = CONST64(0x1f83d9abfb41bd6b);
     md->state[7] = CONST64(0x5be0cd19137e2179);
-    return;
 }
 
 void sha512_process(sha512_context *md, const uint8_t *in, size_t inlen)
@@ -149,7 +146,6 @@ void sha512_process(sha512_context *md, const uint8_t *in, size_t inlen)
             }
         }
     }
-    return;
 }
 
 void sha512_done(sha512_context *md, uint8_t *out)
@@ -194,7 +190,6 @@ void sha512_done(sha512_context *md, uint8_t *out)
     for (i = 0; i < 8; i++) {
         STORE64H(md->state[i], out + (8 * i));
     }
-    return;
 }
 
 void sha512_hash(const uint8_t *data, size_t len, uint8_t *digest)

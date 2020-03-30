@@ -1,4 +1,4 @@
-/* public api for Thomas Pornin's BearSSL SHA-256 implementation */
+/* public api for LibTomCrypt SHA-256 implementation */
 
 /** @file
  *  SHA-256 hash API.
