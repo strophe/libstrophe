@@ -172,19 +172,13 @@ static void _digest_to_hex(const char *digest, char *hex)
 }
 
 /** append 'key="value"' to a buffer, growing as necessary */
-static char *_add_key(xmpp_ctx_t *ctx,
-                      hash_t *table,
-                      const char *key,
-                      char *buf,
-                      int *len,
-                      int quote)
+static char *
+_add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key, char *buf, int quote)
 {
     int olen, nlen;
     int keylen, valuelen;
     const char *value, *qvalue;
     char *c;
-
-    UNUSED(len);
 
     /* allocate a zero-length string if necessary */
     if (buf == NULL) {
@@ -242,7 +236,6 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
     char *node, *domain, *realm;
     char *value;
     char *response;
-    int rlen;
     struct MD5Context MD5;
     unsigned char digest[16], HA1[16], HA2[16];
     char hex[32];
@@ -358,16 +351,15 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
 
     /* construct reply */
     result = NULL;
-    rlen = 0;
-    result = _add_key(ctx, table, "username", result, &rlen, 1);
-    result = _add_key(ctx, table, "realm", result, &rlen, 1);
-    result = _add_key(ctx, table, "nonce", result, &rlen, 1);
-    result = _add_key(ctx, table, "cnonce", result, &rlen, 1);
-    result = _add_key(ctx, table, "nc", result, &rlen, 0);
-    result = _add_key(ctx, table, "qop", result, &rlen, 0);
-    result = _add_key(ctx, table, "digest-uri", result, &rlen, 1);
-    result = _add_key(ctx, table, "response", result, &rlen, 0);
-    result = _add_key(ctx, table, "charset", result, &rlen, 0);
+    result = _add_key(ctx, table, "username", result, 1);
+    result = _add_key(ctx, table, "realm", result, 1);
+    result = _add_key(ctx, table, "nonce", result, 1);
+    result = _add_key(ctx, table, "cnonce", result, 1);
+    result = _add_key(ctx, table, "nc", result, 0);
+    result = _add_key(ctx, table, "qop", result, 0);
+    result = _add_key(ctx, table, "digest-uri", result, 1);
+    result = _add_key(ctx, table, "response", result, 0);
+    result = _add_key(ctx, table, "charset", result, 0);
 
     xmpp_free(ctx, node);
     xmpp_free(ctx, domain);
