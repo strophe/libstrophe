@@ -212,17 +212,18 @@ int sock_is_recoverable(const int error)
 
 int sock_connect_error(const sock_t sock)
 {
-    struct sockaddr sa;
+    struct sockaddr_storage ss;
+    struct sockaddr *sa = (struct sockaddr *)&ss;
     socklen_t len;
     char temp;
 
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_family = AF_UNSPEC;
-    len = sizeof(sa);
+    memset(&ss, 0, sizeof(ss));
+    len = sizeof(ss);
+    sa->sa_family = AF_UNSPEC;
 
     /* we don't actually care about the peer name, we're just checking if
      * we're connected or not */
-    if (getpeername(sock, &sa, &len) == 0) {
+    if (getpeername(sock, sa, &len) == 0) {
         return 0;
     }
 
