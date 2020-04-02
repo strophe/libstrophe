@@ -32,7 +32,7 @@ AC_ARG_ENABLE([cares],
     [AS_HELP_STRING([--enable-cares], [use c-ares for DNS resolution])])
 
 AC_SEARCH_LIBS([socket], [network socket])
-#AC_CHECK_FUNCS([snprintf vsnprintf])
+AC_CHECK_FUNCS([snprintf vsnprintf])
 
 if test "x$enable_tls" != xno; then
     PKG_CHECK_MODULES([openssl], [openssl],
