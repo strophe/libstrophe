@@ -1,9 +1,11 @@
 0.10.0
+	- Coding style has been unified
 	- SCRAM-SHA-256 and SCRAM-SHA-512 support
 	- c-ares support
 	- LibreSSL support
 	- examples/register implements XEP-0077
 	- Fixed issue with IPv6 on Windows (#153)
+	- Improved portability across systems such as Haiku, Windows
 	- New API:
 		- xmpp_stanza_get_child_by_name_and_ns()
 		- xmpp_conn_is_connecting()
