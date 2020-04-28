@@ -1029,7 +1029,7 @@ void xmpp_conn_disable_tls(xmpp_conn_t *const conn)
  */
 int xmpp_conn_is_secured(xmpp_conn_t *const conn)
 {
-    return conn->secured && !conn->tls_failed && conn->tls != NULL ? 1 : 0;
+    return conn->secured && !conn->tls_failed && conn->tls != NULL;
 }
 
 /**
@@ -1039,7 +1039,7 @@ int xmpp_conn_is_secured(xmpp_conn_t *const conn)
  */
 int xmpp_conn_is_connecting(xmpp_conn_t *const conn)
 {
-    return conn->state == XMPP_STATE_CONNECTING ? 1 : 0;
+    return conn->state == XMPP_STATE_CONNECTING;
 }
 
 /**
@@ -1049,7 +1049,7 @@ int xmpp_conn_is_connecting(xmpp_conn_t *const conn)
  */
 int xmpp_conn_is_connected(xmpp_conn_t *const conn)
 {
-    return conn->state == XMPP_STATE_CONNECTED ? 1 : 0;
+    return conn->state == XMPP_STATE_CONNECTED;
 }
 
 /**
@@ -1059,7 +1059,7 @@ int xmpp_conn_is_connected(xmpp_conn_t *const conn)
  */
 int xmpp_conn_is_disconnected(xmpp_conn_t *const conn)
 {
-    return conn->state == XMPP_STATE_DISCONNECTED ? 1 : 0;
+    return conn->state == XMPP_STATE_DISCONNECTED;
 }
 
 /* timed handler for cleanup if normal disconnect procedure takes too long */
