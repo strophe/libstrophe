@@ -16,8 +16,8 @@
 #if !defined(_WIN32) && !defined(HAVE_CARES)
 #include <netinet/in.h>
 #include <arpa/nameser.h>
-#include <resolv.h> /* res_query */
-#endif              /* _WIN32 && HAVE_CARES */
+#include <resolv.h>
+#endif /* _WIN32 && HAVE_CARES */
 
 #ifdef HAVE_CARES
 #include <ares.h>
@@ -64,14 +64,14 @@ static int resolver_raw_srv_lookup_buf(xmpp_ctx_t *ctx,
                                        resolver_srv_rr_t **srv_rr_list);
 #endif /* !HAVE_CARES */
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(HAVE_CARES)
 static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx,
                                      const char *fulldomain,
                                      resolver_srv_rr_t **srv_rr_list);
 static int resolver_win32_srv_query(const char *fulldomain,
                                     unsigned char *buf,
                                     size_t len);
-#endif /* _WIN32 */
+#endif /* _WIN32 && !HAVE_CARES */
 
 /*******************************************************************************
  * Implementation.
@@ -185,7 +185,9 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx,
     *srv_rr_list = NULL;
 
 #ifdef HAVE_CARES
+
     set = resolver_ares_srv_lookup(ctx, fulldomain, srv_rr_list);
+
 #else /* HAVE_CARES */
 
 #ifdef _WIN32
@@ -549,7 +551,7 @@ static int resolver_ares_srv_lookup(xmpp_ctx_t *ctx,
 
 #endif /* HAVE_CARES */
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(HAVE_CARES)
 /*******************************************************************************
  * Next part was copied from sock.c and contains old win32 code.
  *
@@ -928,8 +930,8 @@ resolver_win32_srv_query(const char *fulldomain, unsigned char *buf, size_t len)
 
             memset(&question, 0, sizeof(question));
             strncpy(question.qname, fulldomain, 1024);
-            question.qtype = 33; /* SRV */
-            question.qclass = 1; /* INTERNET! */
+            question.qtype = MESSAGE_T_SRV; /* SRV */
+            question.qclass = MESSAGE_C_IN; /* INTERNET! */
 
             netbuf_add_dnsquery_question(buf, (int)len, &offset, &question);
 
@@ -970,4 +972,4 @@ resolver_win32_srv_query(const char *fulldomain, unsigned char *buf, size_t len)
     return set ? insize : -1;
 }
 
-#endif /* _WIN32 */
+#endif /* _WIN32 && !HAVE_CARES */
