@@ -46,8 +46,8 @@ iq_reg_send_form(xmpp_reg_t *reg, xmpp_conn_t *conn, xmpp_stanza_t *stanza)
     xmpp_stanza_t *text;
     xmpp_stanza_t *iq;
     const char *name;
-    ssize_t rc;
-    size_t size;
+    size_t len;
+    char buf[256];
     char *s;
 
     query = xmpp_stanza_get_child_by_name(stanza, "query");
@@ -68,22 +68,24 @@ iq_reg_send_form(xmpp_reg_t *reg, xmpp_conn_t *conn, xmpp_stanza_t *stanza)
             xmpp_free(ctx, s);
         } else {
             printf("%s: ", name);
-            s = NULL;
-            size = 0;
-            rc = getline(&s, &size, stdin);
-            if (rc > 0 && s[rc - 1] == '\n')
-                s[rc - 1] = '\0';
-            if (rc > 0 && strlen(s) > 0) {
-                elem = xmpp_stanza_new(ctx);
-                text = xmpp_stanza_new(ctx);
-                xmpp_stanza_set_text(text, s);
-                xmpp_stanza_set_name(elem, name);
-                xmpp_stanza_add_child(elem, text);
-                xmpp_stanza_add_child(query, elem);
-                xmpp_stanza_release(text);
-                xmpp_stanza_release(elem);
+            s = fgets(buf, sizeof(buf), stdin);
+            if (s != NULL) {
+                len = strlen(s);
+                if (len > 0 && s[len - 1] == '\n') {
+                    s[len - 1] = '\0';
+                    --len;
+                }
+                if (len > 0) {
+                    elem = xmpp_stanza_new(ctx);
+                    text = xmpp_stanza_new(ctx);
+                    xmpp_stanza_set_text(text, s);
+                    xmpp_stanza_set_name(elem, name);
+                    xmpp_stanza_add_child(elem, text);
+                    xmpp_stanza_add_child(query, elem);
+                    xmpp_stanza_release(text);
+                    xmpp_stanza_release(elem);
+                }
             }
-            free(s);
         }
         next = xmpp_stanza_get_next(next);
     }
