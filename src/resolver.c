@@ -565,7 +565,7 @@ static int resolver_ares_srv_lookup(xmpp_ctx_t *ctx,
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windns.h>
-#include <Iphlpapi.h>
+#include <iphlpapi.h>
 
 struct dnsquery_header {
     unsigned short id;

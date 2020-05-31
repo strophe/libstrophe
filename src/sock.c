@@ -21,8 +21,8 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <Iphlpapi.h>
-#include <Mstcpip.h> /* tcp_keepalive */
+#include <iphlpapi.h>
+#include <mstcpip.h> /* tcp_keepalive */
 #else
 #include <errno.h>
 #include <unistd.h>
