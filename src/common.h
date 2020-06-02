@@ -29,6 +29,38 @@
 #include "rand.h"
 #include "snprintf.h"
 
+/** handlers **/
+
+typedef struct _xmpp_handlist_t xmpp_handlist_t;
+struct _xmpp_handlist_t {
+    /* common members */
+    int user_handler;
+    int (*handler)();
+    void *userdata;
+    int enabled; /* handlers are added disabled and enabled after the
+                  * handler chain is processed to prevent stanzas from
+                  * getting processed by newly added handlers */
+    xmpp_handlist_t *next;
+
+    union {
+        /* timed handlers */
+        struct {
+            unsigned long period;
+            uint64_t last_stamp;
+        };
+        /* id handlers */
+        struct {
+            char *id;
+        };
+        /* normal handlers */
+        struct {
+            char *ns;
+            char *name;
+            char *type;
+        };
+    } u;
+};
+
 /** run-time context **/
 
 typedef enum {
@@ -49,6 +81,7 @@ struct _xmpp_ctx_t {
     xmpp_rand_t *rand;
     xmpp_loop_status_t loop_status;
     xmpp_connlist_t *connlist;
+    xmpp_handlist_t *timed_handlers;
 
     unsigned long timeout;
 };
@@ -98,36 +131,6 @@ struct _xmpp_send_queue_t {
     size_t written;
 
     xmpp_send_queue_t *next;
-};
-
-typedef struct _xmpp_handlist_t xmpp_handlist_t;
-struct _xmpp_handlist_t {
-    /* common members */
-    int user_handler;
-    int (*handler)();
-    void *userdata;
-    int enabled; /* handlers are added disabled and enabled after the
-                  * handler chain is processed to prevent stanzas from
-                  * getting processed by newly added handlers */
-    xmpp_handlist_t *next;
-
-    union {
-        /* timed handlers */
-        struct {
-            unsigned long period;
-            uint64_t last_stamp;
-        };
-        /* id handlers */
-        struct {
-            char *id;
-        };
-        /* normal handlers */
-        struct {
-            char *ns;
-            char *name;
-            char *type;
-        };
-    } u;
 };
 
 #define UNUSED(x) ((void)(x))

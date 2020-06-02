@@ -3,6 +3,9 @@
 	- SCRAM-SHA-256 and SCRAM-SHA-512 support
 	- c-ares support
 	- LibreSSL support
+	- Introduced global timed handlers that fire periodically regardless of
+	  connections status, such a handler can be used to implement deferred
+	  re-connection
 	- examples/register implements XEP-0077
 	- Fixed issue with IPv6 on Windows (#153)
 	- Improved portability across systems such as Haiku, Windows
@@ -13,6 +16,8 @@
 		- xmpp_conn_is_disconnected()
 		- xmpp_stanza_add_child_ex()
 		- xmpp_stanza_get_context()
+		- xmpp_global_timed_handler_add()
+		- xmpp_global_timed_handler_delete()
 
 0.9.3
 	- PLAIN mechanism is used only when no other mechanisms are supported

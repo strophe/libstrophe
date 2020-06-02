@@ -419,6 +419,7 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *const mem,
             ctx->log = log;
 
         ctx->connlist = NULL;
+        ctx->timed_handlers = NULL;
         ctx->loop_status = XMPP_LOOP_NOTSTARTED;
         ctx->rand = xmpp_rand_new(ctx);
         ctx->timeout = EVENT_LOOP_DEFAULT_TIMEOUT;

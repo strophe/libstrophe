@@ -279,7 +279,7 @@ void xmpp_send_raw(xmpp_conn_t *const conn,
 
 /* handlers */
 
-/* if the handle returns false it is removed */
+/* if the handler returns false it is removed */
 typedef int (*xmpp_timed_handler)(xmpp_conn_t *const conn,
                                   void *const userdata);
 
@@ -289,6 +289,17 @@ void xmpp_timed_handler_add(xmpp_conn_t *const conn,
                             void *const userdata);
 void xmpp_timed_handler_delete(xmpp_conn_t *const conn,
                                xmpp_timed_handler handler);
+
+/* if the handler returns false it is removed */
+typedef int (*xmpp_global_timed_handler)(xmpp_ctx_t *const ctx,
+                                         void *const userdata);
+
+void xmpp_global_timed_handler_add(xmpp_ctx_t *const ctx,
+                                   xmpp_global_timed_handler handler,
+                                   const unsigned long period,
+                                   void *const userdata);
+void xmpp_global_timed_handler_delete(xmpp_ctx_t *const ctx,
+                                      xmpp_global_timed_handler handler);
 
 /* if the handler returns false it is removed */
 typedef int (*xmpp_handler)(xmpp_conn_t *const conn,
