@@ -22,6 +22,7 @@
 #include "strophe.h"
 #include "common.h"
 #include "hash.h"
+#include "parser.h"
 
 /** Create a stanza object.
  *  This function allocates and initializes a blank stanza object.
@@ -1460,4 +1461,60 @@ xmpp_stanza_t *xmpp_error_new(xmpp_ctx_t *ctx,
     }
 
     return error;
+}
+
+static void _stub_stream_start(char *name, char **attrs, void *userdata)
+{
+    UNUSED(name);
+    UNUSED(attrs);
+    UNUSED(userdata);
+}
+
+static void _stub_stream_end(char *name, void *userdata)
+{
+    UNUSED(name);
+    UNUSED(userdata);
+}
+
+static void _stream_stanza(xmpp_stanza_t *stanza, void *userdata)
+{
+    stanza = xmpp_stanza_clone(stanza);
+    *(xmpp_stanza_t **)userdata = stanza;
+}
+
+/** Create a stanza object from the string.
+ *  This function allocates and initializes a stanza object which represents
+ *  stanza located in the string.
+ *  The stanza will have a reference count of one, so the caller does not
+ *  need to clone it.
+ *
+ *  @param ctx a Strophe context object
+ *  @param str stanza in NULL terminated string representation
+ *
+ *  @return a stanza object or NULL on an error
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_stanza_new_from_string(xmpp_ctx_t *ctx, const char *str)
+{
+    xmpp_stanza_t *stanza = NULL;
+    parser_t *parser;
+    int ret;
+
+    static const char *start = "<stream>";
+    static const char *end = "</stream>";
+
+    parser = parser_new(ctx, _stub_stream_start, _stub_stream_end,
+                        _stream_stanza, &stanza);
+    if (parser) {
+        ret = parser_feed(parser, (char *)start, strlen(start)) &&
+              parser_feed(parser, (char *)str, strlen(str)) &&
+              parser_feed(parser, (char *)end, strlen(end));
+        parser_free(parser);
+        if (!ret && stanza) {
+            xmpp_stanza_release(stanza);
+            stanza = NULL;
+        }
+    }
+    return stanza;
 }

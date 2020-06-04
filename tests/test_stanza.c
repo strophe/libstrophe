@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAGICPTR ((void *)0xfeedbeef)
 static unsigned long used_blocks = 0;
@@ -31,7 +32,10 @@ static void stanza_free(void *ptr, void *userdata)
 {
     assert(userdata == MAGICPTR);
 
-    --used_blocks;
+    if (ptr != NULL) {
+        assert(used_blocks > 0);
+        --used_blocks;
+    }
     free(ptr);
 }
 
@@ -39,6 +43,14 @@ static void *stanza_realloc(void *ptr, size_t size, void *userdata)
 {
     assert(userdata == MAGICPTR);
 
+    if (ptr != NULL && size == 0) {
+        /* equivalent to free(ptr) */
+        assert(used_blocks > 0);
+        --used_blocks;
+    } else if (ptr == NULL) {
+        /* equivalent to malloc(size) */
+        ++used_blocks;
+    }
     return realloc(ptr, size);
 }
 
@@ -78,6 +90,28 @@ static void test_stanza_add_child(xmpp_ctx_t *ctx)
     assert(used_blocks == baseline);
 }
 
+static void test_stanza_from_string(xmpp_ctx_t *ctx)
+{
+    xmpp_stanza_t *stanza;
+    char *buf;
+    size_t buflen;
+    int ret;
+
+    static const char *str =
+        "<signcrypt xmlns=\"urn:xmpp:openpgp:0\"><to "
+        "jid=\"user@domain.com\"/><time "
+        "stamp=\"2020-06-03T21:26:24+0200\"/><rpad/><payload><body "
+        "xmlns=\"jabber:client\">Hello World!</body></payload></signcrypt>";
+
+    stanza = xmpp_stanza_new_from_string(ctx, str);
+    assert(stanza != NULL);
+    ret = xmpp_stanza_to_text(stanza, &buf, &buflen);
+    assert(ret == XMPP_EOK);
+    assert(strcmp(buf, str) == 0);
+    xmpp_free(ctx, buf);
+    xmpp_stanza_release(stanza);
+}
+
 int main()
 {
     xmpp_ctx_t *ctx;
@@ -87,6 +121,7 @@ int main()
     assert(ctx != NULL);
 
     test_stanza_add_child(ctx);
+    test_stanza_from_string(ctx);
 
     xmpp_ctx_free(ctx);
     xmpp_shutdown();

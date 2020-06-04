@@ -330,6 +330,7 @@ void xmpp_register_stanza_handler(conn, stanza, xmlns, type, handler)
 
 /* allocate and initialize a blank stanza */
 xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx);
+xmpp_stanza_t *xmpp_stanza_new_from_string(xmpp_ctx_t *ctx, const char *str);
 
 /* clone a stanza */
 xmpp_stanza_t *xmpp_stanza_clone(xmpp_stanza_t *const stanza);
