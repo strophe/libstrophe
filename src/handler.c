@@ -733,6 +733,35 @@ void handler_system_delete_all(xmpp_conn_t *conn)
         hash_iter_release(iter);
 }
 
+/** Add a global timed handler.
+ *  The handler will fire for the first time once the period has elapsed,
+ *  and continue firing regularly after that.  Strophe will try its best
+ *  to fire handlers as close to the period times as it can, but accuracy
+ *  will vary depending on the resolution of the event loop.
+ *
+ *  The main difference between global and ordinary handlers:
+ *  - Ordinary handler is related to a connection, fires only when the
+ *    connection is in connected state and is removed once the connection is
+ *    destroyed.
+ *  - Global handler fires regardless of connections state and is related to
+ *    a Strophe context.
+ *
+ *  The handler is executed in context of the respective event loop.
+ *
+ *  If the handler function returns true, it will be kept, and if it
+ *  returns false, it will be deleted from the list of handlers.
+ *
+ *  Notice, the same handler pointer may be added multiple times with different
+ *  userdata pointers. However, xmpp_global_timed_handler_delete() deletes
+ *  all occurrences.
+ *
+ *  @param ctx a Strophe context object
+ *  @param handler a function pointer to a timed handler
+ *  @param period the time in milliseconds between firings
+ *  @param userdata an opaque data pointer that will be passed to the handler
+ *
+ *  @ingroup Handlers
+ */
 void xmpp_global_timed_handler_add(xmpp_ctx_t *const ctx,
                                    xmpp_global_timed_handler handler,
                                    const unsigned long period,
@@ -741,6 +770,13 @@ void xmpp_global_timed_handler_add(xmpp_ctx_t *const ctx,
     _timed_handler_add(ctx, &ctx->timed_handlers, handler, period, userdata, 1);
 }
 
+/** Delete a global timed handler.
+ *
+ *  @param ctx a Strophe context object
+ *  @param handler function pointer to the handler
+ *
+ *  @ingroup Handlers
+ */
 void xmpp_global_timed_handler_delete(xmpp_ctx_t *const ctx,
                                       xmpp_global_timed_handler handler)
 {
