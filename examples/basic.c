@@ -59,8 +59,12 @@ int main(int argc, char **argv)
             flags |= XMPP_CONN_FLAG_DISABLE_TLS;
         else if (strcmp(argv[i], "--mandatory-tls") == 0)
             flags |= XMPP_CONN_FLAG_MANDATORY_TLS;
+        else if (strcmp(argv[i], "--trust-tls") == 0)
+            flags |= XMPP_CONN_FLAG_TRUST_TLS;
         else if (strcmp(argv[i], "--legacy-ssl") == 0)
             flags |= XMPP_CONN_FLAG_LEGACY_SSL;
+        else if (strcmp(argv[i], "--legacy-auth") == 0)
+            flags |= XMPP_CONN_FLAG_LEGACY_AUTH;
         else if (strcmp(argv[i], "--tcp-keepalive") == 0)
             tcp_keepalive = 1;
         else
@@ -71,7 +75,9 @@ int main(int argc, char **argv)
                         "Options:\n"
                         "  --disable-tls        Disable TLS.\n"
                         "  --mandatory-tls      Deny plaintext connection.\n"
+                        "  --trust-tls          Trust TLS certificate.\n"
                         "  --legacy-ssl         Use old style SSL.\n"
+                        "  --legacy-auth        Allow legacy authentication.\n"
                         "  --tcp-keepalive      Configure TCP keepalive.\n\n"
                         "Note: --disable-tls conflicts with --mandatory-tls or "
                         "--legacy-ssl\n");
