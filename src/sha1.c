@@ -75,9 +75,6 @@ move public api to sha1.h
 #include "ostypes.h"
 #include "sha1.h"
 
-/* Don't change user's data */
-#define SHA1HANDSOFF
-
 static uint32_t host_to_be(uint32_t i);
 static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64]);
 
@@ -139,13 +136,9 @@ static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
     } CHAR64LONG16;
     CHAR64LONG16 *block;
 
-#ifdef SHA1HANDSOFF
     static uint8_t workspace[64];
     block = (CHAR64LONG16 *)workspace;
     memcpy(block, buffer, 64);
-#else
-    block = (CHAR64LONG16 *)buffer;
-#endif
 
     /* Copy context->state[] to working vars */
     a = state[0];
@@ -239,8 +232,8 @@ void crypto_SHA1_Final(SHA1_CTX *context, uint8_t *digest)
     while ((context->count[0] & 504) != 448) {
         crypto_SHA1_Update(context, (uint8_t *)"\0", 1);
     }
-    crypto_SHA1_Update(context, finalcount,
-                       8); /* Should cause a SHA1_Transform() */
+    /* Should cause a SHA1_Transform() */
+    crypto_SHA1_Update(context, finalcount, 8);
     for (i = 0; i < SHA1_DIGEST_SIZE; i++) {
         digest[i] =
             (uint8_t)((context->state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);
@@ -252,9 +245,7 @@ void crypto_SHA1_Final(SHA1_CTX *context, uint8_t *digest)
     memset(context->count, 0, 8);
     memset(finalcount, 0, 8); /* SWR */
 
-#ifdef SHA1HANDSOFF /* make SHA1Transform overwrite its own static vars */
     SHA1_Transform(context->state, context->buffer);
-#endif
 }
 
 void crypto_SHA1(const uint8_t *data, size_t len, uint8_t *digest)
