@@ -126,6 +126,13 @@ static uint32_t host_to_be(uint32_t i)
 #undef le_to_be
 }
 
+static void *(*volatile SHA1_explicit_memset)(void *, int, size_t) = &memset;
+
+static void SHA1_cleanse(void *p, size_t len)
+{
+    SHA1_explicit_memset(p, 0, len);
+}
+
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 {
@@ -179,7 +186,11 @@ static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
     state[4] += e;
 
     /* Wipe variables */
-    a = b = c = d = e = 0;
+    SHA1_cleanse(&a, sizeof(a));
+    SHA1_cleanse(&b, sizeof(b));
+    SHA1_cleanse(&c, sizeof(c));
+    SHA1_cleanse(&d, sizeof(d));
+    SHA1_cleanse(&e, sizeof(e));
 }
 
 /* SHA1Init - Initialize new context */
@@ -240,10 +251,10 @@ void crypto_SHA1_Final(SHA1_CTX *context, uint8_t *digest)
     }
 
     /* Wipe variables */
-    memset(context->buffer, 0, 64);
-    memset(context->state, 0, 20);
-    memset(context->count, 0, 8);
-    memset(finalcount, 0, 8); /* SWR */
+    SHA1_cleanse(context->buffer, 64);
+    SHA1_cleanse(context->state, 20);
+    SHA1_cleanse(context->count, 8);
+    SHA1_cleanse(finalcount, 8); /* SWR */
 
     SHA1_Transform(context->state, context->buffer);
 }
