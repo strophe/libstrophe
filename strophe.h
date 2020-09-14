@@ -39,6 +39,10 @@ extern "C" {
  *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-streams'.
  */
 #define XMPP_NS_STREAMS_IETF "urn:ietf:params:xml:ns:xmpp-streams"
+/** @def XMPP_NS_STANZAS_IETF
+ *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-stanzas'.
+ */
+#define XMPP_NS_STANZAS_IETF "urn:ietf:params:xml:ns:xmpp-stanzas"
 /** @def XMPP_NS_TLS
  *  Namespace definition for 'url:ietf:params:xml:ns:xmpp-tls'.
  */
@@ -402,6 +406,10 @@ int xmpp_stanza_set_from(xmpp_stanza_t *const stanza, const char *const from);
 
 /* allocate and initialize a stanza in reply to another */
 xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t *const stanza);
+xmpp_stanza_t *xmpp_stanza_reply_error(xmpp_stanza_t *const stanza,
+                                       const char *const error_type,
+                                       const char *const condition,
+                                       const char *const text);
 
 /* stanza subclasses */
 xmpp_stanza_t *xmpp_message_new(xmpp_ctx_t *ctx,

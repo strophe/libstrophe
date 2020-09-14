@@ -1198,6 +1198,83 @@ copy_error:
     return NULL;
 }
 
+/** Create an error stanza in reply to the provided stanza.
+ *
+ *  Check https://tools.ietf.org/html/rfc6120#section-8.3 for details.
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param error_type type attribute in the <error/> child element
+ *  @param condition the defined-condition (e.g. "item-not-found")
+ *  @param text optional description, may be NULL
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_stanza_reply_error(xmpp_stanza_t *const stanza,
+                                       const char *const error_type,
+                                       const char *const condition,
+                                       const char *const text)
+{
+    xmpp_ctx_t *ctx = stanza->ctx;
+    xmpp_stanza_t *reply = NULL;
+    xmpp_stanza_t *error;
+    xmpp_stanza_t *item;
+    xmpp_stanza_t *text_stanza;
+    const char *to;
+
+    if (!error_type || !condition)
+        goto quit_err;
+
+    reply = xmpp_stanza_reply(stanza);
+    if (!reply)
+        goto quit_err;
+
+    xmpp_stanza_set_type(reply, "error");
+    to = xmpp_stanza_get_to(stanza);
+    if (to)
+        xmpp_stanza_set_from(reply, to);
+
+    error = xmpp_stanza_new(ctx);
+    if (!error)
+        goto quit_err;
+    xmpp_stanza_set_name(error, "error");
+    xmpp_stanza_set_type(error, error_type);
+    xmpp_stanza_add_child(reply, error);
+    xmpp_stanza_release(error);
+
+    item = xmpp_stanza_new(ctx);
+    if (!item)
+        goto quit_err;
+    xmpp_stanza_set_name(item, condition);
+    xmpp_stanza_set_ns(item, XMPP_NS_STANZAS_IETF);
+    xmpp_stanza_add_child(error, item);
+    xmpp_stanza_release(item);
+
+    if (text) {
+        item = xmpp_stanza_new(ctx);
+        if (!item)
+            goto quit_err;
+        xmpp_stanza_set_name(item, "text");
+        xmpp_stanza_set_ns(item, XMPP_NS_STANZAS_IETF);
+        xmpp_stanza_add_child(error, item);
+        xmpp_stanza_release(item);
+        text_stanza = xmpp_stanza_new(ctx);
+        if (!text_stanza)
+            goto quit_err;
+        xmpp_stanza_set_text(text_stanza, text);
+        xmpp_stanza_add_child(item, text_stanza);
+        xmpp_stanza_release(text_stanza);
+    }
+
+    return reply;
+
+quit_err:
+    if (reply)
+        xmpp_stanza_release(reply);
+    return NULL;
+}
+
 static xmpp_stanza_t *_stanza_new_with_attrs(xmpp_ctx_t *ctx,
                                              const char *const name,
                                              const char *const type,
