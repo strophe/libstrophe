@@ -1186,6 +1186,7 @@ xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t *const stanza)
 
     xmpp_stanza_del_attribute(copy, "to");
     xmpp_stanza_del_attribute(copy, "from");
+    xmpp_stanza_del_attribute(copy, "xmlns");
     rc = xmpp_stanza_set_to(copy, from);
     if (rc != XMPP_EOK)
         goto copy_error;
