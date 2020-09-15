@@ -128,6 +128,20 @@ uint64_t time_elapsed(uint64_t t1, uint64_t t2)
     return (uint64_t)(t2 - t1);
 }
 
+/** Disconnect the stream with the error.
+ *  This is a convenience function used internally by various parts of
+ *  the Strophe library for terminating the connection because of an error.
+ *
+ *  @param conn a Strophe connection object
+ *  @param error an error code
+ */
+void disconnect_with_error(xmpp_conn_t *const conn, int error)
+{
+    xmpp_error(conn->ctx, "xmpp", "Disconnecting with error %d", error);
+    conn->error = conn->error ?: error;
+    xmpp_disconnect(conn);
+}
+
 /** Disconnect the stream with a memory error.
  *  This is a convenience function used internally by various parts of
  *  the Strophe library for terminating the connection because of a
@@ -138,5 +152,5 @@ uint64_t time_elapsed(uint64_t t1, uint64_t t2)
 void disconnect_mem_error(xmpp_conn_t *const conn)
 {
     xmpp_error(conn->ctx, "xmpp", "Memory allocation error");
-    xmpp_disconnect(conn);
+    disconnect_with_error(conn, XMPP_EMEM);
 }

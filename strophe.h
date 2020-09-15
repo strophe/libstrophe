@@ -103,6 +103,26 @@ extern "C" {
  *  Internal failure error code.
  */
 #define XMPP_EINT -3
+/** @def XMPP_ECERT
+ *  Certificate verification failed during TLS establishment.
+ */
+#define XMPP_ECERT -4
+/** @def XMPP_ETIMEDOUT
+ *  Operation timed out error code.
+ */
+#define XMPP_ETIMEDOUT -5
+/** @def XMPP_EIO
+ *  I/O error code.
+ */
+#define XMPP_EIO -6
+/** @def XMPP_ERESET
+ *  Error code for situation when connection closed by remote side.
+ */
+#define XMPP_ERESET -7
+/** @def XMPP_EAUTH
+ *  Authentication failed error code.
+ */
+#define XMPP_EAUTH -8
 
 /* initialization and shutdown */
 void xmpp_initialize(void);

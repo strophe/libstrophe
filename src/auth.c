@@ -349,7 +349,7 @@ static int _handle_sasl_result(xmpp_conn_t *const conn,
                    "Got unexpected reply to SASL %s"
                    "authentication.",
                    (char *)userdata);
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     }
 
     return 0;
@@ -644,7 +644,7 @@ static void _auth(xmpp_conn_t *const conn)
         xmpp_error(conn->ctx, "xmpp",
                    "TLS is not supported, but set as "
                    "mandatory for this connection");
-        conn_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINVOP);
         return;
     }
 
@@ -667,7 +667,7 @@ static void _auth(xmpp_conn_t *const conn)
     } else if (anonjid) {
         xmpp_error(conn->ctx, "auth",
                    "No node in JID, and SASL ANONYMOUS unsupported.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINVOP);
     } else if (conn->sasl_support & SASL_MASK_SCRAM) {
         scram_ctx = xmpp_alloc(conn->ctx, sizeof(*scram_ctx));
         if (conn->sasl_support & SASL_MASK_SCRAMSHA512)
@@ -780,7 +780,7 @@ static void _auth(xmpp_conn_t *const conn)
         _auth_legacy(conn);
     } else {
         xmpp_error(conn->ctx, "auth", "Cannot authenticate with known methods");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EAUTH);
     }
 }
 
@@ -930,7 +930,7 @@ static int _handle_features_sasl(xmpp_conn_t *const conn,
         xmpp_error(conn->ctx, "xmpp",
                    "Stream features does not allow "
                    "resource bind.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     }
 
     return 0;
@@ -944,7 +944,7 @@ static int _handle_missing_features_sasl(xmpp_conn_t *const conn,
     xmpp_error(conn->ctx, "xmpp",
                "Did not receive stream features "
                "after SASL authentication.");
-    xmpp_disconnect(conn);
+    disconnect_with_error(conn, XMPP_ETIMEDOUT);
     return 0;
 }
 
@@ -964,7 +964,7 @@ static int _handle_bind(xmpp_conn_t *const conn,
     type = xmpp_stanza_get_type(stanza);
     if (type && strcmp(type, "error") == 0) {
         xmpp_error(conn->ctx, "xmpp", "Binding failed.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     } else if (type && strcmp(type, "result") == 0) {
         xmpp_stanza_t *binding = xmpp_stanza_get_child_by_name(stanza, "bind");
         xmpp_debug(conn->ctx, "xmpp", "Bind successful.");
@@ -1016,7 +1016,7 @@ static int _handle_bind(xmpp_conn_t *const conn,
         }
     } else {
         xmpp_error(conn->ctx, "xmpp", "Server sent malformed bind reply.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     }
 
     return 0;
@@ -1027,7 +1027,7 @@ static int _handle_missing_bind(xmpp_conn_t *const conn, void *const userdata)
     UNUSED(userdata);
 
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to bind request.");
-    xmpp_disconnect(conn);
+    disconnect_with_error(conn, XMPP_ETIMEDOUT);
     return 0;
 }
 
@@ -1046,7 +1046,7 @@ static int _handle_session(xmpp_conn_t *const conn,
     type = xmpp_stanza_get_type(stanza);
     if (type && strcmp(type, "error") == 0) {
         xmpp_error(conn->ctx, "xmpp", "Session establishment failed.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     } else if (type && strcmp(type, "result") == 0) {
         xmpp_debug(conn->ctx, "xmpp", "Session establishment successful.");
 
@@ -1056,7 +1056,7 @@ static int _handle_session(xmpp_conn_t *const conn,
         conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
     } else {
         xmpp_error(conn->ctx, "xmpp", "Server sent malformed session reply.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     }
 
     return 0;
@@ -1068,7 +1068,7 @@ static int _handle_missing_session(xmpp_conn_t *const conn,
     UNUSED(userdata);
 
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to session request.");
-    xmpp_disconnect(conn);
+    disconnect_with_error(conn, XMPP_ETIMEDOUT);
     return 0;
 }
 
@@ -1079,7 +1079,7 @@ static int _handle_missing_legacy(xmpp_conn_t *const conn, void *const userdata)
     xmpp_error(conn->ctx, "xmpp",
                "Server did not reply to legacy "
                "authentication request.");
-    xmpp_disconnect(conn);
+    disconnect_with_error(conn, XMPP_ETIMEDOUT);
     return 0;
 }
 
@@ -1102,11 +1102,11 @@ static int _handle_legacy(xmpp_conn_t *const conn,
         xmpp_error(conn->ctx, "xmpp",
                    "Server sent us an unexpected response "
                    "to legacy authentication request.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     } else if (strcmp(type, "error") == 0) {
         /* legacy client auth failed, no more fallbacks */
         xmpp_error(conn->ctx, "xmpp", "Legacy client authentication failed.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EAUTH);
     } else if (strcmp(type, "result") == 0) {
         /* auth succeeded */
         xmpp_debug(conn->ctx, "xmpp", "Legacy auth succeeded.");
@@ -1117,7 +1117,7 @@ static int _handle_legacy(xmpp_conn_t *const conn,
         xmpp_error(conn->ctx, "xmpp",
                    "Server sent us a legacy authentication "
                    "response with a bad type.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINT);
     }
 
     return 0;
@@ -1197,7 +1197,7 @@ static void _auth_legacy(xmpp_conn_t *conn)
         xmpp_stanza_release(authdata);
         xmpp_stanza_release(iq);
         xmpp_error(conn->ctx, "auth", "Cannot authenticate without resource");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, XMPP_EINVOP);
         return;
     }
     xmpp_stanza_add_child(child, authdata);
@@ -1231,7 +1231,7 @@ void auth_handle_component_open(xmpp_conn_t *const conn)
     rc = _handle_component_auth(conn);
     if (rc != 0) {
         xmpp_error(conn->ctx, "auth", "Component authentication failed.");
-        xmpp_disconnect(conn);
+        disconnect_with_error(conn, rc);
     }
 }
 
@@ -1298,15 +1298,8 @@ int _handle_component_hs_response(xmpp_conn_t *const conn,
 
     name = xmpp_stanza_get_name(stanza);
     if (strcmp(name, "handshake") != 0) {
-        char *msg;
-        size_t msg_size;
-        xmpp_stanza_to_text(stanza, &msg, &msg_size);
-        if (msg) {
-            xmpp_debug(conn->ctx, "auth", "Handshake failed: %s", msg);
-            xmpp_free(conn->ctx, msg);
-        }
-        xmpp_disconnect(conn);
-        return XMPP_EINT;
+        xmpp_debug(conn->ctx, "auth", "Handshake failed.");
+        disconnect_with_error(conn, XMPP_EINT);
     } else {
         conn->authenticated = 1;
         conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
@@ -1323,7 +1316,7 @@ int _handle_missing_handshake(xmpp_conn_t *const conn, void *const userdata)
     UNUSED(userdata);
 
     xmpp_error(conn->ctx, "xmpp", "Server did not reply to handshake request.");
-    xmpp_disconnect(conn);
+    disconnect_with_error(conn, XMPP_ETIMEDOUT);
     return 0;
 }
 

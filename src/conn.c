@@ -918,8 +918,8 @@ int conn_tls_start(xmpp_conn_t *const conn)
         if (tls_start(conn->tls)) {
             conn->secured = 1;
         } else {
-            rc = XMPP_EINT;
-            conn->error = tls_error(conn->tls);
+            /* TODO: distinguish invalid certificates and other errors */
+            rc = XMPP_ECERT;
             tls_free(conn->tls);
             conn->tls = NULL;
             conn->tls_failed = 1;
@@ -927,9 +927,9 @@ int conn_tls_start(xmpp_conn_t *const conn)
     }
     if (rc != 0) {
         xmpp_debug(conn->ctx, "conn",
-                   "Couldn't start TLS! "
-                   "error %d tls_error %d",
-                   rc, conn->error);
+                   "Couldn't start TLS! error %d tls_error %d", rc,
+                   conn->tls == NULL ? 0 : tls_error(conn->tls));
+        conn->error = rc;
     }
     return rc;
 }
@@ -1069,6 +1069,7 @@ static int _disconnect_cleanup(xmpp_conn_t *const conn, void *const userdata)
 
     xmpp_debug(conn->ctx, "xmpp", "disconnection forced by cleanup timeout");
 
+    conn->error = conn->error ?: XMPP_ETIMEDOUT;
     conn_disconnect(conn);
 
     return 0;
@@ -1195,7 +1196,7 @@ static void _handle_stream_start(char *name, char **attrs, void *const userdata)
 {
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
     char *id;
-    int failed = 0;
+    int ret = 0;
 
     if (conn->stream_id)
         xmpp_free(conn->ctx, conn->stream_id);
@@ -1209,20 +1210,21 @@ static void _handle_stream_start(char *name, char **attrs, void *const userdata)
 
         if (id && !conn->stream_id) {
             xmpp_error(conn->ctx, "conn", "Memory allocation failed.");
-            failed = 1;
+            ret = XMPP_EMEM;
         }
     } else {
         xmpp_error(conn->ctx, "conn",
                    "Server did not open valid stream."
                    " name = %s.",
                    name);
-        failed = 1;
+        ret = XMPP_EINT;
     }
 
-    if (!failed) {
+    if (ret == 0) {
         /* call stream open handler */
         conn->open_handler(conn);
     } else {
+        conn->error = ret;
         conn_disconnect(conn);
     }
 }

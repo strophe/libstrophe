@@ -38,7 +38,25 @@ void conn_handler(xmpp_conn_t *const conn,
                 secured ? "secured" : "NOT secured");
         xmpp_disconnect(conn);
     } else {
-        fprintf(stderr, "DEBUG: disconnected\n");
+        switch (error) {
+        case XMPP_EOK:
+            fprintf(stderr, "DEBUG: disconnected successfully.\n");
+            break;
+        case XMPP_EINVOP:
+            /*
+             * This may happen when the requested functionality is not
+             * supported or some data is not provided when it is required (e.g.
+             * resource part).
+             */
+            fprintf(stderr, "DEBUG: disconnected, invalid operation.\n");
+            break;
+        case XMPP_ECERT:
+            /*
+             * In this case, application can reconnect with
+             * XMPP_CONN_FLAG_TRUST_TLS if user permits.
+             */
+            fprintf(stderr, "DEBUG: disconnected, invalid TLS certificate.\n");
+        }
         xmpp_stop(ctx);
     }
 }

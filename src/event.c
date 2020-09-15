@@ -41,15 +41,6 @@
 #define _sleep(x) usleep((x)*1000)
 #else
 #include <winsock2.h>
-#ifndef ETIMEDOUT
-#define ETIMEDOUT WSAETIMEDOUT
-#endif
-#ifndef ECONNRESET
-#define ECONNRESET WSAECONNRESET
-#endif
-#ifndef ECONNABORTED
-#define ECONNABORTED WSAECONNABORTED
-#endif
 #define _sleep(x) Sleep(x)
 #endif
 
@@ -107,25 +98,23 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
 
             if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls))) {
                 /* an error occurred */
-                xmpp_debug(ctx, "xmpp", "Send error occurred, disconnecting.");
-                conn->error = ECONNABORTED;
-                conn_disconnect(conn);
+                conn->error = XMPP_EIO;
             }
         }
 
         /* write all data from the send queue to the socket */
         sq = conn->send_queue_head;
-        while (sq) {
+        while (!conn->error && sq) {
             towrite = sq->len - sq->written;
 
             if (conn->tls) {
                 ret = tls_write(conn->tls, &sq->data[sq->written], towrite);
                 if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls)))
-                    conn->error = tls_error(conn->tls);
+                    conn->error = XMPP_EIO;
             } else {
                 ret = sock_write(conn->sock, &sq->data[sq->written], towrite);
                 if (ret < 0 && !sock_is_recoverable(sock_error()))
-                    conn->error = sock_error();
+                    conn->error = XMPP_EIO;
             }
             if (ret > 0 && ret < towrite)
                 sq->written += ret; /* not all data could be sent now */
@@ -151,7 +140,6 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
             /* FIXME: need to tear down send queues and random other things
              * maybe this should be abstracted */
             xmpp_debug(ctx, "xmpp", "Send error occurred, disconnecting.");
-            conn->error = ECONNABORTED;
             conn_disconnect(conn);
         }
 
@@ -190,8 +178,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
                 conn->connect_timeout)
                 FD_SET(conn->sock, &wfds);
             else {
-                conn->error = ETIMEDOUT;
                 xmpp_info(ctx, "xmpp", "Connection attempt timed out.");
+                conn->error = XMPP_ETIMEDOUT;
                 conn_disconnect(conn);
             }
             break;
@@ -252,6 +240,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
                 if (ret != 0) {
                     /* connection failed */
                     xmpp_debug(ctx, "xmpp", "connection failed, error %d", ret);
+                    conn->error = XMPP_EIO;
                     conn_disconnect(conn);
                     break;
                 }
@@ -285,14 +274,14 @@ void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
                             xmpp_debug(ctx, "xmpp",
                                        "Unrecoverable TLS error, %d.",
                                        tls_error(conn->tls));
-                            conn->error = tls_error(conn->tls);
+                            conn->error = XMPP_EIO;
                             conn_disconnect(conn);
                         }
                     } else {
                         /* return of 0 means socket closed by server */
                         xmpp_debug(ctx, "xmpp",
                                    "Socket closed by remote host.");
-                        conn->error = ECONNRESET;
+                        conn->error = ret == 0 ? XMPP_ERESET : XMPP_EIO;
                         conn_disconnect(conn);
                     }
                 }

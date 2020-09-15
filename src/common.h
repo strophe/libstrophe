@@ -276,6 +276,7 @@ void handler_add(xmpp_conn_t *const conn,
 void handler_system_delete_all(xmpp_conn_t *conn);
 
 /* utility functions */
+void disconnect_with_error(xmpp_conn_t *const conn, int error);
 void disconnect_mem_error(xmpp_conn_t *const conn);
 
 /* auth functions */
