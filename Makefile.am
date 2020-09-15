@@ -92,8 +92,6 @@ EXTRA_DIST = \
 	examples/README.md \
 	jni/Android.mk \
 	jni/Application.mk \
-	rpm/README \
-	rpm/libstrophe.spec \
 	src/tls_gnutls.c \
 	src/tls_schannel.c \
 	tests/res_query_dump.c
