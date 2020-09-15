@@ -50,9 +50,10 @@
 #include "resolver.h"
 #include "util.h"
 
-/* Workaround for visual studio without va_copy support. */
-#if defined(_MSC_VER) && _MSC_VER < 1800 || defined(__HAIKU__)
-#define va_copy(d, s) ((d) = (s))
+/* Workaround for systems without va_copy support. */
+#if defined(_MSC_VER) && _MSC_VER < 1800 || \
+    !defined(_MSC_VER) && !defined(HAVE_DECL_VA_COPY)
+#define va_copy(d, s) (memcpy(&d, &s, sizeof(va_list)))
 #endif
 
 /** Initialize the Strophe library.

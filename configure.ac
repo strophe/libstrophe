@@ -33,6 +33,7 @@ AC_ARG_ENABLE([cares],
 
 AC_SEARCH_LIBS([socket], [network socket])
 AC_CHECK_FUNCS([snprintf vsnprintf])
+AC_CHECK_DECLS([va_copy], [], [], [#include <stdarg.h>])
 
 if test "x$enable_tls" != xno; then
     PKG_CHECK_MODULES([openssl], [openssl],
