@@ -6,18 +6,20 @@ stages:
   - style
   - test
 before_script:
-  - ./bootstrap.sh
+  - ./travis/before_script.sh
 env:
   - CONFIGURE_OPT="--without-libxml2"
   - CONFIGURE_OPT="--with-libxml2"
   - CONFIGURE_OPT="--disable-tls"
   - CONFIGURE_OPT="--enable-cares"
-script: ./configure ${CONFIGURE_OPT} CFLAGS="-Werror" && make && make check
+  - CONFIGURE_OPT="PKG_CONFIG_PATH=${HOME}/libressl/lib/pkgconfig" LIBRESSL=yes LIBRESSL_COMMIT="v3.1.4"
+  - CONFIGURE_OPT="PKG_CONFIG_PATH=${HOME}/libressl/lib/pkgconfig" LIBRESSL=yes LIBRESSL_COMMIT="v2.1.7"
+script: ./bootstrap.sh && ./configure ${CONFIGURE_OPT} CFLAGS="-Werror" && make && make check
 jobs:
   include:
     - stage: style
       name: "Check code style"
-      script: ./configure && make format && git diff --exit-code
+      script: ./bootstrap.sh && ./configure && make format && git diff --exit-code
       env:
         - CONFIGURE_OPT=""
 matrix:
