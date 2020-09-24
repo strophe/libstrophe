@@ -1,3 +1,6 @@
+0.10.1
+	- Fixed compilation error when LibreSSL is used
+
 0.10.0
 	- Coding style has been unified
 	- SCRAM-SHA-256 and SCRAM-SHA-512 support
