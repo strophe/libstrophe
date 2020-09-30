@@ -420,7 +420,7 @@ void xmpp_conn_set_pass(xmpp_conn_t *const conn, const char *const pass)
 {
     if (conn->pass)
         xmpp_free(conn->ctx, conn->pass);
-    conn->pass = xmpp_strdup(conn->ctx, pass);
+    conn->pass = pass ? xmpp_strdup(conn->ctx, pass) : NULL;
 }
 
 /** Get the strophe context that the connection is associated with.

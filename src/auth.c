@@ -667,6 +667,10 @@ static void _auth(xmpp_conn_t *const conn)
         xmpp_error(conn->ctx, "auth",
                    "No node in JID, and SASL ANONYMOUS unsupported.");
         xmpp_disconnect(conn);
+    } else if (conn->pass == NULL) {
+        xmpp_error(conn->ctx, "auth",
+                   "Password hasn't been set, and SASL ANONYMOUS unsupported.");
+        xmpp_disconnect(conn);
     } else if (conn->sasl_support & SASL_MASK_SCRAM) {
         scram_ctx = xmpp_alloc(conn->ctx, sizeof(*scram_ctx));
         if (conn->sasl_support & SASL_MASK_SCRAMSHA512)
