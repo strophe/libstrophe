@@ -346,8 +346,7 @@ static int _handle_sasl_result(xmpp_conn_t *const conn,
     } else {
         /* got unexpected reply */
         xmpp_error(conn->ctx, "xmpp",
-                   "Got unexpected reply to SASL %s"
-                   "authentication.",
+                   "Got unexpected reply to SASL %s authentication.",
                    (char *)userdata);
         xmpp_disconnect(conn);
     }
