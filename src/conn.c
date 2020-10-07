@@ -951,7 +951,6 @@ long xmpp_conn_get_flags(const xmpp_conn_t *const conn)
             XMPP_CONN_FLAG_LEGACY_SSL * conn->tls_legacy_ssl |
             XMPP_CONN_FLAG_TRUST_TLS * conn->tls_trust |
             XMPP_CONN_FLAG_LEGACY_AUTH * conn->auth_legacy_enabled;
-    ;
 
     return flags;
 }
