@@ -137,6 +137,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *const ctx)
         conn->bound_jid = NULL;
 
         conn->is_raw = 0;
+        conn->tls_cafile = NULL;
         conn->tls_support = 0;
         conn->tls_disabled = 0;
         conn->tls_mandatory = 0;
@@ -338,6 +339,8 @@ int xmpp_conn_release(xmpp_conn_t *const conn)
             xmpp_free(ctx, conn->pass);
         if (conn->lang)
             xmpp_free(ctx, conn->lang);
+        if (conn->tls_cafile)
+            xmpp_free(ctx, conn->tls_cafile);
         xmpp_free(ctx, conn);
         released = 1;
     }
@@ -686,6 +689,28 @@ int xmpp_conn_tls_start(xmpp_conn_t *const conn)
     return conn_tls_start(conn);
 }
 
+/** Set external CAfile which will be used for TLS cert verification.
+ *
+ *  @return XMPP_EOK (0) on success a number less than 0 on failure
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_tls_cafile(xmpp_conn_t *const conn, const char *cafile)
+{
+    FILE *f;
+
+    f = fopen(cafile, "r");
+    if (f == NULL) {
+        xmpp_debug(conn->ctx, "conn", "CAfile '%s' is not readable. errno=%d",
+                   cafile, errno);
+        return XMPP_EINVOP;
+    }
+    fclose(f);
+    conn->tls_cafile = xmpp_strdup(conn->ctx, cafile);
+
+    return conn->tls_cafile == NULL ? XMPP_EMEM : XMPP_EOK;
+}
+
 /** Cleanly disconnect the connection.
  *  This function is only called by the stream parser when </stream:stream>
  *  is received, and it not intended to be called by code outside of Strophe.
@@ -915,6 +940,10 @@ int conn_tls_start(xmpp_conn_t *const conn)
     }
 
     if (conn->tls != NULL) {
+        if (conn->tls_cafile != NULL) {
+            (void)tls_set_credentials(conn->tls, conn->tls_cafile);
+        }
+
         if (tls_start(conn->tls)) {
             conn->secured = 1;
         } else {

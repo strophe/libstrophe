@@ -271,6 +271,7 @@ int xmpp_conn_open_stream(xmpp_conn_t *const conn,
                           char **attributes,
                           size_t attributes_len);
 int xmpp_conn_tls_start(xmpp_conn_t *const conn);
+int xmpp_conn_tls_cafile(xmpp_conn_t *const conn, const char *cafile);
 
 void xmpp_disconnect(xmpp_conn_t *const conn);
 

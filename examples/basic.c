@@ -49,6 +49,7 @@ int main(int argc, char **argv)
     xmpp_conn_t *conn;
     xmpp_log_t *log;
     char *jid, *pass, *host = NULL;
+    const char *cafile = NULL;
     long flags = 0;
     int tcp_keepalive = 0;
     int i;
@@ -67,12 +68,15 @@ int main(int argc, char **argv)
             flags |= XMPP_CONN_FLAG_LEGACY_AUTH;
         else if (strcmp(argv[i], "--tcp-keepalive") == 0)
             tcp_keepalive = 1;
+        else if (strncmp(argv[i], "--cafile=", strlen("--cafile=")) == 0)
+            cafile = argv[i] + strlen("--cafile=");
         else
             break;
     }
     if ((argc - i) < 2 || (argc - i) > 3) {
         fprintf(stderr, "Usage: basic [options] <jid> <pass> [<host>]\n\n"
                         "Options:\n"
+                        "  --cafile=<PATH>      CAfile for cert verification.\n"
                         "  --disable-tls        Disable TLS.\n"
                         "  --mandatory-tls      Deny plaintext connection.\n"
                         "  --trust-tls          Trust TLS certificate.\n"
@@ -110,6 +114,10 @@ int main(int argc, char **argv)
     /* configure TCP keepalive (optional) */
     if (tcp_keepalive)
         xmpp_conn_set_keepalive(conn, KA_TIMEOUT, KA_INTERVAL);
+
+    /* add external CAfile if needed */
+    if (cafile)
+        xmpp_conn_tls_cafile(conn, cafile);
 
     /* setup authentication information */
     xmpp_conn_set_jid(conn, jid);

@@ -318,9 +318,14 @@ void tls_free(tls_t *tls)
 
 int tls_set_credentials(tls_t *tls, const char *cafilename)
 {
-    UNUSED(tls);
-    UNUSED(cafilename);
-    return -1;
+    int ret;
+
+    ret = SSL_CTX_load_verify_locations(tls->ssl_ctx, cafilename, NULL);
+    if (ret != 1) {
+        xmpp_error(tls->ctx, "tls", "Failed to process CAfile: %s", cafilename);
+        _tls_log_error(tls->ctx);
+    }
+    return ret;
 }
 
 int tls_start(tls_t *tls)

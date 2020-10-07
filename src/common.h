@@ -171,6 +171,7 @@ struct _xmpp_conn_t {
     int ka_interval; /* TCP keepalive interval */
 
     tls_t *tls;
+    char *tls_cafile;
     int tls_support;
     int tls_disabled;
     int tls_mandatory;
