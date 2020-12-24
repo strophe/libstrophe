@@ -1,5 +1,6 @@
 0.10.1
 	- Fixed compilation error when LibreSSL is used
+	- Fixed crash when NULL is provided as password
 
 0.10.0
 	- Coding style has been unified
