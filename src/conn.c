@@ -143,6 +143,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         conn->tls_legacy_ssl = 0;
         conn->tls_trust = 0;
         conn->tls_failed = 0;
+        conn->tls_client_cert = NULL;
+        conn->tls_client_key = NULL;
         conn->sasl_support = 0;
         conn->auth_legacy_enabled = 0;
         conn->secured = 0;
@@ -338,6 +340,10 @@ int xmpp_conn_release(xmpp_conn_t *conn)
             xmpp_free(ctx, conn->pass);
         if (conn->lang)
             xmpp_free(ctx, conn->lang);
+        if (conn->tls_client_cert)
+            xmpp_free(ctx, conn->tls_client_cert);
+        if (conn->tls_client_key)
+            xmpp_free(ctx, conn->tls_client_key);
         xmpp_free(ctx, conn);
         released = 1;
     }
@@ -392,6 +398,58 @@ void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid)
     if (conn->jid)
         xmpp_free(conn->ctx, conn->jid);
     conn->jid = xmpp_strdup(conn->ctx, jid);
+}
+
+/** Set the Client Certificate and Private Key that will be bound to the
+ *  connection. If any of the both was previously set, it will be discarded.
+ *  This should not be used after a connection is created.  The function will
+ *  make a copy of the strings passed in.
+ *  Currently only non-encrypted Private Keys are supported.
+ *
+ *  @param conn a Strophe connection object
+ *  @param cert path to a certificate file
+ *  @param key path to a private key file
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
+                               const char *const cert,
+                               const char *const key)
+{
+    xmpp_debug(conn->ctx, "conn", "set client cert %s %s", cert, key);
+    if (conn->tls_client_cert)
+        xmpp_free(conn->ctx, conn->tls_client_cert);
+    conn->tls_client_cert = xmpp_strdup(conn->ctx, cert);
+    if (conn->tls_client_key)
+        xmpp_free(conn->ctx, conn->tls_client_key);
+    conn->tls_client_key = xmpp_strdup(conn->ctx, key);
+}
+
+/** Get the number of xmppAddr entries in the client certificate.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return the number of xmppAddr entries in the client certificate
+ *
+ *  @ingroup Connections
+ */
+unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *const conn)
+{
+    return tls_id_on_xmppaddr_num(conn);
+}
+
+/** Get a specific xmppAddr entry.
+ *
+ *  @param conn a Strophe connection object
+ *  @param n the index of the entry, starting at 0
+ *
+ *  @return a string containing the xmppAddr or NULL if n is out of range
+ *
+ *  @ingroup Connections
+ */
+char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *const conn, unsigned int n)
+{
+    return tls_id_on_xmppaddr(conn, n);
 }
 
 /** Get the password used for authentication of a connection.
@@ -469,6 +527,20 @@ int xmpp_connect_client(xmpp_conn_t *conn,
     unsigned short port = 0;
     int found = XMPP_DOMAIN_NOT_FOUND;
     int rc;
+
+    if (!conn->jid && conn->tls_client_cert) {
+        if (tls_id_on_xmppaddr_num(conn) != 1) {
+            xmpp_debug(conn->ctx, "xmpp",
+                       "Client certificate contains multiple or no xmppAddr "
+                       "and no JID was given to be used.");
+            return XMPP_EINVOP;
+        }
+        conn->jid = tls_id_on_xmppaddr(conn, 0);
+        if (!conn->jid)
+            return XMPP_EMEM;
+        xmpp_debug(conn->ctx, "xmpp", "Use jid %s from id-on-xmppAddr.",
+                   conn->jid);
+    }
 
     domain = xmpp_jid_domain(conn->ctx, conn->jid);
     if (!domain)

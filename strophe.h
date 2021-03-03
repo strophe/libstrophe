@@ -234,6 +234,11 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags);
 const char *xmpp_conn_get_jid(const xmpp_conn_t *conn);
 const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *conn);
 void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid);
+void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
+                               const char *const cert,
+                               const char *const key);
+unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *const conn);
+char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *const conn, unsigned int n);
 const char *xmpp_conn_get_pass(const xmpp_conn_t *conn);
 void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass);
 xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *conn);

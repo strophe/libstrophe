@@ -242,6 +242,9 @@ _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 
                 if (strcasecmp(text, "PLAIN") == 0)
                     conn->sasl_support |= SASL_MASK_PLAIN;
+                else if (strcasecmp(text, "EXTERNAL") == 0 &&
+                         conn->tls_client_cert)
+                    conn->sasl_support |= SASL_MASK_EXTERNAL;
                 else if (strcasecmp(text, "DIGEST-MD5") == 0)
                     conn->sasl_support |= SASL_MASK_DIGESTMD5;
                 else if (strcasecmp(text, "SCRAM-SHA-1") == 0)
@@ -651,6 +654,49 @@ static void _auth(xmpp_conn_t *conn)
 
         /* SASL ANONYMOUS was tried, unset flag */
         conn->sasl_support &= ~SASL_MASK_ANONYMOUS;
+    } else if (conn->sasl_support & SASL_MASK_EXTERNAL) {
+        /* more crap here */
+        auth = _make_sasl_auth(conn, "EXTERNAL");
+        if (!auth) {
+            disconnect_mem_error(conn);
+            return;
+        }
+
+        authdata = xmpp_stanza_new(conn->ctx);
+        if (!authdata) {
+            xmpp_stanza_release(auth);
+            disconnect_mem_error(conn);
+            return;
+        }
+        str = tls_id_on_xmppaddr(conn, 0);
+        if (!str || (tls_id_on_xmppaddr_num(conn) == 1 &&
+                     strcmp(str, conn->jid) == 0)) {
+            xmpp_stanza_set_text(authdata, "=");
+        } else {
+            xmpp_free(conn->ctx, str);
+            str = xmpp_base64_encode(conn->ctx, (void *)conn->jid,
+                                     strlen(conn->jid));
+            if (!str) {
+                xmpp_stanza_release(authdata);
+                xmpp_stanza_release(auth);
+                disconnect_mem_error(conn);
+                return;
+            }
+            xmpp_stanza_set_text(authdata, str);
+        }
+        xmpp_free(conn->ctx, str);
+
+        xmpp_stanza_add_child(auth, authdata);
+        xmpp_stanza_release(authdata);
+
+        handler_add(conn, _handle_sasl_result, XMPP_NS_SASL, NULL, NULL,
+                    "EXTERNAL");
+
+        xmpp_send(conn, auth);
+        xmpp_stanza_release(auth);
+
+        /* SASL EXTERNAL was tried, unset flag */
+        conn->sasl_support &= ~SASL_MASK_EXTERNAL;
     } else if (anonjid) {
         xmpp_error(conn->ctx, "auth",
                    "No node in JID, and SASL ANONYMOUS unsupported.");

@@ -131,6 +131,7 @@ struct _xmpp_send_queue_t {
 #define SASL_MASK_SCRAMSHA1 (1 << 3)
 #define SASL_MASK_SCRAMSHA256 (1 << 4)
 #define SASL_MASK_SCRAMSHA512 (1 << 5)
+#define SASL_MASK_EXTERNAL (1 << 6)
 
 #define SASL_MASK_SCRAM \
     (SASL_MASK_SCRAMSHA1 | SASL_MASK_SCRAMSHA256 | SASL_MASK_SCRAMSHA512)
@@ -164,6 +165,8 @@ struct _xmpp_conn_t {
     int tls_mandatory;
     int tls_legacy_ssl;
     int tls_trust;
+    char *tls_client_cert;
+    char *tls_client_key;
     int tls_failed;   /* set when tls fails, so we don't try again */
     int sasl_support; /* if true, field is a bitfield of supported
                          mechanisms */
