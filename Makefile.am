@@ -5,8 +5,13 @@ ACLOCAL_AMFLAGS = -I m4
 PARSER_CFLAGS=@PARSER_CFLAGS@
 PARSER_LIBS=@PARSER_LIBS@
 
+if TLS_WITH_GNUTLS
+SSL_CFLAGS = @gnutls_CFLAGS@
+SSL_LIBS = @gnutls_LIBS@
+else
 SSL_CFLAGS = @openssl_CFLAGS@
 SSL_LIBS = @openssl_LIBS@
+endif
 
 RESOLV_CFLAGS = @RESOLV_CFLAGS@
 RESOLV_LIBS = @RESOLV_LIBS@
@@ -67,7 +72,11 @@ libstrophe_la_SOURCES += \
 if DISABLE_TLS
 libstrophe_la_SOURCES += src/tls_dummy.c
 else
+if TLS_WITH_GNUTLS
+libstrophe_la_SOURCES += src/tls_gnutls.c
+else
 libstrophe_la_SOURCES += src/tls_openssl.c
+endif
 endif
 
 if PARSER_EXPAT
@@ -92,9 +101,14 @@ EXTRA_DIST = \
 	examples/README.md \
 	jni/Android.mk \
 	jni/Application.mk \
-	src/tls_gnutls.c \
 	src/tls_schannel.c \
 	tests/res_query_dump.c
+
+if TLS_WITH_GNUTLS
+EXTRA_DIST += src/tls_openssl.c
+else
+EXTRA_DIST += src/tls_gnutls.c
+endif
 
 ## Examples
 noinst_PROGRAMS = \

@@ -26,6 +26,8 @@ AS_CASE([$PLATFORM],
 
 AC_ARG_WITH([libxml2],
     [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing, expat is the default])])
+AC_ARG_WITH([gnutls],
+    [AS_HELP_STRING([--with-gnutls], [use GnuTLS for TLS support, OpenSSL is the default])])
 AC_ARG_ENABLE([tls],
     [AS_HELP_STRING([--disable-tls], [disable TLS support])])
 AC_ARG_ENABLE([cares],
@@ -35,7 +37,17 @@ AC_SEARCH_LIBS([socket], [network socket])
 AC_CHECK_FUNCS([snprintf vsnprintf])
 AC_CHECK_DECLS([va_copy], [], [], [#include <stdarg.h>])
 
-if test "x$enable_tls" != xno; then
+if test "x$enable_tls" != xno -a "x$with_gnutls" == xyes; then
+    PKG_CHECK_MODULES([gnutls], [gnutls],
+        [PC_REQUIRES="gnutls ${PC_REQUIRES}"],
+        [AC_CHECK_HEADER([gnutls/gnutls.h],
+            [
+                gnutls_LIBS="-lgnutls"
+                PC_LIBS="${gnutls_LIBS} ${PC_LIBS}"
+            ],
+            [AC_MSG_ERROR([gnutls not found; gnutls required])]
+        )])
+elif test "x$enable_tls" != xno; then
     PKG_CHECK_MODULES([openssl], [openssl],
         [PC_REQUIRES="openssl ${PC_REQUIRES}"],
         [AC_CHECK_HEADER([openssl/ssl.h],
@@ -145,6 +157,7 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
 
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AM_CONDITIONAL([DISABLE_TLS], [test x$enable_tls = xno])
+AM_CONDITIONAL([TLS_WITH_GNUTLS], [test x$with_gnutls = xyes])
 
 AC_SUBST([PC_REQUIRES], [${PC_REQUIRES}])
 AC_SUBST([PC_CFLAGS], [${PC_CFLAGS}])
