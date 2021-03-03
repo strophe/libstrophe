@@ -10,6 +10,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <strophe.h>
@@ -48,10 +49,11 @@ int main(int argc, char **argv)
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
-    char *jid, *pass, *host = NULL;
+    char *jid = NULL, *password = NULL, *cert = NULL, *key = NULL, *host = NULL;
     long flags = 0;
     int tcp_keepalive = 0;
     int i;
+    unsigned long port = 0;
 
     /* take a jid and password on the command line */
     for (i = 1; i < argc; ++i) {
@@ -67,27 +69,40 @@ int main(int argc, char **argv)
             flags |= XMPP_CONN_FLAG_LEGACY_AUTH;
         else if (strcmp(argv[i], "--tcp-keepalive") == 0)
             tcp_keepalive = 1;
+        else if ((strcmp(argv[i], "--jid") == 0) && (++i < argc))
+            jid = argv[i];
+        else if ((strcmp(argv[i], "--pass") == 0) && (++i < argc))
+            password = argv[i];
+        else if ((strcmp(argv[i], "--tls-cert") == 0) && (++i < argc))
+            cert = argv[i];
+        else if ((strcmp(argv[i], "--tls-key") == 0) && (++i < argc))
+            key = argv[i];
         else
             break;
     }
-    if ((argc - i) < 2 || (argc - i) > 3) {
-        fprintf(stderr, "Usage: basic [options] <jid> <pass> [<host>]\n\n"
-                        "Options:\n"
-                        "  --disable-tls        Disable TLS.\n"
-                        "  --mandatory-tls      Deny plaintext connection.\n"
-                        "  --trust-tls          Trust TLS certificate.\n"
-                        "  --legacy-ssl         Use old style SSL.\n"
-                        "  --legacy-auth        Allow legacy authentication.\n"
-                        "  --tcp-keepalive      Configure TCP keepalive.\n\n"
-                        "Note: --disable-tls conflicts with --mandatory-tls or "
-                        "--legacy-ssl\n");
+    if ((argc - i) == 0 || (argc - i) > 2) {
+        fprintf(stderr,
+                "Usage: basic [options] [<host> [<port>]]\n\n"
+                "Options:\n"
+                "  --jid <jid>              The JID to use to authenticate.\n"
+                "  --pass <pass>            The password of the JID.\n"
+                "  --tls-cert <cert>        Path to client certificate.\n"
+                "  --tls-key <key>          Path to private key.\n\n"
+                "  --disable-tls            Disable TLS.\n"
+                "  --mandatory-tls          Deny plaintext connection.\n"
+                "  --trust-tls              Trust TLS certificate.\n"
+                "  --legacy-ssl             Use old style SSL.\n"
+                "  --legacy-auth            Allow legacy authentication.\n"
+                "  --tcp-keepalive          Configure TCP keepalive.\n\n"
+                "Note: --disable-tls conflicts with --mandatory-tls or "
+                "--legacy-ssl\n");
         return 1;
     }
 
-    jid = argv[i];
-    pass = argv[i + 1];
-    if (i + 2 < argc)
-        host = argv[i + 2];
+    if (i < argc)
+        host = argv[i];
+    if (i + 1 < argc)
+        port = strtoul(argv[i + 1], NULL, 0);
 
     /*
      * Note, this example doesn't handle errors. Applications should check
@@ -112,15 +127,21 @@ int main(int argc, char **argv)
         xmpp_conn_set_keepalive(conn, KA_TIMEOUT, KA_INTERVAL);
 
     /* setup authentication information */
-    xmpp_conn_set_jid(conn, jid);
-    xmpp_conn_set_pass(conn, pass);
+    if (cert && key) {
+        xmpp_conn_set_client_cert(conn, cert, key);
+    }
+    if (jid)
+        xmpp_conn_set_jid(conn, jid);
+    if (password)
+        xmpp_conn_set_pass(conn, password);
 
     /* initiate connection */
-    xmpp_connect_client(conn, host, 0, conn_handler, ctx);
+    if (xmpp_connect_client(conn, host, port, conn_handler, ctx) == XMPP_EOK) {
 
-    /* enter the event loop -
-       our connect handler will trigger an exit */
-    xmpp_run(ctx);
+        /* enter the event loop -
+           our connect handler will trigger an exit */
+        xmpp_run(ctx);
+    }
 
     /* release our connection and context */
     xmpp_conn_release(conn);
