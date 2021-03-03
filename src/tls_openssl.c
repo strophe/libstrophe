@@ -47,11 +47,19 @@
 #endif
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+static const unsigned char *ASN1_STRING_get0_data(ASN1_STRING *asn1)
+{
+    return ASN1_STRING_data(asn1);
+}
+#endif
+
 struct _tls {
     xmpp_ctx_t *ctx;
     sock_t sock;
     SSL_CTX *ssl_ctx;
     SSL *ssl;
+    X509 *client_cert;
     int lasterror;
 };
 
@@ -66,6 +74,10 @@ static const char *_tls_error_str(int error, const char **tbl, size_t tbl_size);
 static void _tls_set_error(tls_t *tls, int error);
 static void _tls_log_error(xmpp_ctx_t *ctx);
 static void _tls_dump_cert_info(tls_t *tls);
+static X509 *_tls_cert_read(xmpp_conn_t *conn);
+static int _tls_xaddr_nid(void);
+static int _tls_name_to_xmppaddr(GENERAL_NAME *name, char **res);
+static GENERAL_NAMES *_tls_cert_get_names(xmpp_conn_t *conn);
 
 #define TLS_ERROR_STR(error, table) \
     _tls_error_str(error, table, ARRAY_SIZE(table))
@@ -189,6 +201,8 @@ void tls_initialize(void)
 #else
     OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
 #endif
+    /* init xmppAddr OID */
+    _tls_xaddr_nid();
 }
 
 void tls_shutdown(void)
@@ -199,6 +213,7 @@ void tls_shutdown(void)
      * memory rather than cause random crashes of the main program.
      */
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+    OBJ_cleanup();
     ERR_free_strings();
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
@@ -216,6 +231,55 @@ void tls_shutdown(void)
 int tls_error(tls_t *tls)
 {
     return tls->lasterror;
+}
+
+/** Search through the SubjectAlternativeNames and return the next
+ *  id-on-xmppAddr element starting from `n`.
+ */
+char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n)
+{
+    char *ret = NULL;
+    int i, j;
+    GENERAL_NAMES *names = _tls_cert_get_names(conn);
+    if (!names)
+        return NULL;
+    int num_names = sk_GENERAL_NAME_num(names);
+    for (i = j = 0; i < num_names; ++i) {
+        char *res;
+        GENERAL_NAME *name = sk_GENERAL_NAME_value(names, i);
+        if (name == NULL)
+            break;
+        if (_tls_name_to_xmppaddr(name, &res))
+            continue;
+        if (j == (int)n) {
+            xmpp_debug(conn->ctx, "tls", "extracted jid %s from id-on-xmppAddr",
+                       res);
+            ret = xmpp_strdup(conn->ctx, res);
+            OPENSSL_free(res);
+            break;
+        }
+        j++;
+        OPENSSL_free(res);
+    }
+    GENERAL_NAMES_free(names);
+    return ret;
+}
+
+unsigned int tls_id_on_xmppaddr_num(xmpp_conn_t *conn)
+{
+    unsigned int ret = 0;
+    GENERAL_NAMES *names = _tls_cert_get_names(conn);
+    if (!names)
+        return 0;
+    int j, num_names = sk_GENERAL_NAME_num(names);
+    for (j = 0; j < num_names; ++j) {
+        GENERAL_NAME *name = sk_GENERAL_NAME_value(names, j);
+        if (_tls_name_to_xmppaddr(name, NULL))
+            continue;
+        ret++;
+    }
+    GENERAL_NAMES_free(names);
+    return ret;
 }
 
 tls_t *tls_new(xmpp_conn_t *conn)
@@ -249,7 +313,23 @@ tls_t *tls_new(xmpp_conn_t *conn)
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv3); /* POODLE */
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_TLSv1); /* BEAST */
 
-        SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
+        if (conn->tls_client_cert && conn->tls_client_key) {
+            tls->client_cert = _tls_cert_read(conn);
+            if (!tls->client_cert) {
+                xmpp_error(tls->ctx, "tls",
+                           "could not read client certificate");
+                goto err_free_ctx;
+            }
+
+            SSL_CTX_use_certificate_file(tls->ssl_ctx, conn->tls_client_cert,
+                                         SSL_FILETYPE_PEM);
+            SSL_CTX_use_PrivateKey_file(tls->ssl_ctx, conn->tls_client_key,
+                                        SSL_FILETYPE_PEM);
+        } else {
+            /* If the server asks for a client certificate, don't send one. */
+            SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
+        }
+
         SSL_CTX_set_mode(tls->ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
 
         ret = SSL_CTX_set_default_verify_paths(tls->ssl_ctx);
@@ -261,12 +341,12 @@ tls_t *tls_new(xmpp_conn_t *conn)
              */
             xmpp_error(tls->ctx, "tls",
                        "SSL_CTX_set_default_verify_paths() failed");
-            goto err_free_ctx;
+            goto err_free_cert;
         }
 
         tls->ssl = SSL_new(tls->ssl_ctx);
         if (tls->ssl == NULL)
-            goto err_free_ctx;
+            goto err_free_cert;
 
 #if OPENSSL_VERSION_NUMBER >= 0x0908060L && !defined(OPENSSL_NO_TLSEXT)
         /* Enable SNI. */
@@ -301,6 +381,8 @@ tls_t *tls_new(xmpp_conn_t *conn)
 
 err_free_ssl:
     SSL_free(tls->ssl);
+err_free_cert:
+    X509_free(tls->client_cert);
 err_free_ctx:
     SSL_CTX_free(tls->ssl_ctx);
 err:
@@ -312,6 +394,7 @@ err:
 void tls_free(tls_t *tls)
 {
     SSL_free(tls->ssl);
+    X509_free(tls->client_cert);
     SSL_CTX_free(tls->ssl_ctx);
     xmpp_free(tls->ctx, tls);
 }
@@ -508,4 +591,90 @@ static void _tls_dump_cert_info(tls_t *tls)
         }
         X509_free(cert);
     }
+}
+
+static X509 *_tls_cert_read(xmpp_conn_t *conn)
+{
+    if (conn->tls && conn->tls->client_cert)
+        return conn->tls->client_cert;
+    BIO *f = BIO_new_file(conn->tls_client_cert, "r");
+    if (!f) {
+        xmpp_debug(conn->ctx, "tls", "f == NULL");
+        return NULL;
+    }
+    X509 *c = PEM_read_bio_X509(f, NULL, NULL, NULL);
+    BIO_free(f);
+    if (!c) {
+        unsigned long error;
+        while ((error = ERR_get_error()) != 0) {
+            xmpp_debug(conn->ctx, "tls", "c == NULL: %s",
+                       ERR_error_string(error, NULL));
+        }
+    }
+    return c;
+}
+
+static int _tls_xaddr_nid(void)
+{
+    static int xaddr_nid = NID_undef;
+    if (xaddr_nid == NID_undef) {
+        xaddr_nid = OBJ_create("1.3.6.1.5.5.7.8.5", "id-on-xmppAddr",
+                               "XmppAddr Identifier");
+    }
+    return xaddr_nid;
+}
+
+static GENERAL_NAMES *_tls_cert_get_names(xmpp_conn_t *conn)
+{
+    X509 *client_cert;
+    GENERAL_NAMES *names = NULL;
+    client_cert = _tls_cert_read(conn);
+    if (!client_cert)
+        return NULL;
+    int san = X509_get_ext_by_NID(client_cert, NID_subject_alt_name, 0);
+    X509_EXTENSION *san_ext = X509_get_ext(client_cert, san);
+    if (!san_ext)
+        goto OUT;
+    ASN1_OCTET_STRING *data = X509_EXTENSION_get_data(san_ext);
+    if (!data)
+        goto OUT;
+    const unsigned char *d = ASN1_STRING_get0_data(data);
+    if (!d)
+        goto OUT;
+    names = d2i_GENERAL_NAMES(NULL, &d, ASN1_STRING_length(data));
+OUT:
+    if (!conn->tls || !conn->tls->client_cert)
+        X509_free(client_cert);
+    return names;
+}
+
+/** Convert GENERAL_NAME* to a string
+ *
+ *  This checks whether the GENERAL_NAME* that is given has the
+ *  correct id-on-xmppAddr set and then optionally converts this
+ *  form ASN.1 to a string/char*.
+ *
+ *  When `res` pointer is set to NULL this method doesn't allocate
+ *  the result but only checks whether it is in the correct format.
+ *
+ *  @param name Pointer to the GENERAL_NAME that shall be converted
+ *  @param res Result-pointer (optional, can be NULL)
+ *
+ *  @return classic Unix style - 0=success, 1=error
+ */
+static int _tls_name_to_xmppaddr(GENERAL_NAME *name, char **res)
+{
+    ASN1_OBJECT *oid;
+    ASN1_TYPE *val;
+    if (!name || name->type != GEN_OTHERNAME)
+        return 1;
+    if (GENERAL_NAME_get0_otherName(name, &oid, &val) == 0)
+        return 1;
+    if (OBJ_obj2nid(oid) != _tls_xaddr_nid() || !val)
+        return 1;
+    if (!res)
+        return 0;
+    if (ASN1_STRING_to_UTF8((unsigned char **)res, val->value.asn1_string) < 0)
+        return 1;
+    return 0;
 }
