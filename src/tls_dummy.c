@@ -33,6 +33,21 @@ void tls_shutdown(void)
     return;
 }
 
+char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n)
+{
+    UNUSED(conn);
+    UNUSED(n);
+    /* always fail */
+    return NULL;
+}
+
+unsigned int tls_id_on_xmppaddr_num(xmpp_conn_t *conn)
+{
+    UNUSED(conn);
+    /* always fail */
+    return 0;
+}
+
 tls_t *tls_new(xmpp_conn_t *conn)
 {
     UNUSED(conn);
