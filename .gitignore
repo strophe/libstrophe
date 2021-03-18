@@ -61,6 +61,7 @@ tests/test_snprintf
 tests/test_sock
 tests/test_stanza
 tests/test_string
+tests/test_xmppaddr
 m4/
 libstrophe.project
 libs/

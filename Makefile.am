@@ -165,6 +165,10 @@ TESTS = \
 	tests/test_stanza \
 	tests/test_resolver
 
+if !DISABLE_TLS
+TESTS += tests/test_xmppaddr
+endif
+
 check_PROGRAMS = $(TESTS)
 
 tests_check_parser_SOURCES = tests/check_parser.c tests/test.h
@@ -229,6 +233,11 @@ tests_test_stanza_SOURCES = tests/test_stanza.c
 tests_test_stanza_CFLAGS = $(STROPHE_FLAGS)
 tests_test_stanza_LDADD = $(STROPHE_LIBS)
 tests_test_stanza_LDFLAGS = -static
+
+tests_test_xmppaddr_SOURCES = tests/test_xmppaddr.c
+tests_test_xmppaddr_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
+tests_test_xmppaddr_LDADD = $(STROPHE_LIBS)
+tests_test_xmppaddr_LDFLAGS = -static
 
 format:
 	@echo "   * run clang-format on all sources"
