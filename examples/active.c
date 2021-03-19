@@ -19,9 +19,7 @@
 
 #include <strophe.h>
 
-int handle_reply(xmpp_conn_t *const conn,
-                 xmpp_stanza_t *const stanza,
-                 void *const userdata)
+int handle_reply(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_stanza_t *query, *item;
     const char *type;
@@ -46,11 +44,11 @@ int handle_reply(xmpp_conn_t *const conn,
     return 0;
 }
 
-void conn_handler(xmpp_conn_t *const conn,
-                  const xmpp_conn_event_t status,
-                  const int error,
-                  xmpp_stream_error_t *const stream_error,
-                  void *const userdata)
+void conn_handler(xmpp_conn_t *conn,
+                  xmpp_conn_event_t status,
+                  int error,
+                  xmpp_stream_error_t *stream_error,
+                  void *userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     xmpp_stanza_t *iq, *query;

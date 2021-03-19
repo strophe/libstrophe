@@ -22,7 +22,7 @@ static int mem_alloc_called = 0;
 static int mem_free_called = 0;
 static int mem_realloc_called = 0;
 
-void *my_alloc(const size_t size, void *const userdata)
+void *my_alloc(size_t size, void *userdata)
 {
     (void)userdata;
 
@@ -30,7 +30,7 @@ void *my_alloc(const size_t size, void *const userdata)
     return malloc(size);
 }
 
-void my_free(void *p, void *const userdata)
+void my_free(void *p, void *userdata)
 {
     (void)userdata;
 
@@ -38,7 +38,7 @@ void my_free(void *p, void *const userdata)
     return free(p);
 }
 
-void *my_realloc(void *p, const size_t size, void *const userdata)
+void *my_realloc(void *p, size_t size, void *userdata)
 {
     (void)userdata;
 
@@ -46,10 +46,10 @@ void *my_realloc(void *p, const size_t size, void *const userdata)
     return realloc(p, size);
 }
 
-void my_logger(void *const userdata,
-               const xmpp_log_level_t level,
-               const char *const area,
-               const char *const msg)
+void my_logger(void *userdata,
+               xmpp_log_level_t level,
+               const char *area,
+               const char *msg)
 {
     if (strcmp((char *)userdata, "asdf") == 0 && level == XMPP_LEVEL_DEBUG &&
         strcmp(area, "test") == 0 && strcmp(msg, "hello") == 0)

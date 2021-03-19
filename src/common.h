@@ -87,33 +87,21 @@ struct _xmpp_ctx_t {
 };
 
 /* convenience functions for accessing the context */
-void *xmpp_alloc(const xmpp_ctx_t *const ctx, const size_t size);
-void *xmpp_realloc(const xmpp_ctx_t *const ctx, void *p, const size_t size);
-char *xmpp_strdup(const xmpp_ctx_t *const ctx, const char *const s);
+void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size);
+void *xmpp_realloc(const xmpp_ctx_t *ctx, void *p, size_t size);
+char *xmpp_strdup(const xmpp_ctx_t *ctx, const char *s);
 
-void xmpp_log(const xmpp_ctx_t *const ctx,
+void xmpp_log(const xmpp_ctx_t *ctx,
               const xmpp_log_level_t level,
-              const char *const area,
-              const char *const fmt,
+              const char *area,
+              const char *fmt,
               va_list ap);
 
 /* wrappers for xmpp_log at specific levels */
-void xmpp_error(const xmpp_ctx_t *const ctx,
-                const char *const area,
-                const char *const fmt,
-                ...);
-void xmpp_warn(const xmpp_ctx_t *const ctx,
-               const char *const area,
-               const char *const fmt,
-               ...);
-void xmpp_info(const xmpp_ctx_t *const ctx,
-               const char *const area,
-               const char *const fmt,
-               ...);
-void xmpp_debug(const xmpp_ctx_t *const ctx,
-                const char *const area,
-                const char *const fmt,
-                ...);
+void xmpp_error(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+void xmpp_warn(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+void xmpp_info(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+void xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 
 /** connection **/
 
@@ -153,7 +141,7 @@ enum {
     XMPP_PORT_COMPONENT = 5347,
 };
 
-typedef void (*xmpp_open_handler)(xmpp_conn_t *const conn);
+typedef void (*xmpp_open_handler)(xmpp_conn_t *conn);
 
 struct _xmpp_conn_t {
     unsigned int ref;
@@ -225,13 +213,13 @@ struct _xmpp_conn_t {
     xmpp_handlist_t *handlers;
 };
 
-void conn_disconnect(xmpp_conn_t *const conn);
-void conn_disconnect_clean(xmpp_conn_t *const conn);
-void conn_established(xmpp_conn_t *const conn);
-void conn_open_stream(xmpp_conn_t *const conn);
-int conn_tls_start(xmpp_conn_t *const conn);
-void conn_prepare_reset(xmpp_conn_t *const conn, xmpp_open_handler handler);
-void conn_parser_reset(xmpp_conn_t *const conn);
+void conn_disconnect(xmpp_conn_t *conn);
+void conn_disconnect_clean(xmpp_conn_t *conn);
+void conn_established(xmpp_conn_t *conn);
+void conn_open_stream(xmpp_conn_t *conn);
+int conn_tls_start(xmpp_conn_t *conn);
+void conn_prepare_reset(xmpp_conn_t *conn, xmpp_open_handler handler);
+void conn_parser_reset(xmpp_conn_t *conn);
 
 typedef enum {
     XMPP_STANZA_UNKNOWN,
@@ -256,32 +244,32 @@ struct _xmpp_stanza_t {
 };
 
 /* handler management */
-void handler_fire_stanza(xmpp_conn_t *const conn, xmpp_stanza_t *const stanza);
-uint64_t handler_fire_timed(xmpp_ctx_t *const ctx);
+void handler_fire_stanza(xmpp_conn_t *conn, xmpp_stanza_t *stanza);
+uint64_t handler_fire_timed(xmpp_ctx_t *ctx);
 void handler_reset_timed(xmpp_conn_t *conn, int user_only);
-void handler_add_timed(xmpp_conn_t *const conn,
+void handler_add_timed(xmpp_conn_t *conn,
                        xmpp_timed_handler handler,
-                       const unsigned long period,
-                       void *const userdata);
-void handler_add_id(xmpp_conn_t *const conn,
+                       unsigned long period,
+                       void *userdata);
+void handler_add_id(xmpp_conn_t *conn,
                     xmpp_handler handler,
-                    const char *const id,
-                    void *const userdata);
-void handler_add(xmpp_conn_t *const conn,
+                    const char *id,
+                    void *userdata);
+void handler_add(xmpp_conn_t *conn,
                  xmpp_handler handler,
-                 const char *const ns,
-                 const char *const name,
-                 const char *const type,
-                 void *const userdata);
+                 const char *ns,
+                 const char *name,
+                 const char *type,
+                 void *userdata);
 void handler_system_delete_all(xmpp_conn_t *conn);
 
 /* utility functions */
-void disconnect_mem_error(xmpp_conn_t *const conn);
+void disconnect_mem_error(xmpp_conn_t *conn);
 
 /* auth functions */
-void auth_handle_open(xmpp_conn_t *const conn);
-void auth_handle_component_open(xmpp_conn_t *const conn);
-void auth_handle_open_raw(xmpp_conn_t *const conn);
-void auth_handle_open_stub(xmpp_conn_t *const conn);
+void auth_handle_open(xmpp_conn_t *conn);
+void auth_handle_component_open(xmpp_conn_t *conn);
+void auth_handle_open_raw(xmpp_conn_t *conn);
+void auth_handle_open_stub(xmpp_conn_t *conn);
 
 #endif /* __LIBSTROPHE_COMMON_H__ */

@@ -21,14 +21,14 @@
 #include "rand.c"
 
 /* stubs to build test without whole libstrophe */
-void *xmpp_alloc(const xmpp_ctx_t *const ctx, const size_t size)
+void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size)
 {
     (void)ctx;
     (void)size;
     return NULL;
 }
 
-void xmpp_free(const xmpp_ctx_t *const ctx, void *p)
+void xmpp_free(const xmpp_ctx_t *ctx, void *p)
 {
     (void)ctx;
     (void)p;

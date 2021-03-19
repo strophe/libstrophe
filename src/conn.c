@@ -48,8 +48,8 @@
 #define CONNECT_TIMEOUT 5000 /* 5 seconds */
 #endif
 
-static int _disconnect_cleanup(xmpp_conn_t *const conn, void *const userdata);
-static char *_conn_build_stream_tag(xmpp_conn_t *const conn,
+static int _disconnect_cleanup(xmpp_conn_t *conn, void *userdata);
+static char *_conn_build_stream_tag(xmpp_conn_t *conn,
                                     char **attributes,
                                     size_t attributes_len);
 static void _conn_attributes_new(xmpp_conn_t *conn,
@@ -59,24 +59,21 @@ static void _conn_attributes_new(xmpp_conn_t *conn,
 static void _conn_attributes_destroy(xmpp_conn_t *conn,
                                      char **attributes,
                                      size_t attributes_len);
-static void
-_handle_stream_start(char *name, char **attrs, void *const userdata);
-static void _handle_stream_end(char *name, void *const userdata);
-static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *const userdata);
-static unsigned short _conn_default_port(xmpp_conn_t *const conn,
+static void _handle_stream_start(char *name, char **attrs, void *userdata);
+static void _handle_stream_end(char *name, void *userdata);
+static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *userdata);
+static unsigned short _conn_default_port(xmpp_conn_t *conn,
                                          xmpp_conn_type_t type);
-static void _conn_reset(xmpp_conn_t *const conn);
-static int _conn_connect(xmpp_conn_t *const conn,
-                         const char *const domain,
-                         const char *const host,
+static void _conn_reset(xmpp_conn_t *conn);
+static int _conn_connect(xmpp_conn_t *conn,
+                         const char *domain,
+                         const char *host,
                          unsigned short port,
                          xmpp_conn_type_t type,
                          xmpp_conn_handler callback,
-                         void *const userdata);
+                         void *userdata);
 
-void xmpp_send_error(xmpp_conn_t *const conn,
-                     xmpp_error_type_t const type,
-                     char *const text)
+void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text)
 {
     xmpp_stanza_t *error = xmpp_error_new(conn->ctx, type, text);
 
@@ -93,7 +90,7 @@ void xmpp_send_error(xmpp_conn_t *const conn,
  *
  *  @ingroup Connections
  */
-xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *const ctx)
+xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
 {
     xmpp_conn_t *conn = NULL;
     xmpp_connlist_t *tail, *item;
@@ -201,7 +198,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *const ctx)
  *
  *  @ingroup Connections
  */
-xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *const conn)
+xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *conn)
 {
     conn->ref++;
     return conn;
@@ -219,7 +216,7 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-void xmpp_conn_set_keepalive(xmpp_conn_t *const conn, int timeout, int interval)
+void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval)
 {
     int ret = 0;
 
@@ -245,7 +242,7 @@ void xmpp_conn_set_keepalive(xmpp_conn_t *const conn, int timeout, int interval)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_release(xmpp_conn_t *const conn)
+int xmpp_conn_release(xmpp_conn_t *conn)
 {
     xmpp_ctx_t *ctx;
     xmpp_connlist_t *item, *prev;
@@ -353,7 +350,7 @@ int xmpp_conn_release(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-const char *xmpp_conn_get_jid(const xmpp_conn_t *const conn)
+const char *xmpp_conn_get_jid(const xmpp_conn_t *conn)
 {
     return conn->jid;
 }
@@ -371,7 +368,7 @@ const char *xmpp_conn_get_jid(const xmpp_conn_t *const conn)
  *
  * @ingroup Connections
  */
-const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *const conn)
+const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *conn)
 {
     return conn->bound_jid;
 }
@@ -387,7 +384,7 @@ const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-void xmpp_conn_set_jid(xmpp_conn_t *const conn, const char *const jid)
+void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid)
 {
     if (conn->jid)
         xmpp_free(conn->ctx, conn->jid);
@@ -402,7 +399,7 @@ void xmpp_conn_set_jid(xmpp_conn_t *const conn, const char *const jid)
  *
  *  @ingroup Connections
  */
-const char *xmpp_conn_get_pass(const xmpp_conn_t *const conn)
+const char *xmpp_conn_get_pass(const xmpp_conn_t *conn)
 {
     return conn->pass;
 }
@@ -416,7 +413,7 @@ const char *xmpp_conn_get_pass(const xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-void xmpp_conn_set_pass(xmpp_conn_t *const conn, const char *const pass)
+void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass)
 {
     if (conn->pass)
         xmpp_free(conn->ctx, conn->pass);
@@ -430,7 +427,7 @@ void xmpp_conn_set_pass(xmpp_conn_t *const conn, const char *const pass)
  *
  *  @ingroup Connections
  */
-xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *const conn)
+xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *conn)
 {
     return conn->ctx;
 }
@@ -456,11 +453,11 @@ xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_connect_client(xmpp_conn_t *const conn,
-                        const char *const altdomain,
+int xmpp_connect_client(xmpp_conn_t *conn,
+                        const char *altdomain,
                         unsigned short altport,
                         xmpp_conn_handler callback,
-                        void *const userdata)
+                        void *userdata)
 {
     resolver_srv_rr_t *srv_rr_list = NULL;
     resolver_srv_rr_t *rr;
@@ -536,11 +533,11 @@ int xmpp_connect_client(xmpp_conn_t *const conn,
  *
  *  @ingroup Connections
  */
-int xmpp_connect_component(xmpp_conn_t *const conn,
-                           const char *const server,
+int xmpp_connect_component(xmpp_conn_t *conn,
+                           const char *server,
                            unsigned short port,
                            xmpp_conn_handler callback,
-                           void *const userdata)
+                           void *userdata)
 {
     /*  The server domain, jid and password MUST be specified. */
     if (!(server && conn->jid && conn->pass))
@@ -583,18 +580,18 @@ int xmpp_connect_component(xmpp_conn_t *const conn,
  *
  *  @ingroup Connections
  */
-int xmpp_connect_raw(xmpp_conn_t *const conn,
-                     const char *const altdomain,
+int xmpp_connect_raw(xmpp_conn_t *conn,
+                     const char *altdomain,
                      unsigned short altport,
                      xmpp_conn_handler callback,
-                     void *const userdata)
+                     void *userdata)
 {
     conn->is_raw = 1;
     return xmpp_connect_client(conn, altdomain, altport, callback, userdata);
 }
 
 /* Called when tcp connection is established. */
-void conn_established(xmpp_conn_t *const conn)
+void conn_established(xmpp_conn_t *conn)
 {
     if (conn->tls_legacy_ssl && !conn->is_raw) {
         xmpp_debug(conn->ctx, "xmpp", "using legacy SSL connection");
@@ -628,7 +625,7 @@ void conn_established(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_open_stream_default(xmpp_conn_t *const conn)
+int xmpp_conn_open_stream_default(xmpp_conn_t *conn)
 {
     if (!conn->is_raw)
         return XMPP_EINVOP;
@@ -655,7 +652,7 @@ int xmpp_conn_open_stream_default(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_open_stream(xmpp_conn_t *const conn,
+int xmpp_conn_open_stream(xmpp_conn_t *conn,
                           char **attributes,
                           size_t attributes_len)
 {
@@ -681,7 +678,7 @@ int xmpp_conn_open_stream(xmpp_conn_t *const conn,
  *
  *  @ingroup Connections
  */
-int xmpp_conn_tls_start(xmpp_conn_t *const conn)
+int xmpp_conn_tls_start(xmpp_conn_t *conn)
 {
     return conn_tls_start(conn);
 }
@@ -692,7 +689,7 @@ int xmpp_conn_tls_start(xmpp_conn_t *const conn)
  *
  *  @param conn a Strophe connection object
  */
-void conn_disconnect_clean(xmpp_conn_t *const conn)
+void conn_disconnect_clean(xmpp_conn_t *conn)
 {
     /* remove the timed handler */
     xmpp_timed_handler_delete(conn, _disconnect_cleanup);
@@ -706,7 +703,7 @@ void conn_disconnect_clean(xmpp_conn_t *const conn)
  *
  *  @param conn a Strophe connection object
  */
-void conn_disconnect(xmpp_conn_t *const conn)
+void conn_disconnect(xmpp_conn_t *conn)
 {
     xmpp_debug(conn->ctx, "xmpp", "Closing socket.");
     conn->state = XMPP_STATE_DISCONNECTED;
@@ -724,14 +721,14 @@ void conn_disconnect(xmpp_conn_t *const conn)
 
 /* prepares a parser reset.  this is called from handlers. we can't
  * reset the parser immediately as it is not re-entrant. */
-void conn_prepare_reset(xmpp_conn_t *const conn, xmpp_open_handler handler)
+void conn_prepare_reset(xmpp_conn_t *conn, xmpp_open_handler handler)
 {
     conn->reset_parser = 1;
     conn->open_handler = handler;
 }
 
 /* reset the parser */
-void conn_parser_reset(xmpp_conn_t *const conn)
+void conn_parser_reset(xmpp_conn_t *conn)
 {
     conn->reset_parser = 0;
     parser_reset(conn->parser);
@@ -746,7 +743,7 @@ void conn_parser_reset(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-void xmpp_disconnect(xmpp_conn_t *const conn)
+void xmpp_disconnect(xmpp_conn_t *conn)
 {
     if (conn->state != XMPP_STATE_CONNECTING &&
         conn->state != XMPP_STATE_CONNECTED)
@@ -772,7 +769,7 @@ void xmpp_disconnect(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-void xmpp_send_raw_string(xmpp_conn_t *const conn, const char *const fmt, ...)
+void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
 {
     va_list ap;
     size_t len;
@@ -821,9 +818,7 @@ void xmpp_send_raw_string(xmpp_conn_t *const conn, const char *const fmt, ...)
  *
  *  @ingroup Connections
  */
-void xmpp_send_raw(xmpp_conn_t *const conn,
-                   const char *const data,
-                   const size_t len)
+void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
 {
     xmpp_send_queue_t *item;
 
@@ -867,7 +862,7 @@ void xmpp_send_raw(xmpp_conn_t *const conn,
  *
  *  @ingroup Connections
  */
-void xmpp_send(xmpp_conn_t *const conn, xmpp_stanza_t *const stanza)
+void xmpp_send(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
 {
     char *buf;
     size_t len;
@@ -887,7 +882,7 @@ void xmpp_send(xmpp_conn_t *const conn, xmpp_stanza_t *const stanza)
  *
  *  @param conn a Strophe connection object
  */
-void conn_open_stream(xmpp_conn_t *const conn)
+void conn_open_stream(xmpp_conn_t *conn)
 {
     xmpp_send_raw_string(conn,
                          "<?xml version=\"1.0\"?>"
@@ -902,7 +897,7 @@ void conn_open_stream(xmpp_conn_t *const conn)
                          XMPP_NS_STREAMS);
 }
 
-int conn_tls_start(xmpp_conn_t *const conn)
+int conn_tls_start(xmpp_conn_t *conn)
 {
     int rc;
 
@@ -942,7 +937,7 @@ int conn_tls_start(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-long xmpp_conn_get_flags(const xmpp_conn_t *const conn)
+long xmpp_conn_get_flags(const xmpp_conn_t *conn)
 {
     long flags;
 
@@ -977,7 +972,7 @@ long xmpp_conn_get_flags(const xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_set_flags(xmpp_conn_t *const conn, long flags)
+int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags)
 {
     if (conn->state != XMPP_STATE_DISCONNECTED) {
         xmpp_error(conn->ctx, "conn",
@@ -1012,7 +1007,7 @@ int xmpp_conn_set_flags(xmpp_conn_t *const conn, long flags)
  *
  *  @ingroup Connections
  */
-void xmpp_conn_disable_tls(xmpp_conn_t *const conn)
+void xmpp_conn_disable_tls(xmpp_conn_t *conn)
 {
     long flags = xmpp_conn_get_flags(conn);
 
@@ -1026,7 +1021,7 @@ void xmpp_conn_disable_tls(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_is_secured(xmpp_conn_t *const conn)
+int xmpp_conn_is_secured(xmpp_conn_t *conn)
 {
     return conn->secured && !conn->tls_failed && conn->tls != NULL;
 }
@@ -1036,7 +1031,7 @@ int xmpp_conn_is_secured(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_is_connecting(xmpp_conn_t *const conn)
+int xmpp_conn_is_connecting(xmpp_conn_t *conn)
 {
     return conn->state == XMPP_STATE_CONNECTING;
 }
@@ -1046,7 +1041,7 @@ int xmpp_conn_is_connecting(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_is_connected(xmpp_conn_t *const conn)
+int xmpp_conn_is_connected(xmpp_conn_t *conn)
 {
     return conn->state == XMPP_STATE_CONNECTED;
 }
@@ -1056,13 +1051,13 @@ int xmpp_conn_is_connected(xmpp_conn_t *const conn)
  *
  *  @ingroup Connections
  */
-int xmpp_conn_is_disconnected(xmpp_conn_t *const conn)
+int xmpp_conn_is_disconnected(xmpp_conn_t *conn)
 {
     return conn->state == XMPP_STATE_DISCONNECTED;
 }
 
 /* timed handler for cleanup if normal disconnect procedure takes too long */
-static int _disconnect_cleanup(xmpp_conn_t *const conn, void *const userdata)
+static int _disconnect_cleanup(xmpp_conn_t *conn, void *userdata)
 {
     UNUSED(userdata);
 
@@ -1073,7 +1068,7 @@ static int _disconnect_cleanup(xmpp_conn_t *const conn, void *const userdata)
     return 0;
 }
 
-static char *_conn_build_stream_tag(xmpp_conn_t *const conn,
+static char *_conn_build_stream_tag(xmpp_conn_t *conn,
                                     char **attributes,
                                     size_t attributes_len)
 {
@@ -1190,7 +1185,7 @@ static char *_get_stream_attribute(char **attrs, char *name)
     return NULL;
 }
 
-static void _handle_stream_start(char *name, char **attrs, void *const userdata)
+static void _handle_stream_start(char *name, char **attrs, void *userdata)
 {
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
     char *id;
@@ -1226,7 +1221,7 @@ static void _handle_stream_start(char *name, char **attrs, void *const userdata)
     }
 }
 
-static void _handle_stream_end(char *name, void *const userdata)
+static void _handle_stream_end(char *name, void *userdata)
 {
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
 
@@ -1237,7 +1232,7 @@ static void _handle_stream_end(char *name, void *const userdata)
     conn_disconnect_clean(conn);
 }
 
-static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *const userdata)
+static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_conn_t *conn = (xmpp_conn_t *)userdata;
     char *buf;
@@ -1251,7 +1246,7 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *const userdata)
     handler_fire_stanza(conn, stanza);
 }
 
-static unsigned short _conn_default_port(xmpp_conn_t *const conn,
+static unsigned short _conn_default_port(xmpp_conn_t *conn,
                                          xmpp_conn_type_t type)
 {
     switch (type) {
@@ -1265,7 +1260,7 @@ static unsigned short _conn_default_port(xmpp_conn_t *const conn,
     };
 }
 
-static void _conn_reset(xmpp_conn_t *const conn)
+static void _conn_reset(xmpp_conn_t *conn)
 {
     xmpp_ctx_t *ctx = conn->ctx;
     xmpp_send_queue_t *sq, *tsq;
@@ -1316,13 +1311,13 @@ static void _conn_reset(xmpp_conn_t *const conn)
     handler_system_delete_all(conn);
 }
 
-static int _conn_connect(xmpp_conn_t *const conn,
-                         const char *const domain,
-                         const char *const host,
+static int _conn_connect(xmpp_conn_t *conn,
+                         const char *domain,
+                         const char *host,
                          unsigned short port,
                          xmpp_conn_type_t type,
                          xmpp_conn_handler callback,
-                         void *const userdata)
+                         void *userdata)
 {
     xmpp_open_handler open_handler;
 
@@ -1352,10 +1347,9 @@ static int _conn_connect(xmpp_conn_t *const conn,
     conn->conn_handler = callback;
     conn->userdata = userdata;
 
-    open_handler = conn->is_raw
-                       ? auth_handle_open_stub
-                       : type == XMPP_CLIENT ? auth_handle_open
-                                             : auth_handle_component_open;
+    open_handler = conn->is_raw          ? auth_handle_open_stub
+                   : type == XMPP_CLIENT ? auth_handle_open
+                                         : auth_handle_component_open;
     conn_prepare_reset(conn, open_handler);
 
     /* FIXME: it could happen that the connect returns immediately as

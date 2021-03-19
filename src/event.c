@@ -73,7 +73,7 @@
  *
  *  @ingroup EventLoop
  */
-void xmpp_run_once(xmpp_ctx_t *ctx, const unsigned long timeout)
+void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
 {
     xmpp_connlist_t *connitem;
     xmpp_conn_t *conn;

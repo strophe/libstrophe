@@ -53,7 +53,7 @@ static void _handler_item_remove(xmpp_handlist_t **head, xmpp_handlist_t *item)
  *  @param conn a Strophe connection object
  *  @param stanza a Strophe stanza object
  */
-void handler_fire_stanza(xmpp_conn_t *const conn, xmpp_stanza_t *const stanza)
+void handler_fire_stanza(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
 {
     xmpp_handlist_t *item, *next, *head, *head_old;
     const char *id, *ns, *name, *type;
@@ -144,7 +144,7 @@ void handler_fire_stanza(xmpp_conn_t *const conn, xmpp_stanza_t *const stanza)
  *
  *  @return the time in milliseconds until the next handler will be ready
  */
-uint64_t handler_fire_timed(xmpp_ctx_t *const ctx)
+uint64_t handler_fire_timed(xmpp_ctx_t *ctx)
 {
     xmpp_connlist_t *connitem;
     xmpp_handlist_t *item, *next;
@@ -253,9 +253,9 @@ void handler_reset_timed(xmpp_conn_t *conn, int user_only)
 static void _timed_handler_add(xmpp_ctx_t *ctx,
                                xmpp_handlist_t **handlers_list,
                                xmpp_void_handler handler,
-                               const unsigned long period,
-                               void *const userdata,
-                               const int user_handler)
+                               unsigned long period,
+                               void *userdata,
+                               int user_handler)
 {
     xmpp_handlist_t *item;
 
@@ -311,16 +311,15 @@ static void _timed_handler_delete(xmpp_ctx_t *ctx,
  *
  *  @ingroup Handlers
  */
-void xmpp_timed_handler_delete(xmpp_conn_t *const conn,
-                               xmpp_timed_handler handler)
+void xmpp_timed_handler_delete(xmpp_conn_t *conn, xmpp_timed_handler handler)
 {
     _timed_handler_delete(conn->ctx, &conn->timed_handlers, handler);
 }
 
-static void _id_handler_add(xmpp_conn_t *const conn,
+static void _id_handler_add(xmpp_conn_t *conn,
                             xmpp_handler handler,
-                            const char *const id,
-                            void *const userdata,
+                            const char *id,
+                            void *userdata,
                             int user_handler)
 {
     xmpp_handlist_t *item, *tail;
@@ -373,9 +372,9 @@ static void _id_handler_add(xmpp_conn_t *const conn,
  *
  *  @ingroup Handlers
  */
-void xmpp_id_handler_delete(xmpp_conn_t *const conn,
+void xmpp_id_handler_delete(xmpp_conn_t *conn,
                             xmpp_handler handler,
-                            const char *const id)
+                            const char *id)
 {
     xmpp_handlist_t *item, *prev, *next;
 
@@ -406,12 +405,12 @@ void xmpp_id_handler_delete(xmpp_conn_t *const conn,
 }
 
 /* add a stanza handler */
-static void _handler_add(xmpp_conn_t *const conn,
+static void _handler_add(xmpp_conn_t *conn,
                          xmpp_handler handler,
-                         const char *const ns,
-                         const char *const name,
-                         const char *const type,
-                         void *const userdata,
+                         const char *ns,
+                         const char *name,
+                         const char *type,
+                         void *userdata,
                          int user_handler)
 {
     xmpp_handlist_t *item, *tail;
@@ -489,7 +488,7 @@ static void _handler_add(xmpp_conn_t *const conn,
  *
  *  @ingroup Handlers
  */
-void xmpp_handler_delete(xmpp_conn_t *const conn, xmpp_handler handler)
+void xmpp_handler_delete(xmpp_conn_t *conn, xmpp_handler handler)
 {
     xmpp_handlist_t *prev, *item;
 
@@ -536,10 +535,10 @@ void xmpp_handler_delete(xmpp_conn_t *const conn, xmpp_handler handler)
  *
  *  @ingroup Handlers
  */
-void xmpp_timed_handler_add(xmpp_conn_t *const conn,
+void xmpp_timed_handler_add(xmpp_conn_t *conn,
                             xmpp_timed_handler handler,
-                            const unsigned long period,
-                            void *const userdata)
+                            unsigned long period,
+                            void *userdata)
 {
     _timed_handler_add(conn->ctx, &conn->timed_handlers, handler, period,
                        userdata, 1);
@@ -554,10 +553,10 @@ void xmpp_timed_handler_add(xmpp_conn_t *const conn,
  *  @param period the time in milliseconds between firings
  *  @param userdata an opaque data pointer that will be passed to the handler
  */
-void handler_add_timed(xmpp_conn_t *const conn,
+void handler_add_timed(xmpp_conn_t *conn,
                        xmpp_timed_handler handler,
-                       const unsigned long period,
-                       void *const userdata)
+                       unsigned long period,
+                       void *userdata)
 {
     _timed_handler_add(conn->ctx, &conn->timed_handlers, handler, period,
                        userdata, 0);
@@ -579,10 +578,10 @@ void handler_add_timed(xmpp_conn_t *const conn,
  *
  *  @ingroup Handlers
  */
-void xmpp_id_handler_add(xmpp_conn_t *const conn,
+void xmpp_id_handler_add(xmpp_conn_t *conn,
                          xmpp_handler handler,
-                         const char *const id,
-                         void *const userdata)
+                         const char *id,
+                         void *userdata)
 {
     _id_handler_add(conn, handler, id, userdata, 1);
 }
@@ -596,10 +595,10 @@ void xmpp_id_handler_add(xmpp_conn_t *const conn,
  *  @param id a string with the id
  *  @param userdata an opaque data pointer that will be passed to the handler
  */
-void handler_add_id(xmpp_conn_t *const conn,
+void handler_add_id(xmpp_conn_t *conn,
                     xmpp_handler handler,
-                    const char *const id,
-                    void *const userdata)
+                    const char *id,
+                    void *userdata)
 {
     _id_handler_add(conn, handler, id, userdata, 0);
 }
@@ -626,12 +625,12 @@ void handler_add_id(xmpp_conn_t *const conn,
  *
  *  @ingroup Handlers
  */
-void xmpp_handler_add(xmpp_conn_t *const conn,
+void xmpp_handler_add(xmpp_conn_t *conn,
                       xmpp_handler handler,
-                      const char *const ns,
-                      const char *const name,
-                      const char *const type,
-                      void *const userdata)
+                      const char *ns,
+                      const char *name,
+                      const char *type,
+                      void *userdata)
 {
     _handler_add(conn, handler, ns, name, type, userdata, 1);
 }
@@ -647,12 +646,12 @@ void xmpp_handler_add(xmpp_conn_t *const conn,
  *  @param type a string with the 'type' attribute value to match
  *  @param userdata an opaque data pointer that will be passed to the handler
  */
-void handler_add(xmpp_conn_t *const conn,
+void handler_add(xmpp_conn_t *conn,
                  xmpp_handler handler,
-                 const char *const ns,
-                 const char *const name,
-                 const char *const type,
-                 void *const userdata)
+                 const char *ns,
+                 const char *name,
+                 const char *type,
+                 void *userdata)
 {
     _handler_add(conn, handler, ns, name, type, userdata, 0);
 }
@@ -762,10 +761,10 @@ void handler_system_delete_all(xmpp_conn_t *conn)
  *
  *  @ingroup Handlers
  */
-void xmpp_global_timed_handler_add(xmpp_ctx_t *const ctx,
+void xmpp_global_timed_handler_add(xmpp_ctx_t *ctx,
                                    xmpp_global_timed_handler handler,
-                                   const unsigned long period,
-                                   void *const userdata)
+                                   unsigned long period,
+                                   void *userdata)
 {
     _timed_handler_add(ctx, &ctx->timed_handlers, handler, period, userdata, 1);
 }
@@ -777,7 +776,7 @@ void xmpp_global_timed_handler_add(xmpp_ctx_t *const ctx,
  *
  *  @ingroup Handlers
  */
-void xmpp_global_timed_handler_delete(xmpp_ctx_t *const ctx,
+void xmpp_global_timed_handler_delete(xmpp_ctx_t *ctx,
                                       xmpp_global_timed_handler handler)
 {
     _timed_handler_delete(ctx, &ctx->timed_handlers, handler);

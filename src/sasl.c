@@ -65,7 +65,7 @@ char *sasl_plain(xmpp_ctx_t *ctx, const char *authid, const char *password)
 /** helpers for digest auth */
 
 /* create a new, null-terminated string from a substring */
-static char *_make_string(xmpp_ctx_t *ctx, const char *s, const unsigned len)
+static char *_make_string(xmpp_ctx_t *ctx, const char *s, unsigned len)
 {
     char *result;
 

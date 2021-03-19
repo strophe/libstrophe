@@ -69,7 +69,7 @@ static int _in_progress(int error)
 #endif
 }
 
-sock_t sock_connect(const char *const host, const unsigned short port)
+sock_t sock_connect(const char *host, unsigned short port)
 {
     sock_t sock;
     char service[6];
@@ -109,7 +109,7 @@ sock_t sock_connect(const char *const host, const unsigned short port)
     return sock;
 }
 
-int sock_set_keepalive(const sock_t sock, int timeout, int interval)
+int sock_set_keepalive(sock_t sock, int timeout, int interval)
 {
     int ret;
     int optval = (timeout && interval) ? 1 : 0;
@@ -154,7 +154,7 @@ int sock_set_keepalive(const sock_t sock, int timeout, int interval)
     return ret;
 }
 
-int sock_close(const sock_t sock)
+int sock_close(sock_t sock)
 {
 #ifdef _WIN32
     return closesocket(sock);
@@ -180,27 +180,27 @@ static int _sock_set_blocking_mode(sock_t sock, int blocking)
 #endif
 }
 
-int sock_set_blocking(const sock_t sock)
+int sock_set_blocking(sock_t sock)
 {
     return _sock_set_blocking_mode(sock, 1);
 }
 
-int sock_set_nonblocking(const sock_t sock)
+int sock_set_nonblocking(sock_t sock)
 {
     return _sock_set_blocking_mode(sock, 0);
 }
 
-int sock_read(const sock_t sock, void *const buff, const size_t len)
+int sock_read(sock_t sock, void *buff, size_t len)
 {
     return recv(sock, buff, len, 0);
 }
 
-int sock_write(const sock_t sock, const void *const buff, const size_t len)
+int sock_write(sock_t sock, const void *buff, size_t len)
 {
     return send(sock, buff, len, 0);
 }
 
-int sock_is_recoverable(const int error)
+int sock_is_recoverable(int error)
 {
 #ifdef _WIN32
     return (error == WSAEINTR || error == WSAEWOULDBLOCK ||
@@ -210,7 +210,7 @@ int sock_is_recoverable(const int error)
 #endif
 }
 
-int sock_connect_error(const sock_t sock)
+int sock_connect_error(sock_t sock)
 {
     struct sockaddr_storage ss;
     struct sockaddr *sa = (struct sockaddr *)&ss;

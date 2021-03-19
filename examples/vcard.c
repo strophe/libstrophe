@@ -160,7 +160,7 @@ exit:
     return cb;
 }
 
-static int timedout(xmpp_conn_t *const conn, void *const userdata)
+static int timedout(xmpp_conn_t *conn, void *userdata)
 {
     (void)userdata;
 
@@ -170,9 +170,7 @@ static int timedout(xmpp_conn_t *const conn, void *const userdata)
     return 0;
 }
 
-static int recv_vcard(xmpp_conn_t *const conn,
-                      xmpp_stanza_t *const stanza,
-                      void *const userdata)
+static int recv_vcard(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     vcard_t *vc = userdata;
     vcard_cb_t cb;
@@ -217,11 +215,11 @@ static void send_vcard_req(xmpp_conn_t *conn, const char *to, const char *id)
                          xmpp_conn_get_bound_jid(conn), to, id);
 }
 
-static void conn_handler(xmpp_conn_t *const conn,
-                         const xmpp_conn_event_t status,
-                         const int error,
-                         xmpp_stream_error_t *const stream_error,
-                         void *const userdata)
+static void conn_handler(xmpp_conn_t *conn,
+                         xmpp_conn_event_t status,
+                         int error,
+                         xmpp_stream_error_t *stream_error,
+                         void *userdata)
 {
     vcard_t *vc = userdata;
 

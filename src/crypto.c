@@ -244,15 +244,14 @@ static const char _base64_charmap[65] = {
     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/', '='};
 
-static size_t base64_encoded_len(const size_t len)
+static size_t base64_encoded_len(size_t len)
 {
     /* encoded steam is 4 bytes for every three, rounded up */
     return ((len + 2) / 3) << 2;
 }
 
-static char *base64_encode(xmpp_ctx_t *ctx,
-                           const unsigned char *const buffer,
-                           const size_t len)
+static char *
+base64_encode(xmpp_ctx_t *ctx, const unsigned char *buffer, size_t len)
 {
     size_t clen;
     char *cbuf, *c;
@@ -304,7 +303,7 @@ static char *base64_encode(xmpp_ctx_t *ctx,
     return cbuf;
 }
 
-static size_t base64_decoded_len(const char *const buffer, const size_t len)
+static size_t base64_decoded_len(const char *buffer, size_t len)
 {
     size_t nudge = 0;
     unsigned char c;
@@ -331,8 +330,8 @@ static size_t base64_decoded_len(const char *const buffer, const size_t len)
 }
 
 static void base64_decode(xmpp_ctx_t *ctx,
-                          const char *const buffer,
-                          const size_t len,
+                          const char *buffer,
+                          size_t len,
                           unsigned char **out,
                           size_t *outlen)
 {

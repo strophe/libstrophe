@@ -19,11 +19,11 @@
 #define KA_INTERVAL 1
 
 /* define a handler for connection events */
-void conn_handler(xmpp_conn_t *const conn,
-                  const xmpp_conn_event_t status,
-                  const int error,
-                  xmpp_stream_error_t *const stream_error,
-                  void *const userdata)
+void conn_handler(xmpp_conn_t *conn,
+                  xmpp_conn_event_t status,
+                  int error,
+                  xmpp_stream_error_t *stream_error,
+                  void *userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     int secured;

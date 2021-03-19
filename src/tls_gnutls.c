@@ -120,7 +120,7 @@ int tls_pending(tls_t *tls)
     return gnutls_record_check_pending(tls->session);
 }
 
-int tls_read(tls_t *tls, void *const buff, const size_t len)
+int tls_read(tls_t *tls, void *buff, size_t len)
 {
     int ret;
 
@@ -130,7 +130,7 @@ int tls_read(tls_t *tls, void *const buff, const size_t len)
     return ret;
 }
 
-int tls_write(tls_t *tls, const void *const buff, const size_t len)
+int tls_write(tls_t *tls, const void *buff, size_t len)
 {
     int ret;
 

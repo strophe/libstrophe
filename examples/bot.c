@@ -22,9 +22,7 @@
 
 #include <strophe.h>
 
-int version_handler(xmpp_conn_t *const conn,
-                    xmpp_stanza_t *const stanza,
-                    void *const userdata)
+int version_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_stanza_t *reply, *query, *name, *version, *text;
     const char *ns;
@@ -70,9 +68,7 @@ int version_handler(xmpp_conn_t *const conn,
     return 1;
 }
 
-int message_handler(xmpp_conn_t *const conn,
-                    xmpp_stanza_t *const stanza,
-                    void *const userdata)
+int message_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     xmpp_stanza_t *body, *reply;
@@ -118,11 +114,11 @@ int message_handler(xmpp_conn_t *const conn,
 }
 
 /* define a handler for connection events */
-void conn_handler(xmpp_conn_t *const conn,
-                  const xmpp_conn_event_t status,
-                  const int error,
-                  xmpp_stream_error_t *const stream_error,
-                  void *const userdata)
+void conn_handler(xmpp_conn_t *conn,
+                  xmpp_conn_event_t status,
+                  int error,
+                  xmpp_stream_error_t *stream_error,
+                  void *userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
 

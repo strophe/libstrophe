@@ -46,8 +46,7 @@ struct _hash_iterator_t {
 };
 
 /** allocate and initialize a new hash table */
-hash_t *
-hash_new(xmpp_ctx_t *const ctx, const int size, hash_free_func free_func)
+hash_t *hash_new(xmpp_ctx_t *ctx, int size, hash_free_func free_func)
 {
     hash_t *result = NULL;
 
@@ -72,14 +71,14 @@ hash_new(xmpp_ctx_t *const ctx, const int size, hash_free_func free_func)
 }
 
 /** obtain a new reference to an existing hash table */
-hash_t *hash_clone(hash_t *const table)
+hash_t *hash_clone(hash_t *table)
 {
     table->ref++;
     return table;
 }
 
 /** release a hash table that is no longer needed */
-void hash_release(hash_t *const table)
+void hash_release(hash_t *table)
 {
     xmpp_ctx_t *ctx = table->ctx;
     hashentry_t *entry, *next;
@@ -143,7 +142,7 @@ hashentry_t *_hash_entry_find(hash_t *table, const char *key)
  *  each key can appear only once; the value of any
  *  identical key will be replaced
  */
-int hash_add(hash_t *table, const char *const key, void *data)
+int hash_add(hash_t *table, const char *key, void *data)
 {
     xmpp_ctx_t *ctx = table->ctx;
     hashentry_t *entry = NULL;

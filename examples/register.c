@@ -102,9 +102,7 @@ iq_reg_send_form(xmpp_reg_t *reg, xmpp_conn_t *conn, xmpp_stanza_t *stanza)
     }
 }
 
-static int iq_reg2_cb(xmpp_conn_t *const conn,
-                      xmpp_stanza_t *const stanza,
-                      void *const userdata)
+static int iq_reg2_cb(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     const char *type;
 
@@ -129,9 +127,7 @@ quit:
     return 0;
 }
 
-static int iq_reg_cb(xmpp_conn_t *const conn,
-                     xmpp_stanza_t *const stanza,
-                     void *const userdata)
+static int iq_reg_cb(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_reg_t *reg = (xmpp_reg_t *)userdata;
     xmpp_stanza_t *registered = NULL;
@@ -166,9 +162,8 @@ quit:
     return 0;
 }
 
-static int _handle_error(xmpp_conn_t *const conn,
-                         xmpp_stanza_t *const stanza,
-                         void *const userdata)
+static int
+_handle_error(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     (void)stanza;
     (void)userdata;
@@ -179,9 +174,9 @@ static int _handle_error(xmpp_conn_t *const conn,
     return 0;
 }
 
-static int _handle_proceedtls_default(xmpp_conn_t *const conn,
-                                      xmpp_stanza_t *const stanza,
-                                      void *const userdata)
+static int _handle_proceedtls_default(xmpp_conn_t *conn,
+                                      xmpp_stanza_t *stanza,
+                                      void *userdata)
 {
     const char *name = xmpp_stanza_get_name(stanza);
 
@@ -201,8 +196,7 @@ static int _handle_proceedtls_default(xmpp_conn_t *const conn,
     return 0;
 }
 
-static int _handle_missing_features(xmpp_conn_t *const conn,
-                                    void *const userdata)
+static int _handle_missing_features(xmpp_conn_t *conn, void *userdata)
 {
     (void)userdata;
 
@@ -212,9 +206,8 @@ static int _handle_missing_features(xmpp_conn_t *const conn,
     return 0;
 }
 
-static int _handle_features(xmpp_conn_t *const conn,
-                            xmpp_stanza_t *const stanza,
-                            void *const userdata)
+static int
+_handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_reg_t *reg = (xmpp_reg_t *)userdata;
     xmpp_ctx_t *ctx = reg->ctx;
@@ -265,11 +258,11 @@ static int _handle_features(xmpp_conn_t *const conn,
     return 0;
 }
 
-static void conn_handler(xmpp_conn_t *const conn,
-                         const xmpp_conn_event_t status,
-                         const int error,
-                         xmpp_stream_error_t *const stream_error,
-                         void *const userdata)
+static void conn_handler(xmpp_conn_t *conn,
+                         xmpp_conn_event_t status,
+                         int error,
+                         xmpp_stream_error_t *stream_error,
+                         void *userdata)
 {
     xmpp_reg_t *reg = (xmpp_reg_t *)userdata;
     int secured;
