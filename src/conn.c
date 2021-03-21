@@ -52,6 +52,9 @@ static int _disconnect_cleanup(xmpp_conn_t *conn, void *userdata);
 static char *_conn_build_stream_tag(xmpp_conn_t *conn,
                                     char **attributes,
                                     size_t attributes_len);
+static int _conn_open_stream_with_attributes(xmpp_conn_t *conn,
+                                             char **attributes,
+                                             size_t attributes_len);
 static void _conn_attributes_new(xmpp_conn_t *conn,
                                  char **attrs,
                                  char ***attributes,
@@ -656,20 +659,12 @@ int xmpp_conn_open_stream(xmpp_conn_t *conn,
                           char **attributes,
                           size_t attributes_len)
 {
-    char *tag;
-
     if (!conn->is_raw)
         return XMPP_EINVOP;
 
-    tag = _conn_build_stream_tag(conn, attributes, attributes_len);
-    if (!tag)
-        return XMPP_EMEM;
-
     conn_prepare_reset(conn, auth_handle_open_raw);
-    xmpp_send_raw_string(conn, "<?xml version=\"1.0\"?>%s", tag);
-    xmpp_free(conn->ctx, tag);
 
-    return XMPP_EOK;
+    return _conn_open_stream_with_attributes(conn, attributes, attributes_len);
 }
 
 /** Start synchronous TLS handshake with the server.
@@ -884,17 +879,31 @@ void xmpp_send(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
  */
 void conn_open_stream(xmpp_conn_t *conn)
 {
-    xmpp_send_raw_string(conn,
-                         "<?xml version=\"1.0\"?>"
-                         "<stream:stream to=\"%s\" "
-                         "xml:lang=\"%s\" "
-                         "version=\"1.0\" "
-                         "xmlns=\"%s\" "
-                         "xmlns:stream=\"%s\">",
-                         conn->domain, conn->lang,
-                         conn->type == XMPP_CLIENT ? XMPP_NS_CLIENT
-                                                   : XMPP_NS_COMPONENT,
-                         XMPP_NS_STREAMS);
+    size_t attributes_len;
+    int rc;
+    char *from = NULL;
+    char *ns = conn->type == XMPP_CLIENT ? XMPP_NS_CLIENT : XMPP_NS_COMPONENT;
+    char *attributes[12] = {
+        "to",           conn->domain,    "xml:lang", conn->lang,
+        "version",      "1.0",           "xmlns",    ns,
+        "xmlns:stream", XMPP_NS_STREAMS, "from",     NULL};
+
+    attributes_len = ARRAY_SIZE(attributes);
+    if (conn->tls && conn->jid && strchr(conn->jid, '@') != NULL)
+        from = xmpp_jid_bare(conn->ctx, conn->jid);
+
+    if (from)
+        attributes[attributes_len - 1] = from;
+    else
+        attributes_len -= 2;
+
+    rc = _conn_open_stream_with_attributes(conn, attributes, attributes_len);
+    if (rc != XMPP_EOK) {
+        xmpp_error(conn->ctx, "conn", "Cannot build stream tag: memory error");
+        conn_disconnect(conn);
+    }
+    if (from)
+        xmpp_free(conn->ctx, from);
 }
 
 int conn_tls_start(xmpp_conn_t *conn)
@@ -1111,6 +1120,22 @@ static char *_conn_build_stream_tag(xmpp_conn_t *conn,
     }
 
     return tag;
+}
+
+static int _conn_open_stream_with_attributes(xmpp_conn_t *conn,
+                                             char **attributes,
+                                             size_t attributes_len)
+{
+    char *tag;
+
+    tag = _conn_build_stream_tag(conn, attributes, attributes_len);
+    if (!tag)
+        return XMPP_EMEM;
+
+    xmpp_send_raw_string(conn, "<?xml version=\"1.0\"?>%s", tag);
+    xmpp_free(conn->ctx, tag);
+
+    return XMPP_EOK;
 }
 
 static void _conn_attributes_new(xmpp_conn_t *conn,
