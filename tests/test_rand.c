@@ -34,6 +34,7 @@ void xmpp_free(const xmpp_ctx_t *ctx, void *p)
     (void)p;
 }
 
+#ifndef HAVE_SNPRINTF
 int xmpp_snprintf(char *str, size_t count, const char *fmt, ...)
 {
     (void)str;
@@ -41,6 +42,7 @@ int xmpp_snprintf(char *str, size_t count, const char *fmt, ...)
     (void)fmt;
     return 0;
 }
+#endif /* HAVE_SNPRINTF */
 
 uint64_t time_stamp(void)
 {
