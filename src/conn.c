@@ -542,6 +542,11 @@ int xmpp_connect_client(xmpp_conn_t *conn,
                    conn->jid);
     }
 
+    if (!conn->jid) {
+        xmpp_error(conn->ctx, "xmpp", "JID is not set.");
+        return XMPP_EINVOP;
+    }
+
     domain = xmpp_jid_domain(conn->ctx, conn->jid);
     if (!domain)
         return XMPP_EMEM;
