@@ -54,6 +54,21 @@ static const unsigned char *ASN1_STRING_get0_data(ASN1_STRING *asn1)
 }
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x10000000L
+static int GENERAL_NAME_get0_otherName(const GENERAL_NAME *gen,
+                                       ASN1_OBJECT **poid,
+                                       ASN1_TYPE **pvalue)
+{
+    if (gen->type != GEN_OTHERNAME)
+        return 0;
+    if (poid)
+        *poid = gen->d.otherName->type_id;
+    if (pvalue)
+        *pvalue = gen->d.otherName->value;
+    return 1;
+}
+#endif
+
 struct _tls {
     xmpp_ctx_t *ctx;
     sock_t sock;
