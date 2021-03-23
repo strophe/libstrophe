@@ -44,6 +44,27 @@ void conn_handler(xmpp_conn_t *conn,
     }
 }
 
+static void usage(int exit_code)
+{
+    fprintf(stderr,
+            "Usage: basic [options] [<host> [<port>]]\n\n"
+            "Options:\n"
+            "  --jid <jid>              The JID to use to authenticate.\n"
+            "  --pass <pass>            The password of the JID.\n"
+            "  --tls-cert <cert>        Path to client certificate.\n"
+            "  --tls-key <key>          Path to private key.\n\n"
+            "  --disable-tls            Disable TLS.\n"
+            "  --mandatory-tls          Deny plaintext connection.\n"
+            "  --trust-tls              Trust TLS certificate.\n"
+            "  --legacy-ssl             Use old style SSL.\n"
+            "  --legacy-auth            Allow legacy authentication.\n"
+            "  --tcp-keepalive          Configure TCP keepalive.\n\n"
+            "Note: --disable-tls conflicts with --mandatory-tls or "
+            "--legacy-ssl\n");
+
+    exit(exit_code);
+}
+
 int main(int argc, char **argv)
 {
     xmpp_ctx_t *ctx;
@@ -57,7 +78,9 @@ int main(int argc, char **argv)
 
     /* take a jid and password on the command line */
     for (i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "--disable-tls") == 0)
+        if (strcmp(argv[i], "--help") == 0)
+            usage(0);
+        else if (strcmp(argv[i], "--disable-tls") == 0)
             flags |= XMPP_CONN_FLAG_DISABLE_TLS;
         else if (strcmp(argv[i], "--mandatory-tls") == 0)
             flags |= XMPP_CONN_FLAG_MANDATORY_TLS;
@@ -80,23 +103,8 @@ int main(int argc, char **argv)
         else
             break;
     }
-    if ((argc - i) == 0 || (argc - i) > 2) {
-        fprintf(stderr,
-                "Usage: basic [options] [<host> [<port>]]\n\n"
-                "Options:\n"
-                "  --jid <jid>              The JID to use to authenticate.\n"
-                "  --pass <pass>            The password of the JID.\n"
-                "  --tls-cert <cert>        Path to client certificate.\n"
-                "  --tls-key <key>          Path to private key.\n\n"
-                "  --disable-tls            Disable TLS.\n"
-                "  --mandatory-tls          Deny plaintext connection.\n"
-                "  --trust-tls              Trust TLS certificate.\n"
-                "  --legacy-ssl             Use old style SSL.\n"
-                "  --legacy-auth            Allow legacy authentication.\n"
-                "  --tcp-keepalive          Configure TCP keepalive.\n\n"
-                "Note: --disable-tls conflicts with --mandatory-tls or "
-                "--legacy-ssl\n");
-        return 1;
+    if ((!jid && (!cert || !key)) || (argc - i) > 2) {
+        usage(1);
     }
 
     if (i < argc)
