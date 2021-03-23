@@ -13,6 +13,7 @@
  *  TLS implementation with GNUTLS
  */
 
+#include <string.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gnutls/x509-ext.h>
@@ -131,7 +132,6 @@ int _tls_id_on_xmppaddr(xmpp_conn_t *conn,
     unsigned int i, j;
     for (i = j = 0; res != GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE; ++i) {
         res = _tls_get_id_on_xmppaddr(conn, cert, i, NULL);
-        xmpp_debug(conn->ctx, "tls", "orly %i res=%i", i, res);
         if (res == GNUTLS_SAN_OTHERNAME_XMPP) {
             if (j == n) {
                 res = _tls_get_id_on_xmppaddr(conn, cert, i, ret);
