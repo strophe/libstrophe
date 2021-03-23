@@ -1,3 +1,15 @@
+0.11.0
+	- SASL EXTERNAL support (XEP-0178)
+	- Client certificate can be provided for TLS negotiation. If the
+	  certificate contains a single xmppAddr and JID is not provided with
+	  xmpp_conn_set_jid(), the xmppAddr is chosen as JID
+	- <stream> element contains "from" attribute over TLS connections now
+	- GnuTLS can be selected optionally with configure script
+	- New API:
+		- xmpp_conn_set_client_cert()
+		- xmpp_conn_cert_xmppaddr_num()
+		- xmpp_conn_cert_xmppaddr()
+
 0.10.1
 	- Fixed compilation error when LibreSSL is used
 	- Fixed crash when NULL is provided as password
