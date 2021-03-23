@@ -178,6 +178,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
     tls_t *tls = xmpp_alloc(conn->ctx, sizeof(tls_t));
 
     if (tls) {
+        memset(tls, 0, sizeof(*tls));
         tls->ctx = conn->ctx;
         tls->sock = conn->sock;
         gnutls_init(&tls->session, GNUTLS_CLIENT);
@@ -211,7 +212,8 @@ tls_t *tls_new(xmpp_conn_t *conn)
 
 void tls_free(tls_t *tls)
 {
-    gnutls_x509_crt_deinit(tls->client_cert);
+    if (tls->client_cert)
+        gnutls_x509_crt_deinit(tls->client_cert);
     gnutls_deinit(tls->session);
     gnutls_certificate_free_credentials(tls->cred);
     xmpp_free(tls->ctx, tls);
