@@ -633,6 +633,9 @@ static int _tls_xaddr_nid(void)
 {
     static int xaddr_nid = NID_undef;
     if (xaddr_nid == NID_undef) {
+        xaddr_nid = OBJ_sn2nid("id-on-xmppAddr");
+    }
+    if (xaddr_nid == NID_undef) {
         xaddr_nid = OBJ_create("1.3.6.1.5.5.7.8.5", "id-on-xmppAddr",
                                "XmppAddr Identifier");
     }
