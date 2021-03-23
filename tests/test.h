@@ -33,17 +33,17 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
-#define COMPARE(v1, v2)                \
-    do {                               \
-        const char *__v1 = v1;         \
-        const char *__v2 = v2;         \
-        if (strcmp(__v1, __v2) != 0) { \
-            printf("%s differs!\n"     \
-                   "expected: %s\n"    \
-                   "got:      %s\n",   \
-                   #v1, __v1, __v2);   \
-            exit(1);                   \
-        }                              \
+#define COMPARE(v1, v2)                         \
+    do {                                        \
+        const char *__v1 = v1;                  \
+        const char *__v2 = v2;                  \
+        if (strcmp(__v1, __v2) != 0) {          \
+            printf("Error:    %s\n"             \
+                   "Expected: %s\n"             \
+                   "Got:      %s\n",            \
+                   #v1 " != " #v2, __v1, __v2); \
+            exit(1);                            \
+        }                                       \
     } while (0)
 
 #define COMPARE_BUF(v1, len1, v2, len2)                                \
@@ -53,9 +53,9 @@
         size_t __len1 = len1;                                          \
         size_t __len2 = len2;                                          \
         if (__len1 != __len2 || memcmp(__v1, __v2, __len1) != 0) {     \
-            printf("%s differs!\n", #v1);                              \
-            printf("expected: 0x%s\n", test_bin_to_hex(__v1, __len1)); \
-            printf("got:      0x%s\n", test_bin_to_hex(__v2, __len2)); \
+            printf("Error:    %s\n", #v1 " != " #v2);                  \
+            printf("Expected: 0x%s\n", test_bin_to_hex(__v1, __len1)); \
+            printf("Got:      0x%s\n", test_bin_to_hex(__v2, __len2)); \
             exit(1);                                                   \
         }                                                              \
     } while (0)

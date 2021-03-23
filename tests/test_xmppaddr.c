@@ -36,17 +36,18 @@ int main()
 
     xmppaddr_num[0] = xmppaddr_num[0] + xmpp_conn_cert_xmppaddr_num(conn);
 
-    COMPARE(xmppaddr_num, "2");
+    COMPARE("2", xmppaddr_num);
 
     for (n = 0; n < 3; ++n) {
         char *r = xmpp_conn_cert_xmppaddr(conn, n);
         switch (n) {
         case 0:
-            COMPARE(r, "very.long.username@so.the.asn1.length.is.a.valid.ascii."
-                       "character");
+            COMPARE("very.long.username@so.the.asn1.length.is.a.valid.ascii."
+                    "character",
+                    r);
             break;
         case 1:
-            COMPARE(r, "second@xmpp.jid");
+            COMPARE("second@xmpp.jid", r);
             break;
         default:
             if (r != NULL) {
