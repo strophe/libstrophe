@@ -1,26 +1,26 @@
 language: c
+dist: focal
 install:
   - sudo apt-get update
-  - sudo apt-get -y install libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libc-ares-dev dos2unix
+  - sudo apt-get -y install libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libgnutls28-dev libc-ares-dev dos2unix
 stages:
   - style
   - test
-before_script:
-  - ./travis/before_script.sh
 env:
   - CONFIGURE_OPT="--without-libxml2"
   - CONFIGURE_OPT="--with-libxml2"
+  - CONFIGURE_OPT="--with-gnutls"
   - CONFIGURE_OPT="--disable-tls"
   - CONFIGURE_OPT="--enable-cares"
   - CONFIGURE_OPT="PKG_CONFIG_PATH=${HOME}/libressl/lib/pkgconfig" LIBRESSL=yes LIBRESSL_COMMIT="v3.1.4"
   - CONFIGURE_OPT="PKG_CONFIG_PATH=${HOME}/libressl/lib/pkgconfig" LIBRESSL=yes LIBRESSL_COMMIT="v2.1.7"
-script: ./bootstrap.sh && ./configure ${CONFIGURE_OPT} CFLAGS="-Werror" && make && make check
+before_script: ./travis/before_script.sh
+script: ./bootstrap.sh && ./configure ${CONFIGURE_OPT} CFLAGS="-Werror -g3" && make && make check
 jobs:
   include:
     - stage: style
-      name: "Check code style"
+      name: "Check coding style"
+      env: CONFIGURE_OPT=""
       script: ./bootstrap.sh && ./configure && make format && git diff --exit-code
-      env:
-        - CONFIGURE_OPT=""
-matrix:
-    fast_finish: true
+  allow_failures:
+    - stage: style
