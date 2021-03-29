@@ -24,6 +24,21 @@ void tls_shutdown(void)
 {
 }
 
+char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n)
+{
+    UNUSED(n);
+    /* always fail */
+    xmpp_error(conn->ctx, "tls", "Client-Authentication not implemented");
+    return NULL;
+}
+
+unsigned int tls_id_on_xmppaddr_num(xmpp_conn_t *conn)
+{
+    /* always fail */
+    xmpp_error(conn->ctx, "tls", "Client-Authentication not implemented");
+    return 0;
+}
+
 OSStatus MySSLReadFunction(SSLConnectionRef connection, void *data, size_t *dataLength) {
 	size_t bytesToGo = *dataLength;
 	size_t initLen = bytesToGo;
