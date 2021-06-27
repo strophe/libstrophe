@@ -97,7 +97,6 @@ EXTRA_DIST = \
 	MIT-LICENSE.txt \
 	bootstrap.sh \
 	build-android.sh \
-	docs/footer.html \
 	examples/README.md \
 	jni/Android.mk \
 	jni/Application.mk \
