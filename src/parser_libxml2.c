@@ -262,13 +262,22 @@ char *parser_attr_name(xmpp_ctx_t *ctx, char *nsname)
     return xmpp_strdup(ctx, nsname);
 }
 
+static void _free_parent_stanza(xmpp_stanza_t *stanza)
+{
+    xmpp_stanza_t *parent;
+
+    for (parent = stanza; parent->parent != NULL; parent = parent->parent)
+        ;
+    xmpp_stanza_release(parent);
+}
+
 /* free a parser */
 void parser_free(parser_t *parser)
 {
     if (parser->xmlctx)
         xmlFreeParserCtxt(parser->xmlctx);
     if (parser->stanza)
-        xmpp_stanza_release(parser->stanza);
+        _free_parent_stanza(parser->stanza);
     xmpp_free(parser->ctx, parser);
 }
 
@@ -278,7 +287,7 @@ int parser_reset(parser_t *parser)
     if (parser->xmlctx)
         xmlFreeParserCtxt(parser->xmlctx);
     if (parser->stanza)
-        xmpp_stanza_release(parser->stanza);
+        _free_parent_stanza(parser->stanza);
 
     parser->stanza = NULL;
     parser->depth = 0;

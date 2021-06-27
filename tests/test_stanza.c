@@ -110,6 +110,10 @@ static void test_stanza_from_string(xmpp_ctx_t *ctx)
     assert(strcmp(buf, str) == 0);
     xmpp_free(ctx, buf);
     xmpp_stanza_release(stanza);
+
+    /* Error path. */
+    stanza = xmpp_stanza_new_from_string(ctx, "<uu><uu>tt");
+    assert(stanza == NULL);
 }
 
 int main()
