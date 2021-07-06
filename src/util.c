@@ -36,21 +36,41 @@
  *  @param ctx a Strophe context object
  *  @param s a string
  *
- *  @return a new allocates string with the same data as s or NULL on error
+ *  @return a newly allocated string with the same data as s or NULL on error
  */
 char *xmpp_strdup(const xmpp_ctx_t *ctx, const char *s)
 {
-    size_t len;
-    char *copy;
+    return xmpp_strndup(ctx, s, SIZE_MAX);
+}
 
-    len = strlen(s);
-    copy = xmpp_alloc(ctx, len + 1);
+/** Duplicate a string with a maximum length.
+ *  This function replaces the standard strndup library call with a version
+ *  that uses the Strophe context object's allocator.
+ *
+ *  @param ctx a Strophe context object
+ *  @param s a string
+ *  @param len the maximum length of the string to copy
+ *
+ *  @return a newly allocated string that contains at most `len` symbols
+ *             of the original string or NULL on error
+ */
+char *xmpp_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len)
+{
+    char *copy;
+    size_t l;
+
+    l = strlen(s);
+    if (l > len)
+        l = len;
+
+    copy = xmpp_alloc(ctx, l + 1);
     if (!copy) {
         xmpp_error(ctx, "xmpp", "failed to allocate required memory");
         return NULL;
     }
 
-    memcpy(copy, s, len + 1);
+    memcpy(copy, s, l);
+    copy[l] = '\0';
 
     return copy;
 }

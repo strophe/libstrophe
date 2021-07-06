@@ -90,6 +90,7 @@ struct _xmpp_ctx_t {
 void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size);
 void *xmpp_realloc(const xmpp_ctx_t *ctx, void *p, size_t size);
 char *xmpp_strdup(const xmpp_ctx_t *ctx, const char *s);
+char *xmpp_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len);
 
 void xmpp_log(const xmpp_ctx_t *ctx,
               const xmpp_log_level_t level,
