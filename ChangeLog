@@ -3,6 +3,7 @@
 	- Add code coverage support
 	- Add support for password-protected TLS key & PKCS#12/PFX files
 	- New API:
+		- xmpp_conn_send_queue_len()
 		- xmpp_conn_get_keyfile()
 		- xmpp_conn_set_password_callback()
 		- xmpp_conn_set_password_retries()

@@ -1252,6 +1252,20 @@ int xmpp_conn_is_disconnected(xmpp_conn_t *conn)
     return conn->state == XMPP_STATE_DISCONNECTED;
 }
 
+/**
+ *  @return The number of entries in the send queue
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_send_queue_len(const xmpp_conn_t *conn)
+{
+    if (conn->send_queue_head && conn->send_queue_head->written &&
+        conn->send_queue_head->owner == XMPP_QUEUE_USER)
+        return conn->send_queue_user_len - 1;
+    else
+        return conn->send_queue_user_len;
+}
+
 /* timed handler for cleanup if normal disconnect procedure takes too long */
 static int _disconnect_cleanup(xmpp_conn_t *conn, void *userdata)
 {
