@@ -77,6 +77,7 @@ typedef struct _xmpp_connlist_t {
 struct _xmpp_ctx_t {
     const xmpp_mem_t *mem;
     const xmpp_log_t *log;
+    int verbosity;
 
     xmpp_rand_t *rand;
     xmpp_loop_status_t loop_status;
@@ -103,6 +104,8 @@ void xmpp_error(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 void xmpp_warn(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 void xmpp_info(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 void xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+void xmpp_debug_verbose(
+    int level, const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 
 /** connection **/
 

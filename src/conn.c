@@ -1478,5 +1478,6 @@ static int _send_raw(xmpp_conn_t *conn, char *data, size_t len)
     }
     conn->send_queue_len++;
     xmpp_debug(conn->ctx, "conn", "SENT: %s", data);
+    xmpp_debug_verbose(1, conn->ctx, "conn", "Added queue element: %p", item);
     return XMPP_EOK;
 }

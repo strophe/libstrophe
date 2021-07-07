@@ -125,6 +125,9 @@ typedef struct _xmpp_ctx_t xmpp_ctx_t;
 xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *mem, const xmpp_log_t *log);
 void xmpp_ctx_free(xmpp_ctx_t *ctx);
 
+/* set the verbosity level of the ctx */
+void xmpp_ctx_set_verbosity(xmpp_ctx_t *ctx, int level);
+
 /* free some blocks returned by other APIs, for example the
    buffer you get from xmpp_stanza_to_text */
 void xmpp_free(const xmpp_ctx_t *ctx, void *p);

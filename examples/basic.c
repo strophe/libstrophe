@@ -58,6 +58,7 @@ static void usage(int exit_code)
             "  --trust-tls              Trust TLS certificate.\n"
             "  --legacy-ssl             Use old style SSL.\n"
             "  --legacy-auth            Allow legacy authentication.\n"
+            "  --verbose                Increase the verbosity level.\n"
             "  --tcp-keepalive          Configure TCP keepalive.\n\n"
             "Note: --disable-tls conflicts with --mandatory-tls or "
             "--legacy-ssl\n");
@@ -72,7 +73,7 @@ int main(int argc, char **argv)
     xmpp_log_t *log;
     char *jid = NULL, *password = NULL, *cert = NULL, *key = NULL, *host = NULL;
     long flags = 0;
-    int tcp_keepalive = 0;
+    int tcp_keepalive = 0, verbosity = 0;
     int i;
     unsigned long port = 0;
 
@@ -90,6 +91,8 @@ int main(int argc, char **argv)
             flags |= XMPP_CONN_FLAG_LEGACY_SSL;
         else if (strcmp(argv[i], "--legacy-auth") == 0)
             flags |= XMPP_CONN_FLAG_LEGACY_AUTH;
+        else if (strcmp(argv[i], "--verbose") == 0)
+            verbosity++;
         else if (strcmp(argv[i], "--tcp-keepalive") == 0)
             tcp_keepalive = 1;
         else if ((strcmp(argv[i], "--jid") == 0) && (++i < argc))
@@ -124,6 +127,7 @@ int main(int argc, char **argv)
     log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG);
     /* create a context */
     ctx = xmpp_ctx_new(NULL, log);
+    xmpp_ctx_set_verbosity(ctx, verbosity);
 
     /* create a connection */
     conn = xmpp_conn_new(ctx);

@@ -377,6 +377,30 @@ void xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
     va_end(ap);
 }
 
+/** Write to the log at the DEBUG level if verbosity is enabled.
+ *  This is a convenience function for writing to the log at the DEBUG level.
+ *  It takes a printf-style format string followed by a variable list of
+ *  arguments for formatting.
+ *
+ *  @param level the verbosity level
+ *  @param ctx a Strophe context object
+ *  @param area the area to log for
+ *  @param fmt a printf-style format string followed by a variable list of
+ *      arguments to format
+ */
+void xmpp_debug_verbose(
+    int level, const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
+{
+    va_list ap;
+
+    if (ctx->verbosity < level)
+        return;
+
+    va_start(ap, fmt);
+    xmpp_log(ctx, XMPP_LEVEL_DEBUG, area, fmt, ap);
+    va_end(ap);
+}
+
 /** Create and initialize a Strophe context object.
  *  If mem is NULL, a default allocation setup will be used which
  *  wraps malloc(), free(), and realloc() from the standard library.
@@ -448,4 +472,16 @@ void xmpp_ctx_free(xmpp_ctx_t *ctx)
 void xmpp_ctx_set_timeout(xmpp_ctx_t *ctx, unsigned long timeout)
 {
     ctx->timeout = timeout;
+}
+
+/** Set the verbosity level of a Strophe context.
+ *
+ *  @param ctx a Strophe context object
+ *  @param level the verbosity level
+ *
+ *  @ingroup Context
+ */
+void xmpp_ctx_set_verbosity(xmpp_ctx_t *ctx, int level)
+{
+    ctx->verbosity = level;
 }
