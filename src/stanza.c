@@ -1210,9 +1210,9 @@ xmpp_stanza_t *xmpp_stanza_reply_error(xmpp_stanza_t *stanza,
 {
     xmpp_ctx_t *ctx = stanza->ctx;
     xmpp_stanza_t *reply = NULL;
-    xmpp_stanza_t *error;
-    xmpp_stanza_t *item;
-    xmpp_stanza_t *text_stanza;
+    xmpp_stanza_t *error = NULL;
+    xmpp_stanza_t *item = NULL;
+    xmpp_stanza_t *text_stanza = NULL;
     const char *to;
 
     if (!error_type || !condition)
@@ -1221,41 +1221,53 @@ xmpp_stanza_t *xmpp_stanza_reply_error(xmpp_stanza_t *stanza,
     reply = xmpp_stanza_reply(stanza);
     if (!reply)
         goto quit_err;
-
-    xmpp_stanza_set_type(reply, "error");
+    if (xmpp_stanza_set_type(reply, "error") != XMPP_EOK)
+        goto quit_err;
     to = xmpp_stanza_get_to(stanza);
     if (to)
-        xmpp_stanza_set_from(reply, to);
-
+        if (xmpp_stanza_set_from(reply, to) != XMPP_EOK)
+            goto quit_err;
+        
     error = xmpp_stanza_new(ctx);
     if (!error)
         goto quit_err;
-    xmpp_stanza_set_name(error, "error");
-    xmpp_stanza_set_type(error, error_type);
-    xmpp_stanza_add_child(reply, error);
+    if (xmpp_stanza_set_name(error, "error") != XMPP_EOK)
+        goto quit_err;
+    if (xmpp_stanza_set_type(error, error_type) != XMPP_EOK)
+        goto quit_err;
+    if (xmpp_stanza_add_child(reply, error) != XMPP_EOK)
+        goto quit_err;
     xmpp_stanza_release(error);
 
     item = xmpp_stanza_new(ctx);
     if (!item)
         goto quit_err;
-    xmpp_stanza_set_name(item, condition);
-    xmpp_stanza_set_ns(item, XMPP_NS_STANZAS_IETF);
-    xmpp_stanza_add_child(error, item);
+    if (xmpp_stanza_set_name(item, condition) != XMPP_EOK)
+        goto quit_err;
+    if (xmpp_stanza_set_ns(item, XMPP_NS_STANZAS_IETF) != XMPP_EOK)
+        goto quit_err;
+    if (xmpp_stanza_add_child(error, item) != XMPP_EOK)
+        goto quit_err;
     xmpp_stanza_release(item);
 
     if (text) {
         item = xmpp_stanza_new(ctx);
         if (!item)
             goto quit_err;
-        xmpp_stanza_set_name(item, "text");
-        xmpp_stanza_set_ns(item, XMPP_NS_STANZAS_IETF);
-        xmpp_stanza_add_child(error, item);
+        if (xmpp_stanza_set_name(item, "text") != XMPP_EOK)
+            goto quit_err;
+        if (xmpp_stanza_set_ns(item, XMPP_NS_STANZAS_IETF) != XMPP_EOK)
+            goto quit_err;
+        if (xmpp_stanza_add_child(error, item) != XMPP_EOK)
+            goto quit_err;
         xmpp_stanza_release(item);
         text_stanza = xmpp_stanza_new(ctx);
         if (!text_stanza)
             goto quit_err;
-        xmpp_stanza_set_text(text_stanza, text);
-        xmpp_stanza_add_child(item, text_stanza);
+        if (xmpp_stanza_set_text(text_stanza, text) != XMPP_EOK)
+            goto quit_err;
+        if (xmpp_stanza_add_child(item, text_stanza) != XMPP_EOK)
+            goto quit_err;
         xmpp_stanza_release(text_stanza);
     }
 
@@ -1264,6 +1276,12 @@ xmpp_stanza_t *xmpp_stanza_reply_error(xmpp_stanza_t *stanza,
 quit_err:
     if (reply)
         xmpp_stanza_release(reply);
+    if (error)
+        xmpp_stanza_release(error);
+    if (item)
+        xmpp_stanza_release(item);
+    if (text_stanza)
+        xmpp_stanza_release(text_stanza);
     return NULL;
 }
 
