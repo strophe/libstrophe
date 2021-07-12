@@ -61,6 +61,19 @@
         }                                                              \
     } while (0)
 
+#define ENSURE_EQ(v1, v2)                       \
+    do {                                        \
+        int __v1 = v1;                          \
+        int __v2 = v2;                          \
+        if (__v1 != __v2) {                     \
+            printf("Error:    %s\n"             \
+                   "Expected: %d\n"             \
+                   "Got:      %d\n",            \
+                   #v1 " != " #v2, __v2, __v1); \
+            exit(1);                            \
+        }                                       \
+    } while (0)
+
 void test_hex_to_bin(const char *hex, uint8_t *bin, size_t *bin_len);
 const char *test_bin_to_hex(const uint8_t *bin, size_t len);
 
