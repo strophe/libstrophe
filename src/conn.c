@@ -100,6 +100,7 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
                                    xmpp_stanza_t *stanza);
 static unsigned short _conn_default_port(xmpp_conn_t *conn,
                                          xmpp_conn_type_t type);
+static char *_queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e);
 static void _conn_reset(xmpp_conn_t *conn);
 static int _conn_connect(xmpp_conn_t *conn,
                          const char *domain,
@@ -1266,6 +1267,77 @@ int xmpp_conn_send_queue_len(const xmpp_conn_t *conn)
         return conn->send_queue_user_len;
 }
 
+/** Drop an element of the send queue.
+ *  This can be used to manage the send queue in case a server
+ *  isn't fast enough in processing the elements you're trying
+ *  to send.
+ *
+ *  @param conn a Strophe connection object
+ *  @param which the element that shall be removed
+ *
+ *  @ingroup Connections
+ */
+char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
+                                        xmpp_queue_element_t which)
+{
+    xmpp_send_queue_t *t, *p;
+    xmpp_send_queue_owner_t owner;
+    char *ret;
+    /* empty queue */
+    if (!conn->send_queue_head)
+        return NULL;
+    /* one element in queue */
+    if (conn->send_queue_head == conn->send_queue_tail) {
+        if (conn->send_queue_head->written)
+            return NULL;
+
+        t = conn->send_queue_head;
+        conn->send_queue_head = conn->send_queue_tail = NULL;
+        owner = t->owner;
+        ret = _queue_element_free(conn->ctx, t);
+        conn->send_queue_len--;
+        if (owner == XMPP_QUEUE_USER)
+            conn->send_queue_user_len--;
+        return ret;
+    }
+    switch (which) {
+    case XMPP_QUEUE_OLDEST:
+        /* head is already sent out partially */
+        if (conn->send_queue_head->written) {
+            t = conn->send_queue_head->next;
+            /* there are no more elements in the queue */
+            if (!t)
+                return NULL;
+            conn->send_queue_head->next = t->next;
+        } else {
+            t = conn->send_queue_head;
+            conn->send_queue_head = t->next;
+        }
+        owner = t->owner;
+        ret = _queue_element_free(conn->ctx, t);
+        conn->send_queue_len--;
+        if (owner == XMPP_QUEUE_USER)
+            conn->send_queue_user_len--;
+        return ret;
+    case XMPP_QUEUE_YOUNGEST:
+        t = conn->send_queue_head;
+        do {
+            p = t;
+            t = t->next;
+        } while (t != conn->send_queue_tail);
+        conn->send_queue_tail = p;
+        owner = t->owner;
+        ret = _queue_element_free(conn->ctx, t);
+        conn->send_queue_len--;
+        if (owner == XMPP_QUEUE_USER)
+            conn->send_queue_user_len--;
+        return ret;
+    default:
+        strophe_error(conn->ctx, "conn", "Unknown queue element %d", which);
+        return NULL;
+    }
+}
+
 /* timed handler for cleanup if normal disconnect procedure takes too long */
 static int _disconnect_cleanup(xmpp_conn_t *conn, void *userdata)
 {
@@ -1516,6 +1588,16 @@ static unsigned short _conn_default_port(xmpp_conn_t *conn,
     };
 }
 
+static char *_queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e)
+{
+    char *ret = e->data;
+    strophe_debug_verbose(2, ctx, "conn", "Q_FREE: %p", e);
+    memset(e, 0, sizeof(*e));
+    strophe_free(ctx, e);
+    strophe_debug_verbose(3, ctx, "conn", "Q_CONTENT: %s", ret);
+    return ret;
+}
+
 static void _conn_reset(xmpp_conn_t *conn)
 {
     xmpp_ctx_t *ctx = conn->ctx;
@@ -1531,8 +1613,7 @@ static void _conn_reset(xmpp_conn_t *conn)
     while (sq) {
         tsq = sq;
         sq = sq->next;
-        strophe_free(ctx, tsq->data);
-        strophe_free(ctx, tsq);
+        strophe_free(ctx, _queue_element_free(ctx, tsq));
     }
     conn->send_queue_head = NULL;
     conn->send_queue_tail = NULL;

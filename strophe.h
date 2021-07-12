@@ -385,6 +385,13 @@ int xmpp_conn_is_connected(xmpp_conn_t *conn);
 int xmpp_conn_is_disconnected(xmpp_conn_t *conn);
 int xmpp_conn_send_queue_len(const xmpp_conn_t *conn);
 
+typedef enum {
+    XMPP_QUEUE_OLDEST = -1,
+    XMPP_QUEUE_YOUNGEST = -2,
+} xmpp_queue_element_t;
+char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
+                                        xmpp_queue_element_t which);
+
 int xmpp_connect_client(xmpp_conn_t *conn,
                         const char *altdomain,
                         unsigned short altport,
