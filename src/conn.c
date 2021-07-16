@@ -67,6 +67,7 @@ static void _handle_stream_end(char *name, void *userdata);
 static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *userdata);
 static unsigned short _conn_default_port(xmpp_conn_t *conn,
                                          xmpp_conn_type_t type);
+static void _queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e);
 static void _conn_reset(xmpp_conn_t *conn);
 static int _conn_connect(xmpp_conn_t *conn,
                          const char *domain,
@@ -75,6 +76,7 @@ static int _conn_connect(xmpp_conn_t *conn,
                          xmpp_conn_type_t type,
                          xmpp_conn_handler callback,
                          void *userdata);
+static int _send_raw(xmpp_conn_t *conn, char *data, size_t len);
 
 void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text)
 {
@@ -848,6 +850,9 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
     char buf[1024]; /* small buffer for common case */
     char *bigbuf;
 
+    if (conn->state != XMPP_STATE_CONNECTED)
+        return;
+
     va_start(ap, fmt);
     len = xmpp_vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
@@ -866,14 +871,10 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
         xmpp_vsnprintf(bigbuf, len, fmt, ap);
         va_end(ap);
 
-        xmpp_debug(conn->ctx, "conn", "SENT: %s", bigbuf);
-
         /* len - 1 so we don't send trailing \0 */
-        xmpp_send_raw(conn, bigbuf, len - 1);
-
-        xmpp_free(conn->ctx, bigbuf);
+        _send_raw(conn, bigbuf, len - 1);
     } else {
-        xmpp_debug(conn->ctx, "conn", "SENT: %s", buf);
+        /* go through xmpp_send_raw() which does the strdup() for us */
         xmpp_send_raw(conn, buf, len);
     }
 }
@@ -892,37 +893,18 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
  */
 void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
 {
-    xmpp_send_queue_t *item;
+    char *d;
 
     if (conn->state != XMPP_STATE_CONNECTED)
         return;
 
-    /* create send queue item for queue */
-    item = xmpp_alloc(conn->ctx, sizeof(xmpp_send_queue_t));
-    if (!item)
-        return;
-
-    item->data = xmpp_alloc(conn->ctx, len);
-    if (!item->data) {
-        xmpp_free(conn->ctx, item);
+    d = xmpp_strndup(conn->ctx, data, len);
+    if (!d) {
+        xmpp_error(conn->ctx, "conn", "Failed to strndup");
         return;
     }
-    memcpy(item->data, data, len);
-    item->len = len;
-    item->next = NULL;
-    item->written = 0;
 
-    /* add item to the send queue */
-    if (!conn->send_queue_tail) {
-        /* first item, set head and tail */
-        conn->send_queue_head = item;
-        conn->send_queue_tail = item;
-    } else {
-        /* add to the tail */
-        conn->send_queue_tail->next = item;
-        conn->send_queue_tail = item;
-    }
-    conn->send_queue_len++;
+    _send_raw(conn, d, len);
 }
 
 /** Send an XML stanza to the XMPP server.
@@ -936,16 +918,18 @@ void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
  */
 void xmpp_send(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
 {
-    char *buf;
+    char *buf = NULL;
     size_t len;
 
-    if (conn->state == XMPP_STATE_CONNECTED) {
-        if (xmpp_stanza_to_text(stanza, &buf, &len) == 0) {
-            xmpp_send_raw(conn, buf, len);
-            xmpp_debug(conn->ctx, "conn", "SENT: %s", buf);
-            xmpp_free(conn->ctx, buf);
-        }
+    if (conn->state != XMPP_STATE_CONNECTED)
+        return;
+
+    if (xmpp_stanza_to_text(stanza, &buf, &len) != 0) {
+        xmpp_error(conn->ctx, "conn", "Failed to stanza_to_text");
+        return;
     }
+
+    _send_raw(conn, buf, len);
 }
 
 /** Send the opening &lt;stream:stream&gt; tag to the server.
@@ -1140,6 +1124,74 @@ int xmpp_conn_is_connected(xmpp_conn_t *conn)
 int xmpp_conn_is_disconnected(xmpp_conn_t *conn)
 {
     return conn->state == XMPP_STATE_DISCONNECTED;
+}
+
+/**
+ *  @return The number of entries in the send queue
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_send_queue_len(const xmpp_conn_t *conn)
+{
+    if (conn->send_queue_head && conn->send_queue_head->written)
+        return conn->send_queue_len - 1;
+    else
+        return conn->send_queue_len;
+}
+
+/**
+ *  @return The number of entries in the send queue
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
+                                       xmpp_queue_element_t which)
+{
+    xmpp_send_queue_t *t, *p;
+    /* empty queue */
+    if (!conn->send_queue_head)
+        return;
+    /* one element in queue */
+    if (conn->send_queue_head == conn->send_queue_tail) {
+        if (conn->send_queue_head->written)
+            return;
+
+        t = conn->send_queue_head;
+        conn->send_queue_head = conn->send_queue_tail = NULL;
+        _queue_element_free(conn->ctx, t);
+        conn->send_queue_len--;
+        return;
+    }
+    switch (which) {
+    case XMPP_QUEUE_OLDEST:
+        /* head is already sent out partially */
+        if (conn->send_queue_head->written) {
+            t = conn->send_queue_head->next;
+            /* there are no more elements in the queue */
+            if (!t)
+                return;
+            conn->send_queue_head->next = t->next;
+        } else {
+            t = conn->send_queue_head;
+            conn->send_queue_head = t->next;
+        }
+        _queue_element_free(conn->ctx, t);
+        conn->send_queue_len--;
+        break;
+    case XMPP_QUEUE_YOUNGEST:
+        t = conn->send_queue_head;
+        do {
+            p = t;
+            t = t->next;
+        } while (t != conn->send_queue_tail);
+        conn->send_queue_tail = p;
+        _queue_element_free(conn->ctx, t);
+        conn->send_queue_len--;
+        break;
+    default:
+        xmpp_error(conn->ctx, "conn", "Unknown queue element %d", which);
+        return;
+    }
 }
 
 /* timed handler for cleanup if normal disconnect procedure takes too long */
@@ -1362,6 +1414,12 @@ static unsigned short _conn_default_port(xmpp_conn_t *conn,
     };
 }
 
+static void _queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e)
+{
+    xmpp_free(ctx, e->data);
+    xmpp_free(ctx, e);
+}
+
 static void _conn_reset(xmpp_conn_t *conn)
 {
     xmpp_ctx_t *ctx = conn->ctx;
@@ -1377,8 +1435,7 @@ static void _conn_reset(xmpp_conn_t *conn)
     while (sq) {
         tsq = sq;
         sq = sq->next;
-        xmpp_free(ctx, tsq->data);
-        xmpp_free(ctx, tsq);
+        _queue_element_free(ctx, tsq);
     }
     conn->send_queue_head = NULL;
     conn->send_queue_tail = NULL;
@@ -1464,4 +1521,33 @@ static int _conn_connect(xmpp_conn_t *conn,
     xmpp_debug(conn->ctx, "xmpp", "Attempting to connect to %s", host);
 
     return 0;
+}
+
+static int _send_raw(xmpp_conn_t *conn, char *data, size_t len)
+{
+    xmpp_send_queue_t *item;
+
+    /* create send queue item for queue */
+    item = xmpp_alloc(conn->ctx, sizeof(xmpp_send_queue_t));
+    if (!item)
+        return XMPP_EMEM;
+
+    item->data = data;
+    item->len = len;
+    item->next = NULL;
+    item->written = 0;
+
+    /* add item to the send queue */
+    if (!conn->send_queue_tail) {
+        /* first item, set head and tail */
+        conn->send_queue_head = item;
+        conn->send_queue_tail = item;
+    } else {
+        /* add to the tail */
+        conn->send_queue_tail->next = item;
+        conn->send_queue_tail = item;
+    }
+    conn->send_queue_len++;
+    xmpp_debug(conn->ctx, "conn", "Queued (%p): %s", item, data);
+    return XMPP_EOK;
 }

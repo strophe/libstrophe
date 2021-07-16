@@ -159,6 +159,7 @@ TESTS = \
 	tests/test_base64 \
 	tests/test_hash \
 	tests/test_jid \
+	tests/test_send_queue \
 	tests/test_snprintf \
 	tests/test_string \
 	tests/test_stanza \
@@ -229,6 +230,11 @@ tests_test_sha512_CFLAGS = -I$(top_srcdir)/src
 
 tests_test_md5_SOURCES = tests/test_md5.c tests/test.c src/md5.c
 tests_test_md5_CFLAGS = -I$(top_srcdir)/src
+
+tests_test_send_queue_SOURCES = tests/test_send_queue.c
+tests_test_send_queue_CFLAGS = -I$(top_srcdir)/src
+tests_test_send_queue_LDADD = $(STROPHE_LIBS)
+tests_test_send_queue_LDFLAGS = -static
 
 tests_test_snprintf_SOURCES = tests/test_snprintf.c
 tests_test_snprintf_CFLAGS = -I$(top_srcdir)/src

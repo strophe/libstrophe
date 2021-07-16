@@ -54,6 +54,7 @@ tests/test_rand
 tests/test_resolver
 tests/test_sasl
 tests/test_scram
+tests/test_send_queue
 tests/test_sha1
 tests/test_sha256
 tests/test_sha512

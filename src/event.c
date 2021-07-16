@@ -110,6 +110,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
                 xmpp_debug(ctx, "xmpp", "Send error occurred, disconnecting.");
                 conn->error = ECONNABORTED;
                 conn_disconnect(conn);
+                goto NEXT_ITEM;
             }
         }
 
@@ -133,6 +134,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
                 break; /* partial write or an error */
 
             /* all data for this queue item written, delete and move on */
+            xmpp_debug(ctx, "xmpp", "Finished writing queue (%p).", sq);
             xmpp_free(ctx, sq->data);
             tsq = sq;
             sq = sq->next;
@@ -154,7 +156,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
             conn->error = ECONNABORTED;
             conn_disconnect(conn);
         }
-
+NEXT_ITEM:
         connitem = connitem->next;
     }
 
