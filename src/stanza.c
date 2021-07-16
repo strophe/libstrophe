@@ -1227,7 +1227,7 @@ xmpp_stanza_t *xmpp_stanza_reply_error(xmpp_stanza_t *stanza,
     if (to)
         if (xmpp_stanza_set_from(reply, to) != XMPP_EOK)
             goto quit_err;
-        
+
     error = xmpp_stanza_new(ctx);
     if (!error)
         goto quit_err;
