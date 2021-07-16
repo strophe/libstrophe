@@ -238,8 +238,8 @@ tests_test_string_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_string_LDADD = $(STROPHE_LIBS)
 tests_test_string_LDFLAGS = -static
 
-tests_test_stanza_SOURCES = tests/test_stanza.c
-tests_test_stanza_CFLAGS = $(STROPHE_FLAGS)
+tests_test_stanza_SOURCES = tests/test_stanza.c tests/test.h
+tests_test_stanza_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_stanza_LDADD = $(STROPHE_LIBS)
 tests_test_stanza_LDFLAGS = -static
 

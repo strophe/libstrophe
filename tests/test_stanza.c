@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "test.h"
+
 #define MAGICPTR ((void *)0xfeedbeef)
 static unsigned long used_blocks = 0;
 
@@ -107,13 +109,62 @@ static void test_stanza_from_string(xmpp_ctx_t *ctx)
     assert(stanza != NULL);
     ret = xmpp_stanza_to_text(stanza, &buf, &buflen);
     assert(ret == XMPP_EOK);
-    assert(strcmp(buf, str) == 0);
+    COMPARE(str, buf);
     xmpp_free(ctx, buf);
     xmpp_stanza_release(stanza);
 
     /* Error path. */
     stanza = xmpp_stanza_new_from_string(ctx, "<uu><uu>tt");
     assert(stanza == NULL);
+}
+
+static void test_stanza_error(xmpp_ctx_t *ctx)
+{
+    xmpp_stanza_t *stanza;
+    xmpp_stanza_t *error;
+    xmpp_stanza_t *item;
+    char *buf;
+    size_t buflen;
+    const char *attr[10];
+    int attrlen = ARRAY_SIZE(attr);
+    int ret;
+
+    static const char *str =
+        "<iq from='romeo@montague.lit/home' to='juliet@capulet.lit/chamber' "
+        "type='get' id='e2e1'><ping xmlns='urn:xmpp:ping'/></iq>";
+    static const char *str_error =
+        "<error type=\"cancel\"><service-unavailable "
+        "xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/></error>";
+
+    stanza = xmpp_stanza_new_from_string(ctx, str);
+    assert(stanza != NULL);
+    error =
+        xmpp_stanza_reply_error(stanza, "cancel", "service-unavailable", NULL);
+    assert(error != NULL);
+
+    assert(xmpp_stanza_get_to(error) != NULL);
+    COMPARE("romeo@montague.lit/home", xmpp_stanza_get_to(error));
+    assert(xmpp_stanza_get_from(error) != NULL);
+    COMPARE("juliet@capulet.lit/chamber", xmpp_stanza_get_from(error));
+    assert(xmpp_stanza_get_id(error) != NULL);
+    COMPARE("e2e1", xmpp_stanza_get_id(error));
+    assert(xmpp_stanza_get_type(error) != NULL);
+    COMPARE("error", xmpp_stanza_get_type(error));
+
+    ret = xmpp_stanza_get_attributes(error, attr, attrlen);
+    /* attr contains both attribute name and value. */
+    assert(ret == 8);
+
+    item = xmpp_stanza_get_child_by_name(error, "error");
+    assert(item != NULL);
+
+    ret = xmpp_stanza_to_text(item, &buf, &buflen);
+    assert(ret == XMPP_EOK);
+    COMPARE(str_error, buf);
+
+    xmpp_free(ctx, buf);
+    xmpp_stanza_release(stanza);
+    xmpp_stanza_release(error);
 }
 
 int main()
@@ -126,6 +177,7 @@ int main()
 
     test_stanza_add_child(ctx);
     test_stanza_from_string(ctx);
+    test_stanza_error(ctx);
 
     xmpp_ctx_free(ctx);
     xmpp_shutdown();
