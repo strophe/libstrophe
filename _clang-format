@@ -8,6 +8,7 @@ BinPackParameters: 'false'
 BreakBeforeBraces: Linux
 ColumnLimit: '80'
 DerivePointerAlignment: 'false'
+IndentGotoLabels: false
 IndentWidth: '4'
 PointerAlignment: Right
 SortIncludes: 'false'

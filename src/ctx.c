@@ -265,6 +265,13 @@ void xmpp_log(const xmpp_ctx_t *ctx,
     char *buf;
     va_list copy;
 
+    if (!ctx->log->handler)
+        return;
+
+    if (ctx->log->handler == xmpp_default_logger &&
+        level < *(xmpp_log_level_t *)ctx->log->userdata)
+        return;
+
     va_copy(copy, ap);
     ret = xmpp_vsnprintf(smbuf, sizeof(smbuf), fmt, ap);
     if (ret >= (int)sizeof(smbuf)) {
@@ -288,8 +295,7 @@ void xmpp_log(const xmpp_ctx_t *ctx,
     }
     va_end(copy);
 
-    if (ctx->log->handler)
-        ctx->log->handler(ctx->log->userdata, level, area, buf);
+    ctx->log->handler(ctx->log->userdata, level, area, buf);
 
     if (buf != smbuf)
         xmpp_free(ctx, buf);
