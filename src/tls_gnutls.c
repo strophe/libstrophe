@@ -123,10 +123,10 @@ static int _tls_get_id_on_xmppaddr(xmpp_conn_t *conn,
     return GNUTLS_E_X509_UNKNOWN_SAN;
 }
 
-int _tls_id_on_xmppaddr(xmpp_conn_t *conn,
-                        gnutls_x509_crt_t cert,
-                        unsigned int n,
-                        char **ret)
+static int _tls_id_on_xmppaddr(xmpp_conn_t *conn,
+                               gnutls_x509_crt_t cert,
+                               unsigned int n,
+                               char **ret)
 {
     int res = GNUTLS_E_SUCCESS;
     unsigned int i, j;
