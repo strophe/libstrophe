@@ -169,6 +169,8 @@ struct _xmpp_conn_t {
     int tls_mandatory;
     int tls_legacy_ssl;
     int tls_trust;
+    char *tls_cafile;
+    char *tls_capath;
     char *tls_client_cert;
     char *tls_client_key;
     int tls_failed;   /* set when tls fails, so we don't try again */
@@ -176,6 +178,7 @@ struct _xmpp_conn_t {
                          mechanisms */
     int auth_legacy_enabled;
     int secured; /* set when stream is secured with TLS */
+    xmpp_certfail_handler certfail_handler;
 
     /* if server returns <bind/> or <session/> we must do them */
     int bind_required;

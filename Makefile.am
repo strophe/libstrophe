@@ -48,6 +48,7 @@ libstrophe_la_SOURCES = \
 	src/snprintf.c \
 	src/sock.c \
 	src/stanza.c \
+	src/tls.c \
 	src/util.c \
 	src/uuid.c
 libstrophe_la_SOURCES += \

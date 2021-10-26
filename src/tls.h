@@ -21,6 +21,16 @@
 
 typedef struct _tls tls_t;
 
+typedef struct _dnsname_t dnsname_t;
+
+struct _xmpp_tlscert_t {
+    xmpp_ctx_t *ctx;
+    xmpp_conn_t *conn;
+    char *pem;
+    char *elements[XMPP_CERT_ELEMENT_MAX];
+    dnsname_t *dnsnames;
+};
+
 void tls_initialize(void);
 void tls_shutdown(void);
 
@@ -30,6 +40,7 @@ void tls_free(tls_t *tls);
 char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n);
 unsigned int tls_id_on_xmppaddr_num(xmpp_conn_t *conn);
 
+xmpp_tlscert_t *tls_peer_cert(xmpp_conn_t *conn);
 int tls_set_credentials(tls_t *tls, const char *cafilename);
 
 int tls_start(tls_t *tls);
@@ -43,5 +54,8 @@ int tls_write(tls_t *tls, const void *buff, size_t len);
 
 int tls_clear_pending_write(tls_t *tls);
 int tls_is_recoverable(int error);
+
+xmpp_tlscert_t *tlscert_new(xmpp_ctx_t *ctx);
+int tlscert_add_dnsname(xmpp_tlscert_t *cert, const char *dnsname);
 
 #endif /* __LIBSTROPHE_TLS_H__ */

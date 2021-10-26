@@ -122,6 +122,8 @@ typedef struct _xmpp_log_t xmpp_log_t;
 /* opaque run time context containing the above hooks */
 typedef struct _xmpp_ctx_t xmpp_ctx_t;
 
+typedef struct _xmpp_tlscert_t xmpp_tlscert_t;
+
 xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *mem, const xmpp_log_t *log);
 void xmpp_ctx_free(xmpp_ctx_t *ctx);
 
@@ -215,6 +217,24 @@ typedef enum {
     XMPP_SE_XML_NOT_WELL_FORMED
 } xmpp_error_type_t;
 
+/** Certificate Elements
+ *
+ *  @ingroup TLS
+ */
+typedef enum {
+    XMPP_CERT_VERSION,            /**< X.509 Version */
+    XMPP_CERT_SERIALNUMBER,       /**< SerialNumber */
+    XMPP_CERT_SUBJECT,            /**< Subject */
+    XMPP_CERT_ISSUER,             /**< Issuer */
+    XMPP_CERT_NOTBEFORE,          /**< Issued on */
+    XMPP_CERT_NOTAFTER,           /**< Expires on */
+    XMPP_CERT_KEYALG,             /**< Public Key Algorithm */
+    XMPP_CERT_SIGALG,             /**< Certificate Signature Algorithm */
+    XMPP_CERT_FINGERPRINT_SHA1,   /**< Fingerprint SHA-1 */
+    XMPP_CERT_FINGERPRINT_SHA256, /**< Fingerprint SHA-256 */
+    XMPP_CERT_ELEMENT_MAX         /**< Last element of the enum */
+} xmpp_cert_element_t;
+
 typedef struct {
     xmpp_error_type_t type;
     char *text;
@@ -227,6 +247,28 @@ typedef void (*xmpp_conn_handler)(xmpp_conn_t *conn,
                                   xmpp_stream_error_t *stream_error,
                                   void *userdata);
 
+/** The Handler function which will be called when the TLS stack can't
+ *  verify the authenticity of a Certificate that gets presented by
+ *  the server we're trying to connect to.
+ *
+ *  When this function is called and details of the `cert` have to be
+ *  kept, please copy them yourself. The `cert` object will be free'd
+ *  automatically when this function returns.
+ *
+ *  NB: `errormsg` is specific per certificate on OpenSSL and the same
+ *      for all certificates on GnuTLS.
+ *
+ *  @param cert a Strophe certificate object
+ *  @param errormsg The error that caused this.
+ *
+ *  @return 0 if the connection attempt should be terminated,
+ *          1 if the connection should be established.
+ *
+ *  @ingroup TLS
+ */
+typedef int (*xmpp_certfail_handler)(const xmpp_tlscert_t *cert,
+                                     const char *const errormsg);
+
 void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text);
 xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx);
 xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *conn);
@@ -237,6 +279,11 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags);
 const char *xmpp_conn_get_jid(const xmpp_conn_t *conn);
 const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *conn);
 void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid);
+void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path);
+void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path);
+void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
+                                    xmpp_certfail_handler hndl);
+xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn);
 void xmpp_conn_set_client_cert(xmpp_conn_t *conn,
                                const char *cert,
                                const char *key);
@@ -436,6 +483,17 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
 void xmpp_ctx_set_timeout(xmpp_ctx_t *ctx, unsigned long timeout);
+
+/* TLS certificates */
+
+xmpp_ctx_t *xmpp_tlscert_get_ctx(const xmpp_tlscert_t *cert);
+xmpp_conn_t *xmpp_tlscert_get_conn(const xmpp_tlscert_t *cert);
+const char *xmpp_tlscert_get_pem(const xmpp_tlscert_t *cert);
+const char *xmpp_tlscert_get_dnsname(const xmpp_tlscert_t *cert, size_t n);
+const char *xmpp_tlscert_get_string(const xmpp_tlscert_t *cert,
+                                    xmpp_cert_element_t elmnt);
+const char *xmpp_tlscert_get_description(xmpp_cert_element_t elmnt);
+void xmpp_tlscert_free(xmpp_tlscert_t *cert);
 
 /* UUID */
 

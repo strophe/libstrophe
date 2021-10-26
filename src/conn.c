@@ -144,11 +144,14 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         conn->tls_legacy_ssl = 0;
         conn->tls_trust = 0;
         conn->tls_failed = 0;
+        conn->tls_cafile = NULL;
+        conn->tls_capath = NULL;
         conn->tls_client_cert = NULL;
         conn->tls_client_key = NULL;
         conn->sasl_support = 0;
         conn->auth_legacy_enabled = 0;
         conn->secured = 0;
+        conn->certfail_handler = NULL;
 
         conn->bind_required = 0;
         conn->session_required = 0;
@@ -345,6 +348,10 @@ int xmpp_conn_release(xmpp_conn_t *conn)
             xmpp_free(ctx, conn->tls_client_cert);
         if (conn->tls_client_key)
             xmpp_free(ctx, conn->tls_client_key);
+        if (conn->tls_cafile)
+            xmpp_free(ctx, conn->tls_cafile);
+        if (conn->tls_capath)
+            xmpp_free(ctx, conn->tls_capath);
         xmpp_free(ctx, conn);
         released = 1;
     }
@@ -401,6 +408,64 @@ void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid)
     conn->jid = xmpp_strdup(conn->ctx, jid);
 }
 
+/** Set the Handler function which will be called when the TLS stack can't
+ *  verify the CA of the server we're trying to connect to.
+ *
+ *  @param conn a Strophe connection object
+ *  @param hndl certfail Handler function
+ *
+ *  @ingroup Connections
+ *  @ingroup TLS
+ */
+void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
+                                    xmpp_certfail_handler hndl)
+{
+    conn->certfail_handler = hndl;
+}
+
+/** Set the CAfile
+ *
+ *  @param conn a Strophe connection object
+ *  @param cert path to a certificate file
+ *
+ *  @ingroup Connections
+ *  @ingroup TLS
+ */
+void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
+{
+    conn->tls_cafile = xmpp_strdup(conn->ctx, path);
+}
+
+/** Set the CApath
+ *
+ *  @param conn a Strophe connection object
+ *  @param cert path to a folder containing certificates
+ *
+ *  @ingroup Connections
+ *  @ingroup TLS
+ */
+void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path)
+{
+    conn->tls_capath = xmpp_strdup(conn->ctx, path);
+}
+
+/** Retrieve the peer certificate
+ *
+ *  The returned Certificate object must be free'd by calling
+ *  \ref xmpp_tlscert_free
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return a Strophe Certificate object
+ *
+ *  @ingroup Connections
+ *  @ingroup TLS
+ */
+xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn)
+{
+    return tls_peer_cert(conn);
+}
+
 /** Set the Client Certificate and Private Key that will be bound to the
  *  connection. If any of the both was previously set, it will be discarded.
  *  This should not be used after a connection is created.  The function will
@@ -412,6 +477,7 @@ void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid)
  *  @param key path to a private key file
  *
  *  @ingroup Connections
+ *  @ingroup TLS
  */
 void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
                                const char *const cert,
@@ -433,6 +499,7 @@ void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
  *  @return the number of xmppAddr entries in the client certificate
  *
  *  @ingroup Connections
+ *  @ingroup TLS
  */
 unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *const conn)
 {
@@ -447,6 +514,7 @@ unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *const conn)
  *  @return a string containing the xmppAddr or NULL if n is out of range
  *
  *  @ingroup Connections
+ *  @ingroup TLS
  */
 char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *const conn, unsigned int n)
 {
