@@ -32,4 +32,7 @@ char *xmpp_strtok_r(char *s, const char *delim, char **saveptr);
 uint64_t time_stamp(void);
 uint64_t time_elapsed(uint64_t t1, uint64_t t2);
 
+/* misc functions */
+void hex_encode(char *writebuf, void *readbuf, size_t len);
+
 #endif /* __LIBSTROPHE_UTIL_H__ */

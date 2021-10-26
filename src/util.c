@@ -160,3 +160,12 @@ void disconnect_mem_error(xmpp_conn_t *conn)
     xmpp_error(conn->ctx, "xmpp", "Memory allocation error");
     xmpp_disconnect(conn);
 }
+
+void hex_encode(char *writebuf, void *readbuf, size_t len)
+{
+    size_t i;
+    for (i = 0; i < len; i++) {
+        sprintf(writebuf, "%02x", ((unsigned char *)readbuf)[i]);
+        writebuf += 2;
+    }
+}
