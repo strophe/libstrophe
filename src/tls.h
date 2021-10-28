@@ -31,6 +31,8 @@ struct _xmpp_tlscert_t {
     dnsname_t *dnsnames;
 };
 
+/* provided by the real TLS implementation */
+
 void tls_initialize(void);
 void tls_shutdown(void);
 
@@ -54,6 +56,8 @@ int tls_write(tls_t *tls, const void *buff, size_t len);
 
 int tls_clear_pending_write(tls_t *tls);
 int tls_is_recoverable(int error);
+
+/* provided by tls.c */
 
 xmpp_tlscert_t *tlscert_new(xmpp_ctx_t *ctx);
 int tlscert_add_dnsname(xmpp_tlscert_t *cert, const char *dnsname);
