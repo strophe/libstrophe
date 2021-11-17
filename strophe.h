@@ -172,6 +172,7 @@ xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level);
 /* opaque connection object */
 typedef struct _xmpp_conn_t xmpp_conn_t;
 typedef struct _xmpp_stanza_t xmpp_stanza_t;
+typedef struct _xmpp_sm_t xmpp_sm_state_t;
 
 /* connection flags */
 #define XMPP_CONN_FLAG_DISABLE_TLS (1UL << 0)
@@ -185,6 +186,10 @@ typedef struct _xmpp_stanza_t xmpp_stanza_t;
  *  Enable legacy authentication support.
  */
 #define XMPP_CONN_FLAG_LEGACY_AUTH (1UL << 4)
+/** @def XMPP_CONN_FLAG_DISABLE_SM
+ *  Disable Stream-Management XEP-0198.
+ */
+#define XMPP_CONN_FLAG_DISABLE_SM (1UL << 5)
 
 /* connect callback */
 typedef enum {
@@ -391,6 +396,11 @@ typedef enum {
 } xmpp_queue_element_t;
 char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
                                         xmpp_queue_element_t which);
+
+xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn);
+int xmpp_conn_set_sm_state(xmpp_conn_t *conn, xmpp_sm_state_t *sm_state);
+
+void xmpp_free_sm_state(xmpp_sm_state_t *sm_state);
 
 int xmpp_connect_client(xmpp_conn_t *conn,
                         const char *altdomain,

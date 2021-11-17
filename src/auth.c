@@ -879,20 +879,78 @@ static void _handle_open_sasl(xmpp_conn_t *conn)
                       NULL);
 }
 
+static int _do_bind(xmpp_conn_t *conn, xmpp_stanza_t *bind)
+{
+    xmpp_stanza_t *iq, *res, *text;
+    char *resource;
+
+    /* setup response handlers */
+    handler_add_id(conn, _handle_bind, "_xmpp_bind1", NULL);
+    handler_add_timed(conn, _handle_missing_bind, BIND_TIMEOUT, NULL);
+
+    /* send bind request */
+    iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_bind1");
+    if (!iq) {
+        disconnect_mem_error(conn);
+        return 0;
+    }
+
+    /* request a specific resource if we have one */
+    resource = xmpp_jid_resource(conn->ctx, conn->jid);
+    if ((resource != NULL) && (strlen(resource) == 0)) {
+        /* jabberd2 doesn't handle an empty resource */
+        strophe_free(conn->ctx, resource);
+        resource = NULL;
+    }
+
+    /* if we have a resource to request, do it. otherwise the
+       server will assign us one */
+    if (resource) {
+        res = xmpp_stanza_new(conn->ctx);
+        if (!res) {
+            xmpp_stanza_release(bind);
+            xmpp_stanza_release(iq);
+            disconnect_mem_error(conn);
+            return 0;
+        }
+        xmpp_stanza_set_name(res, "resource");
+        text = xmpp_stanza_new(conn->ctx);
+        if (!text) {
+            xmpp_stanza_release(res);
+            xmpp_stanza_release(bind);
+            xmpp_stanza_release(iq);
+            disconnect_mem_error(conn);
+            return 0;
+        }
+        xmpp_stanza_set_text(text, resource);
+        xmpp_stanza_add_child(res, text);
+        xmpp_stanza_release(text);
+        xmpp_stanza_add_child(bind, res);
+        xmpp_stanza_release(res);
+        strophe_free(conn->ctx, resource);
+    }
+
+    xmpp_stanza_add_child(iq, bind);
+    xmpp_stanza_release(bind);
+
+    /* send bind request */
+    send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
+    xmpp_stanza_release(iq);
+    return 0;
+}
+
 static int
 _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
-    xmpp_stanza_t *bind, *session, *iq, *res, *text, *opt;
+    xmpp_stanza_t *bind, *session, *opt;
+    xmpp_stanza_t *resume;
     const char *ns;
-    char *resource;
+    char h[11];
 
     UNUSED(userdata);
 
     /* remove missing features handler */
     xmpp_timed_handler_delete(conn, _handle_missing_features_sasl);
-
-    /* we are expecting <bind/> and <session/> since this is a
-       XMPP style connection */
 
     /* check whether resource binding is required */
     bind = xmpp_stanza_get_child_by_name(stanza, "bind");
@@ -911,77 +969,46 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                 ns != NULL && strcmp(ns, XMPP_NS_SESSION) == 0;
     }
 
-    opt = xmpp_stanza_get_child_by_ns(stanza, XMPP_NS_SM);
-    if (opt && strcmp(xmpp_stanza_get_name(opt), "sm") == 0) {
+    if (xmpp_stanza_get_child_by_name_and_ns(stanza, "sm", XMPP_NS_SM)) {
         /* stream management supported */
-        conn->sm_support = 1;
+        conn->sm_state->sm_support = 1;
     }
 
+    bind = xmpp_stanza_copy(bind);
+    if (!bind) {
+        disconnect_mem_error(conn);
+        return 0;
+    }
+
+    /* we are expecting either <bind/> and <session/> since this is a
+       XMPP style connection or we <resume/> the previous session */
+
+    /* check whether we can <resume/> the previous session */
+    if (!conn->sm_disable && conn->sm_state->can_resume &&
+        conn->sm_state->previd && conn->sm_state->bound_jid) {
+        resume = xmpp_stanza_new(conn->ctx);
+        if (!resume) {
+            disconnect_mem_error(conn);
+            return 0;
+        }
+        conn->sm_state->bind = bind;
+        conn->sm_state->resume = 1;
+        xmpp_stanza_set_name(resume, "resume");
+        xmpp_stanza_set_ns(resume, XMPP_NS_SM);
+        xmpp_stanza_set_attribute(resume, "previd", conn->sm_state->previd);
+        strophe_snprintf(h, sizeof(h), "%u", conn->sm_state->sm_handled_nr);
+        xmpp_stanza_set_attribute(resume, "h", h);
+        send_stanza(conn, resume, XMPP_QUEUE_SM_STROPHE);
+        xmpp_stanza_release(resume);
+        handler_add(conn, _handle_sm, XMPP_NS_SM, NULL, NULL, NULL);
+    }
     /* if bind is required, go ahead and start it */
-    if (conn->bind_required) {
+    else if (conn->bind_required) {
         /* bind resource */
-
-        /* setup response handlers */
-        handler_add_id(conn, _handle_bind, "_xmpp_bind1", NULL);
-        handler_add_timed(conn, _handle_missing_bind, BIND_TIMEOUT, NULL);
-
-        /* send bind request */
-        iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_bind1");
-        if (!iq) {
-            disconnect_mem_error(conn);
-            return 0;
-        }
-
-        bind = xmpp_stanza_copy(bind);
-        if (!bind) {
-            xmpp_stanza_release(iq);
-            disconnect_mem_error(conn);
-            return 0;
-        }
-
-        /* request a specific resource if we have one */
-        resource = xmpp_jid_resource(conn->ctx, conn->jid);
-        if ((resource != NULL) && (strlen(resource) == 0)) {
-            /* jabberd2 doesn't handle an empty resource */
-            strophe_free(conn->ctx, resource);
-            resource = NULL;
-        }
-
-        /* if we have a resource to request, do it. otherwise the
-           server will assign us one */
-        if (resource) {
-            res = xmpp_stanza_new(conn->ctx);
-            if (!res) {
-                xmpp_stanza_release(bind);
-                xmpp_stanza_release(iq);
-                disconnect_mem_error(conn);
-                return 0;
-            }
-            xmpp_stanza_set_name(res, "resource");
-            text = xmpp_stanza_new(conn->ctx);
-            if (!text) {
-                xmpp_stanza_release(res);
-                xmpp_stanza_release(bind);
-                xmpp_stanza_release(iq);
-                disconnect_mem_error(conn);
-                return 0;
-            }
-            xmpp_stanza_set_text(text, resource);
-            xmpp_stanza_add_child(res, text);
-            xmpp_stanza_release(text);
-            xmpp_stanza_add_child(bind, res);
-            xmpp_stanza_release(res);
-            strophe_free(conn->ctx, resource);
-        }
-
-        xmpp_stanza_add_child(iq, bind);
-        xmpp_stanza_release(bind);
-
-        /* send bind request */
-        send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(iq);
+        _do_bind(conn, bind);
     } else {
         /* can't bind, disconnect */
+        xmpp_stanza_release(bind);
         strophe_error(conn->ctx, "xmpp",
                       "Stream features does not allow "
                       "resource bind.");
@@ -1061,7 +1088,7 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
             xmpp_stanza_release(iq);
         }
 
-        if (conn->sm_support) {
+        if (conn->sm_state->sm_support && !conn->sm_disable) {
             enable = xmpp_stanza_new(conn->ctx);
             if (!enable) {
                 disconnect_mem_error(conn);
@@ -1069,10 +1096,11 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
             }
             xmpp_stanza_set_name(enable, "enable");
             xmpp_stanza_set_ns(enable, XMPP_NS_SM);
+            if (!conn->sm_state->dont_request_resume)
+                xmpp_stanza_set_attribute(enable, "resume", "true");
             handler_add(conn, _handle_sm, XMPP_NS_SM, NULL, NULL, NULL);
             send_stanza(conn, enable, XMPP_QUEUE_SM_STROPHE);
             xmpp_stanza_release(enable);
-            conn->sm_sent_nr = 0;
         }
 
         if (!conn->session_required) {
@@ -1148,15 +1176,129 @@ static int _handle_sm(xmpp_conn_t *const conn,
                       xmpp_stanza_t *const stanza,
                       void *const userdata)
 {
-    const char *name;
+    xmpp_stanza_t *failed_cause;
+    const char *name, *id, *previd, *resume, *h, *cause;
+    xmpp_send_queue_t *e;
+    unsigned long ul_h = 0;
+
+    UNUSED(userdata);
 
     name = xmpp_stanza_get_name(stanza);
-    if (name && strcmp(name, "enabled") == 0) {
-        conn->sm_enabled = 1;
-        conn->sm_handled_nr = 0;
+    if (!name)
+        goto LBL_ERR;
+
+    if (strcmp(name, "enabled") == 0) {
+        conn->sm_state->sm_enabled = 1;
+        conn->sm_state->sm_handled_nr = 0;
+        resume = xmpp_stanza_get_attribute(stanza, "resume");
+        if (resume && (strcasecmp(resume, "true") || strcmp(resume, "1"))) {
+            id = xmpp_stanza_get_attribute(stanza, "id");
+            if (!id) {
+                strophe_error(conn->ctx, "xmpp",
+                              "SM error: server said it can resume, but "
+                              "didn't provide an ID.");
+                name = NULL;
+                goto LBL_ERR;
+            }
+            conn->sm_state->can_resume = 1;
+            conn->sm_state->id = strophe_strdup(conn->ctx, id);
+        }
+    } else if (strcmp(name, "resumed") == 0) {
+        previd = xmpp_stanza_get_attribute(stanza, "previd");
+        if (!previd || strcmp(previd, conn->sm_state->previd)) {
+            strophe_error(conn->ctx, "xmpp",
+                          "SM error: previd didn't match, ours is \"%s\".",
+                          conn->sm_state->previd);
+            name = NULL;
+            goto LBL_ERR;
+        }
+        h = xmpp_stanza_get_attribute(stanza, "h");
+        if (!h || string_to_ul(h, &ul_h)) {
+            strophe_error(conn->ctx, "xmpp",
+                          "SM error: failed parsing 'h', it got converted "
+                          "to %llu.",
+                          ul_h);
+            name = NULL;
+            goto LBL_ERR;
+        }
+        conn->sm_state->sm_enabled = 1;
+        conn->sm_state->id = conn->sm_state->previd;
+        conn->sm_state->previd = NULL;
+        conn->bound_jid = conn->sm_state->bound_jid;
+        conn->sm_state->bound_jid = NULL;
+        if (conn->sm_state->sm_queue.head)
+            conn->sm_state->sm_sent_nr = conn->sm_state->sm_queue.head->sm_h;
+        else
+            conn->sm_state->sm_sent_nr = ul_h;
+        while ((e = pop_queue_front(&conn->sm_state->sm_queue))) {
+            if (e->sm_h >= ul_h) {
+                /* Re-send what was already sent out and is still in the
+                 * SM queue (i.e. it hasn't been ACK'ed by the server)
+                 */
+                send_raw(conn, e->data, e->len, e->owner, NULL);
+            }
+            strophe_free(conn->ctx, queue_element_free(conn->ctx, e));
+        }
+        conn->authenticated = 1;
+
+        /* call connection handler */
+        conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+    } else if (strcmp(name, "failed") == 0) {
+        name = NULL;
+
+        failed_cause =
+            xmpp_stanza_get_child_by_ns(stanza, XMPP_NS_STANZAS_IETF);
+        if (!failed_cause)
+            goto LBL_ERR;
+
+        cause = xmpp_stanza_get_name(failed_cause);
+        if (!cause)
+            goto LBL_ERR;
+
+        if (!strcmp(cause, "item-not-found") ||
+            !strcmp(cause, "feature-not-implemented")) {
+            if (conn->sm_state->resume) {
+                conn->sm_state->resume = 0;
+                conn->sm_state->can_resume = 0;
+                /* remember that the server reports having support
+                 * for resumption, but actually it doesn't ...
+                 */
+                conn->sm_state->dont_request_resume =
+                    !strcmp(cause, "feature-not-implemented");
+                strophe_free(conn->ctx, conn->sm_state->previd);
+                conn->sm_state->previd = NULL;
+                strophe_free(conn->ctx, conn->sm_state->bound_jid);
+                conn->sm_state->bound_jid = NULL;
+                _do_bind(conn, conn->sm_state->bind);
+                conn->sm_state->bind = NULL;
+            }
+        }
+        conn->sm_state->sm_handled_nr = 0;
     } else {
-        conn->sm_enabled = 0;
-        strophe_warn(conn->ctx, "auth", "Stream management failed.");
+        /* unknown stanza received */
+        name = NULL;
+    }
+
+LBL_ERR:
+    if (!name) {
+        char *err = "Couldn't convert stanza to text!";
+        char *buf;
+        size_t buflen;
+        switch (xmpp_stanza_to_text(stanza, &buf, &buflen)) {
+        case XMPP_EOK:
+            break;
+        case XMPP_EMEM:
+            disconnect_mem_error(conn);
+            return 0;
+        default:
+            buf = err;
+            break;
+        }
+        strophe_warn(conn->ctx, "xmpp", "SM error: Stanza received was: %s",
+                     buf);
+        if (buf != err)
+            strophe_free(conn->ctx, buf);
+        conn->sm_state->sm_enabled = 0;
     }
     return 0;
 }

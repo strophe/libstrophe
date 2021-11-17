@@ -131,20 +131,32 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
             }
             if (ret > 0 && ret < towrite)
                 sq->written += ret; /* not all data could be sent now */
+            sq->wip = 1;
             if (ret != towrite)
                 break; /* partial write or an error */
 
             /* all data for this queue item written, delete and move on */
             strophe_debug(conn->ctx, "conn", "SENT: %s", sq->data);
-            strophe_debug_verbose(1, ctx, "xmpp",
-                                  "Finished writing queue element: %p.", sq);
-            strophe_free(ctx, sq->data);
+            strophe_debug_verbose(1, ctx, "xmpp", "Q_SENT: %p", sq);
             tsq = sq;
             sq = sq->next;
             conn->send_queue_len--;
             if (tsq->owner & XMPP_QUEUE_USER)
                 conn->send_queue_user_len--;
-            strophe_free(ctx, tsq);
+            if (!(tsq->owner & XMPP_QUEUE_SM) && conn->sm_state->sm_enabled) {
+                tsq->sm_h = conn->sm_state->sm_sent_nr;
+                conn->sm_state->sm_sent_nr++;
+                strophe_debug_verbose(1, ctx, "xmpp", "SM_Q_MOVE: %p", tsq);
+                add_queue_back(&conn->sm_state->sm_queue, tsq);
+                tsq = NULL;
+            }
+            if (tsq) {
+                strophe_debug_verbose(2, ctx, "xmpp", "Q_FREE: %p", tsq);
+                strophe_debug_verbose(3, ctx, "conn", "Q_CONTENT: %s",
+                                      tsq->data);
+                strophe_free(ctx, tsq->data);
+                strophe_free(ctx, tsq);
+            }
 
             /* pop the top item */
             conn->send_queue_head = sq;

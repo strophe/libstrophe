@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <string.h>
-#include <stdlib.h>
 #include <limits.h>
 
 #include "strophe.h"
@@ -100,7 +99,6 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
                                    xmpp_stanza_t *stanza);
 static unsigned short _conn_default_port(xmpp_conn_t *conn,
                                          xmpp_conn_type_t type);
-static char *_queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e);
 static void _conn_reset(xmpp_conn_t *conn);
 static int _conn_connect(xmpp_conn_t *conn,
                          const char *domain,
@@ -116,7 +114,8 @@ static void _send_valist(xmpp_conn_t *conn,
 static int _send_raw(xmpp_conn_t *conn,
                      char *data,
                      size_t len,
-                     xmpp_send_queue_owner_t owner);
+                     xmpp_send_queue_owner_t owner,
+                     void *userdata);
 
 void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text)
 {
@@ -149,6 +148,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
 
         conn->type = XMPP_UNKNOWN;
         conn->state = XMPP_STATE_DISCONNECTED;
+
         conn->sock = -1;
         conn->ka_timeout = KEEPALIVE_TIMEOUT;
         conn->ka_interval = KEEPALIVE_INTERVAL;
@@ -202,10 +202,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
 
         conn->bind_required = 0;
         conn->session_required = 0;
-        conn->sm_support = 0;
-        conn->sm_enabled = 0;
-        conn->sm_handled_nr = 0;
-        conn->sm_sent_nr = 0;
+        conn->sm_state = NULL;
 
         conn->parser =
             parser_new(conn->ctx, _handle_stream_start, _handle_stream_end,
@@ -403,6 +400,8 @@ int xmpp_conn_release(xmpp_conn_t *conn)
             strophe_free(ctx, conn->tls_cafile);
         if (conn->tls_capath)
             strophe_free(ctx, conn->tls_capath);
+        if (conn->sm_state)
+            xmpp_free_sm_state(conn->sm_state);
         tls_clear_password_cache(conn);
         strophe_free(ctx, conn);
         released = 1;
@@ -725,6 +724,14 @@ int xmpp_connect_client(xmpp_conn_t *conn,
     if (!domain)
         return XMPP_EMEM;
 
+    if (!conn->sm_state) {
+        conn->sm_state = strophe_alloc(conn->ctx, sizeof(*conn->sm_state));
+        if (!conn->sm_state)
+            return XMPP_EMEM;
+        memset(conn->sm_state, 0, sizeof(*conn->sm_state));
+        conn->sm_state->ctx = conn->ctx;
+    }
+
     if (altdomain != NULL) {
         strophe_debug(conn->ctx, "xmpp", "Connecting via altdomain.");
         host = altdomain;
@@ -1041,7 +1048,7 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
  */
 void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
 {
-    send_raw(conn, data, len, XMPP_QUEUE_USER);
+    send_raw(conn, data, len, XMPP_QUEUE_USER, NULL);
 }
 
 /** Send an XML stanza to the XMPP server.
@@ -1189,6 +1196,7 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags)
     conn->tls_legacy_ssl = (flags & XMPP_CONN_FLAG_LEGACY_SSL) ? 1 : 0;
     conn->tls_trust = (flags & XMPP_CONN_FLAG_TRUST_TLS) ? 1 : 0;
     conn->auth_legacy_enabled = (flags & XMPP_CONN_FLAG_LEGACY_AUTH) ? 1 : 0;
+    conn->sm_disable = (flags & XMPP_CONN_FLAG_DISABLE_SM) ? 1 : 0;
 
     return 0;
 }
@@ -1254,88 +1262,223 @@ int xmpp_conn_is_disconnected(xmpp_conn_t *conn)
 }
 
 /**
+ *  This returns the Stream Management state of a connection object after
+ *  it has been disconnected.
+ *  One can then initialise a fresh connection object and set this Stream
+ *  Management state by calling \ref xmpp_conn_set_sm_state
+ *
+ *  In case one wants to dispose of the state w/o setting it into a fresh
+ *  connection object, one can call \ref xmpp_free_sm_state
+ *
+ *  After calling this function to retrieve the state, only call one of the
+ *  other two.
+ *
+ *  @param conn   a Strophe connection object
+ *  @return The Stream Management state of the connection or NULL on error
+ *
+ *  @ingroup Connections
+ */
+xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn)
+{
+    xmpp_sm_state_t *ret;
+
+    /* We can only return the SM state when we're disconnected */
+    if (conn->state != XMPP_STATE_DISCONNECTED)
+        return NULL;
+
+    ret = conn->sm_state;
+    conn->sm_state = NULL;
+    if (ret->previd) {
+        strophe_free(conn->ctx, ret->previd);
+        ret->previd = NULL;
+    }
+
+    if (ret->can_resume) {
+        ret->previd = ret->id;
+        ret->id = NULL;
+
+        ret->bound_jid = conn->bound_jid;
+        conn->bound_jid = NULL;
+    } else if (ret->id) {
+        strophe_free(conn->ctx, ret->id);
+        ret->id = NULL;
+    }
+
+    ret->sm_enabled = ret->sm_support = ret->resume = 0;
+
+    if (ret->bind) {
+        xmpp_stanza_release(ret->bind);
+        ret->bind = NULL;
+    }
+
+    return ret;
+}
+
+/**
+ *  @param conn     a Strophe connection object
+ *  @param sm_state A Stream Management state returned from a call to
+ *                  `xmpp_conn_get_sm_state()`
+ *
+ *  @return XMPP_EOK (0) on success or a number less than 0 on failure
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_set_sm_state(xmpp_conn_t *conn, xmpp_sm_state_t *sm_state)
+{
+    /* We can only set the SM state when we're disconnected */
+    if (conn->state != XMPP_STATE_DISCONNECTED)
+        return XMPP_EINVOP;
+
+    if (conn->sm_state) {
+        strophe_error(conn->ctx, "conn", "SM state is already set!");
+        return XMPP_EINVOP;
+    }
+
+    if (conn->ctx != sm_state->ctx) {
+        strophe_error(
+            conn->ctx, "conn",
+            "SM state has to be assigned to connection that stems from "
+            "the same context!");
+        return XMPP_EINVOP;
+    }
+
+    conn->sm_state = sm_state;
+    return XMPP_EOK;
+}
+
+/**  c.f. \ref xmpp_conn_get_sm_state for usage documentation
+ *
+ *  @param sm_state   A Stream Management state returned from a call to
+ *                  `xmpp_conn_get_sm_state()`
+ *
+ *  @ingroup Connections
+ */
+void xmpp_free_sm_state(xmpp_sm_state_t *sm_state)
+{
+    xmpp_ctx_t *ctx;
+    xmpp_send_queue_t *smq;
+
+    if (!sm_state || !sm_state->ctx)
+        return;
+
+    ctx = sm_state->ctx;
+
+    while ((smq = pop_queue_front(&sm_state->sm_queue))) {
+        strophe_free(ctx, queue_element_free(ctx, smq));
+    }
+
+    if (sm_state->bind)
+        xmpp_stanza_release(sm_state->bind);
+    if (sm_state->id)
+        strophe_free(ctx, sm_state->id);
+    if (sm_state->previd)
+        strophe_free(ctx, sm_state->previd);
+    if (sm_state->bound_jid)
+        strophe_free(ctx, sm_state->bound_jid);
+    memset(sm_state, 0, sizeof(*sm_state));
+    strophe_free(ctx, sm_state);
+}
+
+/**
  *  @return The number of entries in the send queue
  *
  *  @ingroup Connections
  */
 int xmpp_conn_send_queue_len(const xmpp_conn_t *conn)
 {
-    if (conn->send_queue_head && conn->send_queue_head->written &&
+    if (conn->send_queue_head && conn->send_queue_head->wip &&
         conn->send_queue_head->owner == XMPP_QUEUE_USER)
         return conn->send_queue_user_len - 1;
     else
         return conn->send_queue_user_len;
 }
 
+static char *_drop_send_queue_element(xmpp_conn_t *conn, xmpp_send_queue_t *e)
+{
+    if (e == conn->send_queue_head)
+        conn->send_queue_head = e->next;
+    if (e == conn->send_queue_tail)
+        conn->send_queue_tail = e->prev;
+    if (!conn->send_queue_head)
+        conn->send_queue_tail = NULL;
+    if (e->prev)
+        e->prev->next = e->next;
+    if (e->next)
+        e->next->prev = e->prev;
+    conn->send_queue_len--;
+    if (e->owner == XMPP_QUEUE_USER)
+        conn->send_queue_user_len--;
+    return queue_element_free(conn->ctx, e);
+}
+
 /** Drop an element of the send queue.
  *  This can be used to manage the send queue in case a server
  *  isn't fast enough in processing the elements you're trying
- *  to send.
+ *  to send or your outgoing bandwidth isn't fast enough to transfer
+ *  everything you want to send out.
  *
  *  @param conn a Strophe connection object
  *  @param which the element that shall be removed
+ *
+ *  @return The rendered stanza. The pointer returned has to be free'd by the
+ *          caller of this function.
  *
  *  @ingroup Connections
  */
 char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
                                         xmpp_queue_element_t which)
 {
-    xmpp_send_queue_t *t, *p;
-    xmpp_send_queue_owner_t owner;
-    char *ret;
+    xmpp_send_queue_t *t;
+
+    /* Fast return paths */
     /* empty queue */
     if (!conn->send_queue_head)
         return NULL;
     /* one element in queue */
     if (conn->send_queue_head == conn->send_queue_tail) {
-        if (conn->send_queue_head->written)
-            return NULL;
-
-        t = conn->send_queue_head;
-        conn->send_queue_head = conn->send_queue_tail = NULL;
-        owner = t->owner;
-        ret = _queue_element_free(conn->ctx, t);
-        conn->send_queue_len--;
-        if (owner == XMPP_QUEUE_USER)
-            conn->send_queue_user_len--;
-        return ret;
-    }
-    switch (which) {
-    case XMPP_QUEUE_OLDEST:
         /* head is already sent out partially */
-        if (conn->send_queue_head->written) {
-            t = conn->send_queue_head->next;
-            /* there are no more elements in the queue */
-            if (!t)
-                return NULL;
-            conn->send_queue_head->next = t->next;
-        } else {
-            t = conn->send_queue_head;
-            conn->send_queue_head = t->next;
-        }
-        owner = t->owner;
-        ret = _queue_element_free(conn->ctx, t);
-        conn->send_queue_len--;
-        if (owner == XMPP_QUEUE_USER)
-            conn->send_queue_user_len--;
-        return ret;
-    case XMPP_QUEUE_YOUNGEST:
+        if (conn->send_queue_head->wip)
+            return NULL;
+        /* the element is no USER element */
+        if (conn->send_queue_head->owner != XMPP_QUEUE_USER)
+            return NULL;
+    }
+
+    /* Regular flow */
+    if (which == XMPP_QUEUE_OLDEST) {
         t = conn->send_queue_head;
-        do {
-            p = t;
-            t = t->next;
-        } while (t != conn->send_queue_tail);
-        conn->send_queue_tail = p;
-        owner = t->owner;
-        ret = _queue_element_free(conn->ctx, t);
-        conn->send_queue_len--;
-        if (owner == XMPP_QUEUE_USER)
-            conn->send_queue_user_len--;
-        return ret;
-    default:
+    } else if (which == XMPP_QUEUE_YOUNGEST) {
+        t = conn->send_queue_tail;
+        /* search backwards to find last USER element */
+        while (t && t->owner != XMPP_QUEUE_USER)
+            t = t->prev;
+    } else {
         strophe_error(conn->ctx, "conn", "Unknown queue element %d", which);
         return NULL;
     }
+    /* there was no USER element in the queue */
+    if (!t)
+        return NULL;
+
+    /* head is already sent out partially */
+    if (t == conn->send_queue_head && t->wip)
+        t = t->next;
+
+    /* search forward to find the first USER element */
+    while (t && t->owner != XMPP_QUEUE_USER)
+        t = t->next;
+
+    /* there was no USER element in the queue we could drop */
+    if (!t)
+        return NULL;
+
+    /* In case there exists a SM stanza that is linked to the
+     * one we're currently dropping, also delete that one.
+     */
+    if (t->next && t->next->userdata == t)
+        strophe_free(conn->ctx, _drop_send_queue_element(conn, t->next));
+    /* Finally drop the element */
+    return _drop_send_queue_element(conn, t);
 }
 
 /* timed handler for cleanup if normal disconnect procedure takes too long */
@@ -1527,6 +1670,8 @@ static void _handle_stream_end(char *name, void *userdata)
 
     /* stream is over */
     strophe_debug(conn->ctx, "xmpp", "RECV: </stream:stream>");
+    /* the session has been terminated properly, i.e. it can't be resumed */
+    conn->sm_state->can_resume = 0;
     conn_disconnect_clean(conn);
 }
 
@@ -1542,7 +1687,7 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *userdata)
     }
 
     handler_fire_stanza(conn, stanza);
-    if (conn->sm_enabled)
+    if (conn->sm_state->sm_enabled)
         _conn_sm_handle_stanza(conn, stanza);
 }
 
@@ -1551,25 +1696,54 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
                                    xmpp_stanza_t *stanza)
 {
     xmpp_stanza_t *a;
-    const char *name;
-    const char *ns;
+    xmpp_send_queue_t *e;
+    char *c;
+    const char *name, *ns, *attr_h;
     char h[11];
+    unsigned long ul_h;
 
     ns = xmpp_stanza_get_ns(stanza);
     if (ns && strcmp(ns, XMPP_NS_SM) != 0)
-        ++conn->sm_handled_nr;
+        ++conn->sm_state->sm_handled_nr;
     else {
         name = xmpp_stanza_get_name(stanza);
-        if (name && strcmp(name, "r") == 0) {
+        if (!name)
+            return;
+        if (strcmp(name, "r") == 0) {
             a = xmpp_stanza_new(conn->ctx);
-            if (!a)
-                return; /* XXX */
+            if (!a) {
+                strophe_debug(conn->ctx, "conn", "Couldn't create <a> stanza.");
+                return;
+            }
             xmpp_stanza_set_name(a, "a");
             xmpp_stanza_set_ns(a, XMPP_NS_SM);
-            strophe_snprintf(h, sizeof(h), "%u", conn->sm_handled_nr);
+            strophe_snprintf(h, sizeof(h), "%u", conn->sm_state->sm_handled_nr);
             xmpp_stanza_set_attribute(a, "h", h);
             send_stanza(conn, a, XMPP_QUEUE_SM_STROPHE);
             xmpp_stanza_release(a);
+        } else if (strcmp(name, "a") == 0) {
+            attr_h = xmpp_stanza_get_attribute(stanza, "h");
+            if (!attr_h) {
+                strophe_debug(conn->ctx, "conn", "Didn't find 'h' attribute.");
+                return;
+            }
+            if (string_to_ul(attr_h, &ul_h)) {
+                strophe_error(
+                    conn->ctx, "conn",
+                    "Error on strtoul() of '%s', returned value is %llu.",
+                    attr_h, ul_h);
+                /* We continue here and drop the complete SM queue instead of
+                 * returning and letting the queue fill up.
+                 */
+                ul_h = ULONG_MAX;
+            }
+            while (conn->sm_state->sm_queue.head &&
+                   conn->sm_state->sm_queue.head->sm_h < ul_h) {
+                e = pop_queue_front(&conn->sm_state->sm_queue);
+                strophe_debug_verbose(2, conn->ctx, "conn", "SM_Q_DROP: %p", e);
+                c = queue_element_free(conn->ctx, e);
+                strophe_free(conn->ctx, c);
+            }
         }
     }
 }
@@ -1588,7 +1762,7 @@ static unsigned short _conn_default_port(xmpp_conn_t *conn,
     };
 }
 
-static char *_queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e)
+char *queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e)
 {
     char *ret = e->data;
     strophe_debug_verbose(2, ctx, "conn", "Q_FREE: %p", e);
@@ -1613,7 +1787,7 @@ static void _conn_reset(xmpp_conn_t *conn)
     while (sq) {
         tsq = sq;
         sq = sq->next;
-        strophe_free(ctx, _queue_element_free(ctx, tsq));
+        strophe_free(ctx, queue_element_free(ctx, tsq));
     }
     conn->send_queue_head = NULL;
     conn->send_queue_tail = NULL;
@@ -1643,8 +1817,7 @@ static void _conn_reset(xmpp_conn_t *conn)
     conn->error = 0;
 
     conn->tls_support = 0;
-    conn->sm_support = 0;
-    conn->sm_enabled = 0;
+
     conn->bind_required = 0;
     conn->session_required = 0;
 
@@ -1705,7 +1878,8 @@ static int _conn_connect(xmpp_conn_t *conn,
 void send_raw(xmpp_conn_t *conn,
               const char *data,
               size_t len,
-              xmpp_send_queue_owner_t owner)
+              xmpp_send_queue_owner_t owner,
+              void *userdata)
 {
     char *d;
 
@@ -1718,7 +1892,7 @@ void send_raw(xmpp_conn_t *conn,
         return;
     }
 
-    _send_raw(conn, d, len, owner);
+    _send_raw(conn, d, len, owner, userdata);
 }
 
 static void _send_valist(xmpp_conn_t *conn,
@@ -1753,10 +1927,10 @@ static void _send_valist(xmpp_conn_t *conn,
         va_end(apdup);
 
         /* len - 1 so we don't send trailing \0 */
-        _send_raw(conn, bigbuf, len - 1, owner);
+        _send_raw(conn, bigbuf, len - 1, owner, NULL);
     } else {
         /* go through send_raw() which does the strdup() for us */
-        send_raw(conn, buf, len, owner);
+        send_raw(conn, buf, len, owner, NULL);
     }
 }
 
@@ -1787,13 +1961,43 @@ void send_stanza(xmpp_conn_t *conn,
         return;
     }
 
-    _send_raw(conn, buf, len, owner);
+    _send_raw(conn, buf, len, owner, NULL);
+}
+
+void add_queue_back(xmpp_queue_t *queue, xmpp_send_queue_t *item)
+{
+    item->next = NULL;
+    if (!queue->tail) {
+        item->prev = NULL;
+        queue->head = item;
+        queue->tail = item;
+    } else {
+        item->prev = queue->tail;
+        queue->tail->next = item;
+        queue->tail = item;
+    }
+}
+
+xmpp_send_queue_t *pop_queue_front(xmpp_queue_t *queue)
+{
+    xmpp_send_queue_t *ret = queue->head;
+    if (queue->head) {
+        queue->head = queue->head->next;
+        if (!queue->head) {
+            queue->tail = NULL;
+        } else {
+            queue->head->prev = NULL;
+        }
+        ret->prev = ret->next = NULL;
+    }
+    return ret;
 }
 
 static int _send_raw(xmpp_conn_t *conn,
                      char *data,
                      size_t len,
-                     xmpp_send_queue_owner_t owner)
+                     xmpp_send_queue_owner_t owner,
+                     void *userdata)
 {
     xmpp_send_queue_t *item;
     const char *req_ack = "<r xmlns='urn:xmpp:sm:3'/>";
@@ -1809,7 +2013,10 @@ static int _send_raw(xmpp_conn_t *conn,
     item->data = data;
     item->len = len;
     item->next = NULL;
+    item->prev = conn->send_queue_tail;
     item->written = 0;
+    item->wip = 0;
+    item->userdata = userdata;
     item->owner = owner;
 
     if (!conn->send_queue_tail) {
@@ -1826,5 +2033,8 @@ static int _send_raw(xmpp_conn_t *conn,
         conn->send_queue_user_len++;
     strophe_debug_verbose(3, conn->ctx, "conn", "QUEUED: %s", data);
     strophe_debug_verbose(1, conn->ctx, "conn", "Q_ADD: %p", item);
+    if (!(owner & XMPP_QUEUE_SM) && conn->sm_state->sm_enabled) {
+        send_raw(conn, req_ack, strlen(req_ack), XMPP_QUEUE_SM_STROPHE, item);
+    }
     return XMPP_EOK;
 }

@@ -33,6 +33,7 @@ uint64_t time_stamp(void);
 uint64_t time_elapsed(uint64_t t1, uint64_t t2);
 
 /* misc functions */
+int string_to_ul(const char *s, unsigned long *ul);
 void hex_encode(char *writebuf, void *readbuf, size_t len);
 
 #endif /* __LIBSTROPHE_UTIL_H__ */

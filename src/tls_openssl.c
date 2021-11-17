@@ -883,9 +883,13 @@ static const char *_tls_error_str(int error, const char **tbl, size_t tbl_size)
 static void _tls_set_error(tls_t *tls, int error)
 {
     if (error != 0 && !tls_is_recoverable(error)) {
-        strophe_debug(tls->ctx, "tls", "error=%s(%d) errno=%d",
-                      TLS_ERROR_STR(error, tls_errors), error, errno);
+        strophe_debug(tls->ctx, "tls", "error=%s(%d) errno=%d lasterror=%d",
+                      TLS_ERROR_STR(error, tls_errors), error, errno,
+                      tls->lasterror);
         _tls_log_error(tls->ctx);
+    } else if (tls->lasterror && tls->lasterror != error) {
+        strophe_debug_verbose(1, tls->ctx, "tls", "overwrite lasterror=%d",
+                              tls->lasterror);
     }
     tls->lasterror = error;
 }

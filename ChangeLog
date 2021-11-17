@@ -2,9 +2,13 @@
 	- Fix potential infinite loop in resolver (#200)
 	- Add code coverage support
 	- Add support for password-protected TLS key & PKCS#12/PFX files
+	- Stream-Management support (XEP-0198)
 	- New API:
 		- xmpp_conn_send_queue_len()
 		- xmpp_conn_send_queue_drop_element()
+		- xmpp_conn_get_sm_state()
+		- xmpp_conn_set_sm_state()
+		- xmpp_free_sm_state()
 		- xmpp_conn_get_keyfile()
 		- xmpp_conn_set_password_callback()
 		- xmpp_conn_set_password_retries()

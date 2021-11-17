@@ -140,9 +140,12 @@ struct _xmpp_send_queue_t {
     char *data;
     size_t len;
     size_t written;
+    int wip;
     xmpp_send_queue_owner_t owner;
+    void *userdata;
+    uint32_t sm_h;
 
-    xmpp_send_queue_t *next;
+    xmpp_send_queue_t *prev, *next;
 };
 
 #define UNUSED(x) ((void)(x))
@@ -167,6 +170,22 @@ enum {
 };
 
 typedef void (*xmpp_open_handler)(xmpp_conn_t *conn);
+
+typedef struct {
+    xmpp_send_queue_t *head, *tail;
+} xmpp_queue_t;
+
+struct _xmpp_sm_t {
+    xmpp_ctx_t *ctx;
+    int sm_support;
+    int sm_enabled;
+    int can_resume, resume, dont_request_resume;
+    uint32_t sm_handled_nr;
+    uint32_t sm_sent_nr;
+    xmpp_queue_t sm_queue;
+    char *id, *previd, *bound_jid;
+    xmpp_stanza_t *bind;
+};
 
 struct _xmpp_conn_t {
     unsigned int ref;
@@ -212,10 +231,8 @@ struct _xmpp_conn_t {
     /* if server returns <bind/> or <session/> we must do them */
     int bind_required;
     int session_required;
-    int sm_support;
-    int sm_enabled;
-    uint32_t sm_handled_nr;
-    uint32_t sm_sent_nr;
+    int sm_disable;
+    xmpp_sm_state_t *sm_state;
 
     char *lang;
     char *domain;
@@ -317,11 +334,17 @@ void auth_handle_component_open(xmpp_conn_t *conn);
 void auth_handle_open_raw(xmpp_conn_t *conn);
 void auth_handle_open_stub(xmpp_conn_t *conn);
 
+/* queue functions */
+void add_queue_back(xmpp_queue_t *queue, xmpp_send_queue_t *item);
+xmpp_send_queue_t *pop_queue_front(xmpp_queue_t *queue);
+char *queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e);
+
 /* send functions */
 void send_raw(xmpp_conn_t *conn,
               const char *data,
               size_t len,
-              xmpp_send_queue_owner_t owner);
+              xmpp_send_queue_owner_t owner,
+              void *userdata);
 /* this is a bit special as it will always mark the sent string as
  * owned by libstrophe
  */

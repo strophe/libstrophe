@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -159,6 +160,13 @@ void disconnect_mem_error(xmpp_conn_t *conn)
 {
     strophe_error(conn->ctx, "xmpp", "Memory allocation error");
     xmpp_disconnect(conn);
+}
+
+int string_to_ul(const char *s, unsigned long *ul)
+{
+    char *endptr;
+    *ul = strtoul(s, &endptr, 10);
+    return *endptr != '\0';
 }
 
 void hex_encode(char *writebuf, void *readbuf, size_t len)

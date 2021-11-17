@@ -24,6 +24,7 @@ int main()
     xmpp_conn_t *conn;
     xmpp_log_t *log;
     xmpp_conn_state_t state;
+    xmpp_sm_state_t *sm_state;
     char *ret;
 
     unsigned int n;
@@ -32,6 +33,11 @@ int main()
     log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG);
     ctx = xmpp_ctx_new(NULL, log);
     conn = xmpp_conn_new(ctx);
+    sm_state = strophe_alloc(ctx, sizeof(*sm_state));
+    memset(sm_state, 0, sizeof(*sm_state));
+    sm_state->ctx = ctx;
+
+    xmpp_conn_set_sm_state(conn, sm_state);
 
     ENSURE_EQ(xmpp_conn_send_queue_len(conn), 0);
 
@@ -50,7 +56,7 @@ int main()
     xmpp_send_raw(conn, "baan", 4);
     ENSURE_EQ(xmpp_conn_send_queue_len(conn), 4);
 
-    conn->send_queue_head->written = 1;
+    conn->send_queue_head->wip = 1;
     ENSURE_EQ(xmpp_conn_send_queue_len(conn), 3);
 
     ret = xmpp_conn_send_queue_drop_element(conn, XMPP_QUEUE_OLDEST);
@@ -58,7 +64,7 @@ int main()
     xmpp_free(ctx, ret);
     ENSURE_EQ(xmpp_conn_send_queue_len(conn), 2);
 
-    conn->send_queue_head->written = 0;
+    conn->send_queue_head->wip = 0;
     ENSURE_EQ(xmpp_conn_send_queue_len(conn), 3);
 
     ret = xmpp_conn_send_queue_drop_element(conn, XMPP_QUEUE_OLDEST);
