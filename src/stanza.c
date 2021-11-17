@@ -1509,7 +1509,7 @@ xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx)
  *  The error text is optional and may be NULL.
  *
  *  @param ctx a Strophe context object
- *  @param type enum of xmpp_error_type_t
+ *  @param type enum of strophe_error_type_t
  *  @param text content of a 'text'
  *
  *  @return a new Strophe stanza object

@@ -128,11 +128,19 @@ typedef enum {
     XMPP_STATE_CONNECTED
 } xmpp_conn_state_t;
 
+typedef enum {
+    XMPP_QUEUE_STROPHE = 0x1,
+    XMPP_QUEUE_USER = 0x2,
+    XMPP_QUEUE_SM = 0x800,
+    XMPP_QUEUE_SM_STROPHE = XMPP_QUEUE_SM | XMPP_QUEUE_STROPHE,
+} xmpp_send_queue_owner_t;
+
 typedef struct _xmpp_send_queue_t xmpp_send_queue_t;
 struct _xmpp_send_queue_t {
     char *data;
     size_t len;
     size_t written;
+    xmpp_send_queue_owner_t owner;
 
     xmpp_send_queue_t *next;
 };
@@ -220,6 +228,7 @@ struct _xmpp_conn_t {
     int blocking_send;
     int send_queue_max;
     int send_queue_len;
+    int send_queue_user_len;
     xmpp_send_queue_t *send_queue_head;
     xmpp_send_queue_t *send_queue_tail;
 
@@ -307,5 +316,18 @@ void auth_handle_open(xmpp_conn_t *conn);
 void auth_handle_component_open(xmpp_conn_t *conn);
 void auth_handle_open_raw(xmpp_conn_t *conn);
 void auth_handle_open_stub(xmpp_conn_t *conn);
+
+/* send functions */
+void send_raw(xmpp_conn_t *conn,
+              const char *data,
+              size_t len,
+              xmpp_send_queue_owner_t owner);
+/* this is a bit special as it will always mark the sent string as
+ * owned by libstrophe
+ */
+void send_raw_string(xmpp_conn_t *conn, const char *fmt, ...);
+void send_stanza(xmpp_conn_t *conn,
+                 xmpp_stanza_t *stanza,
+                 xmpp_send_queue_owner_t owner);
 
 #endif /* __LIBSTROPHE_COMMON_H__ */

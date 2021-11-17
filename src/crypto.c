@@ -22,11 +22,11 @@
 #include <assert.h>
 #include <string.h> /* memset, memcpy */
 
-#include "common.h"  /* xmpp_alloc */
+#include "common.h"  /* strophe_alloc */
 #include "ostypes.h" /* uint8_t, size_t */
 #include "sha1.h"
 #include "snprintf.h" /* xmpp_snprintf */
-#include "strophe.h"  /* xmpp_ctx_t, xmpp_free */
+#include "strophe.h"  /* xmpp_ctx_t, strophe_free */
 
 struct _xmpp_sha1_t {
     xmpp_ctx_t *xmpp_ctx;
@@ -187,9 +187,9 @@ char *xmpp_sha1_to_string(xmpp_sha1_t *sha1, char *s, size_t slen)
 }
 
 /** Return message digest rendered as a string.
- *  Returns an allocated string. Free the string using the Strophe context
- *  which is passed to xmpp_sha1_new(). Call this function after
- *  xmpp_sha1_final().
+ *  Returns an allocated string. Free the string by calling xmpp_free() using
+ *  the Strophe context which is passed to xmpp_sha1_new(). Call this function
+ *  after xmpp_sha1_final().
  *
  *  @param sha1 a SHA1 object
  *

@@ -142,6 +142,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
             tsq = sq;
             sq = sq->next;
             conn->send_queue_len--;
+            if (tsq->owner & XMPP_QUEUE_USER)
+                conn->send_queue_user_len--;
             strophe_free(ctx, tsq);
 
             /* pop the top item */

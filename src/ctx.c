@@ -255,8 +255,8 @@ void *strophe_realloc(const xmpp_ctx_t *ctx, void *p, size_t size)
  *  Write a log message to the logger for the context for the specified
  *  level and area.  This function takes a printf-style format string and a
  *  variable argument list (in va_list) format.  This function is not meant
- *  to be called directly, but is used via xmpp_error, xmpp_warn, xmpp_info,
- *  and xmpp_debug.
+ *  to be called directly, but is used via strophe_error, strophe_warn,
+ * strophe_info, and strophe_debug.
  *
  *  @param ctx a Strophe context object
  *  @param level the level at which to log

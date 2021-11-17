@@ -32,7 +32,7 @@
 #endif
 #endif
 
-#include "common.h"  /* xmpp_alloc, xmpp_free */
+#include "common.h"  /* strophe_alloc, strophe_free */
 #include "ostypes.h" /* uint8_t, uint32_t, size_t */
 
 #ifndef USE_GETRANDOM

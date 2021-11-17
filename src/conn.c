@@ -22,6 +22,8 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
+#include <limits.h>
 
 #include "strophe.h"
 
@@ -106,13 +108,20 @@ static int _conn_connect(xmpp_conn_t *conn,
                          xmpp_conn_type_t type,
                          xmpp_conn_handler callback,
                          void *userdata);
-static int _send_raw(xmpp_conn_t *conn, char *data, size_t len);
+static void _send_valist(xmpp_conn_t *conn,
+                         const char *fmt,
+                         va_list ap,
+                         xmpp_send_queue_owner_t owner);
+static int _send_raw(xmpp_conn_t *conn,
+                     char *data,
+                     size_t len,
+                     xmpp_send_queue_owner_t owner);
 
 void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text)
 {
     xmpp_stanza_t *error = xmpp_error_new(conn->ctx, type, text);
 
-    xmpp_send(conn, error);
+    send_stanza(conn, error, XMPP_QUEUE_STROPHE);
 
     xmpp_stanza_release(error);
 }
@@ -152,6 +161,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         conn->blocking_send = 0;
         conn->send_queue_max = DEFAULT_SEND_QUEUE_MAX;
         conn->send_queue_len = 0;
+        conn->send_queue_user_len = 0;
         conn->send_queue_head = NULL;
         conn->send_queue_tail = NULL;
 
@@ -985,7 +995,7 @@ void xmpp_disconnect(xmpp_conn_t *conn)
         return;
 
     /* close the stream */
-    xmpp_send_raw_string(conn, "</stream:stream>");
+    send_raw_string(conn, "</stream:stream>");
 
     /* setup timed handler in case disconnect takes too long */
     handler_add_timed(conn, _disconnect_cleanup, DISCONNECT_TIMEOUT, NULL);
@@ -1007,37 +1017,13 @@ void xmpp_disconnect(xmpp_conn_t *conn)
 void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
 {
     va_list ap;
-    size_t len;
-    char buf[1024]; /* small buffer for common case */
-    char *bigbuf;
 
     if (conn->state != XMPP_STATE_CONNECTED)
         return;
 
     va_start(ap, fmt);
-    len = strophe_vsnprintf(buf, sizeof(buf), fmt, ap);
+    _send_valist(conn, fmt, ap, XMPP_QUEUE_USER);
     va_end(ap);
-
-    if (len >= sizeof(buf)) {
-        /* we need more space for this data, so we allocate a big
-         * enough buffer and print to that */
-        len++; /* account for trailing \0 */
-        bigbuf = strophe_alloc(conn->ctx, len);
-        if (!bigbuf) {
-            strophe_debug(conn->ctx, "xmpp",
-                          "Could not allocate memory for send_raw_string");
-            return;
-        }
-        va_start(ap, fmt);
-        strophe_vsnprintf(bigbuf, len, fmt, ap);
-        va_end(ap);
-
-        /* len - 1 so we don't send trailing \0 */
-        _send_raw(conn, bigbuf, len - 1);
-    } else {
-        /* go through xmpp_send_raw() which does the strdup() for us */
-        xmpp_send_raw(conn, buf, len);
-    }
 }
 
 /** Send raw bytes to the XMPP server.
@@ -1054,18 +1040,7 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
  */
 void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
 {
-    char *d;
-
-    if (conn->state != XMPP_STATE_CONNECTED)
-        return;
-
-    d = strophe_strndup(conn->ctx, data, len);
-    if (!d) {
-        strophe_error(conn->ctx, "conn", "Failed to strndup");
-        return;
-    }
-
-    _send_raw(conn, d, len);
+    send_raw(conn, data, len, XMPP_QUEUE_USER);
 }
 
 /** Send an XML stanza to the XMPP server.
@@ -1079,18 +1054,7 @@ void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
  */
 void xmpp_send(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
 {
-    char *buf = NULL;
-    size_t len;
-
-    if (conn->state != XMPP_STATE_CONNECTED)
-        return;
-
-    if (xmpp_stanza_to_text(stanza, &buf, &len) != 0) {
-        strophe_error(conn->ctx, "conn", "Failed to stanza_to_text");
-        return;
-    }
-
-    _send_raw(conn, buf, len);
+    send_stanza(conn, stanza, XMPP_QUEUE_USER);
 }
 
 /** Send the opening &lt;stream:stream&gt; tag to the server.
@@ -1355,7 +1319,7 @@ static int _conn_open_stream_with_attributes(xmpp_conn_t *conn,
     if (!tag)
         return XMPP_EMEM;
 
-    xmpp_send_raw_string(conn, "<?xml version=\"1.0\"?>%s", tag);
+    send_raw_string(conn, "<?xml version=\"1.0\"?>%s", tag);
     strophe_free(conn->ctx, tag);
 
     return XMPP_EOK;
@@ -1518,7 +1482,7 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
             xmpp_stanza_set_ns(a, XMPP_NS_SM);
             strophe_snprintf(h, sizeof(h), "%u", conn->sm_handled_nr);
             xmpp_stanza_set_attribute(a, "h", h);
-            xmpp_send(conn, a);
+            send_stanza(conn, a, XMPP_QUEUE_SM_STROPHE);
             xmpp_stanza_release(a);
         }
     }
@@ -1559,6 +1523,7 @@ static void _conn_reset(xmpp_conn_t *conn)
     conn->send_queue_head = NULL;
     conn->send_queue_tail = NULL;
     conn->send_queue_len = 0;
+    conn->send_queue_user_len = 0;
 
     if (conn->stream_error) {
         xmpp_stanza_release(conn->stream_error->stanza);
@@ -1642,9 +1607,101 @@ static int _conn_connect(xmpp_conn_t *conn,
     return 0;
 }
 
-static int _send_raw(xmpp_conn_t *conn, char *data, size_t len)
+void send_raw(xmpp_conn_t *conn,
+              const char *data,
+              size_t len,
+              xmpp_send_queue_owner_t owner)
+{
+    char *d;
+
+    if (conn->state != XMPP_STATE_CONNECTED)
+        return;
+
+    d = strophe_strndup(conn->ctx, data, len);
+    if (!d) {
+        strophe_error(conn->ctx, "conn", "Failed to strndup");
+        return;
+    }
+
+    _send_raw(conn, d, len, owner);
+}
+
+static void _send_valist(xmpp_conn_t *conn,
+                         const char *fmt,
+                         va_list ap,
+                         xmpp_send_queue_owner_t owner)
+{
+    va_list apdup;
+    size_t len;
+    char buf[1024]; /* small buffer for common case */
+    char *bigbuf;
+
+    if (conn->state != XMPP_STATE_CONNECTED)
+        return;
+
+    va_copy(apdup, ap);
+    len = strophe_vsnprintf(buf, sizeof(buf), fmt, apdup);
+    va_end(apdup);
+
+    if (len >= sizeof(buf)) {
+        /* we need more space for this data, so we allocate a big
+         * enough buffer and print to that */
+        len++; /* account for trailing \0 */
+        bigbuf = strophe_alloc(conn->ctx, len);
+        if (!bigbuf) {
+            strophe_debug(conn->ctx, "xmpp",
+                          "Could not allocate memory for send_raw_string");
+            return;
+        }
+        va_copy(apdup, ap);
+        strophe_vsnprintf(bigbuf, len, fmt, apdup);
+        va_end(apdup);
+
+        /* len - 1 so we don't send trailing \0 */
+        _send_raw(conn, bigbuf, len - 1, owner);
+    } else {
+        /* go through send_raw() which does the strdup() for us */
+        send_raw(conn, buf, len, owner);
+    }
+}
+
+void send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
+{
+    va_list ap;
+
+    if (conn->state != XMPP_STATE_CONNECTED)
+        return;
+
+    va_start(ap, fmt);
+    _send_valist(conn, fmt, ap, XMPP_QUEUE_SM_STROPHE);
+    va_end(ap);
+}
+
+void send_stanza(xmpp_conn_t *conn,
+                 xmpp_stanza_t *stanza,
+                 xmpp_send_queue_owner_t owner)
+{
+    char *buf = NULL;
+    size_t len;
+
+    if (conn->state != XMPP_STATE_CONNECTED)
+        return;
+
+    if (xmpp_stanza_to_text(stanza, &buf, &len) != 0) {
+        strophe_error(conn->ctx, "conn", "Failed to stanza_to_text");
+        return;
+    }
+
+    _send_raw(conn, buf, len, owner);
+}
+
+static int _send_raw(xmpp_conn_t *conn,
+                     char *data,
+                     size_t len,
+                     xmpp_send_queue_owner_t owner)
 {
     xmpp_send_queue_t *item;
+    const char *req_ack = "<r xmlns='urn:xmpp:sm:3'/>";
 
     /* create send queue item for queue */
     item = strophe_alloc(conn->ctx, sizeof(xmpp_send_queue_t));
@@ -1658,8 +1715,8 @@ static int _send_raw(xmpp_conn_t *conn, char *data, size_t len)
     item->len = len;
     item->next = NULL;
     item->written = 0;
+    item->owner = owner;
 
-    /* add item to the send queue */
     if (!conn->send_queue_tail) {
         /* first item, set head and tail */
         conn->send_queue_head = item;
@@ -1670,8 +1727,9 @@ static int _send_raw(xmpp_conn_t *conn, char *data, size_t len)
         conn->send_queue_tail = item;
     }
     conn->send_queue_len++;
-    strophe_debug_verbose(2, conn->ctx, "conn", "QUEUED: %s", data);
-    strophe_debug_verbose(1, conn->ctx, "conn", "Added queue element: %p",
-                          item);
+    if (owner == XMPP_QUEUE_USER)
+        conn->send_queue_user_len++;
+    strophe_debug_verbose(3, conn->ctx, "conn", "QUEUED: %s", data);
+    strophe_debug_verbose(1, conn->ctx, "conn", "Q_ADD: %p", item);
     return XMPP_EOK;
 }
