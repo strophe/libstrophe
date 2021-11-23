@@ -665,8 +665,7 @@ void handler_system_delete_all(xmpp_conn_t *conn)
 {
     xmpp_handlist_t *item, *next, *head, *head_old;
     hash_iterator_t *iter;
-    const char *key;
-    char *key2 = NULL;
+    const char *key, *key2;
 
     /* TODO unify all kinds of handlers and avoid copy-paste below */
 
@@ -714,7 +713,7 @@ void handler_system_delete_all(xmpp_conn_t *conn)
                 item = item->next;
         }
         if (head != head_old)
-            key2 = xmpp_strdup(conn->ctx, key);
+            key2 = key;
         /* Hash table implementation is not perfect, so we need to find next
            key before dropping current one. Otherwise, we will get access to
            freed memory. */
@@ -725,7 +724,6 @@ void handler_system_delete_all(xmpp_conn_t *conn)
                 hash_add(conn->id_handlers, key2, head);
             else
                 hash_drop(conn->id_handlers, key2);
-            xmpp_free(conn->ctx, key2);
         }
     }
     if (iter)
