@@ -46,6 +46,17 @@ static void _handler_item_remove(xmpp_handlist_t **head, xmpp_handlist_t *item)
     }
 }
 
+static void _free_handlist_item(xmpp_ctx_t *ctx, xmpp_handlist_t *item)
+{
+    if (item->u.ns)
+        xmpp_free(ctx, item->u.ns);
+    if (item->u.name)
+        xmpp_free(ctx, item->u.name);
+    if (item->u.type)
+        xmpp_free(ctx, item->u.type);
+    xmpp_free(ctx, item);
+}
+
 /** Fire off all stanza handlers that match.
  *  This function is called internally by the event loop whenever stanzas
  *  are received from the XMPP server.
@@ -124,13 +135,7 @@ void handler_fire_stanza(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
             if (!ret) {
                 /* handler is one-shot, so delete it */
                 _handler_item_remove(&conn->handlers, item);
-                if (item->u.ns)
-                    xmpp_free(conn->ctx, item->u.ns);
-                if (item->u.name)
-                    xmpp_free(conn->ctx, item->u.name);
-                if (item->u.type)
-                    xmpp_free(conn->ctx, item->u.type);
-                xmpp_free(conn->ctx, item);
+                _free_handlist_item(conn->ctx, item);
             }
         }
         item = next;
@@ -404,6 +409,16 @@ void xmpp_id_handler_delete(xmpp_conn_t *conn,
     }
 }
 
+static int _dup_string(xmpp_ctx_t *ctx, const char *src, char **dest)
+{
+    if (src) {
+        *dest = xmpp_strdup(ctx, src);
+        if (!(*dest))
+            return 1;
+    }
+    return 0;
+}
+
 /* add a stanza handler */
 static void _handler_add(xmpp_conn_t *conn,
                          xmpp_handler handler,
@@ -432,43 +447,17 @@ static void _handler_add(xmpp_conn_t *conn,
     if (!item)
         return;
 
+    memset(item, 0, sizeof(*item));
     item->user_handler = user_handler;
     item->handler = handler;
     item->userdata = userdata;
-    item->enabled = 0;
-    item->next = NULL;
 
-    if (ns) {
-        item->u.ns = xmpp_strdup(conn->ctx, ns);
-        if (!item->u.ns) {
-            xmpp_free(conn->ctx, item);
-            return;
-        }
-    } else
-        item->u.ns = NULL;
-
-    if (name) {
-        item->u.name = xmpp_strdup(conn->ctx, name);
-        if (!item->u.name) {
-            if (item->u.ns)
-                xmpp_free(conn->ctx, item->u.ns);
-            xmpp_free(conn->ctx, item);
-            return;
-        }
-    } else
-        item->u.name = NULL;
-
-    if (type) {
-        item->u.type = xmpp_strdup(conn->ctx, type);
-        if (!item->u.type) {
-            if (item->u.ns)
-                xmpp_free(conn->ctx, item->u.ns);
-            if (item->u.name)
-                xmpp_free(conn->ctx, item->u.name);
-            xmpp_free(conn->ctx, item);
-        }
-    } else
-        item->u.type = NULL;
+    if (_dup_string(conn->ctx, ns, &item->u.ns))
+        goto error_out;
+    if (_dup_string(conn->ctx, name, &item->u.name))
+        goto error_out;
+    if (_dup_string(conn->ctx, type, &item->u.type))
+        goto error_out;
 
     /* append to list */
     if (!conn->handlers)
@@ -479,6 +468,11 @@ static void _handler_add(xmpp_conn_t *conn,
             tail = tail->next;
         tail->next = item;
     }
+
+    return;
+
+error_out:
+    _free_handlist_item(conn->ctx, item);
 }
 
 /** Delete a stanza handler.
@@ -504,13 +498,7 @@ void xmpp_handler_delete(xmpp_conn_t *conn, xmpp_handler handler)
             else
                 conn->handlers = item->next;
 
-            if (item->u.ns)
-                xmpp_free(conn->ctx, item->u.ns);
-            if (item->u.name)
-                xmpp_free(conn->ctx, item->u.name);
-            if (item->u.type)
-                xmpp_free(conn->ctx, item->u.type);
-            xmpp_free(conn->ctx, item);
+            _free_handlist_item(conn->ctx, item);
             item = prev ? prev->next : conn->handlers;
         } else {
             prev = item;
@@ -674,13 +662,7 @@ void handler_system_delete_all(xmpp_conn_t *conn)
         if (!item->user_handler) {
             next = item->next;
             _handler_item_remove(&conn->handlers, item);
-            if (item->u.ns)
-                xmpp_free(conn->ctx, item->u.ns);
-            if (item->u.name)
-                xmpp_free(conn->ctx, item->u.name);
-            if (item->u.type)
-                xmpp_free(conn->ctx, item->u.type);
-            xmpp_free(conn->ctx, item);
+            _free_handlist_item(conn->ctx, item);
             item = next;
         } else
             item = item->next;
