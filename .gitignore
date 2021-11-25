@@ -27,6 +27,8 @@ examples/*.o
 *.la
 *.pc
 *.tar.gz
+*.tar.bz2
+*.tar.xz
 *.zip
 docs/html
 TAGS
