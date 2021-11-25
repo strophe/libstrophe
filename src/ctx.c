@@ -462,18 +462,6 @@ void xmpp_ctx_free(xmpp_ctx_t *ctx)
     xmpp_free(ctx, ctx); /* pull the hole in after us */
 }
 
-/** Set the timeout to use when calling xmpp_run().
- *
- *  @param ctx a Strophe context object
- *  @param timeout the time to wait for events in milliseconds
- *
- *  @ingroup Context
- */
-void xmpp_ctx_set_timeout(xmpp_ctx_t *ctx, unsigned long timeout)
-{
-    ctx->timeout = timeout;
-}
-
 /** Set the verbosity level of a Strophe context.
  *
  *  @param ctx a Strophe context object

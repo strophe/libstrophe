@@ -355,3 +355,15 @@ void xmpp_stop(xmpp_ctx_t *ctx)
     if (ctx->loop_status == XMPP_LOOP_RUNNING)
         ctx->loop_status = XMPP_LOOP_QUIT;
 }
+
+/** Set the timeout to use when calling xmpp_run().
+ *
+ *  @param ctx a Strophe context object
+ *  @param timeout the time to wait for events in milliseconds
+ *
+ *  @ingroup EventLoop
+ */
+void xmpp_ctx_set_timeout(xmpp_ctx_t *ctx, unsigned long timeout)
+{
+    ctx->timeout = timeout;
+}
