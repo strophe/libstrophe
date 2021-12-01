@@ -123,6 +123,7 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
     xmpp_stanza_t *stanza;
     xmpp_stanza_t *error;
     xmpp_stanza_t *item;
+    xmpp_stanza_t *mood;
     char *buf;
     size_t buflen;
     const char *attr[10];
@@ -135,12 +136,29 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
     static const char *str_error =
         "<error type=\"cancel\"><service-unavailable "
         "xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/></error>";
+    // clang-format off
+    static const char *str_mood =
+        "<iq from='juliet@capulet.lit/balcony' id='publish1' type='set'>"
+          "<pubsub xmlns='http://jabber.org/protocol/pubsub'>"
+            "<publish node='http://jabber.org/protocol/mood'>"
+              "<item>"
+                "<mood xmlns='http://jabber.org/protocol/mood'>"
+                  "<annoyed/>"
+                  "<text>curse my nurse!</text>"
+                "</mood>"
+              "</item>"
+            "</publish>"
+          "</pubsub>"
+        "</iq>";
+    // clang-format on
 
     stanza = xmpp_stanza_new_from_string(ctx, str);
     assert(stanza != NULL);
     error =
         xmpp_stanza_reply_error(stanza, "cancel", "service-unavailable", NULL);
     assert(error != NULL);
+    mood = xmpp_stanza_new_from_string(ctx, str_mood);
+    assert(stanza != NULL);
 
     assert(xmpp_stanza_get_to(error) != NULL);
     COMPARE("romeo@montague.lit/home", xmpp_stanza_get_to(error));
@@ -150,6 +168,46 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
     COMPARE("e2e1", xmpp_stanza_get_id(error));
     assert(xmpp_stanza_get_type(error) != NULL);
     COMPARE("error", xmpp_stanza_get_type(error));
+
+    /* FAIL - no list given */
+    item = xmpp_stanza_get_child_by_path(mood, NULL);
+    assert(item == NULL);
+
+    /* FAIL - first entry doesn't match */
+    item = xmpp_stanza_get_child_by_path(mood, "foo", NULL);
+    assert(item == NULL);
+
+    /* FAIL - 'iq' has no namespace */
+    item = xmpp_stanza_get_child_by_path(
+        mood, XMPP_STANZA_NAME_IN_NS("iq", "foobar"),
+        XMPP_STANZA_NAME_IN_NS("pubsub", "http://jabber.org/protocol/pubsub"),
+        "publish", "item", "mood", NULL);
+    assert(item == NULL);
+
+    /* FAIL - 'pubsub' is in another namespace */
+    item = xmpp_stanza_get_child_by_path(
+        mood, "iq",
+        XMPP_STANZA_NAME_IN_NS("pubsub", "http://jabber.org/protocol/foobar"),
+        "publish", "item", "mood", NULL);
+    assert(item == NULL);
+
+    item = xmpp_stanza_get_child_by_path(mood, "iq", "pubsub", "publish",
+                                                "item", "mood", NULL);
+    assert(item != NULL);
+    assert(xmpp_stanza_get_children(item) != NULL);
+    assert(xmpp_stanza_get_name(xmpp_stanza_get_children(item)) != NULL);
+    COMPARE("annoyed", xmpp_stanza_get_name(xmpp_stanza_get_children(item)));
+
+    item = xmpp_stanza_get_child_by_path(
+        mood, "iq",
+        XMPP_STANZA_NAME_IN_NS("pubsub", "http://jabber.org/protocol/pubsub"),
+        "publish", "item",
+        XMPP_STANZA_NAME_IN_NS("mood", "http://jabber.org/protocol/mood"),
+        NULL);
+    assert(item != NULL);
+    assert(xmpp_stanza_get_children(item) != NULL);
+    assert(xmpp_stanza_get_name(xmpp_stanza_get_children(item)) != NULL);
+    COMPARE("annoyed", xmpp_stanza_get_name(xmpp_stanza_get_children(item)));
 
     ret = xmpp_stanza_get_attributes(error, attr, attrlen);
     /* attr contains both attribute name and value. */
@@ -163,6 +221,7 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
     COMPARE(str_error, buf);
 
     xmpp_free(ctx, buf);
+    xmpp_stanza_release(mood);
     xmpp_stanza_release(stanza);
     xmpp_stanza_release(error);
 }

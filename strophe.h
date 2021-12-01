@@ -406,6 +406,9 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_ns(xmpp_stanza_t *stanza,
 xmpp_stanza_t *xmpp_stanza_get_child_by_name_and_ns(xmpp_stanza_t *stanza,
                                                     const char *name,
                                                     const char *ns);
+/* helper macro for names with a namespace */
+#define XMPP_STANZA_NAME_IN_NS(name, ns) name "[@ns='" ns "']"
+xmpp_stanza_t *xmpp_stanza_get_child_by_path(xmpp_stanza_t *stanza, ...);
 xmpp_stanza_t *xmpp_stanza_get_next(xmpp_stanza_t *stanza);
 int xmpp_stanza_add_child(xmpp_stanza_t *stanza, xmpp_stanza_t *child);
 int xmpp_stanza_add_child_ex(xmpp_stanza_t *stanza,

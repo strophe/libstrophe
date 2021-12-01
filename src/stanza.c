@@ -844,6 +844,82 @@ const char *xmpp_stanza_get_from(xmpp_stanza_t *stanza)
     return xmpp_stanza_get_attribute(stanza, "from");
 }
 
+/** Get the first child of stanza following a path-like list of names.
+ *  This function searches the children and their children that match
+ *  the given path.
+ *
+ *  * "name" - Search 'name'
+ *
+ *  * "name[@ns='foo']" - Search 'name' which is in the namespace 'foo'
+ *
+ *  The Syntax to pass namespaces is inspired by the XPATH way of passing
+ *  attributes.
+ *
+ *  The namespace syntax only supports single quotes `'`.
+ *
+ *  The \ref XMPP_STANZA_NAME_IN_NS macro is provided as a helper for names
+ *  in namespaces.
+ *
+ *  @param stanza a Strophe stanza object
+ *  @param ... a var-args list that must be terminated by a NULL entry
+ *
+ *  @return the matching child stanza object or NULL if no match was found
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_stanza_get_child_by_path(xmpp_stanza_t *stanza, ...)
+{
+    xmpp_stanza_t *child = NULL;
+    char *p, *tok, *attr, *saveattr, *ns = NULL;
+    const char *xmlns;
+    va_list ap;
+
+    va_start(ap, stanza);
+
+    while ((p = va_arg(ap, char *)) != NULL) {
+        tok = xmpp_strdup(stanza->ctx, p);
+        if (!tok) {
+            child = NULL;
+            break;
+        }
+        saveattr = ns = NULL;
+        attr = xmpp_strtok_r(tok, "[", &saveattr);
+        if (attr) {
+            attr = xmpp_strtok_r(NULL, "]", &saveattr);
+            if (attr) {
+                if (!strncmp(attr, "@ns='", 5)) {
+                    ns = attr + 5;
+                    xmpp_strtok_r(ns, "'", &saveattr);
+                }
+            }
+        }
+        if (!child) {
+            if (strcmp(xmpp_stanza_get_name(stanza), tok))
+                goto error_out;
+
+            if (ns) {
+                xmlns = xmpp_stanza_get_ns(stanza);
+                if (!xmlns || strcmp(xmlns, ns))
+                    goto error_out;
+            }
+            child = stanza;
+        } else {
+            if (!ns)
+                child = xmpp_stanza_get_child_by_name(child, tok);
+            else
+                child = xmpp_stanza_get_child_by_name_and_ns(child, tok, ns);
+        }
+error_out:
+        xmpp_free(stanza->ctx, tok);
+        if (!child)
+            break;
+    }
+
+    va_end(ap);
+
+    return p == NULL ? child : NULL;
+}
+
 /** Get the first child of stanza with name.
  *  This function searches all the immediate children of stanza for a child
  *  stanza that matches the name.  The first matching child is returned.

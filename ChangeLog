@@ -1,5 +1,7 @@
 0.12.0
 	- Add code coverage support
+	- New API:
+		- xmpp_stanza_get_child_by_path()
 
 0.11.0
 	- SASL EXTERNAL support (XEP-0178)
