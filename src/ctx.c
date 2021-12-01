@@ -440,6 +440,7 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *mem, const xmpp_log_t *log)
         ctx->loop_status = XMPP_LOOP_NOTSTARTED;
         ctx->rand = xmpp_rand_new(ctx);
         ctx->timeout = EVENT_LOOP_DEFAULT_TIMEOUT;
+        ctx->verbosity = 0;
         if (ctx->rand == NULL) {
             xmpp_free(ctx, ctx);
             ctx = NULL;
