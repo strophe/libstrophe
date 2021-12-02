@@ -57,13 +57,13 @@ static gnutls_x509_crt_t _tls_load_cert(xmpp_conn_t *conn)
     if (gnutls_x509_crt_init(&cert) < 0)
         return NULL;
     if (gnutls_load_file(conn->tls_client_cert, &data) < 0)
-        goto LBL_ERR;
+        goto error_out;
     res = gnutls_x509_crt_import(cert, &data, GNUTLS_X509_FMT_PEM);
     gnutls_free(data.data);
     if (res < 0)
-        goto LBL_ERR;
+        goto error_out;
     return cert;
-LBL_ERR:
+error_out:
     gnutls_x509_crt_deinit(cert);
     return NULL;
 }

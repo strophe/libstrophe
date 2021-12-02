@@ -398,25 +398,25 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
 
     BIO *b = BIO_new(BIO_s_mem());
     if (!b)
-        goto ERR_OUT;
+        goto error_out;
     PEM_write_bio_X509(b, cert);
     BUF_MEM *bptr;
     BIO_get_mem_ptr(b, &bptr);
     tlscert->pem = xmpp_alloc(ctx, bptr->length + 1);
     if (!tlscert->pem)
-        goto ERR_OUT;
+        goto error_out;
     memcpy(tlscert->pem, bptr->data, bptr->length);
     tlscert->pem[bptr->length] = '\0';
     BIO_free(b);
 
     subject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
     if (!subject)
-        goto ERR_OUT;
+        goto error_out;
     tlscert->elements[XMPP_CERT_SUBJECT] = xmpp_strdup(ctx, subject);
     OPENSSL_free(subject);
     issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
     if (!issuer)
-        goto ERR_OUT;
+        goto error_out;
     tlscert->elements[XMPP_CERT_ISSUER] = xmpp_strdup(ctx, issuer);
     OPENSSL_free(issuer);
 
@@ -466,7 +466,7 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
     }
 
     return tlscert;
-ERR_OUT:
+error_out:
     xmpp_tlscert_free(tlscert);
     return NULL;
 }
