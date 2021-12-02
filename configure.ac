@@ -44,6 +44,23 @@ if test "x$enable_fuzzing" = "xyes" ; then
     fi
 fi
 
+AC_ARG_ENABLE([coverage],
+    [AS_HELP_STRING([--enable-coverage], [turn on coverage for tests])],
+    [case "${enableval}" in yes) coverage=true ;; no)  coverage=false ;; *) AC_MSG_ERROR([bad value ${enableval} for --enable-coverage]) ;; esac],[coverage=false])
+AM_CONDITIONAL([COVERAGE], [test x$coverage = xtrue])
+
+if test "$enable_coverage" = "yes"; then
+    COVERAGE_CFLAGS="--coverage -g"
+    COVERAGE_LDFLAGS="--coverage -lgcov"
+    COVERAGE_PRE="-Wl,--whole-archive"
+    COVERAGE_POST="-Wl,--no-whole-archive"
+else
+    COVERAGE_CFLAGS=""
+    COVERAGE_LDFLAGS=""
+    COVERAGE_PRE=""
+    COVERAGE_POST=""
+fi
+
 AC_SEARCH_LIBS([socket], [network socket])
 AC_CHECK_FUNCS([snprintf vsnprintf])
 AC_CHECK_DECLS([va_copy], [], [], [#include <stdarg.h>])
@@ -174,6 +191,10 @@ AC_SUBST([PC_REQUIRES], [${PC_REQUIRES}])
 AC_SUBST([PC_CFLAGS], [${PC_CFLAGS}])
 AC_SUBST([PC_LIBS], [${PC_LIBS}])
 
+AC_SUBST(COVERAGE_CFLAGS)
+AC_SUBST(COVERAGE_LDFLAGS)
+AC_SUBST(COVERAGE_PRE)
+AC_SUBST(COVERAGE_POST)
 AC_SUBST(PARSER_CFLAGS)
 AC_SUBST(PARSER_LIBS)
 AC_SUBST(RESOLV_CFLAGS)

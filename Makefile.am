@@ -2,6 +2,11 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 ACLOCAL_AMFLAGS = -I m4
 
+COVERAGE_CFLAGS=@COVERAGE_CFLAGS@
+COVERAGE_LDFLAGS=@COVERAGE_LDFLAGS@
+COVERAGE_PRE=@COVERAGE_PRE@
+COVERAGE_POST=@COVERAGE_POST@
+
 PARSER_CFLAGS=@PARSER_CFLAGS@
 PARSER_LIBS=@PARSER_LIBS@
 
@@ -18,12 +23,12 @@ RESOLV_LIBS = @RESOLV_LIBS@
 
 WARNING_FLAGS = @WARNING_FLAGS@
 STROPHE_FLAGS = -I$(top_srcdir) $(WARNING_FLAGS)
-STROPHE_LIBS = libstrophe.la
+STROPHE_LIBS = $(COVERAGE_PRE) libstrophe.la $(COVERAGE_POST) $(COVERAGE_LDFLAGS)
 
 ## Main build targets
 lib_LTLIBRARIES = libstrophe.la
 
-libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS) $(RESOLV_CFLAGS)
+libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS) $(RESOLV_CFLAGS) $(COVERAGE_CFLAGS)
 libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(RESOLV_LIBS) -no-undefined
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_'
@@ -255,3 +260,13 @@ format:
 	@echo "   * run clang-format on all sources"
 	@dos2unix -q src/*.[ch] *.h tests/*.[ch] examples/*.c
 	@clang-format -i src/*.[ch] *.h tests/*.[ch] examples/*.c
+
+if COVERAGE
+MOSTLYCLEANFILES = src/*.gcno src/*.gcda coverage.info
+clean-local:
+	-rm -rf coverage/
+
+coverage: check
+	@lcov --capture --no-external --directory src -q --output-file coverage.info
+	@genhtml coverage.info --output-directory coverage -q
+endif

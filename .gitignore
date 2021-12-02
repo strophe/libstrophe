@@ -20,6 +20,8 @@ autom4te.cache
 .dirstamp
 .deps
 .sconsign*
+src/*.gcda
+src/*.gcno
 src/*.o
 src/*.lo
 examples/*.o
@@ -72,3 +74,6 @@ expat/
 .settings/
 .project
 .cproject
+coverage/
+coverage.info
+configure~

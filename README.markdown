@@ -42,17 +42,30 @@ another path use the `--prefix` option during configure, e.g.:
 Run script `build-android.sh` and follow the instructions. You will
 need expat sources and android-ndk.
 
+### Code Coverage
+
+If you want to create a code coverage report, run:
+
+    ./configure --enable-coverage
+    make coverage
+
+The coverage report can be found in `./coverage/index.html`.
+
+
 Requirements
 ------------
 
 libstrophe requires:
 
-- expat or libxml2 - expat is the default; use --with-libxml2 to
+- expat or libxml2 - expat is the default; use `--with-libxml2` to
   switch
-- openssl on UNIX systems
+- openssl or GnuTLS on UNIX systems - openssl is default; use
+  `--with-gnutls` to switch
 
-To build libstrophe using autotools you will need autoconf, automake,
-libtool and pkg-config.
+To build libstrophe using autotools you will need `autoconf`,
+`automake`, `libtool` and `pkg-config`.
+
+To run code coverage analysis you will need `gcov` and `lcov`.
 
 Installation
 ------------
