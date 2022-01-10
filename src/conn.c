@@ -241,6 +241,19 @@ void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval)
     }
 }
 
+/** Get the socket of a connection object
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return the socket of the connection
+ *
+ *  @ingroup Connections
+ */
+int xmpp_conn_get_socket(xmpp_conn_t *conn)
+{
+    return conn->sock;
+}
+
 /** Release a Strophe connection object.
  *  Decrement the reference count by one for a connection, freeing the
  *  connection object if the count reaches 0.
