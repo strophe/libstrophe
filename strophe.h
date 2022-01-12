@@ -17,6 +17,7 @@
 #define __LIBSTROPHE_STROPHE_H__
 
 #include <stddef.h> /* size_t */
+#include <stdint.h> /* uint64_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -487,6 +488,9 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout);
 void xmpp_run(xmpp_ctx_t *ctx);
 void xmpp_stop(xmpp_ctx_t *ctx);
 void xmpp_ctx_set_timeout(xmpp_ctx_t *ctx, unsigned long timeout);
+int xmpp_run_send(xmpp_ctx_t *ctx);
+void xmpp_run_recv(xmpp_ctx_t *ctx, xmpp_conn_t *conn);
+uint64_t xmpp_run_timers(xmpp_ctx_t *ctx);
 
 /* TLS certificates */
 
