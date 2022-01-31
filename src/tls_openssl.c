@@ -358,6 +358,7 @@ _get_alg(const xmpp_ctx_t *ctx, X509 *err_cert, xmpp_cert_element_t el)
     switch (el) {
     case XMPP_CERT_KEYALG: {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+        UNUSED(rc);
         alg_nid = OBJ_obj2nid(err_cert->cert_info->key->algor->algorithm);
 #else
         X509_PUBKEY *pubkey = X509_get_X509_PUBKEY(err_cert);
