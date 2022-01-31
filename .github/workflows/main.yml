@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  linux-tests:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        configure_options:
+           - "--without-libxml2"
+           - "--with-libxml2"
+           - "--with-gnutls"
+           - "--disable-tls"
+           - "--enable-cares"
+
+    name: Regular Tests
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libgnutls28-dev libc-ares-dev
+      - name: Build the library
+        run: |
+          ./bootstrap.sh
+          ./configure ${{ matrix.configure_options }} CFLAGS="-Werror -g3"
+          make -j5
+      - name: Run tests
+        run: |
+          make check
+
+  libressl-tests:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        libressl_versions:
+           - "v3.1.4"
+           - "v2.1.7"
+
+    name: LibreSSL tests
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libgnutls28-dev libc-ares-dev
+      - name: build&install libressl
+        env:
+           LIBRESSL_COMMIT: ${{ matrix.libressl_versions }}
+        run: |
+          ./travis/before_script.sh
+      - name: Build the library
+        run: |
+          ./bootstrap.sh
+          ./configure PKG_CONFIG_PATH="${HOME}/libressl/lib/pkgconfig"  CFLAGS="-Werror -g3"
+          make -j5
+      - name: Run tests
+        run: |
+          make check
+
+  code-style:
+    runs-on: ubuntu-20.04
+    name: Check coding style
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libgnutls28-dev libc-ares-dev dos2unix
+      - name: Configure
+        run: |
+          ./bootstrap.sh
+          ./configure
+      - name: Check style
+        run: |
+          make format
+          git diff --exit-code

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "x$LIBRESSL" = "xyes" ]; then
+if [ "x$LIBRESSL_COMMIT" != "x" ]; then
     cd "$HOME"
     git clone https://github.com/libressl-portable/portable.git libressl-git
     cd libressl-git
