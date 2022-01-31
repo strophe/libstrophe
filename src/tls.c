@@ -112,7 +112,6 @@ const char *xmpp_tlscert_get_string(const xmpp_tlscert_t *cert,
  *
  *  c.f. \ref xmpp_cert_element_t for details.
  *
- *  @param cert a Strophe TLS certificate object
  *  @param elmnt which element
  *
  *  @return a string with the description

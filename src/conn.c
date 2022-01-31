@@ -14,6 +14,9 @@
  */
 
 /** @defgroup Connections Connection management
+ *  These functions manage a connection object.
+ *
+ *  A part of those functions is listed under the \ref TLS section.
  */
 
 #include <errno.h>
@@ -414,7 +417,6 @@ void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid)
  *  @param conn a Strophe connection object
  *  @param hndl certfail Handler function
  *
- *  @ingroup Connections
  *  @ingroup TLS
  */
 void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
@@ -426,9 +428,8 @@ void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
 /** Set the CAfile
  *
  *  @param conn a Strophe connection object
- *  @param cert path to a certificate file
+ *  @param path path to a certificate file
  *
- *  @ingroup Connections
  *  @ingroup TLS
  */
 void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
@@ -439,9 +440,8 @@ void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
 /** Set the CApath
  *
  *  @param conn a Strophe connection object
- *  @param cert path to a folder containing certificates
+ *  @param path path to a folder containing certificates
  *
- *  @ingroup Connections
  *  @ingroup TLS
  */
 void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path)
@@ -458,7 +458,6 @@ void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path)
  *
  *  @return a Strophe Certificate object
  *
- *  @ingroup Connections
  *  @ingroup TLS
  */
 xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn)
@@ -476,7 +475,6 @@ xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn)
  *  @param cert path to a certificate file
  *  @param key path to a private key file
  *
- *  @ingroup Connections
  *  @ingroup TLS
  */
 void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
@@ -498,7 +496,6 @@ void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
  *
  *  @return the number of xmppAddr entries in the client certificate
  *
- *  @ingroup Connections
  *  @ingroup TLS
  */
 unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *const conn)
@@ -513,7 +510,6 @@ unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *const conn)
  *
  *  @return a string containing the xmppAddr or NULL if n is out of range
  *
- *  @ingroup Connections
  *  @ingroup TLS
  */
 char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *const conn, unsigned int n)

@@ -1271,7 +1271,7 @@ copy_error:
  *  Check https://tools.ietf.org/html/rfc6120#section-8.3 for details.
  *
  *  @param stanza a Strophe stanza object
- *  @param error_type type attribute in the <error/> child element
+ *  @param error_type type attribute in the `<error/>` child element
  *  @param condition the defined-condition (e.g. "item-not-found")
  *  @param text optional description, may be NULL
  *
@@ -1386,7 +1386,7 @@ static xmpp_stanza_t *_stanza_new_with_attrs(xmpp_ctx_t *ctx,
     return stanza;
 }
 
-/** Create a <message/> stanza object with given attributes.
+/** Create a `<message/>` stanza object with given attributes.
  *  Attributes are optional and may be NULL.
  *
  *  @param ctx a Strophe context object
@@ -1406,13 +1406,13 @@ xmpp_stanza_t *xmpp_message_new(xmpp_ctx_t *ctx,
     return _stanza_new_with_attrs(ctx, "message", type, id, to);
 }
 
-/** Get text from <body/> child element.
+/** Get text from `<body/>` child element.
  *  This function returns new allocated string. The caller is responsible
  *  for freeing this string with xmpp_free().
  *
- *  @param msg well formed <message/> stanza
+ *  @param msg well formed `<message/>` stanza
  *
- *  @return allocated string or NULL on failure (no <body/> element or
+ *  @return allocated string or NULL on failure (no `<body/>` element or
  *      memory allocation error)
  *
  *  @ingroup Stanza
@@ -1431,9 +1431,10 @@ char *xmpp_message_get_body(xmpp_stanza_t *msg)
     return text;
 }
 
-/** Add <body/> child element to a <message/> stanza with the given text.
+/** Add `<body/>` child element to a `<message/>` stanza with the given text.
  *
- *  @param msg a <message> stanza object without <body/> child element.
+ *  @param msg a `<message>` stanza object without `<body/>` child element.
+ *  @param text The text that shall be placed in the body.
  *
  *  @return 0 on success (XMPP_EOK), and a number less than 0 on failure
  *      (XMPP_EMEM, XMPP_EINVOP)
@@ -1448,7 +1449,7 @@ int xmpp_message_set_body(xmpp_stanza_t *msg, const char *text)
     const char *name;
     int ret;
 
-    /* check that msg is a <message/> stanza and doesn't contain <body/> */
+    /* check that msg is a `<message/>` stanza and doesn't contain `<body/>` */
     name = xmpp_stanza_get_name(msg);
     body = xmpp_stanza_get_child_by_name(msg, "body");
     if (!name || strcmp(name, "message") != 0 || body)
@@ -1475,7 +1476,7 @@ int xmpp_message_set_body(xmpp_stanza_t *msg, const char *text)
     return ret;
 }
 
-/** Create an <iq/> stanza object with given attributes.
+/** Create an `<iq/>` stanza object with given attributes.
  *  Attributes are optional and may be NULL.
  *
  *  @param ctx a Strophe context object
@@ -1491,7 +1492,7 @@ xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char *type, const char *id)
     return _stanza_new_with_attrs(ctx, "iq", type, id, NULL);
 }
 
-/** Create a <presence/> stanza object.
+/** Create a `<presence/>` stanza object.
  *
  *  @param ctx a Strophe context object
  *
