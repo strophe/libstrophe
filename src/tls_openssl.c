@@ -572,7 +572,6 @@ tls_t *tls_new(xmpp_conn_t *conn)
                                               conn->tls_capath) == 0) {
                 xmpp_error(tls->ctx, "tls",
                            "SSL_CTX_load_verify_locations() failed");
-                _tls_log_error(tls->ctx);
                 goto err_free_cert;
             }
         }
@@ -811,13 +810,13 @@ static void _tls_set_error(tls_t *tls, int error)
 static void _tls_log_error(xmpp_ctx_t *ctx)
 {
     unsigned long e;
-    char buf[256];
 
     do {
         e = ERR_get_error();
         if (e != 0) {
-            ERR_error_string_n(e, buf, sizeof(buf));
-            xmpp_debug(ctx, "tls", "%s", buf);
+            xmpp_debug(ctx, "tls", "error:%08uX:%s:%s:%s", e,
+                       ERR_lib_error_string(e), ERR_func_error_string(e),
+                       ERR_reason_error_string(e));
         }
     } while (e != 0);
 }
@@ -857,11 +856,7 @@ static X509 *_tls_cert_read(xmpp_conn_t *conn)
     X509 *c = PEM_read_bio_X509(f, NULL, NULL, NULL);
     BIO_free(f);
     if (!c) {
-        unsigned long error;
-        while ((error = ERR_get_error()) != 0) {
-            xmpp_debug(conn->ctx, "tls", "c == NULL: %s",
-                       ERR_error_string(error, NULL));
-        }
+        _tls_log_error(conn->ctx);
     }
     return c;
 }
