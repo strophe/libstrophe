@@ -1,4 +1,13 @@
-AC_INIT([libstrophe], [0.11.0], [jack@metajack.im])
+m4_define([v_maj], [0])
+m4_define([v_min], [11])
+m4_define([v_patch], [0])
+m4_define([project_version], [v_maj.v_min.v_patch])
+
+m4_define([lt_cur], m4_eval(v_maj + v_min))
+m4_define([lt_rev], v_patch)
+m4_define([lt_age], v_min)
+
+AC_INIT([libstrophe], [project_version], [jack@metajack.im])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT([dlopen])
@@ -186,6 +195,21 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AM_CONDITIONAL([DISABLE_TLS], [test x$enable_tls = xno])
 AM_CONDITIONAL([TLS_WITH_GNUTLS], [test x$with_gnutls = xyes])
+
+# define while compiling
+AC_DEFINE_UNQUOTED(LIBXMPP_VERSION_MAJOR, [v_maj], [Major version])
+AC_DEFINE_UNQUOTED(LIBXMPP_VERSION_MINOR, [v_min], [Minor version])
+
+VMAJ=v_maj
+VMIN=v_min
+AC_SUBST(VMAJ)
+AC_SUBST(VMIN)
+# define in package-config file
+PC_CFLAGS="${PC_CFLAGS} -DLIBXMPP_VERSION_MAJOR=${VMAJ} -DLIBXMPP_VERSION_MINOR=${VMIN}"
+
+# set the SO version of the installed library
+VERSION_INFO="lt_cur:lt_rev:lt_age"
+AC_SUBST([VERSION_INFO])
 
 AC_SUBST([PC_REQUIRES], [${PC_REQUIRES}])
 AC_SUBST([PC_CFLAGS], [${PC_CFLAGS}])
