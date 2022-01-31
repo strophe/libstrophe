@@ -123,6 +123,7 @@ noinst_PROGRAMS = \
 	examples/active \
 	examples/basic \
 	examples/bot \
+	examples/complex \
 	examples/component \
 	examples/roster \
 	examples/uuid \
@@ -138,6 +139,9 @@ examples_basic_LDADD = $(STROPHE_LIBS)
 examples_bot_SOURCES = examples/bot.c
 examples_bot_CFLAGS = $(STROPHE_FLAGS)
 examples_bot_LDADD = $(STROPHE_LIBS)
+examples_complex_SOURCES = examples/complex.c
+examples_complex_CFLAGS = $(STROPHE_FLAGS)
+examples_complex_LDADD = $(STROPHE_LIBS)
 examples_component_SOURCES = examples/component.c
 examples_component_CFLAGS = $(STROPHE_FLAGS)
 examples_component_LDADD = $(STROPHE_LIBS)

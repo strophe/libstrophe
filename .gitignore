@@ -38,6 +38,7 @@ tags
 examples/active
 examples/basic
 examples/bot
+examples/complex
 examples/component
 examples/register
 examples/roster
