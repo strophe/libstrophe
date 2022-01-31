@@ -1213,8 +1213,8 @@ int xmpp_stanza_del_attribute(xmpp_stanza_t *stanza, const char *name)
 }
 
 /** Create a stanza object in reply to another.
- *  This function makes a copy of a stanza object with the attribute “to” set
- *  its original “from”.
+ *  This function makes a copy of a stanza object with the attribute "to" set
+ *  its original "from".
  *  The stanza will have a reference count of one, so the caller does not
  *  need to clone it.
  *

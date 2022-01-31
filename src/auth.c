@@ -1279,7 +1279,7 @@ int _handle_component_auth(xmpp_conn_t *conn)
         return XMPP_EINT;
     }
 
-    /* Feed the session id and passphrase to the algorithm.
+    /* Feed the session id and passphrase to the algorithm.
      * We need to compute SHA1(session_id + passphrase)
      */
     crypto_SHA1_Init(&mdctx);
