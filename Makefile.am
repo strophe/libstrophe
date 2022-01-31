@@ -103,6 +103,7 @@ EXTRA_DIST = \
 	MIT-LICENSE.txt \
 	bootstrap.sh \
 	build-android.sh \
+	testbuild.sh \
 	examples/README.md \
 	jni/Android.mk \
 	jni/Application.mk \
@@ -270,3 +271,22 @@ coverage: check
 	@lcov --capture --no-external --directory src -q --output-file coverage.info
 	@genhtml coverage.info --output-directory coverage -q
 endif
+
+
+release:
+	$(MAKE) dist
+	$(MAKE) dist-bzip2
+	$(MAKE) dist-xz
+
+test-release: release
+	@touch testbuild-$(PACKAGE_VERSION).log && ln -sf testbuild-$(PACKAGE_VERSION).log testbuild.log
+	@mkdir -p test-release && cp $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.* test-release && pushd test-release && \
+		tar xJf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.xz  && pushd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./testbuild.sh && popd && rm -rf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
+		tar xjf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.bz2 && pushd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./testbuild.sh && popd && rm -rf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
+		tar xzf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz  && pushd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./testbuild.sh && popd && rm -rf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
+		echo "Success" && popd
+
+docs:
+	@doxygen -q
+
+.PHONY: docs test-release

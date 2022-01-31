@@ -43,6 +43,8 @@ examples/register
 examples/roster
 examples/uuid
 examples/vcard
+testbuild*.log
+test-release/
 test_stamp
 test-suite.log
 tests/*.o
