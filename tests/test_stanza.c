@@ -192,7 +192,7 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
     assert(item == NULL);
 
     item = xmpp_stanza_get_child_by_path(mood, "iq", "pubsub", "publish",
-                                                "item", "mood", NULL);
+                                         "item", "mood", NULL);
     assert(item != NULL);
     assert(xmpp_stanza_get_children(item) != NULL);
     assert(xmpp_stanza_get_name(xmpp_stanza_get_children(item)) != NULL);
