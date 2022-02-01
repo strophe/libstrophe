@@ -145,14 +145,14 @@ const char *xmpp_tlscert_get_description(xmpp_cert_element_t elmnt)
  */
 xmpp_tlscert_t *tlscert_new(xmpp_ctx_t *ctx)
 {
-    xmpp_tlscert_t *tlscert = xmpp_alloc(ctx, sizeof(*tlscert));
+    xmpp_tlscert_t *tlscert = strophe_alloc(ctx, sizeof(*tlscert));
     if (!tlscert)
         return NULL;
     memset(tlscert, 0, sizeof(*tlscert));
 
-    tlscert->dnsnames = xmpp_alloc(ctx, sizeof(*tlscert->dnsnames));
+    tlscert->dnsnames = strophe_alloc(ctx, sizeof(*tlscert->dnsnames));
     if (!tlscert->dnsnames) {
-        xmpp_free(ctx, tlscert);
+        strophe_free(ctx, tlscert);
         return NULL;
     }
     memset(tlscert->dnsnames, 0, sizeof(*tlscert->dnsnames));
@@ -173,19 +173,19 @@ void xmpp_tlscert_free(xmpp_tlscert_t *cert)
     size_t n;
     for (n = 0; n < ARRAY_SIZE(cert->elements); ++n) {
         if (cert->elements[n])
-            xmpp_free(cert->ctx, cert->elements[n]);
+            strophe_free(cert->ctx, cert->elements[n]);
     }
     if (cert->dnsnames->data) {
         for (n = 0; n < cert->dnsnames->cur; ++n) {
             if (cert->dnsnames->data[n])
-                xmpp_free(cert->ctx, cert->dnsnames->data[n]);
+                strophe_free(cert->ctx, cert->dnsnames->data[n]);
         }
     }
-    xmpp_free(cert->ctx, cert->dnsnames->data);
-    xmpp_free(cert->ctx, cert->dnsnames);
+    strophe_free(cert->ctx, cert->dnsnames->data);
+    strophe_free(cert->ctx, cert->dnsnames);
     if (cert->pem)
-        xmpp_free(cert->ctx, cert->pem);
-    xmpp_free(cert->ctx, cert);
+        strophe_free(cert->ctx, cert->pem);
+    strophe_free(cert->ctx, cert);
 }
 
 /** Add a dnsName to the Strophe TLS certificate object.
@@ -199,15 +199,15 @@ int tlscert_add_dnsname(xmpp_tlscert_t *cert, const char *dnsname)
 {
     if ((cert->dnsnames->cur + 1) >= cert->dnsnames->max) {
         char **dnsnames =
-            xmpp_realloc(cert->ctx, cert->dnsnames->data,
-                         (cert->dnsnames->max + tlscert_dnsnames_increment) *
-                             sizeof(char **));
+            strophe_realloc(cert->ctx, cert->dnsnames->data,
+                            (cert->dnsnames->max + tlscert_dnsnames_increment) *
+                                sizeof(char **));
         if (!dnsnames)
             return 1;
         cert->dnsnames->data = dnsnames;
         cert->dnsnames->max += tlscert_dnsnames_increment;
     }
     cert->dnsnames->data[cert->dnsnames->cur++] =
-        xmpp_strdup(cert->ctx, dnsname);
+        strophe_strdup(cert->ctx, dnsname);
     return 0;
 }

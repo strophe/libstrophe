@@ -38,9 +38,9 @@
  *
  *  @return a newly allocated string with the same data as s or NULL on error
  */
-char *xmpp_strdup(const xmpp_ctx_t *ctx, const char *s)
+char *strophe_strdup(const xmpp_ctx_t *ctx, const char *s)
 {
-    return xmpp_strndup(ctx, s, SIZE_MAX);
+    return strophe_strndup(ctx, s, SIZE_MAX);
 }
 
 /** Duplicate a string with a maximum length.
@@ -54,7 +54,7 @@ char *xmpp_strdup(const xmpp_ctx_t *ctx, const char *s)
  *  @return a newly allocated string that contains at most `len` symbols
  *             of the original string or NULL on error
  */
-char *xmpp_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len)
+char *strophe_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len)
 {
     char *copy;
     size_t l;
@@ -63,7 +63,7 @@ char *xmpp_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len)
     if (l > len)
         l = len;
 
-    copy = xmpp_alloc(ctx, l + 1);
+    copy = strophe_alloc(ctx, l + 1);
     if (!copy) {
         xmpp_error(ctx, "xmpp", "failed to allocate required memory");
         return NULL;

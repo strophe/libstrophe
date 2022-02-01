@@ -269,7 +269,7 @@ static void xmpp_rand_reseed(xmpp_rand_t *rand)
 
 xmpp_rand_t *xmpp_rand_new(xmpp_ctx_t *ctx)
 {
-    xmpp_rand_t *out = xmpp_alloc(ctx, sizeof(*out));
+    xmpp_rand_t *out = strophe_alloc(ctx, sizeof(*out));
     if (out != NULL) {
         memset(out, 0, sizeof(*out));
     }
@@ -278,7 +278,7 @@ xmpp_rand_t *xmpp_rand_new(xmpp_ctx_t *ctx)
 
 void xmpp_rand_free(xmpp_ctx_t *ctx, xmpp_rand_t *rand)
 {
-    xmpp_free(ctx, rand);
+    strophe_free(ctx, rand);
 }
 
 void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len)

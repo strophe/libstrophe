@@ -49,12 +49,12 @@ static void _handler_item_remove(xmpp_handlist_t **head, xmpp_handlist_t *item)
 static void _free_handlist_item(xmpp_ctx_t *ctx, xmpp_handlist_t *item)
 {
     if (item->u.ns)
-        xmpp_free(ctx, item->u.ns);
+        strophe_free(ctx, item->u.ns);
     if (item->u.name)
-        xmpp_free(ctx, item->u.name);
+        strophe_free(ctx, item->u.name);
     if (item->u.type)
-        xmpp_free(ctx, item->u.type);
-    xmpp_free(ctx, item);
+        strophe_free(ctx, item->u.type);
+    strophe_free(ctx, item);
 }
 
 /** Fire off all stanza handlers that match.
@@ -98,8 +98,8 @@ void handler_fire_stanza(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
                     /* replace old value */
                     hash_add(conn->id_handlers, id, head);
                 }
-                xmpp_free(conn->ctx, item->u.id);
-                xmpp_free(conn->ctx, item);
+                strophe_free(conn->ctx, item->u.id);
+                strophe_free(conn->ctx, item);
             }
             item = next;
         }
@@ -194,7 +194,7 @@ uint64_t handler_fire_timed(xmpp_ctx_t *ctx)
                 if (!ret) {
                     /* delete handler if it returned false */
                     _handler_item_remove(&conn->timed_handlers, item);
-                    xmpp_free(ctx, item);
+                    strophe_free(ctx, item);
                 }
             } else if (min > (item->u.period - elapsed))
                 min = item->u.period - elapsed;
@@ -225,7 +225,7 @@ uint64_t handler_fire_timed(xmpp_ctx_t *ctx)
             if (!ret) {
                 /* delete handler if it returned false */
                 _handler_item_remove(&ctx->timed_handlers, item);
-                xmpp_free(ctx, item);
+                strophe_free(ctx, item);
             }
         } else if (min > (item->u.period - elapsed))
             min = item->u.period - elapsed;
@@ -275,7 +275,7 @@ static void _timed_handler_add(xmpp_ctx_t *ctx,
         return;
 
     /* build new item */
-    item = xmpp_alloc(ctx, sizeof(xmpp_handlist_t));
+    item = strophe_alloc(ctx, sizeof(xmpp_handlist_t));
     if (!item)
         return;
 
@@ -302,7 +302,7 @@ static void _timed_handler_delete(xmpp_ctx_t *ctx,
         item = *handlers_list;
         if (item->handler == handler) {
             *handlers_list = item->next;
-            xmpp_free(ctx, item);
+            strophe_free(ctx, item);
         } else {
             handlers_list = &item->next;
         }
@@ -342,7 +342,7 @@ static void _id_handler_add(xmpp_conn_t *conn,
         return;
 
     /* build new item */
-    item = xmpp_alloc(conn->ctx, sizeof(xmpp_handlist_t));
+    item = strophe_alloc(conn->ctx, sizeof(xmpp_handlist_t));
     if (!item)
         return;
 
@@ -352,9 +352,9 @@ static void _id_handler_add(xmpp_conn_t *conn,
     item->enabled = 0;
     item->next = NULL;
 
-    item->u.id = xmpp_strdup(conn->ctx, id);
+    item->u.id = strophe_strdup(conn->ctx, id);
     if (!item->u.id) {
-        xmpp_free(conn->ctx, item);
+        strophe_free(conn->ctx, item);
         return;
     }
 
@@ -399,8 +399,8 @@ void xmpp_id_handler_delete(xmpp_conn_t *conn,
                 hash_add(conn->id_handlers, id, next);
             }
 
-            xmpp_free(conn->ctx, item->u.id);
-            xmpp_free(conn->ctx, item);
+            strophe_free(conn->ctx, item->u.id);
+            strophe_free(conn->ctx, item);
             item = next;
         } else {
             prev = item;
@@ -412,7 +412,7 @@ void xmpp_id_handler_delete(xmpp_conn_t *conn,
 static int _dup_string(xmpp_ctx_t *ctx, const char *src, char **dest)
 {
     if (src) {
-        *dest = xmpp_strdup(ctx, src);
+        *dest = strophe_strdup(ctx, src);
         if (!(*dest))
             return 1;
     }
@@ -443,7 +443,7 @@ static void _handler_add(xmpp_conn_t *conn,
         return;
 
     /* build new item */
-    item = (xmpp_handlist_t *)xmpp_alloc(conn->ctx, sizeof(xmpp_handlist_t));
+    item = (xmpp_handlist_t *)strophe_alloc(conn->ctx, sizeof(xmpp_handlist_t));
     if (!item)
         return;
 
@@ -673,7 +673,7 @@ void handler_system_delete_all(xmpp_conn_t *conn)
         if (!item->user_handler) {
             next = item->next;
             _handler_item_remove(&conn->timed_handlers, item);
-            xmpp_free(conn->ctx, item);
+            strophe_free(conn->ctx, item);
             item = next;
         } else
             item = item->next;
@@ -688,8 +688,8 @@ void handler_system_delete_all(xmpp_conn_t *conn)
             if (!item->user_handler) {
                 next = item->next;
                 _handler_item_remove(&head, item);
-                xmpp_free(conn->ctx, item->u.id);
-                xmpp_free(conn->ctx, item);
+                strophe_free(conn->ctx, item->u.id);
+                strophe_free(conn->ctx, item);
                 item = next;
             } else
                 item = item->next;

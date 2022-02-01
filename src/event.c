@@ -137,11 +137,11 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
             xmpp_debug(conn->ctx, "conn", "SENT: %s", sq->data);
             xmpp_debug_verbose(1, ctx, "xmpp",
                                "Finished writing queue element: %p.", sq);
-            xmpp_free(ctx, sq->data);
+            strophe_free(ctx, sq->data);
             tsq = sq;
             sq = sq->next;
             conn->send_queue_len--;
-            xmpp_free(ctx, tsq);
+            strophe_free(ctx, tsq);
 
             /* pop the top item */
             conn->send_queue_head = sq;

@@ -47,7 +47,7 @@ char *xmpp_jid_new(xmpp_ctx_t *ctx,
     len = nlen + dlen + rlen;
 
     /* concat components */
-    result = xmpp_alloc(ctx, len + 1);
+    result = strophe_alloc(ctx, len + 1);
     if (result != NULL) {
         if (node != NULL) {
             memcpy(result, node, nlen - 1);
@@ -77,7 +77,7 @@ char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid)
     size_t len;
 
     len = strcspn(jid, "/");
-    result = xmpp_alloc(ctx, len + 1);
+    result = strophe_alloc(ctx, len + 1);
     if (result != NULL) {
         memcpy(result, jid, len);
         result[len] = '\0';
@@ -101,7 +101,7 @@ char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid)
 
     c = strchr(jid, '@');
     if (c != NULL) {
-        result = xmpp_alloc(ctx, (c - jid) + 1);
+        result = strophe_alloc(ctx, (c - jid) + 1);
         if (result != NULL) {
             memcpy(result, jid, (c - jid));
             result[c - jid] = '\0';
@@ -133,7 +133,7 @@ char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
         c++;
     }
     dlen = strcspn(c, "/"); /* do not include resource */
-    result = xmpp_alloc(ctx, dlen + 1);
+    result = strophe_alloc(ctx, dlen + 1);
     if (result != NULL) {
         memcpy(result, c, dlen);
         result[dlen] = '\0';
@@ -155,5 +155,5 @@ char *xmpp_jid_resource(xmpp_ctx_t *ctx, const char *jid)
     const char *c;
 
     c = strchr(jid, '/');
-    return c != NULL ? xmpp_strdup(ctx, c + 1) : NULL;
+    return c != NULL ? strophe_strdup(ctx, c + 1) : NULL;
 }

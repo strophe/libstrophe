@@ -60,7 +60,7 @@ static xmpp_ctx_t *mem_ctx = NULL;
 static void *parser_mem_malloc(size_t size)
 {
     if (mem_ctx != NULL)
-        return xmpp_alloc(mem_ctx, size);
+        return strophe_alloc(mem_ctx, size);
     else
         return NULL;
 }
@@ -68,7 +68,7 @@ static void *parser_mem_malloc(size_t size)
 static void *parser_mem_realloc(void *ptr, size_t size)
 {
     if (mem_ctx != NULL)
-        return xmpp_realloc(mem_ctx, ptr, size);
+        return strophe_realloc(mem_ctx, ptr, size);
     else
         return NULL;
 }
@@ -76,7 +76,7 @@ static void *parser_mem_realloc(void *ptr, size_t size)
 static void parser_mem_free(void *ptr)
 {
     if (mem_ctx != NULL)
-        xmpp_free(mem_ctx, ptr);
+        strophe_free(mem_ctx, ptr);
 }
 
 static const XML_Memory_Handling_Suite parser_mem_suite = {
@@ -95,11 +95,11 @@ static char *_xml_name(xmpp_ctx_t *ctx, const char *nsname)
 
     c = strchr(nsname, namespace_sep);
     if (c == NULL)
-        return xmpp_strdup(ctx, nsname);
+        return strophe_strdup(ctx, nsname);
 
     c++;
     len = strlen(c);
-    result = xmpp_alloc(ctx, len + 1);
+    result = strophe_alloc(ctx, len + 1);
     if (result != NULL) {
         memcpy(result, c, len);
         result[len] = '\0';
@@ -116,7 +116,7 @@ static char *_xml_namespace(xmpp_ctx_t *ctx, const char *nsname)
 
     c = strchr(nsname, namespace_sep);
     if (c != NULL) {
-        result = xmpp_alloc(ctx, (c - nsname) + 1);
+        result = strophe_alloc(ctx, (c - nsname) + 1);
         if (result != NULL) {
             memcpy(result, nsname, (c - nsname));
             result[c - nsname] = '\0';
@@ -138,7 +138,7 @@ static void _set_attributes(xmpp_stanza_t *stanza, const XML_Char **attrs)
         /* namespaced attributes aren't used in xmpp, discard namespace */
         attr = _xml_name(stanza->ctx, attrs[i]);
         xmpp_stanza_set_attribute(stanza, attr, attrs[i + 1]);
-        xmpp_free(stanza->ctx, attr);
+        strophe_free(stanza->ctx, attr);
     }
 }
 
@@ -155,7 +155,7 @@ static void complete_inner_text(parser_t *parser)
             xmpp_stanza_add_child(parser->stanza, stanza);
             xmpp_stanza_release(stanza);
         }
-        xmpp_free(parser->ctx, parser->inner_text);
+        strophe_free(parser->ctx, parser->inner_text);
         parser->inner_text = NULL;
         parser->inner_text_size = 0;
         parser->inner_text_used = 0;
@@ -202,9 +202,9 @@ _start_element(void *userdata, const XML_Char *nsname, const XML_Char **attrs)
     }
 
     if (ns)
-        xmpp_free(parser->ctx, ns);
+        strophe_free(parser->ctx, ns);
     if (name)
-        xmpp_free(parser->ctx, name);
+        strophe_free(parser->ctx, name);
 
     parser->depth++;
 }
@@ -246,10 +246,10 @@ static void _characters(void *userdata, const XML_Char *s, int len)
     if (parser->inner_text_used + len >= parser->inner_text_size) {
         parser->inner_text_size =
             parser->inner_text_used + len + 1 + INNER_TEXT_PADDING;
-        p = xmpp_realloc(parser->ctx, parser->inner_text,
-                         parser->inner_text_size);
+        p = strophe_realloc(parser->ctx, parser->inner_text,
+                            parser->inner_text_size);
         if (p == NULL) {
-            xmpp_free(parser->ctx, parser->inner_text);
+            strophe_free(parser->ctx, parser->inner_text);
             parser->inner_text = NULL;
             parser->inner_text_used = 0;
             parser->inner_text_size = 0;
@@ -270,7 +270,7 @@ parser_t *parser_new(xmpp_ctx_t *ctx,
 {
     parser_t *parser;
 
-    parser = xmpp_alloc(ctx, sizeof(parser_t));
+    parser = strophe_alloc(ctx, sizeof(parser_t));
     if (parser != NULL) {
         parser->ctx = ctx;
         parser->expat = NULL;
@@ -316,11 +316,11 @@ void parser_free(parser_t *parser)
     }
 
     if (parser->inner_text) {
-        xmpp_free(parser->ctx, parser->inner_text);
+        strophe_free(parser->ctx, parser->inner_text);
         parser->inner_text = NULL;
     }
 
-    xmpp_free(parser->ctx, parser);
+    strophe_free(parser->ctx, parser);
 }
 
 /* shuts down and restarts XML parser.  true on success */
@@ -349,7 +349,7 @@ int parser_reset(parser_t *parser)
     }
 
     if (parser->inner_text) {
-        xmpp_free(parser->ctx, parser->inner_text);
+        strophe_free(parser->ctx, parser->inner_text);
         parser->inner_text = NULL;
     }
 

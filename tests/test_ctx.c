@@ -83,20 +83,20 @@ int main()
     ctx = xmpp_ctx_new(&mymem, &mylog);
     xmpp_debug(ctx, "test", "hello");
 
-    testptr1 = xmpp_alloc(ctx, 1024);
+    testptr1 = strophe_alloc(ctx, 1024);
     if (testptr1 == NULL) {
         xmpp_ctx_free(ctx);
         return 1;
     }
 
-    testptr2 = xmpp_realloc(ctx, testptr1, 2048);
+    testptr2 = strophe_realloc(ctx, testptr1, 2048);
     if (testptr2 == NULL) {
-        xmpp_free(ctx, testptr1);
+        strophe_free(ctx, testptr1);
         xmpp_ctx_free(ctx);
         return 1;
     }
 
-    xmpp_free(ctx, testptr2);
+    strophe_free(ctx, testptr2);
 
     xmpp_ctx_free(ctx);
 

@@ -216,14 +216,14 @@ int main()
     rand = xmpp_rand_new(ctx);
     assert(rand != NULL);
     assert(sizeof(data2) > 64);
-    buf = xmpp_alloc(ctx, sizeof(data2));
+    buf = strophe_alloc(ctx, sizeof(data2));
     assert(buf != NULL);
     memcpy(buf, data2, 64);
     xmpp_rand_bytes(rand, &buf[64], sizeof(data2) - 64);
     ret = resolver_srv_lookup_buf(ctx, buf, sizeof(data2), &srv_rr_list);
     if (ret == XMPP_DOMAIN_FOUND && srv_rr_list != NULL)
         resolver_srv_free(ctx, srv_rr_list);
-    xmpp_free(ctx, buf);
+    strophe_free(ctx, buf);
     xmpp_rand_free(ctx, rand);
     printf("ok\n");
 

@@ -47,13 +47,13 @@ int test_jid(xmpp_ctx_t *ctx)
     if (resource != NULL)
         return 1;
     if (bare)
-        xmpp_free(ctx, bare);
+        strophe_free(ctx, bare);
     if (node)
-        xmpp_free(ctx, node);
+        strophe_free(ctx, node);
     if (domain)
-        xmpp_free(ctx, domain);
+        strophe_free(ctx, domain);
     if (resource)
-        xmpp_free(ctx, resource);
+        strophe_free(ctx, resource);
 
     bare = xmpp_jid_bare(ctx, jid2);
     node = xmpp_jid_node(ctx, jid2);
@@ -70,13 +70,13 @@ int test_jid(xmpp_ctx_t *ctx)
     if (resource == NULL || strcmp(resource, "hullo"))
         return 1;
     if (bare)
-        xmpp_free(ctx, bare);
+        strophe_free(ctx, bare);
     if (node)
-        xmpp_free(ctx, node);
+        strophe_free(ctx, node);
     if (domain)
-        xmpp_free(ctx, domain);
+        strophe_free(ctx, domain);
     if (resource)
-        xmpp_free(ctx, resource);
+        strophe_free(ctx, resource);
 
     bare = xmpp_jid_bare(ctx, jid3);
     node = xmpp_jid_node(ctx, jid3);
@@ -93,13 +93,13 @@ int test_jid(xmpp_ctx_t *ctx)
     if (resource == NULL || strcmp(resource, "frob"))
         return 1;
     if (bare)
-        xmpp_free(ctx, bare);
+        strophe_free(ctx, bare);
     if (node)
-        xmpp_free(ctx, node);
+        strophe_free(ctx, node);
     if (domain)
-        xmpp_free(ctx, domain);
+        strophe_free(ctx, domain);
     if (resource)
-        xmpp_free(ctx, resource);
+        strophe_free(ctx, resource);
 
     bare = xmpp_jid_bare(ctx, jid4);
     node = xmpp_jid_node(ctx, jid4);
@@ -116,13 +116,13 @@ int test_jid(xmpp_ctx_t *ctx)
     if (resource != NULL)
         return 1;
     if (bare)
-        xmpp_free(ctx, bare);
+        strophe_free(ctx, bare);
     if (node)
-        xmpp_free(ctx, node);
+        strophe_free(ctx, node);
     if (domain)
-        xmpp_free(ctx, domain);
+        strophe_free(ctx, domain);
     if (resource)
-        xmpp_free(ctx, resource);
+        strophe_free(ctx, resource);
 
     return 0;
 }
@@ -135,13 +135,13 @@ int test_jid_new(xmpp_ctx_t *ctx)
     printf("new jid: '%s'\n", jid);
     if (strcmp(jid, "node@domain/resource"))
         return 1;
-    xmpp_free(ctx, jid);
+    strophe_free(ctx, jid);
 
     jid = xmpp_jid_new(ctx, "foo", "bar.com", NULL);
     printf("new jid: '%s'\n", jid);
     if (strcmp(jid, "foo@bar.com"))
         return 1;
-    xmpp_free(ctx, jid);
+    strophe_free(ctx, jid);
 
     return 0;
 }

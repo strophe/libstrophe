@@ -53,7 +53,7 @@ static char *digest_to_string_alloc(xmpp_ctx_t *ctx, const uint8_t *digest)
     size_t slen;
 
     slen = SHA1_DIGEST_SIZE * 2 + 1;
-    s = xmpp_alloc(ctx, slen);
+    s = strophe_alloc(ctx, slen);
     if (s) {
         s = digest_to_string(digest, s, slen);
         assert(s != NULL);
@@ -122,7 +122,7 @@ xmpp_sha1_t *xmpp_sha1_new(xmpp_ctx_t *ctx)
 {
     xmpp_sha1_t *sha1;
 
-    sha1 = xmpp_alloc(ctx, sizeof(*sha1));
+    sha1 = strophe_alloc(ctx, sizeof(*sha1));
     if (sha1) {
         memset(sha1, 0, sizeof(*sha1));
         crypto_SHA1_Init(&sha1->ctx);
@@ -139,7 +139,7 @@ xmpp_sha1_t *xmpp_sha1_new(xmpp_ctx_t *ctx)
  */
 void xmpp_sha1_free(xmpp_sha1_t *sha1)
 {
-    xmpp_free(sha1->xmpp_ctx, sha1);
+    strophe_free(sha1->xmpp_ctx, sha1);
 }
 
 /** Update SHA1 context with the next portion of data.
@@ -259,7 +259,7 @@ base64_encode(xmpp_ctx_t *ctx, const unsigned char *buffer, size_t len)
     size_t i;
 
     clen = base64_encoded_len(len);
-    cbuf = xmpp_alloc(ctx, clen + 1);
+    cbuf = strophe_alloc(ctx, clen + 1);
     if (cbuf != NULL) {
         c = cbuf;
         /* loop over data, turning every 3 bytes into 4 characters */
@@ -348,7 +348,7 @@ static void base64_decode(xmpp_ctx_t *ctx,
     if (dlen == 0)
         goto _base64_error;
 
-    dbuf = xmpp_alloc(ctx, dlen + 1);
+    dbuf = strophe_alloc(ctx, dlen + 1);
     if (dbuf != NULL) {
         d = dbuf;
         /* loop over each set of 4 characters, decoding 3 bytes */
@@ -427,7 +427,7 @@ static void base64_decode(xmpp_ctx_t *ctx,
 
 _base64_decode_error:
     /* invalid character; abort decoding! */
-    xmpp_free(ctx, dbuf);
+    strophe_free(ctx, dbuf);
 _base64_error:
     *out = NULL;
     *outlen = 0;
@@ -469,7 +469,7 @@ char *xmpp_base64_decode_str(xmpp_ctx_t *ctx, const char *base64, size_t len)
 
     if (len == 0) {
         /* handle empty string */
-        buf = xmpp_alloc(ctx, 1);
+        buf = strophe_alloc(ctx, 1);
         if (buf)
             buf[0] = '\0';
         buflen = 0;
@@ -478,7 +478,7 @@ char *xmpp_base64_decode_str(xmpp_ctx_t *ctx, const char *base64, size_t len)
     }
     if (buf) {
         if (buflen != strlen((char *)buf)) {
-            xmpp_free(ctx, buf);
+            strophe_free(ctx, buf);
             buf = NULL;
         }
     }

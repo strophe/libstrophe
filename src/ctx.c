@@ -211,7 +211,7 @@ static xmpp_log_t xmpp_default_log = {NULL, NULL};
  *
  *  @return a pointer to the allocated memory or NULL on an error
  */
-void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size)
+void *strophe_alloc(const xmpp_ctx_t *ctx, size_t size)
 {
     return ctx->mem->alloc(size, ctx->mem->userdata);
 }
@@ -222,9 +222,19 @@ void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size)
  *  @param ctx a Strophe context object
  *  @param p a pointer referencing memory to be freed
  */
-void xmpp_free(const xmpp_ctx_t *ctx, void *p)
+void strophe_free(const xmpp_ctx_t *ctx, void *p)
 {
     ctx->mem->free(p, ctx->mem->userdata);
+}
+
+/** Trampoline to \ref strophe_free
+ *
+ *  @param ctx \ref strophe_free
+ *  @param p \ref strophe_free
+ */
+void xmpp_free(const xmpp_ctx_t *ctx, void *p)
+{
+    strophe_free(ctx, p);
 }
 
 /** Reallocate memory in a Strophe context.
@@ -236,7 +246,7 @@ void xmpp_free(const xmpp_ctx_t *ctx, void *p)
  *
  *  @return a pointer to the reallocated memory or NULL on an error
  */
-void *xmpp_realloc(const xmpp_ctx_t *ctx, void *p, size_t size)
+void *strophe_realloc(const xmpp_ctx_t *ctx, void *p, size_t size)
 {
     return ctx->mem->realloc(p, size, ctx->mem->userdata);
 }
@@ -275,7 +285,7 @@ void xmpp_log(const xmpp_ctx_t *ctx,
     va_copy(copy, ap);
     ret = xmpp_vsnprintf(smbuf, sizeof(smbuf), fmt, ap);
     if (ret >= (int)sizeof(smbuf)) {
-        buf = (char *)xmpp_alloc(ctx, ret + 1);
+        buf = (char *)strophe_alloc(ctx, ret + 1);
         if (!buf) {
             buf = NULL;
             xmpp_error(ctx, "log", "Failed allocating memory for log message.");
@@ -286,7 +296,7 @@ void xmpp_log(const xmpp_ctx_t *ctx,
         ret = xmpp_vsnprintf(buf, ret + 1, fmt, copy);
         if (ret > oldret) {
             xmpp_error(ctx, "log", "Unexpected error");
-            xmpp_free(ctx, buf);
+            strophe_free(ctx, buf);
             va_end(copy);
             return;
         }
@@ -298,7 +308,7 @@ void xmpp_log(const xmpp_ctx_t *ctx,
     ctx->log->handler(ctx->log->userdata, level, area, buf);
 
     if (buf != smbuf)
-        xmpp_free(ctx, buf);
+        strophe_free(ctx, buf);
 }
 
 /** Write to the log at the ERROR level.
@@ -442,7 +452,7 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *mem, const xmpp_log_t *log)
         ctx->timeout = EVENT_LOOP_DEFAULT_TIMEOUT;
         ctx->verbosity = 0;
         if (ctx->rand == NULL) {
-            xmpp_free(ctx, ctx);
+            strophe_free(ctx, ctx);
             ctx = NULL;
         }
     }
@@ -460,7 +470,7 @@ void xmpp_ctx_free(xmpp_ctx_t *ctx)
 {
     /* mem and log are owned by their suppliers */
     xmpp_rand_free(ctx, ctx->rand);
-    xmpp_free(ctx, ctx); /* pull the hole in after us */
+    strophe_free(ctx, ctx); /* pull the hole in after us */
 }
 
 /** Set the verbosity level of a Strophe context.

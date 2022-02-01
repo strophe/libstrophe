@@ -105,7 +105,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
     if (ctx == NULL)
         return NULL;
 
-    conn = xmpp_alloc(ctx, sizeof(xmpp_conn_t));
+    conn = strophe_alloc(ctx, sizeof(xmpp_conn_t));
     if (conn != NULL) {
         conn->ctx = ctx;
 
@@ -129,9 +129,9 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         /* default timeouts */
         conn->connect_timeout = CONNECT_TIMEOUT;
 
-        conn->lang = xmpp_strdup(conn->ctx, "en");
+        conn->lang = strophe_strdup(conn->ctx, "en");
         if (!conn->lang) {
-            xmpp_free(conn->ctx, conn);
+            strophe_free(conn->ctx, conn);
             return NULL;
         }
         conn->domain = NULL;
@@ -180,12 +180,12 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         while (tail && tail->next)
             tail = tail->next;
 
-        item = xmpp_alloc(conn->ctx, sizeof(xmpp_connlist_t));
+        item = strophe_alloc(conn->ctx, sizeof(xmpp_connlist_t));
         if (!item) {
             xmpp_error(conn->ctx, "xmpp", "failed to allocate memory");
-            xmpp_free(conn->ctx, conn->lang);
+            strophe_free(conn->ctx, conn->lang);
             parser_free(conn->parser);
-            xmpp_free(conn->ctx, conn);
+            strophe_free(conn->ctx, conn);
             conn = NULL;
         } else {
             item->conn = conn;
@@ -277,7 +277,7 @@ int xmpp_conn_release(xmpp_conn_t *conn)
         if (ctx->connlist->conn == conn) {
             item = ctx->connlist;
             ctx->connlist = item->next;
-            xmpp_free(ctx, item);
+            strophe_free(ctx, item);
         } else {
             prev = NULL;
             item = ctx->connlist;
@@ -290,7 +290,7 @@ int xmpp_conn_release(xmpp_conn_t *conn)
                 xmpp_error(ctx, "xmpp", "Connection not in context's list\n");
             } else {
                 prev->next = item->next;
-                xmpp_free(ctx, item);
+                strophe_free(ctx, item);
             }
         }
 
@@ -306,7 +306,7 @@ int xmpp_conn_release(xmpp_conn_t *conn)
             thli = hlitem;
             hlitem = hlitem->next;
 
-            xmpp_free(ctx, thli);
+            strophe_free(ctx, thli);
         }
 
         /* id handlers
@@ -318,8 +318,8 @@ int xmpp_conn_release(xmpp_conn_t *conn)
             while (hlitem) {
                 thli = hlitem;
                 hlitem = hlitem->next;
-                xmpp_free(conn->ctx, thli->u.id);
-                xmpp_free(conn->ctx, thli);
+                strophe_free(conn->ctx, thli->u.id);
+                strophe_free(conn->ctx, thli);
             }
         }
         hash_iter_release(iter);
@@ -331,31 +331,31 @@ int xmpp_conn_release(xmpp_conn_t *conn)
             hlitem = hlitem->next;
 
             if (thli->u.ns)
-                xmpp_free(ctx, thli->u.ns);
+                strophe_free(ctx, thli->u.ns);
             if (thli->u.name)
-                xmpp_free(ctx, thli->u.name);
+                strophe_free(ctx, thli->u.name);
             if (thli->u.type)
-                xmpp_free(ctx, thli->u.type);
-            xmpp_free(ctx, thli);
+                strophe_free(ctx, thli->u.type);
+            strophe_free(ctx, thli);
         }
 
         parser_free(conn->parser);
 
         if (conn->jid)
-            xmpp_free(ctx, conn->jid);
+            strophe_free(ctx, conn->jid);
         if (conn->pass)
-            xmpp_free(ctx, conn->pass);
+            strophe_free(ctx, conn->pass);
         if (conn->lang)
-            xmpp_free(ctx, conn->lang);
+            strophe_free(ctx, conn->lang);
         if (conn->tls_client_cert)
-            xmpp_free(ctx, conn->tls_client_cert);
+            strophe_free(ctx, conn->tls_client_cert);
         if (conn->tls_client_key)
-            xmpp_free(ctx, conn->tls_client_key);
+            strophe_free(ctx, conn->tls_client_key);
         if (conn->tls_cafile)
-            xmpp_free(ctx, conn->tls_cafile);
+            strophe_free(ctx, conn->tls_cafile);
         if (conn->tls_capath)
-            xmpp_free(ctx, conn->tls_capath);
-        xmpp_free(ctx, conn);
+            strophe_free(ctx, conn->tls_capath);
+        strophe_free(ctx, conn);
         released = 1;
     }
 
@@ -407,8 +407,8 @@ const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *conn)
 void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid)
 {
     if (conn->jid)
-        xmpp_free(conn->ctx, conn->jid);
-    conn->jid = xmpp_strdup(conn->ctx, jid);
+        strophe_free(conn->ctx, conn->jid);
+    conn->jid = strophe_strdup(conn->ctx, jid);
 }
 
 /** Set the Handler function which will be called when the TLS stack can't
@@ -434,7 +434,7 @@ void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
  */
 void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
 {
-    conn->tls_cafile = xmpp_strdup(conn->ctx, path);
+    conn->tls_cafile = strophe_strdup(conn->ctx, path);
 }
 
 /** Set the CApath
@@ -446,7 +446,7 @@ void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
  */
 void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path)
 {
-    conn->tls_capath = xmpp_strdup(conn->ctx, path);
+    conn->tls_capath = strophe_strdup(conn->ctx, path);
 }
 
 /** Retrieve the peer certificate
@@ -483,11 +483,11 @@ void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
 {
     xmpp_debug(conn->ctx, "conn", "set client cert %s %s", cert, key);
     if (conn->tls_client_cert)
-        xmpp_free(conn->ctx, conn->tls_client_cert);
-    conn->tls_client_cert = xmpp_strdup(conn->ctx, cert);
+        strophe_free(conn->ctx, conn->tls_client_cert);
+    conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
     if (conn->tls_client_key)
-        xmpp_free(conn->ctx, conn->tls_client_key);
-    conn->tls_client_key = xmpp_strdup(conn->ctx, key);
+        strophe_free(conn->ctx, conn->tls_client_key);
+    conn->tls_client_key = strophe_strdup(conn->ctx, key);
 }
 
 /** Get the number of xmppAddr entries in the client certificate.
@@ -542,8 +542,8 @@ const char *xmpp_conn_get_pass(const xmpp_conn_t *conn)
 void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass)
 {
     if (conn->pass)
-        xmpp_free(conn->ctx, conn->pass);
-    conn->pass = pass ? xmpp_strdup(conn->ctx, pass) : NULL;
+        strophe_free(conn->ctx, conn->pass);
+    conn->pass = pass ? strophe_strdup(conn->ctx, pass) : NULL;
 }
 
 /** Get the strophe context that the connection is associated with.
@@ -649,7 +649,7 @@ int xmpp_connect_client(xmpp_conn_t *conn,
                            userdata);
     } while (rc != 0 && rr != NULL);
 
-    xmpp_free(conn->ctx, domain);
+    strophe_free(conn->ctx, domain);
     resolver_srv_free(conn->ctx, srv_rr_list);
 
     return rc;
@@ -924,7 +924,7 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
         /* we need more space for this data, so we allocate a big
          * enough buffer and print to that */
         len++; /* account for trailing \0 */
-        bigbuf = xmpp_alloc(conn->ctx, len);
+        bigbuf = strophe_alloc(conn->ctx, len);
         if (!bigbuf) {
             xmpp_debug(conn->ctx, "xmpp",
                        "Could not allocate memory for send_raw_string");
@@ -961,7 +961,7 @@ void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
     if (conn->state != XMPP_STATE_CONNECTED)
         return;
 
-    d = xmpp_strndup(conn->ctx, data, len);
+    d = strophe_strndup(conn->ctx, data, len);
     if (!d) {
         xmpp_error(conn->ctx, "conn", "Failed to strndup");
         return;
@@ -1027,7 +1027,7 @@ void conn_open_stream(xmpp_conn_t *conn)
         conn_disconnect(conn);
     }
     if (from)
-        xmpp_free(conn->ctx, from);
+        strophe_free(conn->ctx, from);
 }
 
 int conn_tls_start(xmpp_conn_t *conn)
@@ -1218,7 +1218,7 @@ static char *_conn_build_stream_tag(xmpp_conn_t *conn,
     len = strlen(tag_head) + strlen(tag_tail);
     for (i = 0; i < attributes_len; ++i)
         len += strlen(attributes[i]) + 2;
-    tag = xmpp_alloc(conn->ctx, len + 1);
+    tag = strophe_alloc(conn->ctx, len + 1);
     if (!tag)
         return NULL;
 
@@ -1239,7 +1239,7 @@ static char *_conn_build_stream_tag(xmpp_conn_t *conn,
         xmpp_error(conn->ctx, "xmpp",
                    "Internal error in "
                    "_conn_build_stream_tag().");
-        xmpp_free(conn->ctx, tag);
+        strophe_free(conn->ctx, tag);
         tag = NULL;
     }
 
@@ -1257,7 +1257,7 @@ static int _conn_open_stream_with_attributes(xmpp_conn_t *conn,
         return XMPP_EMEM;
 
     xmpp_send_raw_string(conn, "<?xml version=\"1.0\"?>%s", tag);
-    xmpp_free(conn->ctx, tag);
+    strophe_free(conn->ctx, tag);
 
     return XMPP_EOK;
 }
@@ -1274,10 +1274,10 @@ static void _conn_attributes_new(xmpp_conn_t *conn,
     if (attrs) {
         for (; attrs[nr]; ++nr)
             ;
-        array = xmpp_alloc(conn->ctx, sizeof(*array) * nr);
+        array = strophe_alloc(conn->ctx, sizeof(*array) * nr);
         for (i = 0; array && i < nr; ++i) {
             array[i] = (i & 1) == 0 ? parser_attr_name(conn->ctx, attrs[i])
-                                    : xmpp_strdup(conn->ctx, attrs[i]);
+                                    : strophe_strdup(conn->ctx, attrs[i]);
             if (array[i] == NULL)
                 break;
         }
@@ -1300,8 +1300,8 @@ static void _conn_attributes_destroy(xmpp_conn_t *conn,
 
     if (attributes) {
         for (i = 0; i < attributes_len; ++i)
-            xmpp_free(conn->ctx, attributes[i]);
-        xmpp_free(conn->ctx, attributes);
+            strophe_free(conn->ctx, attributes[i]);
+        strophe_free(conn->ctx, attributes);
     }
 }
 
@@ -1315,7 +1315,7 @@ static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
     tag = _conn_build_stream_tag(conn, attributes, nr);
     if (tag) {
         xmpp_debug(conn->ctx, "xmpp", "RECV: %s", tag);
-        xmpp_free(conn->ctx, tag);
+        strophe_free(conn->ctx, tag);
     }
     _conn_attributes_destroy(conn, attributes, nr);
 }
@@ -1341,14 +1341,14 @@ static void _handle_stream_start(char *name, char **attrs, void *userdata)
     int failed = 0;
 
     if (conn->stream_id)
-        xmpp_free(conn->ctx, conn->stream_id);
+        strophe_free(conn->ctx, conn->stream_id);
     conn->stream_id = NULL;
 
     if (strcmp(name, "stream") == 0) {
         _log_open_tag(conn, attrs);
         id = _get_stream_attribute(attrs, "id");
         if (id)
-            conn->stream_id = xmpp_strdup(conn->ctx, id);
+            conn->stream_id = strophe_strdup(conn->ctx, id);
 
         if (id && !conn->stream_id) {
             xmpp_error(conn->ctx, "conn", "Memory allocation failed.");
@@ -1389,7 +1389,7 @@ static void _handle_stream_stanza(xmpp_stanza_t *stanza, void *userdata)
 
     if (xmpp_stanza_to_text(stanza, &buf, &len) == 0) {
         xmpp_debug(conn->ctx, "xmpp", "RECV: %s", buf);
-        xmpp_free(conn->ctx, buf);
+        strophe_free(conn->ctx, buf);
     }
 
     handler_fire_stanza(conn, stanza);
@@ -1424,8 +1424,8 @@ static void _conn_reset(xmpp_conn_t *conn)
     while (sq) {
         tsq = sq;
         sq = sq->next;
-        xmpp_free(ctx, tsq->data);
-        xmpp_free(ctx, tsq);
+        strophe_free(ctx, tsq->data);
+        strophe_free(ctx, tsq);
     }
     conn->send_queue_head = NULL;
     conn->send_queue_tail = NULL;
@@ -1434,17 +1434,17 @@ static void _conn_reset(xmpp_conn_t *conn)
     if (conn->stream_error) {
         xmpp_stanza_release(conn->stream_error->stanza);
         if (conn->stream_error->text)
-            xmpp_free(ctx, conn->stream_error->text);
-        xmpp_free(ctx, conn->stream_error);
+            strophe_free(ctx, conn->stream_error->text);
+        strophe_free(ctx, conn->stream_error);
         conn->stream_error = NULL;
     }
 
     if (conn->domain)
-        xmpp_free(ctx, conn->domain);
+        strophe_free(ctx, conn->domain);
     if (conn->bound_jid)
-        xmpp_free(ctx, conn->bound_jid);
+        strophe_free(ctx, conn->bound_jid);
     if (conn->stream_id)
-        xmpp_free(ctx, conn->stream_id);
+        strophe_free(ctx, conn->stream_id);
     conn->domain = NULL;
     conn->bound_jid = NULL;
     conn->stream_id = NULL;
@@ -1480,7 +1480,7 @@ static int _conn_connect(xmpp_conn_t *conn,
     _conn_reset(conn);
 
     conn->type = type;
-    conn->domain = xmpp_strdup(conn->ctx, domain);
+    conn->domain = strophe_strdup(conn->ctx, domain);
     if (!conn->domain)
         return XMPP_EMEM;
 
@@ -1518,10 +1518,10 @@ static int _send_raw(xmpp_conn_t *conn, char *data, size_t len)
     xmpp_send_queue_t *item;
 
     /* create send queue item for queue */
-    item = xmpp_alloc(conn->ctx, sizeof(xmpp_send_queue_t));
+    item = strophe_alloc(conn->ctx, sizeof(xmpp_send_queue_t));
     if (!item) {
         xmpp_error(conn->ctx, "conn", "DROPPED: %s", data);
-        xmpp_free(conn->ctx, data);
+        strophe_free(conn->ctx, data);
         return XMPP_EMEM;
     }
 

@@ -20,17 +20,15 @@
 /* include rand.c to access private structures and functions */
 #include "rand.c"
 
-#ifndef USE_GETRANDOM
-
 /* stubs to build test without whole libstrophe */
-void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size)
+void *strophe_alloc(const xmpp_ctx_t *ctx, size_t size)
 {
     (void)ctx;
     (void)size;
     return NULL;
 }
 
-void xmpp_free(const xmpp_ctx_t *ctx, void *p)
+void strophe_free(const xmpp_ctx_t *ctx, void *p)
 {
     (void)ctx;
     (void)p;
@@ -50,6 +48,8 @@ uint64_t time_stamp(void)
 {
     return 0;
 }
+
+#ifndef USE_GETRANDOM
 
 static struct {
     const char *entropy_input;

@@ -39,7 +39,7 @@ xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx)
 {
     xmpp_stanza_t *stanza;
 
-    stanza = xmpp_alloc(ctx, sizeof(xmpp_stanza_t));
+    stanza = strophe_alloc(ctx, sizeof(xmpp_stanza_t));
     if (stanza != NULL) {
         stanza->ref = 1;
         stanza->ctx = ctx;
@@ -124,7 +124,7 @@ xmpp_stanza_t *xmpp_stanza_copy(const xmpp_stanza_t *stanza)
     copy->type = stanza->type;
 
     if (stanza->data) {
-        copy->data = xmpp_strdup(stanza->ctx, stanza->data);
+        copy->data = strophe_strdup(stanza->ctx, stanza->data);
         if (!copy->data)
             goto copy_error;
     }
@@ -188,8 +188,8 @@ int xmpp_stanza_release(xmpp_stanza_t *stanza)
         if (stanza->attributes)
             hash_release(stanza->attributes);
         if (stanza->data)
-            xmpp_free(stanza->ctx, stanza->data);
-        xmpp_free(stanza->ctx, stanza);
+            strophe_free(stanza->ctx, stanza->data);
+        strophe_free(stanza->ctx, stanza);
         released = 1;
     }
 
@@ -263,7 +263,7 @@ static char *_escape_xml(xmpp_ctx_t *ctx, char *text)
             len++;
         }
     }
-    if ((buf = xmpp_alloc(ctx, (len + 1) * sizeof(char))) == NULL)
+    if ((buf = strophe_alloc(ctx, (len + 1) * sizeof(char))) == NULL)
         return NULL; /* Error */
     dst = buf;
     for (src = text; *src != '\0'; src++) {
@@ -337,7 +337,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
         if (tmp == NULL)
             return XMPP_EMEM;
         ret = xmpp_snprintf(ptr, left, "%s", tmp);
-        xmpp_free(stanza->ctx, tmp);
+        strophe_free(stanza->ctx, tmp);
         if (ret < 0)
             return XMPP_EMEM;
         _render_update(&written, buflen, ret, &left, &ptr);
@@ -375,7 +375,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
                     return XMPP_EMEM;
                 }
                 ret = xmpp_snprintf(ptr, left, " %s=\"%s\"", key, tmp);
-                xmpp_free(stanza->ctx, tmp);
+                strophe_free(stanza->ctx, tmp);
                 if (ret < 0) {
                     hash_iter_release(iter);
                     return XMPP_EMEM;
@@ -447,7 +447,7 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza, char **buf, size_t *buflen)
 
     /* allocate a default sized buffer and attempt to render */
     length = 1024;
-    buffer = xmpp_alloc(stanza->ctx, length);
+    buffer = strophe_alloc(stanza->ctx, length);
     if (!buffer) {
         *buf = NULL;
         *buflen = 0;
@@ -456,16 +456,16 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza, char **buf, size_t *buflen)
 
     ret = _render_stanza_recursive(stanza, buffer, length);
     if (ret < 0) {
-        xmpp_free(stanza->ctx, buffer);
+        strophe_free(stanza->ctx, buffer);
         *buf = NULL;
         *buflen = 0;
         return ret;
     }
 
     if ((size_t)ret > length - 1) {
-        tmp = xmpp_realloc(stanza->ctx, buffer, ret + 1);
+        tmp = strophe_realloc(stanza->ctx, buffer, ret + 1);
         if (!tmp) {
-            xmpp_free(stanza->ctx, buffer);
+            strophe_free(stanza->ctx, buffer);
             *buf = NULL;
             *buflen = 0;
             return XMPP_EMEM;
@@ -475,7 +475,7 @@ int xmpp_stanza_to_text(xmpp_stanza_t *stanza, char **buf, size_t *buflen)
 
         ret = _render_stanza_recursive(stanza, buffer, length);
         if ((size_t)ret > length - 1) {
-            xmpp_free(stanza->ctx, buffer);
+            strophe_free(stanza->ctx, buffer);
             *buf = NULL;
             *buflen = 0;
             return XMPP_EMEM;
@@ -506,10 +506,10 @@ int xmpp_stanza_set_name(xmpp_stanza_t *stanza, const char *name)
         return XMPP_EINVOP;
 
     if (stanza->data)
-        xmpp_free(stanza->ctx, stanza->data);
+        strophe_free(stanza->ctx, stanza->data);
 
     stanza->type = XMPP_STANZA_TAG;
-    stanza->data = xmpp_strdup(stanza->ctx, name);
+    stanza->data = strophe_strdup(stanza->ctx, name);
 
     return stanza->data == NULL ? XMPP_EMEM : XMPP_EOK;
 }
@@ -615,19 +615,19 @@ int xmpp_stanza_set_attribute(xmpp_stanza_t *stanza,
         return XMPP_EINVOP;
 
     if (!stanza->attributes) {
-        stanza->attributes = hash_new(stanza->ctx, 8, xmpp_free);
+        stanza->attributes = hash_new(stanza->ctx, 8, strophe_free);
         if (!stanza->attributes)
             return XMPP_EMEM;
     }
 
-    val = xmpp_strdup(stanza->ctx, value);
+    val = strophe_strdup(stanza->ctx, value);
     if (!val) {
         return XMPP_EMEM;
     }
 
     rc = hash_add(stanza->attributes, key, val);
     if (rc < 0) {
-        xmpp_free(stanza->ctx, val);
+        strophe_free(stanza->ctx, val);
         return XMPP_EMEM;
     }
 
@@ -728,8 +728,8 @@ int xmpp_stanza_set_text(xmpp_stanza_t *stanza, const char *text)
     stanza->type = XMPP_STANZA_TEXT;
 
     if (stanza->data)
-        xmpp_free(stanza->ctx, stanza->data);
-    stanza->data = xmpp_strdup(stanza->ctx, text);
+        strophe_free(stanza->ctx, stanza->data);
+    stanza->data = strophe_strdup(stanza->ctx, text);
 
     return stanza->data == NULL ? XMPP_EMEM : XMPP_EOK;
 }
@@ -758,8 +758,8 @@ int xmpp_stanza_set_text_with_size(xmpp_stanza_t *stanza,
     stanza->type = XMPP_STANZA_TEXT;
 
     if (stanza->data)
-        xmpp_free(stanza->ctx, stanza->data);
-    stanza->data = xmpp_alloc(stanza->ctx, size + 1);
+        strophe_free(stanza->ctx, stanza->data);
+    stanza->data = strophe_alloc(stanza->ctx, size + 1);
     if (!stanza->data)
         return XMPP_EMEM;
 
@@ -877,7 +877,7 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_path(xmpp_stanza_t *stanza, ...)
     va_start(ap, stanza);
 
     while ((p = va_arg(ap, char *)) != NULL) {
-        tok = xmpp_strdup(stanza->ctx, p);
+        tok = strophe_strdup(stanza->ctx, p);
         if (!tok) {
             child = NULL;
             break;
@@ -910,7 +910,7 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_path(xmpp_stanza_t *stanza, ...)
                 child = xmpp_stanza_get_child_by_name_and_ns(child, tok, ns);
         }
 error_out:
-        xmpp_free(stanza->ctx, tok);
+        strophe_free(stanza->ctx, tok);
         if (!child)
             break;
     }
@@ -1053,7 +1053,7 @@ char *xmpp_stanza_get_text(xmpp_stanza_t *stanza)
 
     if (stanza->type == XMPP_STANZA_TEXT) {
         if (stanza->data)
-            return xmpp_strdup(stanza->ctx, stanza->data);
+            return strophe_strdup(stanza->ctx, stanza->data);
         else
             return NULL;
     }
@@ -1066,7 +1066,7 @@ char *xmpp_stanza_get_text(xmpp_stanza_t *stanza)
     if (len == 0)
         return NULL;
 
-    text = (char *)xmpp_alloc(stanza->ctx, len + 1);
+    text = (char *)strophe_alloc(stanza->ctx, len + 1);
     if (!text)
         return NULL;
 
@@ -1241,7 +1241,7 @@ xmpp_stanza_t *xmpp_stanza_reply(xmpp_stanza_t *stanza)
     copy->type = stanza->type;
 
     if (stanza->data) {
-        copy->data = xmpp_strdup(stanza->ctx, stanza->data);
+        copy->data = strophe_strdup(stanza->ctx, stanza->data);
         if (!copy->data)
             goto copy_error;
     }

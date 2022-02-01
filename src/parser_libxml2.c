@@ -48,12 +48,12 @@ _set_attributes(xmpp_stanza_t *stanza, int nattrs, const xmlChar **attrs)
     /* SAX2 uses array of localname/prefix/uri/value_begin/value_end */
     for (i = 0; i < nattrs * 5; i += 5) {
         len = attrs[i + 4] - attrs[i + 3];
-        value = xmpp_alloc(stanza->ctx, len + 1);
+        value = strophe_alloc(stanza->ctx, len + 1);
         if (value) {
             memcpy(value, attrs[i + 3], len);
             value[len] = '\0';
             xmpp_stanza_set_attribute(stanza, (const char *)attrs[i], value);
-            xmpp_free(stanza->ctx, value);
+            strophe_free(stanza->ctx, value);
         }
     }
 }
@@ -70,7 +70,7 @@ _convert_attrs(parser_t *parser, int nattrs, const xmlChar **attrs)
     if (!attrs)
         return NULL;
 
-    ret = xmpp_alloc(parser->ctx, (nattrs + 1) * 2 * sizeof(char *));
+    ret = strophe_alloc(parser->ctx, (nattrs + 1) * 2 * sizeof(char *));
     if (!ret)
         return NULL;
     memset(ret, 0, (nattrs + 1) * 2 * sizeof(char *));
@@ -80,11 +80,11 @@ _convert_attrs(parser_t *parser, int nattrs, const xmlChar **attrs)
         o = c * 2;
 
         len = attrs[i + 4] - attrs[i + 3];
-        value = xmpp_alloc(parser->ctx, len + 1);
+        value = strophe_alloc(parser->ctx, len + 1);
         if (value) {
             memcpy(value, attrs[i + 3], len);
             value[len] = '\0';
-            ret[o] = xmpp_strdup(parser->ctx, (char *)attrs[i]);
+            ret[o] = strophe_strdup(parser->ctx, (char *)attrs[i]);
             ret[o + 1] = value;
         }
     }
@@ -101,12 +101,12 @@ static void _free_cbattrs(parser_t *parser, char **attrs)
 
     for (i = 0; attrs[i]; i += 2) {
         if (attrs[i])
-            xmpp_free(parser->ctx, attrs[i]);
+            strophe_free(parser->ctx, attrs[i]);
         if (attrs[i + 1])
-            xmpp_free(parser->ctx, attrs[i + 1]);
+            strophe_free(parser->ctx, attrs[i + 1]);
     }
 
-    xmpp_free(parser->ctx, attrs);
+    strophe_free(parser->ctx, attrs);
 }
 
 static void _start_element(void *userdata,
@@ -235,7 +235,7 @@ parser_t *parser_new(xmpp_ctx_t *ctx,
 {
     parser_t *parser;
 
-    parser = xmpp_alloc(ctx, sizeof(parser_t));
+    parser = strophe_alloc(ctx, sizeof(parser_t));
     if (parser != NULL) {
         parser->ctx = ctx;
         parser->xmlctx = NULL;
@@ -259,7 +259,7 @@ parser_t *parser_new(xmpp_ctx_t *ctx,
 
 char *parser_attr_name(xmpp_ctx_t *ctx, char *nsname)
 {
-    return xmpp_strdup(ctx, nsname);
+    return strophe_strdup(ctx, nsname);
 }
 
 static void _free_parent_stanza(xmpp_stanza_t *stanza)
@@ -278,7 +278,7 @@ void parser_free(parser_t *parser)
         xmlFreeParserCtxt(parser->xmlctx);
     if (parser->stanza)
         _free_parent_stanza(parser->stanza);
-    xmpp_free(parser->ctx, parser);
+    strophe_free(parser->ctx, parser);
 }
 
 /* shuts down and restarts XML parser.  true on success */

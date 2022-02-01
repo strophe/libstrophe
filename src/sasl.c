@@ -48,14 +48,14 @@ char *sasl_plain(xmpp_ctx_t *ctx, const char *authid, const char *password)
     idlen = strlen(authid);
     passlen = strlen(password);
     msglen = 2 + idlen + passlen;
-    msg = xmpp_alloc(ctx, msglen);
+    msg = strophe_alloc(ctx, msglen);
     if (msg != NULL) {
         msg[0] = '\0';
         memcpy(msg + 1, authid, idlen);
         msg[1 + idlen] = '\0';
         memcpy(msg + 1 + idlen + 1, password, passlen);
         result = xmpp_base64_encode(ctx, (unsigned char *)msg, msglen);
-        xmpp_free(ctx, msg);
+        strophe_free(ctx, msg);
     }
 
     return result;
@@ -68,7 +68,7 @@ static char *_make_string(xmpp_ctx_t *ctx, const char *s, unsigned len)
 {
     char *result;
 
-    result = xmpp_alloc(ctx, len + 1);
+    result = strophe_alloc(ctx, len + 1);
     if (result != NULL) {
         memcpy(result, s, len);
         result[len] = '\0';
@@ -82,7 +82,7 @@ static char *_make_quoted(xmpp_ctx_t *ctx, const char *s)
     char *result;
     size_t len = strlen(s);
 
-    result = xmpp_alloc(ctx, len + 3);
+    result = strophe_alloc(ctx, len + 3);
     if (result != NULL) {
         result[0] = '"';
         memcpy(result + 1, s, len);
@@ -106,7 +106,7 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
         return NULL;
     }
 
-    result = hash_new(ctx, 10, xmpp_free);
+    result = hash_new(ctx, 10, strophe_free);
     if (result != NULL) {
         s = text;
         while (*s != '\0') {
@@ -144,16 +144,16 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
                 s = t;
             }
             if (value == NULL) {
-                xmpp_free(ctx, key);
+                strophe_free(ctx, key);
                 break;
             }
             /* TODO: check for collisions per spec */
             hash_add(result, key, value);
             /* hash table now owns the value, free the key */
-            xmpp_free(ctx, key);
+            strophe_free(ctx, key);
         }
     }
-    xmpp_free(ctx, text);
+    strophe_free(ctx, text);
 
     return result;
 }
@@ -181,7 +181,7 @@ _add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key, char *buf, int quote)
 
     /* allocate a zero-length string if necessary */
     if (buf == NULL) {
-        buf = xmpp_alloc(ctx, 1);
+        buf = strophe_alloc(ctx, 1);
         buf[0] = '\0';
     }
     if (buf == NULL)
@@ -204,7 +204,7 @@ _add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key, char *buf, int quote)
     keylen = strlen(key);
     valuelen = strlen(qvalue);
     nlen = (olen ? 1 : 0) + keylen + 1 + valuelen + 1;
-    buf = xmpp_realloc(ctx, buf, olen + nlen);
+    buf = strophe_realloc(ctx, buf, olen + nlen);
 
     if (buf != NULL) {
         c = buf + olen;
@@ -219,7 +219,7 @@ _add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key, char *buf, int quote)
     }
 
     if (quote)
-        xmpp_free(ctx, (char *)qvalue);
+        strophe_free(ctx, (char *)qvalue);
 
     return buf;
 }
@@ -265,18 +265,18 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
        server */
     realm = hash_get(table, "realm");
     if (realm == NULL || strlen(realm) == 0) {
-        hash_add(table, "realm", xmpp_strdup(ctx, domain));
+        hash_add(table, "realm", strophe_strdup(ctx, domain));
         realm = hash_get(table, "realm");
     }
 
     /* add our response fields */
-    hash_add(table, "username", xmpp_strdup(ctx, node));
+    hash_add(table, "username", strophe_strdup(ctx, node));
     xmpp_rand_nonce(ctx->rand, cnonce, sizeof(cnonce));
-    hash_add(table, "cnonce", xmpp_strdup(ctx, cnonce));
-    hash_add(table, "nc", xmpp_strdup(ctx, "00000001"));
+    hash_add(table, "cnonce", strophe_strdup(ctx, cnonce));
+    hash_add(table, "nc", strophe_strdup(ctx, "00000001"));
     if (hash_get(table, "qop") == NULL)
-        hash_add(table, "qop", xmpp_strdup(ctx, "auth"));
-    value = xmpp_alloc(ctx, 5 + strlen(domain) + 1);
+        hash_add(table, "qop", strophe_strdup(ctx, "auth"));
+    value = strophe_alloc(ctx, 5 + strlen(domain) + 1);
     memcpy(value, "xmpp/", 5);
     memcpy(value + 5, domain, strlen(domain));
     value[5 + strlen(domain)] = '\0';
@@ -342,7 +342,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
     MD5Update(&MD5, (unsigned char *)hex, 32);
     MD5Final(digest, &MD5);
 
-    response = xmpp_alloc(ctx, 32 + 1);
+    response = strophe_alloc(ctx, 32 + 1);
     _digest_to_hex((char *)digest, hex);
     memcpy(response, hex, 32);
     response[32] = '\0';
@@ -360,13 +360,13 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
     result = _add_key(ctx, table, "response", result, 0);
     result = _add_key(ctx, table, "charset", result, 0);
 
-    xmpp_free(ctx, node);
-    xmpp_free(ctx, domain);
+    strophe_free(ctx, node);
+    strophe_free(ctx, domain);
     hash_release(table); /* also frees value strings */
 
     /* reuse response for the base64 encode of our result */
     response = xmpp_base64_encode(ctx, (unsigned char *)result, strlen(result));
-    xmpp_free(ctx, result);
+    strophe_free(ctx, result);
 
     return response;
 }
@@ -400,7 +400,7 @@ char *sasl_scram(xmpp_ctx_t *ctx,
 
     UNUSED(jid);
 
-    tmp = xmpp_strdup(ctx, challenge);
+    tmp = strophe_strdup(ctx, challenge);
     if (!tmp) {
         return NULL;
     }
@@ -428,14 +428,14 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     ival = strtol(i, &saveptr, 10);
 
     auth_len = 10 + strlen(r) + strlen(first_bare) + strlen(challenge);
-    auth = xmpp_alloc(ctx, auth_len);
+    auth = strophe_alloc(ctx, auth_len);
     if (!auth) {
         goto out_sval;
     }
 
     /* "c=biws," + r + ",p=" + sign_b64 + '\0' */
     response_len = 7 + strlen(r) + 3 + ((alg->digest_size + 2) / 3 * 4) + 1;
-    response = xmpp_alloc(ctx, response_len);
+    response = strophe_alloc(ctx, response_len);
     if (!response) {
         goto out_auth;
     }
@@ -456,12 +456,12 @@ char *sasl_scram(xmpp_ctx_t *ctx,
 
     /* Check for buffer overflow */
     if (strlen(response) + strlen(sign_b64) + 3 + 1 > response_len) {
-        xmpp_free(ctx, sign_b64);
+        strophe_free(ctx, sign_b64);
         goto out_response;
     }
     strcat(response, ",p=");
     strcat(response, sign_b64);
-    xmpp_free(ctx, sign_b64);
+    strophe_free(ctx, sign_b64);
 
     response_b64 =
         xmpp_base64_encode(ctx, (unsigned char *)response, strlen(response));
@@ -471,12 +471,12 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     result = response_b64;
 
 out_response:
-    xmpp_free(ctx, response);
+    strophe_free(ctx, response);
 out_auth:
-    xmpp_free(ctx, auth);
+    strophe_free(ctx, auth);
 out_sval:
-    xmpp_free(ctx, sval);
+    strophe_free(ctx, sval);
 out:
-    xmpp_free(ctx, tmp);
+    strophe_free(ctx, tmp);
     return result;
 }

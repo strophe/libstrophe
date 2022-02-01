@@ -87,10 +87,11 @@ struct _xmpp_ctx_t {
 };
 
 /* convenience functions for accessing the context */
-void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size);
-void *xmpp_realloc(const xmpp_ctx_t *ctx, void *p, size_t size);
-char *xmpp_strdup(const xmpp_ctx_t *ctx, const char *s);
-char *xmpp_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len);
+void *strophe_alloc(const xmpp_ctx_t *ctx, size_t size);
+void *strophe_realloc(const xmpp_ctx_t *ctx, void *p, size_t size);
+char *strophe_strdup(const xmpp_ctx_t *ctx, const char *s);
+char *strophe_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len);
+void strophe_free(const xmpp_ctx_t *ctx, void *p);
 
 void xmpp_log(const xmpp_ctx_t *ctx,
               const xmpp_log_level_t level,

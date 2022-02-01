@@ -50,11 +50,11 @@ hash_t *hash_new(xmpp_ctx_t *ctx, int size, hash_free_func free_func)
 {
     hash_t *result = NULL;
 
-    result = xmpp_alloc(ctx, sizeof(hash_t));
+    result = strophe_alloc(ctx, sizeof(hash_t));
     if (result != NULL) {
-        result->entries = xmpp_alloc(ctx, size * sizeof(hashentry_t *));
+        result->entries = strophe_alloc(ctx, size * sizeof(hashentry_t *));
         if (result->entries == NULL) {
-            xmpp_free(ctx, result);
+            strophe_free(ctx, result);
             return NULL;
         }
         memset(result->entries, 0, size * sizeof(hashentry_t *));
@@ -91,15 +91,15 @@ void hash_release(hash_t *table)
             entry = table->entries[i];
             while (entry != NULL) {
                 next = entry->next;
-                xmpp_free(ctx, entry->key);
+                strophe_free(ctx, entry->key);
                 if (table->free)
                     table->free(ctx, entry->value);
-                xmpp_free(ctx, entry);
+                strophe_free(ctx, entry);
                 entry = next;
             }
         }
-        xmpp_free(ctx, table->entries);
-        xmpp_free(ctx, table);
+        strophe_free(ctx, table->entries);
+        strophe_free(ctx, table);
     }
 }
 
@@ -153,12 +153,12 @@ int hash_add(hash_t *table, const char *key, void *data)
 
     if (entry == NULL) {
         /* allocate and fill a new entry */
-        entry = xmpp_alloc(ctx, sizeof(hashentry_t));
+        entry = strophe_alloc(ctx, sizeof(hashentry_t));
         if (!entry)
             return -1;
-        entry->key = xmpp_strdup(ctx, key);
+        entry->key = strophe_strdup(ctx, key);
         if (!entry->key) {
-            xmpp_free(ctx, entry);
+            strophe_free(ctx, entry);
             return -1;
         }
         /* insert ourselves in the linked list */
@@ -198,7 +198,7 @@ int hash_drop(hash_t *table, const char *key)
         /* traverse the linked list looking for the key */
         if (!strcmp(key, entry->key)) {
             /* match, remove the entry */
-            xmpp_free(ctx, entry->key);
+            strophe_free(ctx, entry->key);
             if (table->free)
                 table->free(ctx, entry->value);
             if (prev == NULL) {
@@ -206,7 +206,7 @@ int hash_drop(hash_t *table, const char *key)
             } else {
                 prev->next = entry->next;
             }
-            xmpp_free(ctx, entry);
+            strophe_free(ctx, entry);
             table->num_keys--;
             return 0;
         }
@@ -228,7 +228,7 @@ hash_iterator_t *hash_iter_new(hash_t *table)
     xmpp_ctx_t *ctx = table->ctx;
     hash_iterator_t *iter;
 
-    iter = xmpp_alloc(ctx, sizeof(*iter));
+    iter = strophe_alloc(ctx, sizeof(*iter));
     if (iter != NULL) {
         iter->ref = 1;
         iter->table = hash_clone(table);
@@ -248,7 +248,7 @@ void hash_iter_release(hash_iterator_t *iter)
 
     if (iter->ref == 0) { // ref is unsigned!!!
         hash_release(iter->table);
-        xmpp_free(ctx, iter);
+        strophe_free(ctx, iter);
     }
 }
 

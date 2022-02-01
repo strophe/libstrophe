@@ -71,7 +71,7 @@ static int test_strdup_one(xmpp_ctx_t *ctx, const char *s)
     int rc = 0;
 
     s1 = strdup(s);
-    s2 = xmpp_strdup(ctx, s);
+    s2 = strophe_strdup(ctx, s);
 
     if (!s1 || !s2 || strcmp(s1, s2) != 0) {
         rc = -1;
@@ -81,7 +81,7 @@ static int test_strdup_one(xmpp_ctx_t *ctx, const char *s)
 
     free(s1);
     if (s2)
-        xmpp_free(ctx, s2);
+        strophe_free(ctx, s2);
 
     return rc;
 }

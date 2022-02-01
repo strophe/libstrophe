@@ -93,7 +93,7 @@ static int _tls_get_id_on_xmppaddr(xmpp_conn_t *conn,
          * https://gitlab.com/gnutls/gnutls/-/merge_requests/1397
          */
         if (ret) {
-            *ret = xmpp_strdup(conn->ctx, name);
+            *ret = strophe_strdup(conn->ctx, name);
         }
         return GNUTLS_SAN_OTHERNAME_XMPP;
     }
@@ -112,7 +112,7 @@ static int _tls_get_id_on_xmppaddr(xmpp_conn_t *conn,
             return GNUTLS_E_MEMORY_ERROR;
         }
         if (ret) {
-            *ret = xmpp_strdup(conn->ctx, (char *)xmpp_addr.data);
+            *ret = strophe_strdup(conn->ctx, (char *)xmpp_addr.data);
         }
         gnutls_free(xmpp_addr.data);
         return GNUTLS_SAN_OTHERNAME_XMPP;
@@ -181,51 +181,53 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, gnutls_x509_crt_t cert)
     xmpp_tlscert_t *tlscert = tlscert_new(ctx);
 
     gnutls_x509_crt_export2(cert, GNUTLS_X509_FMT_PEM, &data);
-    tlscert->pem = xmpp_alloc(ctx, data.size + 1);
+    tlscert->pem = strophe_alloc(ctx, data.size + 1);
     memcpy(tlscert->pem, data.data, data.size);
     tlscert->pem[data.size] = '\0';
     gnutls_free(data.data);
 
     size = sizeof(buf);
     gnutls_x509_crt_get_dn(cert, buf, &size);
-    tlscert->elements[XMPP_CERT_SUBJECT] = xmpp_strdup(ctx, buf);
+    tlscert->elements[XMPP_CERT_SUBJECT] = strophe_strdup(ctx, buf);
     size = sizeof(buf);
     gnutls_x509_crt_get_issuer_dn(cert, buf, &size);
-    tlscert->elements[XMPP_CERT_ISSUER] = xmpp_strdup(ctx, buf);
+    tlscert->elements[XMPP_CERT_ISSUER] = strophe_strdup(ctx, buf);
 
     time_val = gnutls_x509_crt_get_activation_time(cert);
-    tlscert->elements[XMPP_CERT_NOTBEFORE] = xmpp_strdup(ctx, ctime(&time_val));
+    tlscert->elements[XMPP_CERT_NOTBEFORE] =
+        strophe_strdup(ctx, ctime(&time_val));
     tlscert->elements[XMPP_CERT_NOTBEFORE]
                      [strlen(tlscert->elements[XMPP_CERT_NOTBEFORE]) - 1] =
         '\0';
     time_val = gnutls_x509_crt_get_expiration_time(cert);
-    tlscert->elements[XMPP_CERT_NOTAFTER] = xmpp_strdup(ctx, ctime(&time_val));
+    tlscert->elements[XMPP_CERT_NOTAFTER] =
+        strophe_strdup(ctx, ctime(&time_val));
     tlscert->elements[XMPP_CERT_NOTAFTER]
                      [strlen(tlscert->elements[XMPP_CERT_NOTAFTER]) - 1] = '\0';
 
     size = sizeof(smallbuf);
     gnutls_x509_crt_get_fingerprint(cert, GNUTLS_DIG_SHA1, smallbuf, &size);
     hex_encode(buf, smallbuf, size);
-    tlscert->elements[XMPP_CERT_FINGERPRINT_SHA1] = xmpp_strdup(ctx, buf);
+    tlscert->elements[XMPP_CERT_FINGERPRINT_SHA1] = strophe_strdup(ctx, buf);
     size = sizeof(smallbuf);
     gnutls_x509_crt_get_fingerprint(cert, GNUTLS_DIG_SHA256, smallbuf, &size);
     hex_encode(buf, smallbuf, size);
-    tlscert->elements[XMPP_CERT_FINGERPRINT_SHA256] = xmpp_strdup(ctx, buf);
+    tlscert->elements[XMPP_CERT_FINGERPRINT_SHA256] = strophe_strdup(ctx, buf);
 
     xmpp_snprintf(buf, sizeof(buf), "%d", gnutls_x509_crt_get_version(cert));
-    tlscert->elements[XMPP_CERT_VERSION] = xmpp_strdup(ctx, buf);
+    tlscert->elements[XMPP_CERT_VERSION] = strophe_strdup(ctx, buf);
 
     algo = gnutls_x509_crt_get_pk_algorithm(cert, NULL);
     tlscert->elements[XMPP_CERT_KEYALG] =
-        xmpp_strdup(ctx, gnutls_pk_algorithm_get_name(algo));
+        strophe_strdup(ctx, gnutls_pk_algorithm_get_name(algo));
     algo = gnutls_x509_crt_get_signature_algorithm(cert);
     tlscert->elements[XMPP_CERT_SIGALG] =
-        xmpp_strdup(ctx, gnutls_sign_get_name(algo));
+        strophe_strdup(ctx, gnutls_sign_get_name(algo));
 
     size = sizeof(smallbuf);
     gnutls_x509_crt_get_serial(cert, smallbuf, &size);
     hex_encode(buf, smallbuf, size);
-    tlscert->elements[XMPP_CERT_SERIALNUMBER] = xmpp_strdup(ctx, buf);
+    tlscert->elements[XMPP_CERT_SERIALNUMBER] = strophe_strdup(ctx, buf);
 
     for (n = 0, m = 0, res = 0; res != GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE;
          ++n) {
@@ -310,7 +312,7 @@ static int _tls_verify(gnutls_session_t session)
 
 tls_t *tls_new(xmpp_conn_t *conn)
 {
-    tls_t *tls = xmpp_alloc(conn->ctx, sizeof(tls_t));
+    tls_t *tls = strophe_alloc(conn->ctx, sizeof(tls_t));
 
     if (tls) {
         memset(tls, 0, sizeof(*tls));
@@ -328,7 +330,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
                            "could not read client certificate");
                 gnutls_certificate_free_credentials(tls->cred);
                 gnutls_deinit(tls->session);
-                xmpp_free(tls->ctx, tls);
+                strophe_free(tls->ctx, tls);
                 return NULL;
             }
             gnutls_certificate_set_x509_key_file(
@@ -354,7 +356,7 @@ void tls_free(tls_t *tls)
         gnutls_x509_crt_deinit(tls->client_cert);
     gnutls_deinit(tls->session);
     gnutls_certificate_free_credentials(tls->cred);
-    xmpp_free(tls->ctx, tls);
+    strophe_free(tls->ctx, tls);
 }
 
 xmpp_tlscert_t *tls_peer_cert(xmpp_conn_t *conn)

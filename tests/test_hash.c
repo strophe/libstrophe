@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     }
 
     /* allocate a hash table */
-    table = hash_new(ctx, TABLESIZE, xmpp_free);
+    table = hash_new(ctx, TABLESIZE, strophe_free);
     if (table == NULL) {
         /* table allocation failed! */
         return 1;
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
     /* test insertion */
     for (i = 0; i < nkeys; i++) {
-        err = hash_add(table, keys[i], xmpp_strdup(ctx, values[i]));
+        err = hash_add(table, keys[i], strophe_strdup(ctx, values[i]));
         if (err)
             return err;
     }
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 
     /* test replacing old values */
     for (i = 0; i < nkeys; i++) {
-        err = hash_add(table, keys[0], xmpp_strdup(ctx, values[i]));
+        err = hash_add(table, keys[0], strophe_strdup(ctx, values[i]));
         if (err)
             return err;
         if (hash_num_keys(table) != nkeys)
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
             return 1;
     }
     /* restore value for the 1st key */
-    hash_add(table, keys[0], xmpp_strdup(ctx, values[0]));
+    hash_add(table, keys[0], strophe_strdup(ctx, values[0]));
 
     /* test cloning */
     clone = hash_clone(table);

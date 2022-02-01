@@ -271,7 +271,7 @@ char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n)
         if (j == (int)n) {
             xmpp_debug(conn->ctx, "tls", "extracted jid %s from id-on-xmppAddr",
                        res);
-            ret = xmpp_strdup(conn->ctx, res);
+            ret = strophe_strdup(conn->ctx, res);
             OPENSSL_free(res);
             break;
         }
@@ -321,7 +321,7 @@ static char *_asn1_time_to_str(const xmpp_ctx_t *ctx, ASN1_TIME *t)
     char buf[128];
     int res = _convert_ASN1TIME(t, buf, sizeof(buf));
     if (res) {
-        return xmpp_strdup(ctx, buf);
+        return strophe_strdup(ctx, buf);
     }
     return NULL;
 }
@@ -345,7 +345,7 @@ _get_fingerprint(const xmpp_ctx_t *ctx, X509 *err_cert, xmpp_cert_element_t el)
     if (X509_digest(err_cert, digest, buf, &len) != 0) {
         char fingerprint[4 * EVP_MAX_MD_SIZE];
         hex_encode(fingerprint, buf, len);
-        return xmpp_strdup(ctx, fingerprint);
+        return strophe_strdup(ctx, fingerprint);
     }
     return NULL;
 }
@@ -384,7 +384,7 @@ _get_alg(const xmpp_ctx_t *ctx, X509 *err_cert, xmpp_cert_element_t el)
     if (alg_nid != NID_undef) {
         const char *alg = OBJ_nid2ln(alg_nid);
         if (alg) {
-            return xmpp_strdup(ctx, alg);
+            return strophe_strdup(ctx, alg);
         }
     }
     return NULL;
@@ -403,7 +403,7 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
     PEM_write_bio_X509(b, cert);
     BUF_MEM *bptr;
     BIO_get_mem_ptr(b, &bptr);
-    tlscert->pem = xmpp_alloc(ctx, bptr->length + 1);
+    tlscert->pem = strophe_alloc(ctx, bptr->length + 1);
     if (!tlscert->pem)
         goto error_out;
     memcpy(tlscert->pem, bptr->data, bptr->length);
@@ -413,12 +413,12 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
     subject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
     if (!subject)
         goto error_out;
-    tlscert->elements[XMPP_CERT_SUBJECT] = xmpp_strdup(ctx, subject);
+    tlscert->elements[XMPP_CERT_SUBJECT] = strophe_strdup(ctx, subject);
     OPENSSL_free(subject);
     issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
     if (!issuer)
         goto error_out;
-    tlscert->elements[XMPP_CERT_ISSUER] = xmpp_strdup(ctx, issuer);
+    tlscert->elements[XMPP_CERT_ISSUER] = strophe_strdup(ctx, issuer);
     OPENSSL_free(issuer);
 
     tlscert->elements[XMPP_CERT_NOTBEFORE] =
@@ -432,7 +432,7 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
         _get_fingerprint(ctx, cert, XMPP_CERT_FINGERPRINT_SHA256);
 
     xmpp_snprintf(buf, sizeof(buf), "%ld", X509_get_version(cert) + 1);
-    tlscert->elements[XMPP_CERT_VERSION] = xmpp_strdup(ctx, buf);
+    tlscert->elements[XMPP_CERT_VERSION] = strophe_strdup(ctx, buf);
 
     tlscert->elements[XMPP_CERT_KEYALG] = _get_alg(ctx, cert, XMPP_CERT_KEYALG);
     tlscert->elements[XMPP_CERT_SIGALG] = _get_alg(ctx, cert, XMPP_CERT_SIGALG);
@@ -443,7 +443,7 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
         char *serialnumber = BN_bn2hex(bn);
         if (serialnumber) {
             tlscert->elements[XMPP_CERT_SERIALNUMBER] =
-                xmpp_strdup(ctx, serialnumber);
+                strophe_strdup(ctx, serialnumber);
             OPENSSL_free(serialnumber);
         }
         BN_free(bn);
@@ -509,7 +509,7 @@ static int _tls_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
 
 tls_t *tls_new(xmpp_conn_t *conn)
 {
-    tls_t *tls = xmpp_alloc(conn->ctx, sizeof(*tls));
+    tls_t *tls = strophe_alloc(conn->ctx, sizeof(*tls));
 
     if (tls) {
         int ret;
@@ -623,7 +623,7 @@ err_free_cert:
 err_free_ctx:
     SSL_CTX_free(tls->ssl_ctx);
 err:
-    xmpp_free(conn->ctx, tls);
+    strophe_free(conn->ctx, tls);
     _tls_log_error(conn->ctx);
     return NULL;
 }
@@ -633,7 +633,7 @@ void tls_free(tls_t *tls)
     SSL_free(tls->ssl);
     X509_free(tls->client_cert);
     SSL_CTX_free(tls->ssl_ctx);
-    xmpp_free(tls->ctx, tls);
+    strophe_free(tls->ctx, tls);
 }
 
 xmpp_tlscert_t *tls_peer_cert(xmpp_conn_t *conn)

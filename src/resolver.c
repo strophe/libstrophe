@@ -196,7 +196,7 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx,
         return set;
 #endif /* _WIN32 */
 
-    buf = xmpp_alloc(ctx, RESOLVER_BUF_MAX);
+    buf = strophe_alloc(ctx, RESOLVER_BUF_MAX);
     if (buf == NULL)
         return XMPP_DOMAIN_NOT_FOUND;
 
@@ -210,7 +210,7 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx,
     if (len > 0)
         set = resolver_srv_lookup_buf(ctx, buf, (size_t)len, srv_rr_list);
 
-    xmpp_free(ctx, buf);
+    strophe_free(ctx, buf);
 
 #endif /* HAVE_CARES */
 
@@ -223,7 +223,7 @@ void resolver_srv_free(xmpp_ctx_t *ctx, resolver_srv_rr_t *srv_rr_list)
 
     while (srv_rr_list != NULL) {
         rr = srv_rr_list->next;
-        xmpp_free(ctx, srv_rr_list);
+        strophe_free(ctx, srv_rr_list);
         srv_rr_list = rr;
     }
 }
@@ -431,7 +431,7 @@ static int resolver_raw_srv_lookup_buf(xmpp_ctx_t *ctx,
         rdlength = xmpp_ntohs_ptr(&buf[j + 8]);
         j += 10;
         if (type == MESSAGE_T_SRV && class == MESSAGE_C_IN) {
-            rr = xmpp_alloc(ctx, sizeof(*rr));
+            rr = strophe_alloc(ctx, sizeof(*rr));
             rr->next = *srv_rr_list;
             rr->priority = xmpp_ntohs_ptr(&buf[j]);
             rr->weight = xmpp_ntohs_ptr(&buf[j + 2]);
@@ -441,7 +441,7 @@ static int resolver_raw_srv_lookup_buf(xmpp_ctx_t *ctx,
             if (name_len > 0)
                 *srv_rr_list = rr;
             else
-                xmpp_free(ctx, rr); /* skip broken record */
+                strophe_free(ctx, rr); /* skip broken record */
         }
         j += rdlength;
     }
@@ -480,7 +480,7 @@ static int resolver_ares_srv_lookup_buf(xmpp_ctx_t *ctx,
 
     item = srv;
     while (item != NULL) {
-        rr = xmpp_alloc(ctx, sizeof(*rr));
+        rr = strophe_alloc(ctx, sizeof(*rr));
         if (rr == NULL)
             break;
         rr->next = *srv_rr_list;
@@ -705,7 +705,7 @@ static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx,
 
                 while (current) {
                     if (current->wType == DNS_TYPE_SRV) {
-                        rr = xmpp_alloc(ctx, sizeof(*rr));
+                        rr = strophe_alloc(ctx, sizeof(*rr));
                         if (rr == NULL)
                             break;
                         rr->next = *srv_rr_list;

@@ -106,12 +106,12 @@ _handle_error(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     if (conn->stream_error) {
         xmpp_stanza_release(conn->stream_error->stanza);
         if (conn->stream_error->text)
-            xmpp_free(conn->ctx, conn->stream_error->text);
-        xmpp_free(conn->ctx, conn->stream_error);
+            strophe_free(conn->ctx, conn->stream_error->text);
+        strophe_free(conn->ctx, conn->stream_error);
     }
 
     /* create stream error structure */
-    conn->stream_error = (xmpp_stream_error_t *)xmpp_alloc(
+    conn->stream_error = (xmpp_stream_error_t *)strophe_alloc(
         conn->ctx, sizeof(xmpp_stream_error_t));
 
     conn->stream_error->text = NULL;
@@ -130,7 +130,7 @@ _handle_error(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                 name = xmpp_stanza_get_name(child);
                 if (strcmp(name, "text") == 0) {
                     if (conn->stream_error->text)
-                        xmpp_free(conn->ctx, conn->stream_error->text);
+                        strophe_free(conn->ctx, conn->stream_error->text);
                     conn->stream_error->text = xmpp_stanza_get_text(child);
                 } else if (strcmp(name, "bad-format") == 0)
                     conn->stream_error->type = XMPP_SE_BAD_FORMAT;
@@ -255,7 +255,7 @@ _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                 else if (strcasecmp(text, "ANONYMOUS") == 0)
                     conn->sasl_support |= SASL_MASK_ANONYMOUS;
 
-                xmpp_free(conn->ctx, text);
+                strophe_free(conn->ctx, text);
             }
         }
     }
@@ -368,7 +368,7 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
             disconnect_mem_error(conn);
             return 0;
         }
-        xmpp_free(conn->ctx, text);
+        strophe_free(conn->ctx, text);
 
         auth = xmpp_stanza_new(conn->ctx);
         if (!auth) {
@@ -385,7 +385,7 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
         }
 
         xmpp_stanza_set_text(authdata, response);
-        xmpp_free(conn->ctx, response);
+        strophe_free(conn->ctx, response);
 
         xmpp_stanza_add_child(auth, authdata);
         xmpp_stanza_release(authdata);
@@ -465,13 +465,13 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
             goto err;
 
         challenge = xmpp_base64_decode_str(conn->ctx, text, strlen(text));
-        xmpp_free(conn->ctx, text);
+        strophe_free(conn->ctx, text);
         if (!challenge)
             goto err;
 
         response = sasl_scram(conn->ctx, scram_ctx->alg, challenge,
                               scram_ctx->scram_init, conn->jid, conn->pass);
-        xmpp_free(conn->ctx, challenge);
+        strophe_free(conn->ctx, challenge);
         if (!response)
             goto err;
 
@@ -485,7 +485,7 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
         if (!authdata)
             goto err_release_auth;
         xmpp_stanza_set_text(authdata, response);
-        xmpp_free(conn->ctx, response);
+        strophe_free(conn->ctx, response);
 
         xmpp_stanza_add_child(auth, authdata);
         xmpp_stanza_release(authdata);
@@ -506,8 +506,8 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
          */
         rc = _handle_sasl_result(conn, stanza,
                                  (void *)scram_ctx->alg->scram_name);
-        xmpp_free(conn->ctx, scram_ctx->scram_init);
-        xmpp_free(conn->ctx, scram_ctx);
+        strophe_free(conn->ctx, scram_ctx->scram_init);
+        strophe_free(conn->ctx, scram_ctx);
     }
 
     return rc;
@@ -515,10 +515,10 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
 err_release_auth:
     xmpp_stanza_release(auth);
 err_free_response:
-    xmpp_free(conn->ctx, response);
+    strophe_free(conn->ctx, response);
 err:
-    xmpp_free(conn->ctx, scram_ctx->scram_init);
-    xmpp_free(conn->ctx, scram_ctx);
+    strophe_free(conn->ctx, scram_ctx->scram_init);
+    strophe_free(conn->ctx, scram_ctx);
     disconnect_mem_error(conn);
     return 0;
 }
@@ -537,11 +537,11 @@ static char *_make_scram_init_msg(xmpp_conn_t *conn)
     }
     xmpp_rand_nonce(ctx->rand, nonce, sizeof(nonce));
     message_len = strlen(node) + strlen(nonce) + 8 + 1;
-    message = xmpp_alloc(ctx, message_len);
+    message = strophe_alloc(ctx, message_len);
     if (message) {
         xmpp_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
     }
-    xmpp_free(ctx, node);
+    strophe_free(ctx, node);
 
     return message;
 }
@@ -594,7 +594,7 @@ static void _auth(xmpp_conn_t *conn)
     if (str == NULL) {
         anonjid = 1;
     } else {
-        xmpp_free(conn->ctx, str);
+        strophe_free(conn->ctx, str);
         anonjid = 0;
     }
 
@@ -672,7 +672,7 @@ static void _auth(xmpp_conn_t *conn)
                      strcmp(str, conn->jid) == 0)) {
             xmpp_stanza_set_text(authdata, "=");
         } else {
-            xmpp_free(conn->ctx, str);
+            strophe_free(conn->ctx, str);
             str = xmpp_base64_encode(conn->ctx, (void *)conn->jid,
                                      strlen(conn->jid));
             if (!str) {
@@ -683,7 +683,7 @@ static void _auth(xmpp_conn_t *conn)
             }
             xmpp_stanza_set_text(authdata, str);
         }
-        xmpp_free(conn->ctx, str);
+        strophe_free(conn->ctx, str);
 
         xmpp_stanza_add_child(auth, authdata);
         xmpp_stanza_release(authdata);
@@ -705,7 +705,7 @@ static void _auth(xmpp_conn_t *conn)
                    "Password hasn't been set, and SASL ANONYMOUS unsupported.");
         xmpp_disconnect(conn);
     } else if (conn->sasl_support & SASL_MASK_SCRAM) {
-        scram_ctx = xmpp_alloc(conn->ctx, sizeof(*scram_ctx));
+        scram_ctx = strophe_alloc(conn->ctx, sizeof(*scram_ctx));
         if (conn->sasl_support & SASL_MASK_SCRAMSHA512)
             scram_ctx->alg = &scram_sha512;
         else if (conn->sasl_support & SASL_MASK_SCRAMSHA256)
@@ -721,7 +721,7 @@ static void _auth(xmpp_conn_t *conn)
         /* don't free scram_init on success */
         scram_ctx->scram_init = _make_scram_init_msg(conn);
         if (!scram_ctx->scram_init) {
-            xmpp_free(conn->ctx, scram_ctx);
+            strophe_free(conn->ctx, scram_ctx);
             xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
             return;
@@ -731,8 +731,8 @@ static void _auth(xmpp_conn_t *conn)
                                  (unsigned char *)scram_ctx->scram_init,
                                  strlen(scram_ctx->scram_init));
         if (!str) {
-            xmpp_free(conn->ctx, scram_ctx->scram_init);
-            xmpp_free(conn->ctx, scram_ctx);
+            strophe_free(conn->ctx, scram_ctx->scram_init);
+            strophe_free(conn->ctx, scram_ctx);
             xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
             return;
@@ -740,15 +740,15 @@ static void _auth(xmpp_conn_t *conn)
 
         authdata = xmpp_stanza_new(conn->ctx);
         if (!authdata) {
-            xmpp_free(conn->ctx, str);
-            xmpp_free(conn->ctx, scram_ctx->scram_init);
-            xmpp_free(conn->ctx, scram_ctx);
+            strophe_free(conn->ctx, str);
+            strophe_free(conn->ctx, scram_ctx->scram_init);
+            strophe_free(conn->ctx, scram_ctx);
             xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
             return;
         }
         xmpp_stanza_set_text(authdata, str);
-        xmpp_free(conn->ctx, str);
+        strophe_free(conn->ctx, str);
         xmpp_stanza_add_child(auth, authdata);
         xmpp_stanza_release(authdata);
 
@@ -797,8 +797,8 @@ static void _auth(xmpp_conn_t *conn)
             return;
         }
         xmpp_stanza_set_text(authdata, str);
-        xmpp_free(conn->ctx, str);
-        xmpp_free(conn->ctx, authid);
+        strophe_free(conn->ctx, str);
+        strophe_free(conn->ctx, authid);
 
         xmpp_stanza_add_child(auth, authdata);
         xmpp_stanza_release(authdata);
@@ -923,7 +923,7 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         resource = xmpp_jid_resource(conn->ctx, conn->jid);
         if ((resource != NULL) && (strlen(resource) == 0)) {
             /* jabberd2 doesn't handle an empty resource */
-            xmpp_free(conn->ctx, resource);
+            strophe_free(conn->ctx, resource);
             resource = NULL;
         }
 
@@ -951,7 +951,7 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
             xmpp_stanza_release(text);
             xmpp_stanza_add_child(bind, res);
             xmpp_stanza_release(res);
-            xmpp_free(conn->ctx, resource);
+            strophe_free(conn->ctx, resource);
         }
 
         xmpp_stanza_add_child(iq, bind);
@@ -1191,7 +1191,7 @@ static void _auth_legacy(xmpp_conn_t *conn)
         goto err_free;
     }
     xmpp_stanza_set_text(authdata, str);
-    xmpp_free(conn->ctx, str);
+    strophe_free(conn->ctx, str);
     xmpp_stanza_add_child(child, authdata);
     xmpp_stanza_release(authdata);
 
@@ -1222,7 +1222,7 @@ static void _auth_legacy(xmpp_conn_t *conn)
     str = xmpp_jid_resource(conn->ctx, conn->jid);
     if (str) {
         xmpp_stanza_set_text(authdata, str);
-        xmpp_free(conn->ctx, str);
+        strophe_free(conn->ctx, str);
     } else {
         xmpp_stanza_release(authdata);
         xmpp_stanza_release(iq);
@@ -1287,7 +1287,7 @@ int _handle_component_auth(xmpp_conn_t *conn)
     crypto_SHA1_Update(&mdctx, (uint8_t *)conn->pass, strlen(conn->pass));
     crypto_SHA1_Final(&mdctx, md_value);
 
-    digest = xmpp_alloc(conn->ctx, 2 * sizeof(md_value) + 1);
+    digest = strophe_alloc(conn->ctx, 2 * sizeof(md_value) + 1);
     if (digest) {
         /* convert the digest into string representation */
         for (i = 0; i < sizeof(md_value); i++)
@@ -1302,7 +1302,7 @@ int _handle_component_auth(xmpp_conn_t *conn)
                              XMPP_NS_COMPONENT, digest);
         xmpp_debug(conn->ctx, "auth",
                    "Sent component handshake to the server.");
-        xmpp_free(conn->ctx, digest);
+        strophe_free(conn->ctx, digest);
     } else {
         xmpp_debug(conn->ctx, "auth",
                    "Couldn't allocate memory for component "
@@ -1333,7 +1333,7 @@ int _handle_component_hs_response(xmpp_conn_t *conn,
         xmpp_stanza_to_text(stanza, &msg, &msg_size);
         if (msg) {
             xmpp_debug(conn->ctx, "auth", "Handshake failed: %s", msg);
-            xmpp_free(conn->ctx, msg);
+            strophe_free(conn->ctx, msg);
         }
         xmpp_disconnect(conn);
         return XMPP_EINT;

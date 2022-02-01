@@ -60,7 +60,7 @@ int test_plain(xmpp_ctx_t *ctx)
         /* SASL PLAIN returned incorrect string! */
         return 2;
     }
-    xmpp_free(ctx, result);
+    strophe_free(ctx, result);
 
     return 0;
 }
