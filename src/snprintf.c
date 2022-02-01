@@ -706,7 +706,7 @@ static int dopr_outch(char *buffer, size_t *currlen, size_t maxlen, char c)
     return 1;
 }
 
-int xmpp_vsnprintf(char *str, size_t count, const char *fmt, va_list args)
+int strophe_vsnprintf(char *str, size_t count, const char *fmt, va_list args)
 {
     if (str != NULL && count > 0)
         str[0] = 0;
@@ -716,7 +716,7 @@ int xmpp_vsnprintf(char *str, size_t count, const char *fmt, va_list args)
 
 #ifndef HAVE_SNPRINTF
 /* VARARGS3 */
-int xmpp_snprintf(char *str, size_t count, const char *fmt, ...)
+int strophe_snprintf(char *str, size_t count, const char *fmt, ...)
 {
     VA_LOCAL_DECL;
     int total;

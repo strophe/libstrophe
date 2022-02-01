@@ -22,13 +22,15 @@
 #ifdef HAVE_SNPRINTF
 #define xmpp_snprintf snprintf
 #else
-int xmpp_snprintf(char *str, size_t count, const char *fmt, ...);
+#define xmpp_snprintf strophe_snprintf
+int strophe_snprintf(char *str, size_t count, const char *fmt, ...);
 #endif
 
 #ifdef HAVE_VSNPRINTF
 #define xmpp_vsnprintf vsnprintf
 #else
-int xmpp_vsnprintf(char *str, size_t count, const char *fmt, va_list arg);
+#define xmpp_vsnprintf strophe_vsnprintf
+int strophe_vsnprintf(char *str, size_t count, const char *fmt, va_list arg);
 #endif
 
 #endif /* __LIBSTROPHE_SNPRINTF_H__ */
