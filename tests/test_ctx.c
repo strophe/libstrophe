@@ -81,7 +81,7 @@ int main()
     mylog.userdata = my_str;
 
     ctx = xmpp_ctx_new(&mymem, &mylog);
-    xmpp_debug(ctx, "test", "hello");
+    strophe_debug(ctx, "test", "hello");
 
     testptr1 = strophe_alloc(ctx, 1024);
     if (testptr1 == NULL) {

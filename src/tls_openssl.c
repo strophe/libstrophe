@@ -269,8 +269,8 @@ char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n)
         if (_tls_xmppaddr_to_string(name, &res))
             continue;
         if (j == (int)n) {
-            xmpp_debug(conn->ctx, "tls", "extracted jid %s from id-on-xmppAddr",
-                       res);
+            strophe_debug(conn->ctx, "tls",
+                          "extracted jid %s from id-on-xmppAddr", res);
             ret = strophe_strdup(conn->ctx, res);
             OPENSSL_free(res);
             break;
@@ -459,7 +459,8 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
             if (_tls_dnsname_to_string(name, &res))
                 continue;
             if (tlscert_add_dnsname(tlscert, res))
-                xmpp_debug(ctx, "tls", "Can't store dnsName(%zu): %s", n, res);
+                strophe_debug(ctx, "tls", "Can't store dnsName(%zu): %s", n,
+                              res);
             n++;
             OPENSSL_free(res);
         }
@@ -482,8 +483,8 @@ static int _tls_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
     xmpp_conn_t *conn = SSL_get_app_data(ssl);
 
     if (!conn->certfail_handler) {
-        xmpp_error(conn->ctx, "tls",
-                   "No certfail handler set, canceling connection attempt");
+        strophe_error(conn->ctx, "tls",
+                      "No certfail handler set, canceling connection attempt");
         return 0;
     }
 
@@ -494,9 +495,9 @@ static int _tls_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
     if (!tlscert)
         return 0;
 
-    xmpp_debug(conn->ctx, "tls", "preverify_ok:%d\nSubject: %s\nIssuer: %s",
-               preverify_ok, tlscert->elements[XMPP_CERT_SUBJECT],
-               tlscert->elements[XMPP_CERT_ISSUER]);
+    strophe_debug(conn->ctx, "tls", "preverify_ok:%d\nSubject: %s\nIssuer: %s",
+                  preverify_ok, tlscert->elements[XMPP_CERT_SUBJECT],
+                  tlscert->elements[XMPP_CERT_ISSUER]);
 
     int ret = conn->certfail_handler(
         tlscert,
@@ -540,8 +541,8 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (conn->tls_client_cert && conn->tls_client_key) {
             tls->client_cert = _tls_cert_read(conn);
             if (!tls->client_cert) {
-                xmpp_error(tls->ctx, "tls",
-                           "could not read client certificate");
+                strophe_error(tls->ctx, "tls",
+                              "could not read client certificate");
                 goto err_free_ctx;
             }
 
@@ -563,16 +564,16 @@ tls_t *tls_new(xmpp_conn_t *conn)
              * location is still treated as a success.
              * Ignore errors when XMPP_CONN_FLAG_TRUST_TLS is set.
              */
-            xmpp_error(tls->ctx, "tls",
-                       "SSL_CTX_set_default_verify_paths() failed");
+            strophe_error(tls->ctx, "tls",
+                          "SSL_CTX_set_default_verify_paths() failed");
             goto err_free_cert;
         }
 
         if (conn->tls_cafile || conn->tls_capath) {
             if (SSL_CTX_load_verify_locations(tls->ssl_ctx, conn->tls_cafile,
                                               conn->tls_capath) == 0) {
-                xmpp_error(tls->ctx, "tls",
-                           "SSL_CTX_load_verify_locations() failed");
+                strophe_error(tls->ctx, "tls",
+                              "SSL_CTX_load_verify_locations() failed");
                 goto err_free_cert;
             }
         }
@@ -680,13 +681,13 @@ int tls_start(tls_t *tls)
 
     x509_res = SSL_get_verify_result(tls->ssl);
     if (x509_res == X509_V_OK) {
-        xmpp_debug(tls->ctx, "tls", "Certificate verification passed");
+        strophe_debug(tls->ctx, "tls", "Certificate verification passed");
     } else {
-        xmpp_debug(tls->ctx, "tls",
-                   "Certificate verification FAILED, result=%s(%ld)",
-                   TLS_ERROR_STR((int)x509_res, cert_errors), x509_res);
+        strophe_debug(tls->ctx, "tls",
+                      "Certificate verification FAILED, result=%s(%ld)",
+                      TLS_ERROR_STR((int)x509_res, cert_errors), x509_res);
         if (ret > 0)
-            xmpp_debug(tls->ctx, "tls", "User decided to connect anyways");
+            strophe_debug(tls->ctx, "tls", "User decided to connect anyways");
     }
     _tls_dump_cert_info(tls);
 
@@ -801,8 +802,8 @@ static const char *_tls_error_str(int error, const char **tbl, size_t tbl_size)
 static void _tls_set_error(tls_t *tls, int error)
 {
     if (error != 0 && !tls_is_recoverable(error)) {
-        xmpp_debug(tls->ctx, "tls", "error=%s(%d) errno=%d",
-                   TLS_ERROR_STR(error, tls_errors), error, errno);
+        strophe_debug(tls->ctx, "tls", "error=%s(%d) errno=%d",
+                      TLS_ERROR_STR(error, tls_errors), error, errno);
         _tls_log_error(tls->ctx);
     }
     tls->lasterror = error;
@@ -815,9 +816,9 @@ static void _tls_log_error(xmpp_ctx_t *ctx)
     do {
         e = ERR_get_error();
         if (e != 0) {
-            xmpp_debug(ctx, "tls", "error:%08uX:%s:%s:%s", e,
-                       ERR_lib_error_string(e), ERR_func_error_string(e),
-                       ERR_reason_error_string(e));
+            strophe_debug(ctx, "tls", "error:%08uX:%s:%s:%s", e,
+                          ERR_lib_error_string(e), ERR_func_error_string(e),
+                          ERR_reason_error_string(e));
         }
     } while (e != 0);
 }
@@ -829,16 +830,16 @@ static void _tls_dump_cert_info(tls_t *tls)
 
     cert = SSL_get_peer_certificate(tls->ssl);
     if (cert == NULL)
-        xmpp_debug(tls->ctx, "tls", "Certificate was not presented by peer");
+        strophe_debug(tls->ctx, "tls", "Certificate was not presented by peer");
     else {
         name = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
         if (name != NULL) {
-            xmpp_debug(tls->ctx, "tls", "Subject=%s", name);
+            strophe_debug(tls->ctx, "tls", "Subject=%s", name);
             OPENSSL_free(name);
         }
         name = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
         if (name != NULL) {
-            xmpp_debug(tls->ctx, "tls", "Issuer=%s", name);
+            strophe_debug(tls->ctx, "tls", "Issuer=%s", name);
             OPENSSL_free(name);
         }
         X509_free(cert);
@@ -851,7 +852,7 @@ static X509 *_tls_cert_read(xmpp_conn_t *conn)
         return conn->tls->client_cert;
     BIO *f = BIO_new_file(conn->tls_client_cert, "r");
     if (!f) {
-        xmpp_debug(conn->ctx, "tls", "f == NULL");
+        strophe_debug(conn->ctx, "tls", "f == NULL");
         return NULL;
     }
     X509 *c = PEM_read_bio_X509(f, NULL, NULL, NULL);

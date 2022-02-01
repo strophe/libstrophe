@@ -267,7 +267,7 @@ static void _timed_handler_add(xmpp_ctx_t *ctx,
     /* check if handler is already in the list */
     for (item = *handlers_list; item; item = item->next) {
         if (item->handler == handler && item->userdata == userdata) {
-            xmpp_warn(ctx, "xmpp", "Timed handler already exists.");
+            strophe_warn(ctx, "xmpp", "Timed handler already exists.");
             break;
         }
     }
@@ -333,7 +333,7 @@ static void _id_handler_add(xmpp_conn_t *conn,
     item = (xmpp_handlist_t *)hash_get(conn->id_handlers, id);
     while (item) {
         if (item->handler == handler && item->userdata == userdata) {
-            xmpp_warn(conn->ctx, "xmpp", "Id handler already exists.");
+            strophe_warn(conn->ctx, "xmpp", "Id handler already exists.");
             break;
         }
         item = item->next;
@@ -435,7 +435,7 @@ static void _handler_add(xmpp_conn_t *conn,
         /* same handler function can process different stanzas and
            distinguish them according to userdata. */
         if (item->handler == handler && item->userdata == userdata) {
-            xmpp_warn(conn->ctx, "xmpp", "Stanza handler already exists.");
+            strophe_warn(conn->ctx, "xmpp", "Stanza handler already exists.");
             break;
         }
     }

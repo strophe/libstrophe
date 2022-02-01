@@ -181,7 +181,8 @@ _start_element(void *userdata, const XML_Char *nsname, const XML_Char **attrs)
         if (!parser->stanza && parser->depth != 1) {
             /* something terrible happened */
             /* FIXME: shutdown disconnect */
-            xmpp_error(parser->ctx, "parser", "oops, where did our stanza go?");
+            strophe_error(parser->ctx, "parser",
+                          "oops, where did our stanza go?");
         } else {
             child = xmpp_stanza_new(parser->ctx);
             if (!child) {

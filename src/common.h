@@ -93,18 +93,24 @@ char *strophe_strdup(const xmpp_ctx_t *ctx, const char *s);
 char *strophe_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len);
 void strophe_free(const xmpp_ctx_t *ctx, void *p);
 
-void xmpp_log(const xmpp_ctx_t *ctx,
-              const xmpp_log_level_t level,
-              const char *area,
-              const char *fmt,
-              va_list ap);
-
 /* wrappers for xmpp_log at specific levels */
-void xmpp_error(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
-void xmpp_warn(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
-void xmpp_info(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
-void xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
-void xmpp_debug_verbose(
+void strophe_error(const xmpp_ctx_t *ctx,
+                   const char *area,
+                   const char *fmt,
+                   ...);
+void strophe_warn(const xmpp_ctx_t *ctx,
+                  const char *area,
+                  const char *fmt,
+                  ...);
+void strophe_info(const xmpp_ctx_t *ctx,
+                  const char *area,
+                  const char *fmt,
+                  ...);
+void strophe_debug(const xmpp_ctx_t *ctx,
+                   const char *area,
+                   const char *fmt,
+                   ...);
+void strophe_debug_verbose(
     int level, const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 
 /** connection **/

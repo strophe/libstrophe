@@ -107,7 +107,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
 
             if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls))) {
                 /* an error occurred */
-                xmpp_debug(ctx, "xmpp", "Send error occurred, disconnecting.");
+                strophe_debug(ctx, "xmpp",
+                              "Send error occurred, disconnecting.");
                 conn->error = ECONNABORTED;
                 conn_disconnect(conn);
                 goto next_item;
@@ -134,9 +135,9 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
                 break; /* partial write or an error */
 
             /* all data for this queue item written, delete and move on */
-            xmpp_debug(conn->ctx, "conn", "SENT: %s", sq->data);
-            xmpp_debug_verbose(1, ctx, "xmpp",
-                               "Finished writing queue element: %p.", sq);
+            strophe_debug(conn->ctx, "conn", "SENT: %s", sq->data);
+            strophe_debug_verbose(1, ctx, "xmpp",
+                                  "Finished writing queue element: %p.", sq);
             strophe_free(ctx, sq->data);
             tsq = sq;
             sq = sq->next;
@@ -154,7 +155,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
         if (conn->error) {
             /* FIXME: need to tear down send queues and random other things
              * maybe this should be abstracted */
-            xmpp_debug(ctx, "xmpp", "Send error occurred, disconnecting.");
+            strophe_debug(ctx, "xmpp", "Send error occurred, disconnecting.");
             conn->error = ECONNABORTED;
             conn_disconnect(conn);
         }
@@ -195,7 +196,7 @@ next_item:
                 FD_SET(conn->sock, &wfds);
             else {
                 conn->error = ETIMEDOUT;
-                xmpp_info(ctx, "xmpp", "Connection attempt timed out.");
+                strophe_info(ctx, "xmpp", "Connection attempt timed out.");
                 conn_disconnect(conn);
             }
             break;
@@ -232,8 +233,8 @@ next_item:
     /* select errored */
     if (ret < 0) {
         if (!sock_is_recoverable(sock_error()))
-            xmpp_error(ctx, "xmpp", "event watcher internal error %d",
-                       sock_error());
+            strophe_error(ctx, "xmpp", "event watcher internal error %d",
+                          sock_error());
         return;
     }
 
@@ -255,13 +256,14 @@ next_item:
                 ret = sock_connect_error(conn->sock);
                 if (ret != 0) {
                     /* connection failed */
-                    xmpp_debug(ctx, "xmpp", "connection failed, error %d", ret);
+                    strophe_debug(ctx, "xmpp", "connection failed, error %d",
+                                  ret);
                     conn_disconnect(conn);
                     break;
                 }
 
                 conn->state = XMPP_STATE_CONNECTED;
-                xmpp_debug(ctx, "xmpp", "connection successful");
+                strophe_debug(ctx, "xmpp", "connection successful");
                 conn_established(conn);
             }
 
@@ -279,23 +281,23 @@ next_item:
                 if (ret > 0) {
                     ret = parser_feed(conn->parser, buf, ret);
                     if (!ret) {
-                        xmpp_debug(ctx, "xmpp", "parse error [%s]", buf);
+                        strophe_debug(ctx, "xmpp", "parse error [%s]", buf);
                         xmpp_send_error(conn, XMPP_SE_INVALID_XML,
                                         "parse error");
                     }
                 } else {
                     if (conn->tls) {
                         if (!tls_is_recoverable(tls_error(conn->tls))) {
-                            xmpp_debug(ctx, "xmpp",
-                                       "Unrecoverable TLS error, %d.",
-                                       tls_error(conn->tls));
+                            strophe_debug(ctx, "xmpp",
+                                          "Unrecoverable TLS error, %d.",
+                                          tls_error(conn->tls));
                             conn->error = tls_error(conn->tls);
                             conn_disconnect(conn);
                         }
                     } else {
                         /* return of 0 means socket closed by server */
-                        xmpp_debug(ctx, "xmpp",
-                                   "Socket closed by remote host.");
+                        strophe_debug(ctx, "xmpp",
+                                      "Socket closed by remote host.");
                         conn->error = ECONNRESET;
                         conn_disconnect(conn);
                     }
@@ -337,7 +339,7 @@ void xmpp_run(xmpp_ctx_t *ctx)
     /* make it possible to start event loop again */
     ctx->loop_status = XMPP_LOOP_NOTSTARTED;
 
-    xmpp_debug(ctx, "event", "Event loop completed.");
+    strophe_debug(ctx, "event", "Event loop completed.");
 }
 
 /** Stop the event loop.
@@ -350,7 +352,7 @@ void xmpp_run(xmpp_ctx_t *ctx)
  */
 void xmpp_stop(xmpp_ctx_t *ctx)
 {
-    xmpp_debug(ctx, "event", "Stopping event loop.");
+    strophe_debug(ctx, "event", "Stopping event loop.");
 
     if (ctx->loop_status == XMPP_LOOP_RUNNING)
         ctx->loop_status = XMPP_LOOP_QUIT;

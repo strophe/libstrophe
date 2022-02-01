@@ -65,7 +65,7 @@ char *strophe_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len)
 
     copy = strophe_alloc(ctx, l + 1);
     if (!copy) {
-        xmpp_error(ctx, "xmpp", "failed to allocate required memory");
+        strophe_error(ctx, "xmpp", "failed to allocate required memory");
         return NULL;
     }
 
@@ -157,7 +157,7 @@ uint64_t time_elapsed(uint64_t t1, uint64_t t2)
  */
 void disconnect_mem_error(xmpp_conn_t *conn)
 {
-    xmpp_error(conn->ctx, "xmpp", "Memory allocation error");
+    strophe_error(conn->ctx, "xmpp", "Memory allocation error");
     xmpp_disconnect(conn);
 }
 

@@ -264,11 +264,11 @@ void *strophe_realloc(const xmpp_ctx_t *ctx, void *p, size_t size)
  *  @param fmt a printf-style format string for the message
  *  @param ap variable argument list supplied for the format string
  */
-void xmpp_log(const xmpp_ctx_t *ctx,
-              xmpp_log_level_t level,
-              const char *area,
-              const char *fmt,
-              va_list ap)
+static void _strophe_log(const xmpp_ctx_t *ctx,
+                         xmpp_log_level_t level,
+                         const char *area,
+                         const char *fmt,
+                         va_list ap)
 {
     int oldret, ret;
     char smbuf[1024];
@@ -288,14 +288,15 @@ void xmpp_log(const xmpp_ctx_t *ctx,
         buf = (char *)strophe_alloc(ctx, ret + 1);
         if (!buf) {
             buf = NULL;
-            xmpp_error(ctx, "log", "Failed allocating memory for log message.");
+            strophe_error(ctx, "log",
+                          "Failed allocating memory for log message.");
             va_end(copy);
             return;
         }
         oldret = ret;
         ret = xmpp_vsnprintf(buf, ret + 1, fmt, copy);
         if (ret > oldret) {
-            xmpp_error(ctx, "log", "Unexpected error");
+            strophe_error(ctx, "log", "Unexpected error");
             strophe_free(ctx, buf);
             va_end(copy);
             return;
@@ -321,12 +322,15 @@ void xmpp_log(const xmpp_ctx_t *ctx,
  *  @param fmt a printf-style format string followed by a variable list of
  *      arguments to format
  */
-void xmpp_error(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
+void strophe_error(const xmpp_ctx_t *ctx,
+                   const char *area,
+                   const char *fmt,
+                   ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    xmpp_log(ctx, XMPP_LEVEL_ERROR, area, fmt, ap);
+    _strophe_log(ctx, XMPP_LEVEL_ERROR, area, fmt, ap);
     va_end(ap);
 }
 
@@ -340,12 +344,12 @@ void xmpp_error(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
  *  @param fmt a printf-style format string followed by a variable list of
  *      arguments to format
  */
-void xmpp_warn(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
+void strophe_warn(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    xmpp_log(ctx, XMPP_LEVEL_WARN, area, fmt, ap);
+    _strophe_log(ctx, XMPP_LEVEL_WARN, area, fmt, ap);
     va_end(ap);
 }
 
@@ -359,12 +363,12 @@ void xmpp_warn(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
  *  @param fmt a printf-style format string followed by a variable list of
  *      arguments to format
  */
-void xmpp_info(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
+void strophe_info(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    xmpp_log(ctx, XMPP_LEVEL_INFO, area, fmt, ap);
+    _strophe_log(ctx, XMPP_LEVEL_INFO, area, fmt, ap);
     va_end(ap);
 }
 
@@ -378,12 +382,15 @@ void xmpp_info(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
  *  @param fmt a printf-style format string followed by a variable list of
  *      arguments to format
  */
-void xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
+void strophe_debug(const xmpp_ctx_t *ctx,
+                   const char *area,
+                   const char *fmt,
+                   ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    xmpp_log(ctx, XMPP_LEVEL_DEBUG, area, fmt, ap);
+    _strophe_log(ctx, XMPP_LEVEL_DEBUG, area, fmt, ap);
     va_end(ap);
 }
 
@@ -398,7 +405,7 @@ void xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
  *  @param fmt a printf-style format string followed by a variable list of
  *      arguments to format
  */
-void xmpp_debug_verbose(
+void strophe_debug_verbose(
     int level, const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...)
 {
     va_list ap;
@@ -407,7 +414,7 @@ void xmpp_debug_verbose(
         return;
 
     va_start(ap, fmt);
-    xmpp_log(ctx, XMPP_LEVEL_DEBUG, area, fmt, ap);
+    _strophe_log(ctx, XMPP_LEVEL_DEBUG, area, fmt, ap);
     va_end(ap);
 }
 

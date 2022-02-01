@@ -235,7 +235,8 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, gnutls_x509_crt_t cert)
         res = gnutls_x509_crt_get_subject_alt_name(cert, n, buf, &size, NULL);
         if (res == GNUTLS_SAN_DNSNAME) {
             if (tlscert_add_dnsname(tlscert, buf))
-                xmpp_debug(ctx, "tls", "Can't store dnsName(%zu): %s", m, buf);
+                strophe_debug(ctx, "tls", "Can't store dnsName(%zu): %s", m,
+                              buf);
             m++;
         }
     }
@@ -256,13 +257,13 @@ static int _tls_verify(gnutls_session_t session)
         return -1;
 
     if (gnutls_certificate_verify_peers2(session, &status) < 0) {
-        xmpp_error(tls->ctx, "tls", "Verify peers failed");
+        strophe_error(tls->ctx, "tls", "Verify peers failed");
         return -1;
     }
     type = gnutls_certificate_type_get(session);
     if (gnutls_certificate_verification_status_print(status, type, &out, 0) <
         0) {
-        xmpp_error(tls->ctx, "tls", "Status print failed");
+        strophe_error(tls->ctx, "tls", "Status print failed");
         return -1;
     }
 
@@ -272,8 +273,8 @@ static int _tls_verify(gnutls_session_t session)
         return 0;
 
     if (!tls->conn->certfail_handler) {
-        xmpp_error(tls->ctx, "tls",
-                   "No certfail handler set, canceling connection attempt");
+        strophe_error(tls->ctx, "tls",
+                      "No certfail handler set, canceling connection attempt");
         return -1;
     }
 
@@ -326,8 +327,8 @@ tls_t *tls_new(xmpp_conn_t *conn)
         if (conn->tls_client_cert && conn->tls_client_key) {
             tls->client_cert = _tls_load_cert(conn);
             if (!tls->client_cert) {
-                xmpp_error(tls->ctx, "tls",
-                           "could not read client certificate");
+                strophe_error(tls->ctx, "tls",
+                              "could not read client certificate");
                 gnutls_certificate_free_credentials(tls->cred);
                 gnutls_deinit(tls->session);
                 strophe_free(tls->ctx, tls);

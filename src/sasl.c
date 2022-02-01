@@ -102,7 +102,7 @@ static hash_t *_parse_digest_challenge(xmpp_ctx_t *ctx, const char *msg)
 
     text = (unsigned char *)xmpp_base64_decode_str(ctx, msg, strlen(msg));
     if (text == NULL) {
-        xmpp_error(ctx, "SASL", "couldn't Base64 decode challenge!");
+        strophe_error(ctx, "SASL", "couldn't Base64 decode challenge!");
         return NULL;
     }
 
@@ -191,7 +191,7 @@ _add_key(xmpp_ctx_t *ctx, hash_t *table, const char *key, char *buf, int quote)
     olen = strlen(buf);
     value = hash_get(table, key);
     if (value == NULL) {
-        xmpp_error(ctx, "SASL", "couldn't retrieve value for '%s'", key);
+        strophe_error(ctx, "SASL", "couldn't retrieve value for '%s'", key);
         value = "";
     }
     if (quote) {
@@ -254,7 +254,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
     /* parse the challenge */
     table = _parse_digest_challenge(ctx, challenge);
     if (table == NULL) {
-        xmpp_error(ctx, "SASL", "couldn't parse digest challenge");
+        strophe_error(ctx, "SASL", "couldn't parse digest challenge");
         return NULL;
     }
 
