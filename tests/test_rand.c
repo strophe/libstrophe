@@ -20,6 +20,8 @@
 /* include rand.c to access private structures and functions */
 #include "rand.c"
 
+#ifndef USE_GETRANDOM
+
 /* stubs to build test without whole libstrophe */
 void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size)
 {
@@ -160,3 +162,19 @@ int main()
 
     return 0;
 }
+
+#else
+
+int main()
+{
+    uint8_t output[1024];
+    xmpp_rand_t *rand = xmpp_rand_new(NULL);
+
+    assert(rand != NULL);
+    /* this would assert if it failed */
+    xmpp_rand_bytes(rand, output, sizeof(output));
+
+    return 0;
+}
+
+#endif

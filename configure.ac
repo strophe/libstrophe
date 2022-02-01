@@ -41,6 +41,8 @@ AC_ARG_ENABLE([tls],
     [AS_HELP_STRING([--disable-tls], [disable TLS support])])
 AC_ARG_ENABLE([cares],
     [AS_HELP_STRING([--enable-cares], [use c-ares for DNS resolution])])
+AC_ARG_ENABLE([getrandom],
+    [AS_HELP_STRING([--disable-getrandom], [disable usage of the getrandom() system call])])
 
 AC_ARG_ENABLE([fuzzing],
     [AS_HELP_STRING([--enable-fuzzing], [turn on fuzzing test])],
@@ -94,6 +96,12 @@ elif test "x$enable_tls" != xno; then
             ],
             [AC_MSG_ERROR([openssl not found; openssl required])]
         )])
+fi
+
+AC_CHECK_FUNCS([getrandom], [], [enable_getrandom=no])
+if test "$enable_getrandom" = "no"; then
+    AC_DEFINE(DONT_USE_GETRANDOM)
+    AC_MSG_NOTICE([libstrophe will not use the getrandom() system call])
 fi
 
 with_parser=""

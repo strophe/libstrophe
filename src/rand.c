@@ -23,12 +23,22 @@
 #include <string.h> /* memeset */
 #include <time.h>   /* clock, time */
 
+#if !defined(DONT_USE_GETRANDOM) && defined(__linux__) && \
+    defined(__GLIBC_PREREQ)
+#if __GLIBC_PREREQ(2, 25)
+#define USE_GETRANDOM
+#include <sys/random.h>
+#include <errno.h>
+#endif
+#endif
+
 #include "common.h"  /* xmpp_alloc, xmpp_free */
 #include "ostypes.h" /* uint8_t, uint32_t, size_t */
-#include "sha1.h"
-#include "snprintf.h" /* xmpp_snprintf */
 
 #include "rand.h" /* xmpp_rand_t */
+
+#ifndef USE_GETRANDOM
+#include "sha1.h"
 
 #define outlen SHA1_DIGEST_SIZE
 #define seedlen (440 / 8)
@@ -284,6 +294,51 @@ void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len)
         assert(rc == 0);
     }
 }
+
+#else
+
+static int _read_getrandom(void *p, size_t n)
+{
+    unsigned char *q = (unsigned char *)p;
+    while (n > 0u) {
+        ssize_t ret = getrandom(q, n, 0);
+        if (ret < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return 1;
+        }
+        q += ret;
+        n -= (size_t)ret;
+    }
+    return 0;
+}
+
+struct _xmpp_rand_t {
+    char nothing;
+};
+
+static xmpp_rand_t _xmpp_rand;
+
+xmpp_rand_t *xmpp_rand_new(xmpp_ctx_t *ctx)
+{
+    UNUSED(ctx);
+    return &_xmpp_rand;
+}
+
+void xmpp_rand_free(xmpp_ctx_t *ctx, xmpp_rand_t *rand)
+{
+    UNUSED(ctx);
+    assert(rand == &_xmpp_rand);
+}
+
+void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len)
+{
+    assert(rand == &_xmpp_rand);
+    assert(_read_getrandom(output, len) == 0);
+}
+
+#endif
 
 int xmpp_rand(xmpp_rand_t *rand)
 {
