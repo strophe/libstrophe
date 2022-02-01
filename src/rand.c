@@ -35,8 +35,6 @@
 #include "common.h"  /* xmpp_alloc, xmpp_free */
 #include "ostypes.h" /* uint8_t, uint32_t, size_t */
 
-#include "rand.h" /* xmpp_rand_t */
-
 #ifndef USE_GETRANDOM
 #include "sha1.h"
 

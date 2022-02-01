@@ -22,7 +22,6 @@
 #include "sasl.h"
 #include "md5.h"
 #include "scram.h"
-#include "rand.h"
 #include "util.h"
 
 /* strtok_s() has appeared in visual studio 2005.

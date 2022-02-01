@@ -26,7 +26,6 @@
 #include "hash.h"
 #include "util.h"
 #include "parser.h"
-#include "rand.h"
 #include "snprintf.h"
 
 /** handlers **/

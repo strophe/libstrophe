@@ -13,7 +13,6 @@
 #include <stdio.h>
 
 #include "strophe.h"
-#include "rand.h"
 #include "resolver.h"
 #include "test.h"
 

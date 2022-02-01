@@ -21,7 +21,6 @@
 #include "common.h"
 #include "sasl.h"
 #include "sha1.h"
-#include "rand.h"
 
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
