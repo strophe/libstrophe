@@ -41,8 +41,9 @@ jobs:
     strategy:
       matrix:
         libressl_versions:
-           - "v3.1.4"
-           - "v2.1.7"
+           - "v3.4.2"
+           - "v3.1.5"
+           - "v2.1.10"
 
     name: LibreSSL tests
     steps:
