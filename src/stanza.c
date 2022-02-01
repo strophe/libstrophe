@@ -883,13 +883,13 @@ xmpp_stanza_t *xmpp_stanza_get_child_by_path(xmpp_stanza_t *stanza, ...)
             break;
         }
         saveattr = ns = NULL;
-        attr = xmpp_strtok_r(tok, "[", &saveattr);
+        attr = strophe_strtok_r(tok, "[", &saveattr);
         if (attr) {
-            attr = xmpp_strtok_r(NULL, "]", &saveattr);
+            attr = strophe_strtok_r(NULL, "]", &saveattr);
             if (attr) {
                 if (!strncmp(attr, "@ns='", 5)) {
                     ns = attr + 5;
-                    xmpp_strtok_r(ns, "'", &saveattr);
+                    strophe_strtok_r(ns, "'", &saveattr);
                 }
             }
         }

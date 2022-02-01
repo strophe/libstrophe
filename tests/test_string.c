@@ -41,19 +41,19 @@ static int test_strtok_r(void)
     assert(strcmp(s1, s2) == 0);
 
     sub1 = strtok_r(s1, "-", &sp1);
-    sub2 = xmpp_strtok_r(s2, "-", &sp2);
+    sub2 = strophe_strtok_r(s2, "-", &sp2);
     if (strcmp(sub1, sub2) != 0) {
         printf("1st token is '%s', must be '%s'\n", sub2, sub1);
         return -1;
     }
     sub1 = strtok_r(NULL, "-=", &sp1);
-    sub2 = xmpp_strtok_r(NULL, "-=", &sp2);
+    sub2 = strophe_strtok_r(NULL, "-=", &sp2);
     if (strcmp(sub1, sub2) != 0) {
         printf("2nd token is '%s', must be '%s'\n", sub2, sub1);
         return -1;
     }
     sub1 = strtok_r(NULL, "-", &sp1);
-    sub2 = xmpp_strtok_r(NULL, "-", &sp2);
+    sub2 = strophe_strtok_r(NULL, "-", &sp2);
     if (sub1 != sub2) {
         printf("3rd call returns %p instead of NULL\n", sub2);
         return -1;

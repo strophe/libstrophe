@@ -80,7 +80,7 @@ char *strophe_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len)
  *  For example, visual studio older than 2005 doesn't provide strtok_r()
  *  nor strtok_s().
  */
-char *xmpp_strtok_r(char *s, const char *delim, char **saveptr)
+char *strophe_strtok_r(char *s, const char *delim, char **saveptr)
 {
     size_t len;
 
