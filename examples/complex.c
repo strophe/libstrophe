@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -91,6 +92,52 @@ static int certfail_handler(const xmpp_tlscert_t *cert,
     }
     printf("\n");
     return read_char[0] == 'y' || read_char[0] == 'Y';
+}
+
+static int
+password_callback(char *pw, size_t pw_max, const char *fname, void *userdata)
+{
+    (void)userdata;
+    /* when using an encrypted keyfile, we get asked multiple times for the
+     * password ... cache it until we're connected
+     */
+    static struct {
+        char pass[256];
+        unsigned char hash[XMPP_SHA1_DIGEST_SIZE];
+        size_t passlen, fnamelen;
+        unsigned count;
+    } password_cache;
+    int ret = -1;
+    unsigned char hash[XMPP_SHA1_DIGEST_SIZE];
+
+    size_t fname_len = strlen(fname);
+    xmpp_sha1_digest((void *)fname, fname_len, hash);
+    if (fname_len && fname_len == password_cache.fnamelen &&
+        memcmp(hash, password_cache.hash, sizeof(hash)) == 0) {
+        if (password_cache.passlen && --password_cache.count) {
+            memcpy(pw, password_cache.pass, password_cache.passlen + 1);
+            ret = password_cache.passlen;
+            if (!password_cache.count)
+                memset(&password_cache, 0, sizeof(password_cache));
+            return ret;
+        }
+    }
+    printf("Trying to unlock %s\n", fname);
+    char *pass = getpass("Please enter password: ");
+    if (!pass)
+        return -1;
+    size_t passlen = strlen(pass);
+    if (passlen < pw_max) {
+        memcpy(pw, pass, passlen + 1);
+        ret = passlen;
+        memcpy(password_cache.pass, pass, passlen + 1);
+        password_cache.passlen = passlen;
+        password_cache.count = 6;
+        memcpy(password_cache.hash, hash, sizeof(hash));
+        password_cache.fnamelen = fname_len;
+    }
+    memset(pass, 0, passlen);
+    return ret;
 }
 
 static int sockopt_cb(xmpp_conn_t *conn, void *socket)
@@ -181,7 +228,7 @@ static void usage(int exit_code)
             "  --jid <jid>              The JID to use to authenticate.\n"
             "  --pass <pass>            The password of the JID.\n"
             "  --tls-cert <cert>        Path to client certificate.\n"
-            "  --tls-key <key>          Path to private key.\n\n"
+            "  --tls-key <key>          Path to private key or P12 file.\n\n"
             "  --capath <path>          Path to an additional CA trust store "
             "(directory).\n"
             "  --cafile <path>          Path to an additional CA trust store "
@@ -247,7 +294,7 @@ int main(int argc, char **argv)
         else
             break;
     }
-    if ((!jid && (!cert || !key)) || (argc - i) > 2) {
+    if ((!jid && !key) || (argc - i) > 2) {
         usage(1);
     }
 
@@ -279,8 +326,10 @@ int main(int argc, char **argv)
     if (tcp_keepalive)
         xmpp_conn_set_sockopt_callback(conn, sockopt_cb);
 
+    /* ask for a password if key is protected */
+    xmpp_conn_set_password_callback(conn, password_callback, conn);
     /* setup authentication information */
-    if (cert && key) {
+    if (key) {
         xmpp_conn_set_client_cert(conn, cert, key);
     }
     if (jid)

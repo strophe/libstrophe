@@ -242,7 +242,7 @@ _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                 if (strcasecmp(text, "PLAIN") == 0)
                     conn->sasl_support |= SASL_MASK_PLAIN;
                 else if (strcasecmp(text, "EXTERNAL") == 0 &&
-                         conn->tls_client_cert)
+                         (conn->tls_client_cert || conn->tls_client_key))
                     conn->sasl_support |= SASL_MASK_EXTERNAL;
                 else if (strcasecmp(text, "DIGEST-MD5") == 0)
                     conn->sasl_support |= SASL_MASK_DIGESTMD5;

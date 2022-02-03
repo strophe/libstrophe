@@ -182,6 +182,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         conn->auth_legacy_enabled = 0;
         conn->secured = 0;
         conn->certfail_handler = NULL;
+        conn->password_callback = NULL;
+        conn->password_callback_userdata = NULL;
 
         conn->bind_required = 0;
         conn->session_required = 0;
@@ -492,15 +494,38 @@ xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn)
     return tls_peer_cert(conn);
 }
 
-/** Set the Client Certificate and Private Key that will be bound to the
- *  connection. If any of the both was previously set, it will be discarded.
- *  This should not be used after a connection is created.  The function will
- *  make a copy of the strings passed in.
- *  Currently only non-encrypted Private Keys are supported.
+/** Set the Callback function which will be called when the TLS stack can't
+ *  decrypt a password protected key file.
+ *
+ *  @param conn a   Strophe connection object
+ *  @param cb       The callback function that shall be called
+ *  @param userdata An opaque data pointer that will be passed to the callback
+ *
+ *  @ingroup TLS
+ */
+void xmpp_conn_set_password_callback(xmpp_conn_t *conn,
+                                     xmpp_password_callback cb,
+                                     void *userdata)
+{
+    conn->password_callback = cb;
+    conn->password_callback_userdata = userdata;
+}
+
+/** Set the Client Certificate and Private Key or PKCS#12 encoded file that
+ *  will be bound to the connection. If any of them was previously set, it
+ *  will be discarded. This should not be used after a connection is created.
+ *  The function will make a copy of the strings passed in.
+ *
+ *  In case the Private Key is encrypted, a callback must be set via
+ *  \ref xmpp_conn_set_password_callback so the TLS stack can retrieve the
+ *  password.
+ *
+ *  In case one wants to use a PKCS#12 encoded file, it must be passed via
+ *  the `key` parameter and `cert` must be NULL.
  *
  *  @param conn a Strophe connection object
  *  @param cert path to a certificate file
- *  @param key path to a private key file
+ *  @param key path to a private key file or a P12 file
  *
  *  @ingroup TLS
  */
@@ -511,7 +536,10 @@ void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
     strophe_debug(conn->ctx, "conn", "set client cert %s %s", cert, key);
     if (conn->tls_client_cert)
         strophe_free(conn->ctx, conn->tls_client_cert);
-    conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
+    if (cert)
+        conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
+    else
+        conn->tls_client_cert = NULL;
     if (conn->tls_client_key)
         strophe_free(conn->ctx, conn->tls_client_key);
     conn->tls_client_key = strophe_strdup(conn->ctx, key);
@@ -620,7 +648,7 @@ int xmpp_connect_client(xmpp_conn_t *conn,
     int found = XMPP_DOMAIN_NOT_FOUND;
     int rc;
 
-    if (!conn->jid && conn->tls_client_cert) {
+    if (!conn->jid && (conn->tls_client_cert || conn->tls_client_key)) {
         if (tls_id_on_xmppaddr_num(conn) != 1) {
             strophe_debug(conn->ctx, "xmpp",
                           "Client certificate contains multiple or no xmppAddr "

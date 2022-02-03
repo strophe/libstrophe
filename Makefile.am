@@ -114,7 +114,9 @@ EXTRA_DIST = \
 	jni/Application.mk \
 	src/tls_schannel.c \
 	tests/cert.pem \
+	tests/cert.pfx \
 	tests/key.pem \
+	tests/key_encrypted.pem \
 	tests/res_query_dump.c
 
 ## Examples

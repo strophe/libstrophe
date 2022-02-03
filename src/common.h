@@ -192,6 +192,8 @@ struct _xmpp_conn_t {
     int auth_legacy_enabled;
     int secured; /* set when stream is secured with TLS */
     xmpp_certfail_handler certfail_handler;
+    xmpp_password_callback password_callback;
+    void *password_callback_userdata;
 
     /* if server returns <bind/> or <session/> we must do them */
     int bind_required;

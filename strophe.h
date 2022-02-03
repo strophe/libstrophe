@@ -269,6 +269,39 @@ typedef void (*xmpp_conn_handler)(xmpp_conn_t *conn,
 typedef int (*xmpp_certfail_handler)(const xmpp_tlscert_t *cert,
                                      const char *const errormsg);
 
+/** The Handler function which will be called when the TLS stack can't
+ *  decrypt a password protected key file.
+ *
+ *  When this callback is called it shall write a NULL-terminated
+ *  string of maximum length `pw_max - 1` to `pw`.
+ *
+ *  This is currently only supported for GnuTLS and OpenSSL.
+ *
+ *  On 2022-02-02 the following maximum lengths are valid:
+ *  ```
+ *  include/gnutls/pkcs11.h: #define GNUTLS_PKCS11_MAX_PIN_LEN 256
+ *  include/openssl/pem.h: #define PEM_BUFSIZE 1024
+ *  ```
+ *
+ *  The usable length for GnuTLS is 255 as it expects a NULL-terminated string.
+ *
+ *  The usable length for OpenSSL is 1024.
+ *
+ *
+ *  @param pw       The buffer where the password shall be stored.
+ *  @param pw_max   The maximum length of the password.
+ *  @param fname    The name of the file that is going to be unlocked.
+ *  @param userdata The userdata pointer as supplied when setting this callback.
+ *
+ *  @return -1 on error, else the number of bytes written to `pw`
+ *
+ *  @ingroup TLS
+ */
+typedef int (*xmpp_password_callback)(char *pw,
+                                      size_t pw_max,
+                                      const char *fname,
+                                      void *userdata);
+
 /** The function which will be called when Strophe creates a new socket.
  *
  *  The `sock` argument is a pointer that is dependent on the architecture
@@ -319,6 +352,9 @@ void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path);
 void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
                                     xmpp_certfail_handler hndl);
 xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn);
+void xmpp_conn_set_password_callback(xmpp_conn_t *conn,
+                                     xmpp_password_callback cb,
+                                     void *userdata);
 void xmpp_conn_set_client_cert(xmpp_conn_t *conn,
                                const char *cert,
                                const char *key);

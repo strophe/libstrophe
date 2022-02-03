@@ -26,6 +26,7 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/x509v3.h>
+#include <openssl/pkcs12.h>
 
 #include "common.h"
 #include "tls.h"
@@ -51,6 +52,30 @@
 static const unsigned char *ASN1_STRING_get0_data(ASN1_STRING *asn1)
 {
     return ASN1_STRING_data(asn1);
+}
+#endif
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined LIBRESSL_VERSION_NUMBER
+static int SSL_CTX_use_cert_and_key(SSL_CTX *ctx,
+                                    X509 *x509,
+                                    EVP_PKEY *privatekey,
+                                    STACK_OF(X509) * chain,
+                                    int override)
+{
+    UNUSED(override);
+    if (!ctx)
+        return 0;
+    if (x509 && !SSL_CTX_use_certificate(ctx, x509))
+        return 0;
+    if (privatekey && !SSL_CTX_use_PrivateKey(ctx, privatekey))
+        return 0;
+#ifdef SSL_CTX_set1_chain
+    if (chain && !SSL_CTX_set1_chain(ctx, chain))
+        return 0;
+#else
+    UNUSED(chain);
+#endif
+    return 1;
 }
 #endif
 
@@ -90,6 +115,8 @@ static void _tls_set_error(tls_t *tls, int error);
 static void _tls_log_error(xmpp_ctx_t *ctx);
 static void _tls_dump_cert_info(tls_t *tls);
 static X509 *_tls_cert_read(xmpp_conn_t *conn);
+static X509 *
+_tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca);
 static int _tls_xaddr_nid(void);
 static int _tls_xmppaddr_to_string(GENERAL_NAME *name, char **res);
 static int _tls_dnsname_to_string(GENERAL_NAME *name, char **res);
@@ -260,8 +287,10 @@ char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n)
     char *ret = NULL;
     int i, j;
     GENERAL_NAMES *names = _tls_conn_get_names(conn);
-    if (!names)
+    if (!names) {
+        _tls_log_error(conn->ctx);
         return NULL;
+    }
     int num_names = sk_GENERAL_NAME_num(names);
     for (i = j = 0; i < num_names; ++i) {
         char *res;
@@ -288,8 +317,10 @@ unsigned int tls_id_on_xmppaddr_num(xmpp_conn_t *conn)
 {
     unsigned int ret = 0;
     GENERAL_NAMES *names = _tls_conn_get_names(conn);
-    if (!names)
+    if (!names) {
+        _tls_log_error(conn->ctx);
         return 0;
+    }
     int j, num_names = sk_GENERAL_NAME_num(names);
     for (j = 0; j < num_names; ++j) {
         GENERAL_NAME *name = sk_GENERAL_NAME_value(names, j);
@@ -355,18 +386,16 @@ _get_fingerprint(const xmpp_ctx_t *ctx, X509 *err_cert, xmpp_cert_element_t el)
 static char *
 _get_alg(const xmpp_ctx_t *ctx, X509 *err_cert, xmpp_cert_element_t el)
 {
-    int rc, alg_nid = NID_undef;
+    int alg_nid = NID_undef;
 
     switch (el) {
     case XMPP_CERT_KEYALG: {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-        UNUSED(rc);
         alg_nid = OBJ_obj2nid(err_cert->cert_info->key->algor->algorithm);
 #else
         X509_PUBKEY *pubkey = X509_get_X509_PUBKEY(err_cert);
         ASN1_OBJECT *ppkalg = NULL;
-        rc = X509_PUBKEY_get0_param(&ppkalg, NULL, NULL, NULL, pubkey);
-        if (rc) {
+        if (X509_PUBKEY_get0_param(&ppkalg, NULL, NULL, NULL, pubkey)) {
             alg_nid = OBJ_obj2nid(ppkalg);
         }
 #endif
@@ -510,6 +539,18 @@ static int _tls_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
     return ret;
 }
 
+static int _tls_password_callback(char *buf, int size, int rwflag, void *u)
+{
+    xmpp_conn_t *conn = u;
+    UNUSED(rwflag);
+    if (!conn->password_callback) {
+        strophe_error(conn->ctx, "tls", "No password callback set");
+        return -1;
+    }
+    return conn->password_callback(buf, (size_t)size, conn->tls_client_key,
+                                   conn->password_callback_userdata);
+}
+
 tls_t *tls_new(xmpp_conn_t *conn)
 {
     tls_t *tls = strophe_alloc(conn->ctx, sizeof(*tls));
@@ -539,6 +580,8 @@ tls_t *tls_new(xmpp_conn_t *conn)
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv2); /* DROWN */
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv3); /* POODLE */
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_TLSv1); /* BEAST */
+        SSL_CTX_set_default_passwd_cb(tls->ssl_ctx, _tls_password_callback);
+        SSL_CTX_set_default_passwd_cb_userdata(tls->ssl_ctx, conn);
 
         if (conn->tls_client_cert && conn->tls_client_key) {
             tls->client_cert = _tls_cert_read(conn);
@@ -552,6 +595,21 @@ tls_t *tls_new(xmpp_conn_t *conn)
                                          SSL_FILETYPE_PEM);
             SSL_CTX_use_PrivateKey_file(tls->ssl_ctx, conn->tls_client_key,
                                         SSL_FILETYPE_PEM);
+        } else if (conn->tls_client_key) {
+            EVP_PKEY *pkey = NULL;
+            STACK_OF(X509) *ca = NULL;
+            X509 *cert = _tls_cert_read_p12(conn, &pkey, &ca);
+            if (!cert) {
+                goto err_free_ctx;
+            }
+
+            SSL_CTX_use_cert_and_key(tls->ssl_ctx, cert, pkey, ca, 1);
+
+            if (pkey)
+                EVP_PKEY_free(pkey);
+            if (ca)
+                sk_X509_pop_free(ca, X509_free);
+            tls->client_cert = cert;
         } else {
             /* If the server asks for a client certificate, don't send one. */
             SSL_CTX_set_client_cert_cb(tls->ssl_ctx, NULL);
@@ -848,7 +906,7 @@ static void _tls_dump_cert_info(tls_t *tls)
     }
 }
 
-static X509 *_tls_cert_read(xmpp_conn_t *conn)
+static X509 *_tls_cert_read_x509(xmpp_conn_t *conn)
 {
     if (conn->tls && conn->tls->client_cert)
         return conn->tls->client_cert;
@@ -863,6 +921,60 @@ static X509 *_tls_cert_read(xmpp_conn_t *conn)
         _tls_log_error(conn->ctx);
     }
     return c;
+}
+
+static X509 *
+_tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca)
+{
+    if (conn->tls && conn->tls->client_cert && !pkey && !ca)
+        return conn->tls->client_cert;
+    BIO *f = BIO_new_file(conn->tls_client_key, "r");
+    if (!f) {
+        strophe_debug(conn->ctx, "tls", "f == NULL");
+        goto error_out;
+    }
+    PKCS12 *p12 = d2i_PKCS12_bio(f, NULL);
+    BIO_free(f);
+    if (!p12) {
+        strophe_debug(conn->ctx, "tls", "Could not read p12 file");
+        goto error_out;
+    }
+
+    char pass[PEM_BUFSIZE];
+    int passlen = _tls_password_callback(pass, sizeof(pass), 0, conn);
+    if (passlen <= 0)
+        pass[0] = '\0';
+
+    /* For some reason `PKCS12_parse()` fails without a `EVP_PKEY`
+     * so if the user doesn't want it, use a local one and free it
+     * again directly after parsing.
+     */
+    EVP_PKEY *pkey_;
+    if (!pkey)
+        pkey = &pkey_;
+    X509 *cert = NULL;
+    int parse_ok = PKCS12_parse(p12, pass, pkey, &cert, ca);
+    if (pkey == &pkey_ && pkey_)
+        EVP_PKEY_free(pkey_);
+    PKCS12_free(p12);
+    if (!parse_ok) {
+        strophe_debug(conn->ctx, "tls", "Could not parse PKCS#12");
+        goto error_out;
+    }
+    return cert;
+error_out:
+    _tls_log_error(conn->ctx);
+    return NULL;
+}
+
+static X509 *_tls_cert_read(xmpp_conn_t *conn)
+{
+    if (conn->tls && conn->tls->client_cert)
+        return conn->tls->client_cert;
+    if (!conn->tls_client_cert && conn->tls_client_key) {
+        return _tls_cert_read_p12(conn, NULL, NULL);
+    }
+    return _tls_cert_read_x509(conn);
 }
 
 static int _tls_xaddr_nid(void)

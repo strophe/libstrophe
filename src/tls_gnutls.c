@@ -17,6 +17,8 @@
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gnutls/x509-ext.h>
+#include <gnutls/pkcs11.h>
+#include <gnutls/pkcs12.h>
 
 #include "common.h"
 #include "tls.h"
@@ -47,10 +49,30 @@ void tls_shutdown(void)
     gnutls_global_deinit();
 }
 
-static gnutls_x509_crt_t _tls_load_cert(xmpp_conn_t *conn)
+static int _tls_password_callback(void *userdata,
+                                  int attempt,
+                                  const char *token_url,
+                                  const char *token_label,
+                                  unsigned int flags,
+                                  char *pin,
+                                  size_t pin_max)
 {
-    if (conn->tls && conn->tls->client_cert)
-        return conn->tls->client_cert;
+    xmpp_conn_t *conn = userdata;
+    UNUSED(attempt);
+    UNUSED(token_url);
+    UNUSED(token_label);
+    UNUSED(flags);
+    if (!conn->password_callback) {
+        strophe_error(conn->ctx, "tls", "No password callback set");
+        return -1;
+    }
+    int ret = conn->password_callback(pin, pin_max, conn->tls_client_key,
+                                      conn->password_callback_userdata);
+    return ret > 0 ? 0 : GNUTLS_E_PKCS11_PIN_ERROR;
+}
+
+static gnutls_x509_crt_t _tls_load_cert_x509(xmpp_conn_t *conn)
+{
     gnutls_x509_crt_t cert;
     gnutls_datum_t data;
     int res;
@@ -66,6 +88,64 @@ static gnutls_x509_crt_t _tls_load_cert(xmpp_conn_t *conn)
 error_out:
     gnutls_x509_crt_deinit(cert);
     return NULL;
+}
+
+static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
+{
+    gnutls_pkcs12_t p12;
+    gnutls_x509_crt_t *cert;
+    gnutls_datum_t data;
+    gnutls_x509_privkey_t key;
+    unsigned int cert_num = 0;
+    if (gnutls_pkcs12_init(&p12) < 0)
+        return NULL;
+    if (gnutls_load_file(conn->tls_client_key, &data) < 0)
+        goto error_out;
+    if (gnutls_pkcs12_import(p12, &data, GNUTLS_X509_FMT_DER, 0) < 0)
+        goto error_out2;
+
+    char pass[GNUTLS_PKCS11_MAX_PIN_LEN];
+    pass[0] = '\0';
+    int passlen =
+        _tls_password_callback(conn, 0, NULL, NULL, 0, pass, sizeof(pass));
+    if (passlen < 0)
+        pass[0] = '\0';
+
+    int res = gnutls_pkcs12_simple_parse(p12, pass, &key, &cert, &cert_num,
+                                         NULL, NULL, NULL, 0);
+    gnutls_pkcs12_deinit(p12);
+    gnutls_free(data.data);
+    if (res < 0)
+        goto error_out;
+    gnutls_x509_privkey_deinit(key);
+    if (cert_num > 1) {
+        strophe_error(conn->ctx, "tls", "Can't handle stack of %u certs",
+                      cert_num);
+        goto error_out;
+    }
+    gnutls_x509_crt_t ret = *cert;
+    gnutls_free(cert);
+    return ret;
+error_out2:
+    gnutls_free(data.data);
+error_out:
+    if (cert) {
+        for (unsigned int n = 0; n < cert_num; ++n) {
+            gnutls_x509_crt_deinit(cert[n]);
+        }
+        gnutls_free(cert);
+    }
+    return NULL;
+}
+
+static gnutls_x509_crt_t _tls_load_cert(xmpp_conn_t *conn)
+{
+    if (conn->tls && conn->tls->client_cert)
+        return conn->tls->client_cert;
+    if (!conn->tls_client_cert && conn->tls_client_key) {
+        return _tls_load_cert_p12(conn);
+    }
+    return _tls_load_cert_x509(conn);
 }
 
 static void _tls_free_cert(xmpp_conn_t *conn, gnutls_x509_crt_t cert)
@@ -269,12 +349,15 @@ static int _tls_verify(gnutls_session_t session)
 
     /* Return early if the Certificate is trusted
      * OR if we trust all Certificates */
-    if (status == 0 || tls->conn->tls_trust)
+    if (status == 0 || tls->conn->tls_trust) {
+        gnutls_free(out.data);
         return 0;
+    }
 
     if (!tls->conn->certfail_handler) {
         strophe_error(tls->ctx, "tls",
                       "No certfail handler set, canceling connection attempt");
+        gnutls_free(out.data);
         return -1;
     }
 
@@ -324,6 +407,9 @@ tls_t *tls_new(xmpp_conn_t *conn)
         gnutls_certificate_allocate_credentials(&tls->cred);
         tls_set_credentials(tls, NULL);
 
+        gnutls_certificate_set_pin_function(tls->cred, _tls_password_callback,
+                                            conn);
+
         if (conn->tls_client_cert && conn->tls_client_key) {
             tls->client_cert = _tls_load_cert(conn);
             if (!tls->client_cert) {
@@ -337,6 +423,15 @@ tls_t *tls_new(xmpp_conn_t *conn)
             gnutls_certificate_set_x509_key_file(
                 tls->cred, conn->tls_client_cert, conn->tls_client_key,
                 GNUTLS_X509_FMT_PEM);
+        } else if (conn->tls_client_key) {
+            char pass[GNUTLS_PKCS11_MAX_PIN_LEN];
+            pass[0] = '\0';
+            int passlen = _tls_password_callback(conn, 0, NULL, NULL, 0, pass,
+                                                 sizeof(pass));
+            if (passlen < 0)
+                pass[0] = '\0';
+            gnutls_certificate_set_x509_simple_pkcs12_file(
+                tls->cred, conn->tls_client_key, GNUTLS_X509_FMT_DER, pass);
         }
 
         gnutls_certificate_set_verify_function(tls->cred, _tls_verify);

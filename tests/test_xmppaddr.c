@@ -18,50 +18,71 @@
 
 #include "test.h"
 
+static int
+password_callback(char *pw, size_t pw_max, const char *fname, void *userdata)
+{
+    (void)pw_max;
+    (void)userdata;
+    (void)fname;
+    memcpy(pw, "abc123", 7);
+    return 6;
+}
+
 int main()
 {
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
+    char *client_cert[][2] = {
+        {"tests/cert.pem", "tests/key.pem"},
+        {"tests/cert.pem", "tests/key_encrypted.pem"},
+        {NULL, "tests/cert.pfx"},
+    };
 
     char xmppaddr_num[] = "0";
-    unsigned int n;
+    unsigned int m, n;
 
     xmpp_initialize();
     log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG);
     ctx = xmpp_ctx_new(NULL, log);
-    conn = xmpp_conn_new(ctx);
 
-    xmpp_conn_set_client_cert(conn, "tests/cert.pem", "tests/key.pem");
+    for (m = 0; m < sizeof(client_cert) / sizeof(client_cert[0]); ++m) {
+        conn = xmpp_conn_new(ctx);
 
-    xmppaddr_num[0] = xmppaddr_num[0] + xmpp_conn_cert_xmppaddr_num(conn);
+        xmpp_conn_set_password_callback(conn, password_callback, NULL);
 
-    COMPARE("2", xmppaddr_num);
+        xmpp_conn_set_client_cert(conn, client_cert[m][0], client_cert[m][1]);
 
-    for (n = 0; n < 3; ++n) {
-        char *r = xmpp_conn_cert_xmppaddr(conn, n);
-        switch (n) {
-        case 0:
-            COMPARE("very.long.username@so.the.asn1.length.is.a.valid.ascii."
+        xmppaddr_num[0] = '0' + xmpp_conn_cert_xmppaddr_num(conn);
+
+        COMPARE("2", xmppaddr_num);
+
+        for (n = 0; n < 3; ++n) {
+            char *r = xmpp_conn_cert_xmppaddr(conn, n);
+            switch (n) {
+            case 0:
+                COMPARE(
+                    "very.long.username@so.the.asn1.length.is.a.valid.ascii."
                     "character",
                     r);
-            break;
-        case 1:
-            COMPARE("second@xmpp.jid", r);
-            break;
-        default:
-            if (r != NULL) {
-                printf("\nThere shall only be two id-on-xmppAddr SANs!\nFound "
-                       "another one: %s\n",
-                       r);
-                exit(1);
+                break;
+            case 1:
+                COMPARE("second@xmpp.jid", r);
+                break;
+            default:
+                if (r != NULL) {
+                    printf("\nThere shall only be two id-on-xmppAddr SANs!\n"
+                           "Found another one: %s\n",
+                           r);
+                    exit(1);
+                }
+                break;
             }
-            break;
+            free(r);
         }
-        free(r);
+        xmpp_conn_release(conn);
     }
 
-    xmpp_conn_release(conn);
     xmpp_ctx_free(ctx);
     xmpp_shutdown();
 

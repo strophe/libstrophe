@@ -34,17 +34,17 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
-#define COMPARE(v1, v2)                         \
-    do {                                        \
-        const char *__v1 = v1;                  \
-        const char *__v2 = v2;                  \
-        if (strcmp(__v1, __v2) != 0) {          \
-            printf("Error:    %s\n"             \
-                   "Expected: %s\n"             \
-                   "Got:      %s\n",            \
-                   #v1 " != " #v2, __v1, __v2); \
-            exit(1);                            \
-        }                                       \
+#define COMPARE(v1, v2)                                  \
+    do {                                                 \
+        const char *__v1 = v1;                           \
+        const char *__v2 = v2;                           \
+        if (!__v1 || !__v2 || strcmp(__v1, __v2) != 0) { \
+            printf("Error:    %s\n"                      \
+                   "Expected: %s\n"                      \
+                   "Got:      %s\n",                     \
+                   #v1 " != " #v2, __v1, __v2);          \
+            exit(1);                                     \
+        }                                                \
     } while (0)
 
 #define COMPARE_BUF(v1, len1, v2, len2)                                \
