@@ -284,12 +284,18 @@ void xmpp_rand_free(xmpp_ctx_t *ctx, xmpp_rand_t *rand)
 void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len)
 {
     int rc;
-
-    rc = Hash_DRBG_Generate(&rand->ctx, (uint8_t *)output, len);
-    if (rc == RESEED_NEEDED) {
-        xmpp_rand_reseed(rand);
-        rc = Hash_DRBG_Generate(&rand->ctx, (uint8_t *)output, len);
-        assert(rc == 0);
+    size_t gen, tot = 0;
+    while (tot < len) {
+        gen = len - tot;
+        if (gen > GENERATE_MAX)
+            gen = GENERATE_MAX;
+        rc = Hash_DRBG_Generate(&rand->ctx, (uint8_t *)output + tot, gen);
+        if (rc == RESEED_NEEDED) {
+            xmpp_rand_reseed(rand);
+            rc = Hash_DRBG_Generate(&rand->ctx, (uint8_t *)output + tot, gen);
+            assert(rc == 0);
+        }
+        tot += gen;
     }
 }
 
