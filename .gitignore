@@ -40,6 +40,7 @@ examples/basic
 examples/bot
 examples/complex
 examples/component
+examples/perf
 examples/register
 examples/roster
 examples/uuid

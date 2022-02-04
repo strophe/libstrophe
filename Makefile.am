@@ -125,10 +125,11 @@ noinst_PROGRAMS = \
 	examples/bot \
 	examples/complex \
 	examples/component \
+	examples/perf \
+	examples/register \
 	examples/roster \
 	examples/uuid \
-	examples/vcard \
-	examples/register
+	examples/vcard
 
 examples_active_SOURCES = examples/active.c
 examples_active_CFLAGS = $(STROPHE_FLAGS)
@@ -145,6 +146,12 @@ examples_complex_LDADD = $(STROPHE_LIBS)
 examples_component_SOURCES = examples/component.c
 examples_component_CFLAGS = $(STROPHE_FLAGS)
 examples_component_LDADD = $(STROPHE_LIBS)
+examples_perf_SOURCES = examples/perf.c
+examples_perf_CFLAGS = $(STROPHE_FLAGS)
+examples_perf_LDADD = $(STROPHE_LIBS)
+examples_register_SOURCES = examples/register.c
+examples_register_CFLAGS = $(STROPHE_FLAGS)
+examples_register_LDADD = $(STROPHE_LIBS)
 examples_roster_SOURCES = examples/roster.c
 examples_roster_CFLAGS = $(STROPHE_FLAGS)
 examples_roster_LDADD = $(STROPHE_LIBS)
@@ -154,9 +161,6 @@ examples_uuid_LDADD = $(STROPHE_LIBS)
 examples_vcard_SOURCES = examples/vcard.c
 examples_vcard_CFLAGS = $(STROPHE_FLAGS)
 examples_vcard_LDADD = $(STROPHE_LIBS)
-examples_register_SOURCES = examples/register.c
-examples_register_CFLAGS = $(STROPHE_FLAGS)
-examples_register_LDADD = $(STROPHE_LIBS)
 
 
 ## Tests
