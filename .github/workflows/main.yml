@@ -18,6 +18,7 @@ jobs:
            - "--with-gnutls"
            - "--disable-tls"
            - "--enable-cares"
+           - "--disable-getrandom"
 
     name: Regular Tests
     steps:
