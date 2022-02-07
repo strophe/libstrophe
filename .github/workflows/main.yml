@@ -9,17 +9,16 @@ on:
 jobs:
   linux-tests:
     runs-on: ubuntu-20.04
-
     strategy:
       matrix:
         configure_options:
+           - ""
            - "--without-libxml2"
            - "--with-libxml2"
            - "--with-gnutls"
            - "--disable-tls"
            - "--enable-cares"
            - "--disable-getrandom"
-
     name: Regular Tests
     steps:
       - uses: actions/checkout@v2
@@ -38,34 +37,54 @@ jobs:
 
   libressl-tests:
     runs-on: ubuntu-20.04
-
     strategy:
       matrix:
         libressl_versions:
-           - "v3.4.2"
-           - "v3.1.5"
-           - "v2.1.10"
-
+           - { version: "v3.4.2",  continue: true }
+           - { version: "v3.1.5",  continue: false }
+           - { version: "v2.1.10", continue: false }
     name: LibreSSL tests
+    continue-on-error: ${{ matrix.libressl_versions.continue }}
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
         run: |
           sudo apt update
-          sudo apt install -y libtool pkg-config libexpat1-dev libxml2-dev libssl-dev libgnutls28-dev libc-ares-dev
+          sudo apt install -y libtool pkg-config libexpat1-dev
       - name: build&install libressl
         env:
-           LIBRESSL_COMMIT: ${{ matrix.libressl_versions }}
+           LIBRESSL_COMMIT: ${{ matrix.libressl_versions.version }}
         run: |
           ./travis/before_script.sh
       - name: Build the library
         run: |
           ./bootstrap.sh
-          ./configure PKG_CONFIG_PATH="${HOME}/libressl/lib/pkgconfig"  CFLAGS="-Werror -g3"
+          ./configure PKG_CONFIG_PATH="${HOME}/libressl/lib/pkgconfig"  CFLAGS="-Werror -g3" --prefix="${HOME}/libressl"
           make -j5
       - name: Run tests
         run: |
           make check
+
+  release-test:
+    runs-on: ubuntu-20.04
+    name: Check if release would work
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libtool pkg-config libexpat1-dev
+      - name: Setup the library
+        run: |
+          ./bootstrap.sh
+          ./configure
+      - name: Try release & tests
+        run: |
+          make test-release
+      - name: Show logs from release build
+        if: ${{ !failure() }}
+        run: |
+          cat testbuild.log
 
   code-style:
     runs-on: ubuntu-20.04

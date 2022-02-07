@@ -273,13 +273,20 @@ coverage: check
 	@genhtml coverage.info --output-directory coverage -q
 endif
 
+release: test-release-all
 
-release:
+dist-archives:
 	$(MAKE) dist
 	$(MAKE) dist-bzip2
 	$(MAKE) dist-xz
 
-test-release: release
+test-release: dist
+	@touch testbuild-$(PACKAGE_VERSION).log && ln -sf testbuild-$(PACKAGE_VERSION).log testbuild.log
+	@mkdir -p test-release && cp $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.* test-release && pushd test-release && \
+		tar xzf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz  && pushd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./testbuild.sh && popd && rm -rf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
+		echo "Success" && popd
+
+test-release-all: dist-archives
 	@touch testbuild-$(PACKAGE_VERSION).log && ln -sf testbuild-$(PACKAGE_VERSION).log testbuild.log
 	@mkdir -p test-release && cp $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.* test-release && pushd test-release && \
 		tar xJf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.xz  && pushd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./testbuild.sh && popd && rm -rf $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
