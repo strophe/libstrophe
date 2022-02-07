@@ -62,7 +62,6 @@ libstrophe_la_SOURCES += \
 	src/md5.h \
 	src/ostypes.h \
 	src/parser.h \
-	src/rand.h \
 	src/resolver.h \
 	src/sasl.h \
 	src/scram.h \
@@ -111,12 +110,6 @@ EXTRA_DIST = \
 	tests/cert.pem \
 	tests/key.pem \
 	tests/res_query_dump.c
-
-if TLS_WITH_GNUTLS
-EXTRA_DIST += src/tls_openssl.c
-else
-EXTRA_DIST += src/tls_gnutls.c
-endif
 
 ## Examples
 noinst_PROGRAMS = \
