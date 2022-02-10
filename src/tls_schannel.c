@@ -65,14 +65,14 @@ char *tls_id_on_xmppaddr(xmpp_conn_t *conn, unsigned int n)
 {
     UNUSED(n);
     /* always fail */
-    xmpp_error(conn->ctx, "tls", "Client-Authentication not implemented");
+    strophe_error(conn->ctx, "tls", "Client-Authentication not implemented");
     return NULL;
 }
 
 unsigned int tls_id_on_xmppaddr_num(xmpp_conn_t *conn)
 {
     /* always fail */
-    xmpp_error(conn->ctx, "tls", "Client-Authentication not implemented");
+    strophe_error(conn->ctx, "tls", "Client-Authentication not implemented");
     return 0;
 }
 
@@ -102,7 +102,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
         return NULL;
     }
 
-    tls = xmpp_alloc(ctx, sizeof(*tls));
+    tls = strophe_alloc(ctx, sizeof(*tls));
 
     if (!tls) {
         return NULL;
@@ -138,7 +138,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
         return NULL;
     }
 
-    xmpp_debug(ctx, "TLSS", "QuerySecurityPackageInfo() success");
+    strophe_debug(ctx, "TLSS", "QuerySecurityPackageInfo() success");
 
     memset(&scred, 0, sizeof(scred));
     scred.dwVersion = SCHANNEL_CRED_VERSION;
@@ -163,7 +163,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
         return NULL;
     }
 
-    xmpp_debug(ctx, "TLSS", "AcquireCredentialsHandle() success");
+    strophe_debug(ctx, "TLSS", "AcquireCredentialsHandle() success");
 
     tls->init = 1;
 
@@ -196,15 +196,15 @@ tls_t *tls_new(xmpp_conn_t *conn)
 void tls_free(tls_t *tls)
 {
     if (tls->recvbuffer) {
-        xmpp_free(tls->ctx, tls->recvbuffer);
+        strophe_free(tls->ctx, tls->recvbuffer);
     }
 
     if (tls->readybuffer) {
-        xmpp_free(tls->ctx, tls->readybuffer);
+        strophe_free(tls->ctx, tls->readybuffer);
     }
 
     if (tls->sendbuffer) {
-        xmpp_free(tls->ctx, tls->sendbuffer);
+        strophe_free(tls->ctx, tls->sendbuffer);
     }
 
     if (tls->init) {
@@ -218,14 +218,14 @@ void tls_free(tls_t *tls)
         tls->hsec32 = NULL;
     }
 
-    xmpp_free(tls->ctx, tls);
+    strophe_free(tls->ctx, tls);
     return;
 }
 
 xmpp_tlscert_t *tls_peer_cert(xmpp_conn_t *conn)
 {
     /* always fail */
-    xmpp_error(conn->ctx, "tls", "tls_peer_cert() not implemented");
+    strophe_error(conn->ctx, "tls", "tls_peer_cert() not implemented");
     return NULL;
 }
 
@@ -263,7 +263,7 @@ int tls_start(tls_t *tls)
 
     memset(&(sbin[0]), 0, sizeof(sbin[0]));
     sbin[0].BufferType = SECBUFFER_TOKEN;
-    sbin[0].pvBuffer = xmpp_alloc(tls->ctx, tls->spi->cbMaxToken);
+    sbin[0].pvBuffer = strophe_alloc(tls->ctx, tls->spi->cbMaxToken);
     sbin[0].cbBuffer = tls->spi->cbMaxToken;
 
     memset(&(sbin[1]), 0, sizeof(sbin[1]));
@@ -369,12 +369,12 @@ int tls_start(tls_t *tls)
         }
     }
 
-    xmpp_free(tls->ctx, sbin[0].pvBuffer);
+    strophe_free(tls->ctx, sbin[0].pvBuffer);
 
     if (ret != SEC_E_OK) {
         tls->lasterror = ret;
-        xmpp_error(tls->ctx, "TLSS", "Schannel error 0x%lx",
-                   (unsigned long)ret);
+        strophe_error(tls->ctx, "TLSS", "Schannel error 0x%lx",
+                      (unsigned long)ret);
         return 0;
     }
 
@@ -383,16 +383,16 @@ int tls_start(tls_t *tls)
 
     tls->recvbuffermaxlen = tls->spcss.cbHeader + tls->spcss.cbMaximumMessage +
                             tls->spcss.cbTrailer;
-    tls->recvbuffer = xmpp_alloc(tls->ctx, tls->recvbuffermaxlen);
+    tls->recvbuffer = strophe_alloc(tls->ctx, tls->recvbuffermaxlen);
     tls->recvbufferpos = 0;
 
     tls->sendbuffermaxlen = tls->spcss.cbHeader + tls->spcss.cbMaximumMessage +
                             tls->spcss.cbTrailer;
-    tls->sendbuffer = xmpp_alloc(tls->ctx, tls->sendbuffermaxlen);
+    tls->sendbuffer = strophe_alloc(tls->ctx, tls->sendbuffermaxlen);
     tls->sendbufferpos = 0;
     tls->sendbufferlen = 0;
 
-    tls->readybuffer = xmpp_alloc(tls->ctx, tls->spcss.cbMaximumMessage);
+    tls->readybuffer = strophe_alloc(tls->ctx, tls->spcss.cbMaximumMessage);
     tls->readybufferpos = 0;
     tls->readybufferlen = 0;
 
