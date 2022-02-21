@@ -823,6 +823,13 @@ static void _auth(xmpp_conn_t *conn)
     }
 }
 
+static void _auth_success(xmpp_conn_t *conn)
+{
+    conn->authenticated = 1;
+    /* call connection handler */
+    conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+}
+
 /** Set up handlers at stream start.
  *  This function is called internally to Strophe for handling the opening
  *  of an XMPP stream.  It's called by the parser when a stream is opened
@@ -1044,11 +1051,7 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
             xmpp_send(conn, iq);
             xmpp_stanza_release(iq);
         } else {
-            conn->authenticated = 1;
-
-            /* call connection handler */
-            conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL,
-                               conn->userdata);
+            _auth_success(conn);
         }
     } else {
         strophe_error(conn->ctx, "xmpp", "Server sent malformed bind reply.");
@@ -1085,10 +1088,7 @@ _handle_session(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     } else if (type && strcmp(type, "result") == 0) {
         strophe_debug(conn->ctx, "xmpp", "Session establishment successful.");
 
-        conn->authenticated = 1;
-
-        /* call connection handler */
-        conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+        _auth_success(conn);
     } else {
         strophe_error(conn->ctx, "xmpp",
                       "Server sent malformed session reply.");
@@ -1147,8 +1147,7 @@ _handle_legacy(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         /* auth succeeded */
         strophe_debug(conn->ctx, "xmpp", "Legacy auth succeeded.");
 
-        conn->authenticated = 1;
-        conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+        _auth_success(conn);
     } else {
         strophe_error(conn->ctx, "xmpp",
                       "Server sent us a legacy authentication "
@@ -1346,8 +1345,7 @@ int _handle_component_hs_response(xmpp_conn_t *conn,
         xmpp_disconnect(conn);
         return XMPP_EINT;
     } else {
-        conn->authenticated = 1;
-        conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+        _auth_success(conn);
     }
 
     /* We don't need this handler anymore, return 0 so it can be deleted
@@ -1370,8 +1368,7 @@ void auth_handle_open_raw(xmpp_conn_t *conn)
 {
     handler_reset_timed(conn, 0);
     /* user handlers are not called before authentication is completed. */
-    conn->authenticated = 1;
-    conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+    _auth_success(conn);
 }
 
 void auth_handle_open_stub(xmpp_conn_t *conn)
