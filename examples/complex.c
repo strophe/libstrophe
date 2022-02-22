@@ -83,7 +83,7 @@ static int certfail_handler(const xmpp_tlscert_t *cert,
 static void usage(int exit_code)
 {
     fprintf(stderr,
-            "Usage: basic [options] [<host> [<port>]]\n\n"
+            "Usage: complex [options] [<host> [<port>]]\n\n"
             "Options:\n"
             "  --jid <jid>              The JID to use to authenticate.\n"
             "  --pass <pass>            The password of the JID.\n"
