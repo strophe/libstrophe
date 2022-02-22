@@ -62,4 +62,7 @@ int tls_is_recoverable(int error);
 xmpp_tlscert_t *tlscert_new(xmpp_ctx_t *ctx);
 int tlscert_add_dnsname(xmpp_tlscert_t *cert, const char *dnsname);
 
+int tls_caching_password_callback(char *pw, size_t pw_max, xmpp_conn_t *conn);
+void tls_clear_password_cache(xmpp_conn_t *conn);
+
 #endif /* __LIBSTROPHE_TLS_H__ */

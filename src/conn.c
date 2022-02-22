@@ -184,6 +184,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         conn->certfail_handler = NULL;
         conn->password_callback = NULL;
         conn->password_callback_userdata = NULL;
+        tls_clear_password_cache(conn);
+        conn->password_retries = 1;
 
         conn->bind_required = 0;
         conn->session_required = 0;
@@ -384,6 +386,7 @@ int xmpp_conn_release(xmpp_conn_t *conn)
             strophe_free(ctx, conn->tls_cafile);
         if (conn->tls_capath)
             strophe_free(ctx, conn->tls_capath);
+        tls_clear_password_cache(conn);
         strophe_free(ctx, conn);
         released = 1;
     }
@@ -509,6 +512,40 @@ void xmpp_conn_set_password_callback(xmpp_conn_t *conn,
 {
     conn->password_callback = cb;
     conn->password_callback_userdata = userdata;
+}
+
+/** Set the number of retry attempts to decrypt a private key file.
+ *
+ *  In case the user enters the password manually it can be useful to
+ *  directly retry if the decryption of the key file failed.
+ *
+ *  @param conn a   Strophe connection object
+ *  @param retries  The number of retries that should be tried
+ *
+ *  @ingroup TLS
+ */
+void xmpp_conn_set_password_retries(xmpp_conn_t *conn, unsigned int retries)
+{
+    if (retries == 0)
+        conn->password_retries = 1;
+    else
+        conn->password_retries = retries;
+}
+
+/** Retrieve the path of the key file that shall be unlocked.
+ *
+ *  This makes usually sense to be called from the
+ *  \ref xmpp_password_callback .
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return a String of the path to the key file
+ *
+ *  @ingroup TLS
+ */
+const char *xmpp_conn_get_keyfile(const xmpp_conn_t *conn)
+{
+    return conn->tls_client_key;
 }
 
 /** Set the Client Certificate and Private Key or PKCS#12 encoded file that

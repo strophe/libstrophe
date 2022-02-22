@@ -283,23 +283,30 @@ typedef int (*xmpp_certfail_handler)(const xmpp_tlscert_t *cert,
  *  include/openssl/pem.h: #define PEM_BUFSIZE 1024
  *  ```
  *
- *  The usable length for GnuTLS is 255 as it expects a NULL-terminated string.
+ *  We expect the buffer to be NULL-terminated, therefore the usable lengths
+ *  are:
  *
- *  The usable length for OpenSSL is 1024.
+ *  * 255 for GnuTLS
+ *  * 1023 for OpenSSL
+ *
+ *  Useful API's inside this callback are e.g.
+ *
+ *  \ref xmpp_conn_get_keyfile
  *
  *
  *  @param pw       The buffer where the password shall be stored.
  *  @param pw_max   The maximum length of the password.
- *  @param fname    The name of the file that is going to be unlocked.
+ *  @param conn     The Strophe connection object this callback originates from.
  *  @param userdata The userdata pointer as supplied when setting this callback.
  *
- *  @return -1 on error, else the number of bytes written to `pw`
+ *  @return -1 on error, else the number of bytes written to `pw` w/o
+ *           terminating NUL byte
  *
  *  @ingroup TLS
  */
 typedef int (*xmpp_password_callback)(char *pw,
                                       size_t pw_max,
-                                      const char *fname,
+                                      xmpp_conn_t *conn,
                                       void *userdata);
 
 /** The function which will be called when Strophe creates a new socket.
@@ -355,6 +362,8 @@ xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn);
 void xmpp_conn_set_password_callback(xmpp_conn_t *conn,
                                      xmpp_password_callback cb,
                                      void *userdata);
+void xmpp_conn_set_password_retries(xmpp_conn_t *conn, unsigned int retries);
+const char *xmpp_conn_get_keyfile(const xmpp_conn_t *conn);
 void xmpp_conn_set_client_cert(xmpp_conn_t *conn,
                                const char *cert,
                                const char *key);

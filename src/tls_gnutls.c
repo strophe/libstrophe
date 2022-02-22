@@ -62,12 +62,7 @@ static int _tls_password_callback(void *userdata,
     UNUSED(token_url);
     UNUSED(token_label);
     UNUSED(flags);
-    if (!conn->password_callback) {
-        strophe_error(conn->ctx, "tls", "No password callback set");
-        return -1;
-    }
-    int ret = conn->password_callback(pin, pin_max, conn->tls_client_key,
-                                      conn->password_callback_userdata);
+    int ret = tls_caching_password_callback(pin, pin_max, conn);
     return ret > 0 ? 0 : GNUTLS_E_PKCS11_PIN_ERROR;
 }
 
@@ -93,10 +88,15 @@ error_out:
 static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
 {
     gnutls_pkcs12_t p12;
-    gnutls_x509_crt_t *cert;
+    gnutls_x509_crt_t *cert = NULL;
     gnutls_datum_t data;
     gnutls_x509_privkey_t key;
-    unsigned int cert_num = 0;
+    unsigned int cert_num = 0, retries = 0;
+    int err = -1;
+    if (!conn->password_callback) {
+        strophe_error(conn->ctx, "tls", "No password callback set");
+        return NULL;
+    }
     if (gnutls_pkcs12_init(&p12) < 0)
         return NULL;
     if (gnutls_load_file(conn->tls_client_key, &data) < 0)
@@ -104,18 +104,30 @@ static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
     if (gnutls_pkcs12_import(p12, &data, GNUTLS_X509_FMT_DER, 0) < 0)
         goto error_out2;
 
-    char pass[GNUTLS_PKCS11_MAX_PIN_LEN];
-    pass[0] = '\0';
-    int passlen =
-        _tls_password_callback(conn, 0, NULL, NULL, 0, pass, sizeof(pass));
-    if (passlen < 0)
-        pass[0] = '\0';
+    while (retries++ < conn->password_retries) {
+        char pass[GNUTLS_PKCS11_MAX_PIN_LEN];
+        int passlen =
+            _tls_password_callback(conn, 0, NULL, NULL, 0, pass, sizeof(pass));
+        if (passlen < 0)
+            continue;
 
-    int res = gnutls_pkcs12_simple_parse(p12, pass, &key, &cert, &cert_num,
+        err = gnutls_pkcs12_simple_parse(p12, pass, &key, &cert, &cert_num,
                                          NULL, NULL, NULL, 0);
+        memset(pass, 0, sizeof(pass));
+        if (err == 0)
+            break;
+        tls_clear_password_cache(conn);
+        if (err != GNUTLS_E_DECRYPTION_FAILED &&
+            err != GNUTLS_E_MAC_VERIFY_FAILED) {
+            strophe_error(conn->ctx, "tls", "could not read P12 file");
+            break;
+        }
+        strophe_debug(conn->ctx, "tls", "wrong password?");
+    }
+
     gnutls_pkcs12_deinit(p12);
     gnutls_free(data.data);
-    if (res < 0)
+    if (err < 0)
         goto error_out;
     gnutls_x509_privkey_deinit(key);
     if (cert_num > 1) {
@@ -129,6 +141,7 @@ static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
 error_out2:
     gnutls_free(data.data);
 error_out:
+    tls_clear_password_cache(conn);
     if (cert) {
         for (unsigned int n = 0; n < cert_num; ++n) {
             gnutls_x509_crt_deinit(cert[n]);
@@ -407,31 +420,55 @@ tls_t *tls_new(xmpp_conn_t *conn)
         gnutls_certificate_allocate_credentials(&tls->cred);
         tls_set_credentials(tls, NULL);
 
-        gnutls_certificate_set_pin_function(tls->cred, _tls_password_callback,
-                                            conn);
+        if (conn->password_callback)
+            gnutls_certificate_set_pin_function(tls->cred,
+                                                _tls_password_callback, conn);
 
         if (conn->tls_client_cert && conn->tls_client_key) {
+            unsigned int retries = 0;
             tls->client_cert = _tls_load_cert(conn);
             if (!tls->client_cert) {
                 strophe_error(tls->ctx, "tls",
                               "could not read client certificate");
-                gnutls_certificate_free_credentials(tls->cred);
-                gnutls_deinit(tls->session);
-                strophe_free(tls->ctx, tls);
-                return NULL;
+                goto error_out;
             }
-            gnutls_certificate_set_x509_key_file(
-                tls->cred, conn->tls_client_cert, conn->tls_client_key,
-                GNUTLS_X509_FMT_PEM);
+            while (retries++ < conn->password_retries) {
+                int err = gnutls_certificate_set_x509_key_file(
+                    tls->cred, conn->tls_client_cert, conn->tls_client_key,
+                    GNUTLS_X509_FMT_PEM);
+                if (err == 0)
+                    break;
+                tls_clear_password_cache(conn);
+                if (err != GNUTLS_E_DECRYPTION_FAILED) {
+                    strophe_error(tls->ctx, "tls",
+                                  "could not read private key");
+                    goto error_out;
+                }
+                strophe_debug(tls->ctx, "tls", "wrong password?");
+            }
         } else if (conn->tls_client_key) {
-            char pass[GNUTLS_PKCS11_MAX_PIN_LEN];
-            pass[0] = '\0';
-            int passlen = _tls_password_callback(conn, 0, NULL, NULL, 0, pass,
-                                                 sizeof(pass));
-            if (passlen < 0)
+            unsigned int retries = 0;
+
+            while (retries++ < conn->password_retries) {
+                char pass[GNUTLS_PKCS11_MAX_PIN_LEN];
                 pass[0] = '\0';
-            gnutls_certificate_set_x509_simple_pkcs12_file(
-                tls->cred, conn->tls_client_key, GNUTLS_X509_FMT_DER, pass);
+                int passlen = _tls_password_callback(conn, 0, NULL, NULL, 0,
+                                                     pass, sizeof(pass));
+                if (passlen < 0)
+                    continue;
+                int err = gnutls_certificate_set_x509_simple_pkcs12_file(
+                    tls->cred, conn->tls_client_key, GNUTLS_X509_FMT_DER, pass);
+                memset(pass, 0, sizeof(pass));
+                if (err == 0)
+                    break;
+                tls_clear_password_cache(conn);
+                if (err != GNUTLS_E_DECRYPTION_FAILED &&
+                    err != GNUTLS_E_MAC_VERIFY_FAILED) {
+                    strophe_error(tls->ctx, "tls", "could not read P12 file");
+                    goto error_out;
+                }
+                strophe_debug(tls->ctx, "tls", "wrong password?");
+            }
         }
 
         gnutls_certificate_set_verify_function(tls->cred, _tls_verify);
@@ -444,6 +481,13 @@ tls_t *tls_new(xmpp_conn_t *conn)
     }
 
     return tls;
+error_out:
+    if (tls->client_cert)
+        gnutls_x509_crt_deinit(tls->client_cert);
+    gnutls_certificate_free_credentials(tls->cred);
+    gnutls_deinit(tls->session);
+    strophe_free(tls->ctx, tls);
+    return NULL;
 }
 
 void tls_free(tls_t *tls)

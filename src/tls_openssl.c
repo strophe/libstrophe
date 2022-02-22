@@ -541,14 +541,8 @@ static int _tls_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
 
 static int _tls_password_callback(char *buf, int size, int rwflag, void *u)
 {
-    xmpp_conn_t *conn = u;
     UNUSED(rwflag);
-    if (!conn->password_callback) {
-        strophe_error(conn->ctx, "tls", "No password callback set");
-        return -1;
-    }
-    return conn->password_callback(buf, (size_t)size, conn->tls_client_key,
-                                   conn->password_callback_userdata);
+    return tls_caching_password_callback(buf, size, u);
 }
 
 tls_t *tls_new(xmpp_conn_t *conn)
@@ -580,10 +574,14 @@ tls_t *tls_new(xmpp_conn_t *conn)
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv2); /* DROWN */
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_SSLv3); /* POODLE */
         SSL_CTX_set_options(tls->ssl_ctx, SSL_OP_NO_TLSv1); /* BEAST */
-        SSL_CTX_set_default_passwd_cb(tls->ssl_ctx, _tls_password_callback);
-        SSL_CTX_set_default_passwd_cb_userdata(tls->ssl_ctx, conn);
+
+        if (conn->password_callback) {
+            SSL_CTX_set_default_passwd_cb(tls->ssl_ctx, _tls_password_callback);
+            SSL_CTX_set_default_passwd_cb_userdata(tls->ssl_ctx, conn);
+        }
 
         if (conn->tls_client_cert && conn->tls_client_key) {
+            unsigned int retries = 0;
             tls->client_cert = _tls_cert_read(conn);
             if (!tls->client_cert) {
                 strophe_error(tls->ctx, "tls",
@@ -593,8 +591,25 @@ tls_t *tls_new(xmpp_conn_t *conn)
 
             SSL_CTX_use_certificate_file(tls->ssl_ctx, conn->tls_client_cert,
                                          SSL_FILETYPE_PEM);
-            SSL_CTX_use_PrivateKey_file(tls->ssl_ctx, conn->tls_client_key,
-                                        SSL_FILETYPE_PEM);
+            while (retries++ < conn->password_retries) {
+                if (SSL_CTX_use_PrivateKey_file(
+                        tls->ssl_ctx, conn->tls_client_key, SSL_FILETYPE_PEM)) {
+                    break;
+                }
+                tls_clear_password_cache(conn);
+                unsigned long err = ERR_peek_error();
+                if ((ERR_GET_LIB(err) == ERR_LIB_EVP &&
+                     ERR_GET_REASON(err) == EVP_R_BAD_DECRYPT) ||
+                    (ERR_GET_LIB(err) == ERR_LIB_PEM &&
+                     ERR_GET_REASON(err) == PEM_R_BAD_DECRYPT)) {
+                    strophe_debug(tls->ctx, "tls", "wrong password?");
+                    continue;
+                }
+                strophe_error(tls->ctx, "tls",
+                              "could not use private key %d %d",
+                              ERR_GET_LIB(err), ERR_GET_REASON(err));
+                goto err_free_ctx;
+            }
         } else if (conn->tls_client_key) {
             EVP_PKEY *pkey = NULL;
             STACK_OF(X509) *ca = NULL;
@@ -876,7 +891,7 @@ static void _tls_log_error(xmpp_ctx_t *ctx)
     do {
         e = ERR_get_error();
         if (e != 0) {
-            strophe_debug(ctx, "tls", "error:%08uX:%s:%s:%s", e,
+            strophe_debug(ctx, "tls", "error:%08X:%s:%s:%s", e,
                           ERR_lib_error_string(e), ERR_func_error_string(e),
                           ERR_reason_error_string(e));
         }
@@ -928,43 +943,66 @@ _tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca)
 {
     if (conn->tls && conn->tls->client_cert && !pkey && !ca)
         return conn->tls->client_cert;
+    X509 *cert = NULL;
+    PKCS12 *p12 = NULL;
     BIO *f = BIO_new_file(conn->tls_client_key, "r");
     if (!f) {
         strophe_debug(conn->ctx, "tls", "f == NULL");
         goto error_out;
     }
-    PKCS12 *p12 = d2i_PKCS12_bio(f, NULL);
+    p12 = d2i_PKCS12_bio(f, NULL);
     BIO_free(f);
     if (!p12) {
         strophe_debug(conn->ctx, "tls", "Could not read p12 file");
         goto error_out;
     }
 
-    char pass[PEM_BUFSIZE];
-    int passlen = _tls_password_callback(pass, sizeof(pass), 0, conn);
-    if (passlen <= 0)
-        pass[0] = '\0';
+    unsigned int retries = 0;
 
-    /* For some reason `PKCS12_parse()` fails without a `EVP_PKEY`
-     * so if the user doesn't want it, use a local one and free it
-     * again directly after parsing.
-     */
-    EVP_PKEY *pkey_;
-    if (!pkey)
-        pkey = &pkey_;
-    X509 *cert = NULL;
-    int parse_ok = PKCS12_parse(p12, pass, pkey, &cert, ca);
-    if (pkey == &pkey_ && pkey_)
-        EVP_PKEY_free(pkey_);
-    PKCS12_free(p12);
-    if (!parse_ok) {
+    pem_password_cb *cb = PEM_def_callback;
+    void *userdata = NULL;
+    if (conn->password_callback) {
+        cb = _tls_password_callback;
+        userdata = conn;
+    }
+
+    while (retries++ < conn->password_retries) {
+        char pass[PEM_BUFSIZE + 1];
+        int passlen = cb(pass, PEM_BUFSIZE, 0, userdata);
+        if (passlen < 0 || passlen > PEM_BUFSIZE)
+            goto error_out;
+
+        /* For some reason `PKCS12_parse()` fails without a `EVP_PKEY`
+         * so if the user doesn't want it, use a local one and free it
+         * again directly after parsing.
+         */
+        EVP_PKEY *pkey_;
+        if (!pkey)
+            pkey = &pkey_;
+        int parse_ok = PKCS12_parse(p12, pass, pkey, &cert, ca);
+        if (pkey == &pkey_ && pkey_)
+            EVP_PKEY_free(pkey_);
+        if (parse_ok) {
+            goto success;
+        }
+        cert = NULL;
+        tls_clear_password_cache(conn);
+        int err = ERR_peek_last_error();
+        if (ERR_GET_LIB(err) == ERR_LIB_PKCS12 &&
+            ERR_GET_REASON(err) == PKCS12_R_MAC_VERIFY_FAILURE) {
+            strophe_debug(conn->ctx, "tls",
+                          "Entered password is most likely wrong!");
+            continue;
+        }
         strophe_debug(conn->ctx, "tls", "Could not parse PKCS#12");
         goto error_out;
     }
-    return cert;
 error_out:
     _tls_log_error(conn->ctx);
-    return NULL;
+success:
+    if (p12)
+        PKCS12_free(p12);
+    return cert;
 }
 
 static X509 *_tls_cert_read(xmpp_conn_t *conn)

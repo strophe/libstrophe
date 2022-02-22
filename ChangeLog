@@ -1,7 +1,11 @@
 0.12.0
 	- Fix potential infinite loop in resolver (#200)
 	- Add code coverage support
+	- Add support for password-protected TLS key & PKCS#12/PFX files
 	- New API:
+		- xmpp_conn_get_keyfile()
+		- xmpp_conn_set_password_callback()
+		- xmpp_conn_set_password_retries()
 		- xmpp_stanza_get_child_by_path()
 		- xmpp_conn_set_sockopt_callback()
 		- xmpp_sockopt_cb_keepalive()

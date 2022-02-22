@@ -19,11 +19,11 @@
 #include "test.h"
 
 static int
-password_callback(char *pw, size_t pw_max, const char *fname, void *userdata)
+password_callback(char *pw, size_t pw_max, xmpp_conn_t *conn, void *userdata)
 {
     (void)pw_max;
     (void)userdata;
-    (void)fname;
+    (void)conn;
     memcpy(pw, "abc123", 7);
     return 6;
 }

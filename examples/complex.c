@@ -95,47 +95,22 @@ static int certfail_handler(const xmpp_tlscert_t *cert,
 }
 
 static int
-password_callback(char *pw, size_t pw_max, const char *fname, void *userdata)
+password_callback(char *pw, size_t pw_max, xmpp_conn_t *conn, void *userdata)
 {
     (void)userdata;
-    /* when using an encrypted keyfile, we get asked multiple times for the
-     * password ... cache it until we're connected
-     */
-    static struct {
-        char pass[256];
-        unsigned char hash[XMPP_SHA1_DIGEST_SIZE];
-        size_t passlen, fnamelen;
-        unsigned count;
-    } password_cache;
-    int ret = -1;
-    unsigned char hash[XMPP_SHA1_DIGEST_SIZE];
-
-    size_t fname_len = strlen(fname);
-    xmpp_sha1_digest((void *)fname, fname_len, hash);
-    if (fname_len && fname_len == password_cache.fnamelen &&
-        memcmp(hash, password_cache.hash, sizeof(hash)) == 0) {
-        if (password_cache.passlen && --password_cache.count) {
-            memcpy(pw, password_cache.pass, password_cache.passlen + 1);
-            ret = password_cache.passlen;
-            if (!password_cache.count)
-                memset(&password_cache, 0, sizeof(password_cache));
-            return ret;
-        }
-    }
-    printf("Trying to unlock %s\n", fname);
+    printf("Trying to unlock %s\n", xmpp_conn_get_keyfile(conn));
     char *pass = getpass("Please enter password: ");
     if (!pass)
         return -1;
     size_t passlen = strlen(pass);
-    if (passlen < pw_max) {
-        memcpy(pw, pass, passlen + 1);
-        ret = passlen;
-        memcpy(password_cache.pass, pass, passlen + 1);
-        password_cache.passlen = passlen;
-        password_cache.count = 6;
-        memcpy(password_cache.hash, hash, sizeof(hash));
-        password_cache.fnamelen = fname_len;
+    int ret;
+    if (passlen >= pw_max) {
+        ret = -1;
+        goto out;
     }
+    ret = passlen + 1;
+    memcpy(pw, pass, ret);
+out:
     memset(pass, 0, passlen);
     return ret;
 }
@@ -327,7 +302,9 @@ int main(int argc, char **argv)
         xmpp_conn_set_sockopt_callback(conn, sockopt_cb);
 
     /* ask for a password if key is protected */
-    xmpp_conn_set_password_callback(conn, password_callback, conn);
+    xmpp_conn_set_password_callback(conn, password_callback, NULL);
+    /* try at max 3 times in case the user enters the password wrong */
+    xmpp_conn_set_password_retries(conn, 3);
     /* setup authentication information */
     if (key) {
         xmpp_conn_set_client_cert(conn, cert, key);

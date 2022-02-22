@@ -194,6 +194,12 @@ struct _xmpp_conn_t {
     xmpp_certfail_handler certfail_handler;
     xmpp_password_callback password_callback;
     void *password_callback_userdata;
+    struct {
+        char pass[1024];
+        unsigned char fname_hash[XMPP_SHA1_DIGEST_SIZE];
+        size_t passlen, fnamelen;
+    } password_cache;
+    unsigned int password_retries;
 
     /* if server returns <bind/> or <session/> we must do them */
     int bind_required;

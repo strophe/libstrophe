@@ -211,3 +211,40 @@ int tlscert_add_dnsname(xmpp_tlscert_t *cert, const char *dnsname)
         strophe_strdup(cert->ctx, dnsname);
     return 0;
 }
+
+int tls_caching_password_callback(char *pw, size_t pw_max, xmpp_conn_t *conn)
+{
+    int ret;
+    unsigned char hash[XMPP_SHA1_DIGEST_SIZE];
+
+    const char *fname = conn->tls_client_key;
+    size_t fname_len = strlen(fname);
+    xmpp_sha1_digest((void *)fname, fname_len, hash);
+    if (fname_len && fname_len == conn->password_cache.fnamelen &&
+        memcmp(hash, conn->password_cache.fname_hash, sizeof(hash)) == 0) {
+        if (conn->password_cache.passlen) {
+            memcpy(pw, conn->password_cache.pass,
+                   conn->password_cache.passlen + 1);
+            return conn->password_cache.passlen;
+        }
+    }
+    size_t max_len = pw_max == 256 ? pw_max : sizeof(conn->password_cache.pass);
+    ret = conn->password_callback(conn->password_cache.pass, max_len, conn,
+                                  conn->password_callback_userdata);
+
+    if (ret < 0 || ret >= (ssize_t)max_len) {
+        memset(conn->password_cache.pass, 0, sizeof(conn->password_cache.pass));
+        return -1;
+    }
+    conn->password_cache.pass[ret] = '\0';
+    memcpy(pw, conn->password_cache.pass, ret + 1);
+    conn->password_cache.passlen = ret;
+    conn->password_cache.fnamelen = fname_len;
+    memcpy(conn->password_cache.fname_hash, hash, sizeof(hash));
+    return conn->password_cache.passlen;
+}
+
+void tls_clear_password_cache(xmpp_conn_t *conn)
+{
+    memset(&conn->password_cache, 0, sizeof(conn->password_cache));
+}

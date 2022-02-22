@@ -825,6 +825,7 @@ static void _auth(xmpp_conn_t *conn)
 
 static void _auth_success(xmpp_conn_t *conn)
 {
+    tls_clear_password_cache(conn);
     conn->authenticated = 1;
     /* call connection handler */
     conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
