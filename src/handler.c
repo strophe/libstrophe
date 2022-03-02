@@ -694,19 +694,18 @@ void handler_system_delete_all(xmpp_conn_t *conn)
             } else
                 item = item->next;
         }
-        if (head != head_old)
-            key2 = key;
         /* Hash table implementation is not perfect, so we need to find next
            key before dropping current one. Otherwise, we will get access to
            freed memory. */
-        key = hash_iter_next(iter);
+        key2 = hash_iter_next(iter);
         if (head != head_old) {
             /* hash_add() replaces value if the key exists */
             if (head != NULL)
-                hash_add(conn->id_handlers, key2, head);
+                hash_add(conn->id_handlers, key, head);
             else
-                hash_drop(conn->id_handlers, key2);
+                hash_drop(conn->id_handlers, key);
         }
+        key = key2;
     }
     if (iter)
         hash_iter_release(iter);
