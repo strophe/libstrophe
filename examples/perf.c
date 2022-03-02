@@ -32,6 +32,7 @@ static void perf_rand(xmpp_ctx_t *ctx)
     uint64_t t1, t2;
     unsigned int n;
     const size_t alloc_sz = 0x1000u;
+    size_t sz;
     unsigned char *buf = malloc(alloc_sz);
 
     /* pre-heat */
@@ -39,7 +40,7 @@ static void perf_rand(xmpp_ctx_t *ctx)
         xmpp_rand_bytes(rng, buf, n * 10);
     }
 
-    for (size_t sz = 2; sz <= alloc_sz; sz <<= 1) {
+    for (sz = 2; sz <= alloc_sz; sz <<= 1) {
         t2 = 0;
         for (n = 0; n < 1000u; ++n) {
 
