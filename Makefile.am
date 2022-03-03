@@ -40,6 +40,7 @@ libstrophe_la_SOURCES = \
 	src/conn.c \
 	src/crypto.c \
 	src/ctx.c \
+	src/deprecated.c \
 	src/event.c \
 	src/handler.c \
 	src/hash.c \

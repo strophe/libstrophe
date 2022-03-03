@@ -312,6 +312,16 @@ static void _strophe_log(const xmpp_ctx_t *ctx,
         strophe_free(ctx, buf);
 }
 
+/* Dummy trampoline, will be removed when deprecated.c is deleted */
+void strophe_log_internal(const xmpp_ctx_t *ctx,
+                          xmpp_log_level_t level,
+                          const char *area,
+                          const char *fmt,
+                          va_list ap)
+{
+    _strophe_log(ctx, level, area, fmt, ap);
+}
+
 /** Write to the log at the ERROR level.
  *  This is a convenience function for writing to the log at the
  *  ERROR level.  It takes a printf-style format string followed by a

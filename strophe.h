@@ -587,6 +587,49 @@ void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len);
  */
 void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len);
 
+/**
+ * Formerly "private but exported" functions made public for now to announce
+ * deprecation */
+#include <stdarg.h>
+
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
+#define XMPP_DEPRECATED \
+    __attribute__((deprecated("Function is internal from next release on")))
+#elif defined(_MSC_VER) && _MSC_VER >= 1500
+#define XMPP_DEPRECATED \
+    __declspec(deprecated("Function is internal from next release on"))
+#else
+#define XMPP_DEPRECATED
+#endif
+
+XMPP_DEPRECATED void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size);
+XMPP_DEPRECATED void *xmpp_realloc(const xmpp_ctx_t *ctx, void *p, size_t size);
+XMPP_DEPRECATED char *xmpp_strdup(const xmpp_ctx_t *ctx, const char *s);
+XMPP_DEPRECATED char *
+xmpp_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len);
+
+XMPP_DEPRECATED char *xmpp_strtok_r(char *s, const char *delim, char **saveptr);
+XMPP_DEPRECATED int
+xmpp_snprintf(char *str, size_t count, const char *fmt, ...);
+XMPP_DEPRECATED int
+xmpp_vsnprintf(char *str, size_t count, const char *fmt, va_list arg);
+
+XMPP_DEPRECATED void xmpp_log(const xmpp_ctx_t *ctx,
+                              xmpp_log_level_t level,
+                              const char *area,
+                              const char *fmt,
+                              va_list ap);
+XMPP_DEPRECATED void
+xmpp_error(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+XMPP_DEPRECATED void
+xmpp_warn(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+XMPP_DEPRECATED void
+xmpp_info(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+XMPP_DEPRECATED void
+xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+XMPP_DEPRECATED void xmpp_debug_verbose(
+    int level, const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+
 #ifdef __cplusplus
 }
 #endif

@@ -113,6 +113,12 @@ void strophe_debug(const xmpp_ctx_t *ctx,
 void strophe_debug_verbose(
     int level, const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 
+void strophe_log_internal(const xmpp_ctx_t *ctx,
+                          xmpp_log_level_t level,
+                          const char *area,
+                          const char *fmt,
+                          va_list ap);
+
 /** connection **/
 
 /* opaque connection object */
