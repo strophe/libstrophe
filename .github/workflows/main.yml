@@ -34,6 +34,10 @@ jobs:
       - name: Run tests
         run: |
           make check
+      - name: Error logs
+        if: ${{ failure() }}
+        run: |
+          cat test-suite.log || true
 
   libressl-tests:
     runs-on: ubuntu-20.04
@@ -64,6 +68,10 @@ jobs:
       - name: Run tests
         run: |
           make check
+      - name: Error logs
+        if: ${{ failure() }}
+        run: |
+          cat test-suite.log || true
 
   release-test:
     runs-on: ubuntu-20.04
