@@ -55,6 +55,8 @@ tests/*.trs
 tests/check_parser
 tests/test_base64
 tests/test_ctx
+tests/test_fuzz_parser
+tests/test_fuzz_resolver
 tests/test_hash
 tests/test_jid
 tests/test_md5
@@ -81,3 +83,4 @@ expat/
 coverage/
 coverage.info
 configure~
+fuzz-*.log
