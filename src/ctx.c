@@ -283,7 +283,7 @@ static void _strophe_log(const xmpp_ctx_t *ctx,
         return;
 
     va_copy(copy, ap);
-    ret = xmpp_vsnprintf(smbuf, sizeof(smbuf), fmt, ap);
+    ret = strophe_vsnprintf(smbuf, sizeof(smbuf), fmt, ap);
     if (ret >= (int)sizeof(smbuf)) {
         buf = (char *)strophe_alloc(ctx, ret + 1);
         if (!buf) {
@@ -294,7 +294,7 @@ static void _strophe_log(const xmpp_ctx_t *ctx,
             return;
         }
         oldret = ret;
-        ret = xmpp_vsnprintf(buf, ret + 1, fmt, copy);
+        ret = strophe_vsnprintf(buf, ret + 1, fmt, copy);
         if (ret > oldret) {
             strophe_error(ctx, "log", "Unexpected error");
             strophe_free(ctx, buf);

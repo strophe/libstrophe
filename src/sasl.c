@@ -440,9 +440,9 @@ char *sasl_scram(xmpp_ctx_t *ctx,
         goto out_auth;
     }
 
-    xmpp_snprintf(response, response_len, "c=biws,%s", r);
-    xmpp_snprintf(auth, auth_len, "%s,%s,%s", first_bare + 3, challenge,
-                  response);
+    strophe_snprintf(response, response_len, "c=biws,%s", r);
+    strophe_snprintf(auth, auth_len, "%s,%s,%s", first_bare + 3, challenge,
+                     response);
 
     SCRAM_ClientKey(alg, (uint8_t *)password, strlen(password), (uint8_t *)sval,
                     sval_len, (uint32_t)ival, key);

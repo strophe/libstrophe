@@ -35,7 +35,7 @@ void strophe_free(const xmpp_ctx_t *ctx, void *p)
 }
 
 #ifndef HAVE_SNPRINTF
-int xmpp_snprintf(char *str, size_t count, const char *fmt, ...)
+int strophe_snprintf(char *str, size_t count, const char *fmt, ...)
 {
     (void)str;
     (void)count;

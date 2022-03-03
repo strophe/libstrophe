@@ -214,7 +214,7 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, gnutls_x509_crt_t cert)
     hex_encode(buf, smallbuf, size);
     tlscert->elements[XMPP_CERT_FINGERPRINT_SHA256] = strophe_strdup(ctx, buf);
 
-    xmpp_snprintf(buf, sizeof(buf), "%d", gnutls_x509_crt_get_version(cert));
+    strophe_snprintf(buf, sizeof(buf), "%d", gnutls_x509_crt_get_version(cert));
     tlscert->elements[XMPP_CERT_VERSION] = strophe_strdup(ctx, buf);
 
     algo = gnutls_x509_crt_get_pk_algorithm(cert, NULL);

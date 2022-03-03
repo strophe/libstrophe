@@ -37,7 +37,7 @@ int main(void)
 
     for (x = 0; fp_fmt[x] != NULL; x++)
         for (y = 0; fp_nums[y] != 0; y++) {
-            xmpp_snprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
+            strophe_snprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
             sprintf(buf2, fp_fmt[x], fp_nums[y]);
             if (strcmp(buf1, buf2)) {
                 printf("xmpp_snprintf doesn't match Format: "
@@ -50,7 +50,7 @@ int main(void)
 
     for (x = 0; int_fmt[x] != NULL; x++)
         for (y = 0; int_nums[y] != 0; y++) {
-            xmpp_snprintf(buf1, sizeof(buf1), int_fmt[x], int_nums[y]);
+            strophe_snprintf(buf1, sizeof(buf1), int_fmt[x], int_nums[y]);
             sprintf(buf2, int_fmt[x], int_nums[y]);
             if (strcmp(buf1, buf2)) {
                 printf("xmpp_snprintf doesn't match Format: "

@@ -540,7 +540,7 @@ static char *_make_scram_init_msg(xmpp_conn_t *conn)
     message_len = strlen(node) + strlen(nonce) + 8 + 1;
     message = strophe_alloc(ctx, message_len);
     if (message) {
-        xmpp_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
+        strophe_snprintf(message, message_len, "n,,n=%s,r=%s", node, nonce);
     }
     strophe_free(ctx, node);
 
@@ -1298,7 +1298,7 @@ int _handle_component_auth(xmpp_conn_t *conn)
     if (digest) {
         /* convert the digest into string representation */
         for (i = 0; i < sizeof(md_value); i++)
-            xmpp_snprintf(digest + i * 2, 3, "%02x", md_value[i]);
+            strophe_snprintf(digest + i * 2, 3, "%02x", md_value[i]);
         digest[2 * sizeof(md_value)] = '\0';
 
         strophe_debug(conn->ctx, "auth", "Digest: %s, len: %d", digest,

@@ -61,7 +61,7 @@
 
 /* JAM: we don't need this - #include "config.h" */
 
-/* JAM: changed declarations to xmpp_snprintf and xmpp_vsnprintf to
+/* JAM: changed declarations to strophe_snprintf and strophe_vsnprintf to
    avoid namespace collision. */
 
 #include "snprintf.h"
@@ -722,7 +722,7 @@ int strophe_snprintf(char *str, size_t count, const char *fmt, ...)
     int total;
 
     VA_START(fmt);
-    total = xmpp_vsnprintf(str, count, fmt, ap);
+    total = strophe_vsnprintf(str, count, fmt, ap);
     VA_END;
     return total;
 }

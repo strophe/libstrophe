@@ -76,7 +76,7 @@ sock_t sock_connect(const char *host, unsigned short port)
     struct addrinfo *res, *ainfo, hints;
     int err;
 
-    xmpp_snprintf(service, 6, "%u", port);
+    strophe_snprintf(service, 6, "%u", port);
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;

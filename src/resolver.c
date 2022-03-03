@@ -179,8 +179,8 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx,
     (void)buf;
     (void)len;
 
-    xmpp_snprintf(fulldomain, sizeof(fulldomain), "_%s._%s.%s", service, proto,
-                  domain);
+    strophe_snprintf(fulldomain, sizeof(fulldomain), "_%s._%s.%s", service,
+                     proto, domain);
 
     *srv_rr_list = NULL;
 
@@ -715,8 +715,8 @@ static int resolver_win32_srv_lookup(xmpp_ctx_t *ctx,
                         rr->port = current->Data.Srv.wPort;
                         rr->priority = current->Data.Srv.wPriority;
                         rr->weight = current->Data.Srv.wWeight;
-                        xmpp_snprintf(rr->target, sizeof(rr->target), "%s",
-                                      current->Data.Srv.pNameTarget);
+                        strophe_snprintf(rr->target, sizeof(rr->target), "%s",
+                                         current->Data.Srv.pNameTarget);
                         *srv_rr_list = rr;
                     }
                     current = current->pNext;

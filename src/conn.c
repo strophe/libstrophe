@@ -919,7 +919,7 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
         return;
 
     va_start(ap, fmt);
-    len = xmpp_vsnprintf(buf, sizeof(buf), fmt, ap);
+    len = strophe_vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
 
     if (len >= sizeof(buf)) {
@@ -933,7 +933,7 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
             return;
         }
         va_start(ap, fmt);
-        xmpp_vsnprintf(bigbuf, len, fmt, ap);
+        strophe_vsnprintf(bigbuf, len, fmt, ap);
         va_end(ap);
 
         /* len - 1 so we don't send trailing \0 */

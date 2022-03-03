@@ -42,7 +42,7 @@ static char *digest_to_string(const uint8_t *digest, char *s, size_t len)
         return NULL;
 
     for (i = 0; i < SHA1_DIGEST_SIZE; ++i)
-        xmpp_snprintf(s + i * 2, 3, "%02x", digest[i]);
+        strophe_snprintf(s + i * 2, 3, "%02x", digest[i]);
 
     return s;
 }

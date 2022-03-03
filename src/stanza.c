@@ -336,7 +336,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
         tmp = _escape_xml(stanza->ctx, stanza->data);
         if (tmp == NULL)
             return XMPP_EMEM;
-        ret = xmpp_snprintf(ptr, left, "%s", tmp);
+        ret = strophe_snprintf(ptr, left, "%s", tmp);
         strophe_free(stanza->ctx, tmp);
         if (ret < 0)
             return XMPP_EMEM;
@@ -346,7 +346,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
             return XMPP_EINVOP;
 
         /* write beginning of tag and attributes */
-        ret = xmpp_snprintf(ptr, left, "<%s", stanza->data);
+        ret = strophe_snprintf(ptr, left, "<%s", stanza->data);
         if (ret < 0)
             return XMPP_EMEM;
         _render_update(&written, buflen, ret, &left, &ptr);
@@ -374,7 +374,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
                     hash_iter_release(iter);
                     return XMPP_EMEM;
                 }
-                ret = xmpp_snprintf(ptr, left, " %s=\"%s\"", key, tmp);
+                ret = strophe_snprintf(ptr, left, " %s=\"%s\"", key, tmp);
                 strophe_free(stanza->ctx, tmp);
                 if (ret < 0) {
                     hash_iter_release(iter);
@@ -387,7 +387,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
 
         if (!stanza->children) {
             /* write end if singleton tag */
-            ret = xmpp_snprintf(ptr, left, "/>");
+            ret = strophe_snprintf(ptr, left, "/>");
             if (ret < 0)
                 return XMPP_EMEM;
             _render_update(&written, buflen, ret, &left, &ptr);
@@ -395,7 +395,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
             /* this stanza has child stanzas */
 
             /* write end of start tag */
-            ret = xmpp_snprintf(ptr, left, ">");
+            ret = strophe_snprintf(ptr, left, ">");
             if (ret < 0)
                 return XMPP_EMEM;
             _render_update(&written, buflen, ret, &left, &ptr);
@@ -413,7 +413,7 @@ _render_stanza_recursive(xmpp_stanza_t *stanza, char *buf, size_t buflen)
             }
 
             /* write end tag */
-            ret = xmpp_snprintf(ptr, left, "</%s>", stanza->data);
+            ret = strophe_snprintf(ptr, left, "</%s>", stanza->data);
             if (ret < 0)
                 return XMPP_EMEM;
 
