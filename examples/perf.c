@@ -81,7 +81,7 @@ static uint64_t timer, skew = 0;
 /* RDTSC from Scott Duplichan */
 static uint64_t rdtsc(void)
 {
-#if defined __GNUC__ && !defined(LTC_NO_ASM)
+#if defined __GNUC__
 #if defined(__i386__) || defined(__x86_64__)
     /* version from http://www.mcs.anl.gov/~kazutomo/rdtsc.html
      * the old code always got a warning issued by gcc, clang did not
@@ -117,7 +117,7 @@ static uint64_t rdtsc(void)
     __asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(CNTVCT_EL0));
     return CNTVCT_EL0;
 #else
-    return XCLOCK();
+    return clock();
 #endif
 
 /* Microsoft and Intel Windows compilers */
@@ -131,7 +131,7 @@ static uint64_t rdtsc(void)
 #endif
     return __getReg(3116);
 #else
-    return XCLOCK();
+    return clock();
 #endif
 }
 
