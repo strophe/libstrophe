@@ -321,6 +321,9 @@ static unsigned message_name_get(const unsigned char *buf,
             if (i >= buf_len)
                 return 0;
             pointer = (label_len & 0x3f) << 8 | buf[i++];
+            /* Prevent infinite looping */
+            if (pointer == buf_offset)
+                return 0;
             if (name != NULL && name_len >= name_max && name_max > 0) {
                 /* We have filled the name buffer. Don't pass it recursively. */
                 name[name_max - 1] = '\0';

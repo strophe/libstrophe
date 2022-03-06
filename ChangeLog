@@ -1,4 +1,5 @@
 0.12.0
+	- Fix potential infinite loop in resolver (#200)
 	- Add code coverage support
 	- New API:
 		- xmpp_stanza_get_child_by_path()
