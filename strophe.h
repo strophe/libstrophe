@@ -295,6 +295,8 @@ xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *conn);
 void xmpp_conn_disable_tls(xmpp_conn_t *conn);
 int xmpp_conn_is_secured(xmpp_conn_t *conn);
 void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval);
+void xmpp_conn_set_keepalive_full(
+    xmpp_conn_t *conn, int timeout, int interval, int count, int user_timeout);
 int xmpp_conn_is_connecting(xmpp_conn_t *conn);
 int xmpp_conn_is_connected(xmpp_conn_t *conn);
 int xmpp_conn_is_disconnected(xmpp_conn_t *conn);

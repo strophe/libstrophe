@@ -15,9 +15,11 @@
 
 #include <strophe.h>
 
-/* hardcoded TCP keepalive timeout and interval */
+/* hardcoded TCP keepalive timeout, interval, count and tcp_user_timeout */
 #define KA_TIMEOUT 60
 #define KA_INTERVAL 1
+#define KA_COUNT 3
+#define USER_TIMEOUT 120
 
 static void print_tlscert(const xmpp_tlscert_t *cert)
 {
@@ -184,7 +186,8 @@ int main(int argc, char **argv)
     xmpp_conn_set_flags(conn, flags);
     /* configure TCP keepalive (optional) */
     if (tcp_keepalive)
-        xmpp_conn_set_keepalive(conn, KA_TIMEOUT, KA_INTERVAL);
+        xmpp_conn_set_keepalive_full(conn, KA_TIMEOUT, KA_INTERVAL, KA_COUNT,
+                                     USER_TIMEOUT);
 
     /* setup authentication information */
     if (cert && key) {

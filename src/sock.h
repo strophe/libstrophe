@@ -40,6 +40,7 @@ int sock_write(sock_t sock, const void *buff, size_t len);
 int sock_is_recoverable(int error);
 /* checks for an error after connect, return 0 if connect successful */
 int sock_connect_error(sock_t sock);
-int sock_set_keepalive(sock_t sock, int timeout, int interval);
+int sock_set_keepalive(
+    sock_t sock, int timeout, int interval, int count, int user_timeout);
 
 #endif /* __LIBSTROPHE_SOCK_H__ */

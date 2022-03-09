@@ -226,22 +226,48 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *conn)
  *  @param timeout TCP keepalive timeout in seconds
  *  @param interval TCP keepalive interval in seconds
  *
+ *  @note this function is deprecated
+ *  @see xmpp_conn_set_keepalive_full()
+ *
  *  @ingroup Connections
  */
 void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval)
+{
+    xmpp_conn_set_keepalive_full(conn, timeout, interval, 0, 0);
+}
+
+/** Set TCP keepalive parameters
+ *  Turn on TCP keepalive and set timeout and interval. Zero timeout
+ *  disables TCP keepalives. The parameters are applied immediately for
+ *  a non disconnected object. Also, they are applied when the connection
+ *  object connects successfully.
+ *
+ *  @param conn a Strophe connection object
+ *  @param timeout TCP keepalive timeout in seconds
+ *  @param interval TCP keepalive interval in seconds
+ *  @param count TCP keepalive count
+ *  @param user_timeout TCP_USER_TIMEOUT value in seconds
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_keepalive_full(
+    xmpp_conn_t *conn, int timeout, int interval, int count, int user_timeout)
 {
     int ret = 0;
 
     conn->ka_timeout = timeout;
     conn->ka_interval = interval;
+    conn->ka_count = count;
+    conn->user_timeout = user_timeout * 1000;
 
     if (conn->state != XMPP_STATE_DISCONNECTED)
-        ret = sock_set_keepalive(conn->sock, timeout, interval);
+        ret = sock_set_keepalive(conn->sock, timeout, interval, count,
+                                 user_timeout);
 
     if (ret < 0) {
         strophe_error(conn->ctx, "xmpp",
-                      "Setting TCP keepalive (%d,%d) error: %d", timeout,
-                      interval, sock_error());
+                      "Setting TCP keepalive (%d,%d,%d,%d) error: %d", timeout,
+                      interval, count, user_timeout, sock_error());
     }
 }
 
@@ -1492,8 +1518,10 @@ static int _conn_connect(xmpp_conn_t *conn,
                   host, port, conn->sock);
     if (conn->sock == -1)
         return XMPP_EINT;
-    if (conn->ka_timeout || conn->ka_interval)
-        sock_set_keepalive(conn->sock, conn->ka_timeout, conn->ka_interval);
+    if (conn->ka_timeout || conn->ka_interval || conn->ka_count ||
+        conn->user_timeout)
+        sock_set_keepalive(conn->sock, conn->ka_timeout, conn->ka_interval,
+                           conn->ka_count, conn->user_timeout);
 
     /* setup handler */
     conn->conn_handler = callback;

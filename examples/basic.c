@@ -15,10 +15,6 @@
 
 #include <strophe.h>
 
-/* hardcoded TCP keepalive timeout and interval */
-#define KA_TIMEOUT 60
-#define KA_INTERVAL 1
-
 /* define a handler for connection events */
 static void conn_handler(xmpp_conn_t *conn,
                          xmpp_conn_event_t status,

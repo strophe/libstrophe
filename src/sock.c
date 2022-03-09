@@ -109,7 +109,8 @@ sock_t sock_connect(const char *host, unsigned short port)
     return sock;
 }
 
-int sock_set_keepalive(sock_t sock, int timeout, int interval)
+int sock_set_keepalive(
+    sock_t sock, int timeout, int interval, int count, int user_timeout)
 {
     int ret;
     int optval = (timeout && interval) ? 1 : 0;
@@ -148,7 +149,26 @@ int sock_set_keepalive(sock_t sock, int timeout, int interval)
         if (ret < 0)
             return ret;
 #endif /* TCP_KEEPINTVL */
+
+#ifdef TCP_KEEPCNT
+        if (count) {
+            ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &count,
+                             sizeof(count));
+            if (ret < 0)
+                return ret;
+        }
+#endif /* TCP_KEEPCNT */
     }
+
+#ifdef TCP_USER_TIMEOUT
+    if (user_timeout) {
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_USER_TIMEOUT, &user_timeout,
+                         sizeof(user_timeout));
+        if (ret < 0)
+            return ret;
+    }
+#endif /* TCP_KEEPCNT */
+
 #endif /* _WIN32 */
 
     return ret;
