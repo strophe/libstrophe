@@ -25,6 +25,8 @@ AS_CASE([$host_os],
     [*solaris*],   [PLATFORM="solaris"],
     [*android*],   [PLATFORM="android"],
     [*haiku*],     [PLATFORM="haiku"],
+    [*mingw*],     [PLATFORM="win32"
+                    MINGW_LIBS="-lws2_32"],
                    [PLATFORM="nix"])
 
 WARNING_FLAGS="-Wall"
@@ -170,8 +172,10 @@ AS_CASE([$PLATFORM],
     [solaris], [RESOLV_LIBS="-lresolv -lsocket -lnsl"],
     [android], [RESOLV_LIBS=""],
     [haiku],   [RESOLV_LIBS="-lnetwork"],
+    [win32],   [RESOLV_LIBS=""],
                [RESOLV_LIBS="-lresolv"])
 
+if test "x$PLATFORM" != xwin32; then
 LIBS_TMP="${LIBS}"
 LIBS="${RESOLV_LIBS}"
 AC_LINK_IFELSE([AC_LANG_SOURCE([
@@ -190,6 +194,7 @@ AC_LINK_IFELSE([AC_LANG_SOURCE([
     [AC_MSG_ERROR([res_query() not found with LIBS="${LIBS}"])])
 LIBS="${LIBS_TMP}"
 PC_LIBS="${RESOLV_LIBS} ${PC_LIBS}"
+fi
 
 fi
 
@@ -227,6 +232,7 @@ AC_SUBST(COVERAGE_CFLAGS)
 AC_SUBST(COVERAGE_LDFLAGS)
 AC_SUBST(COVERAGE_PRE)
 AC_SUBST(COVERAGE_POST)
+AC_SUBST(MINGW_LIBS)
 AC_SUBST(PARSER_CFLAGS)
 AC_SUBST(PARSER_LIBS)
 AC_SUBST(RESOLV_CFLAGS)

@@ -18,6 +18,8 @@ SSL_CFLAGS = @openssl_CFLAGS@
 SSL_LIBS = @openssl_LIBS@
 endif
 
+MINGW_LIBS = @MINGW_LIBS@
+
 RESOLV_CFLAGS = @RESOLV_CFLAGS@
 RESOLV_LIBS = @RESOLV_LIBS@
 
@@ -29,7 +31,7 @@ STROPHE_LIBS = $(COVERAGE_PRE) libstrophe.la $(COVERAGE_POST) $(COVERAGE_LDFLAGS
 lib_LTLIBRARIES = libstrophe.la
 
 libstrophe_la_CFLAGS = $(SSL_CFLAGS) $(STROPHE_FLAGS) $(PARSER_CFLAGS) $(RESOLV_CFLAGS) $(COVERAGE_CFLAGS)
-libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(RESOLV_LIBS) -no-undefined
+libstrophe_la_LDFLAGS = $(SSL_LIBS) $(PARSER_LIBS) $(RESOLV_LIBS) $(MINGW_LIBS) -no-undefined
 # Export only public API
 libstrophe_la_LDFLAGS += -export-symbols-regex '^xmpp_' -version-info @VERSION_INFO@
 
@@ -266,8 +268,8 @@ tests_test_xmppaddr_LDFLAGS = -static
 
 format:
 	@echo "   * run clang-format on all sources"
-	@dos2unix -q src/*.[ch] *.h tests/*.[ch] examples/*.c
-	@clang-format -i src/*.[ch] *.h tests/*.[ch] examples/*.c
+	@dos2unix -k -q $(top_srcdir)/src/*.[ch] $(top_srcdir)/*.h $(top_srcdir)/tests/*.[ch] $(top_srcdir)/examples/*.c
+	@clang-format -i $(top_srcdir)/src/*.[ch] $(top_srcdir)/*.h $(top_srcdir)/tests/*.[ch] $(top_srcdir)/examples/*.c
 
 if COVERAGE
 MOSTLYCLEANFILES = src/*.gcno src/*.gcda coverage.info
