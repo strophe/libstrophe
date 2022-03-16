@@ -75,7 +75,7 @@ else
 fi
 
 AC_SEARCH_LIBS([socket], [network socket])
-AC_CHECK_FUNCS([snprintf vsnprintf])
+AC_CHECK_FUNCS([snprintf vsnprintf], [], [have_snprintf=no])
 AC_CHECK_DECLS([va_copy], [], [], [#include <stdarg.h>])
 
 if test "x$enable_tls" != xno -a "x$with_gnutls" == xyes; then
@@ -207,6 +207,7 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
 
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AM_CONDITIONAL([DISABLE_TLS], [test x$enable_tls = xno])
+AM_CONDITIONAL([NEED_SNPRINTF], [test x$have_snprintf = xno])
 AM_CONDITIONAL([TLS_WITH_GNUTLS], [test x$with_gnutls = xyes])
 
 # define while compiling

@@ -52,7 +52,6 @@ libstrophe_la_SOURCES = \
 	src/sha1.c \
 	src/sha256.c \
 	src/sha512.c \
-	src/snprintf.c \
 	src/sock.c \
 	src/stanza.c \
 	src/tls.c \
@@ -75,6 +74,10 @@ libstrophe_la_SOURCES += \
 	src/sock.h \
 	src/tls.h \
 	src/util.h
+
+if NEED_SNPRINTF
+libstrophe_la_SOURCES += src/snprintf.c
+endif
 
 if DISABLE_TLS
 libstrophe_la_SOURCES += src/tls_dummy.c
