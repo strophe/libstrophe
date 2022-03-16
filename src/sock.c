@@ -33,8 +33,7 @@
 #include <fcntl.h>
 #endif
 
-#include "sock.h"
-#include "snprintf.h"
+#include "common.h"
 
 void sock_initialize(void)
 {
@@ -69,7 +68,7 @@ static int _in_progress(int error)
 #endif
 }
 
-sock_t sock_connect(const char *host, unsigned short port)
+sock_t sock_connect(xmpp_conn_t *conn, const char *host, unsigned short port)
 {
     sock_t sock;
     char service[6];
@@ -95,6 +94,14 @@ sock_t sock_connect(const char *host, unsigned short port)
         if (sock < 0)
             continue;
 
+        if (conn->sockopt_cb != NULL)
+            err = (conn->sockopt_cb)(conn, &sock);
+
+        if (err != 0) {
+            sock_close(sock);
+            continue;
+        }
+
         err = sock_set_nonblocking(sock);
         if (err == 0) {
             err = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
@@ -109,12 +116,17 @@ sock_t sock_connect(const char *host, unsigned short port)
     return sock;
 }
 
-int sock_set_keepalive(sock_t sock, int timeout, int interval)
+int sock_set_keepalive(sock_t sock,
+                       int timeout,
+                       int interval,
+                       int count,
+                       unsigned int user_timeout)
 {
     int ret;
     int optval = (timeout && interval) ? 1 : 0;
 
-    /* This function doesn't change maximum number of keepalive probes */
+    UNUSED(count);
+    UNUSED(user_timeout);
 
 #ifdef _WIN32
     struct tcp_keepalive ka;
@@ -149,9 +161,55 @@ int sock_set_keepalive(sock_t sock, int timeout, int interval)
             return ret;
 #endif /* TCP_KEEPINTVL */
     }
+
+    if (count) {
+#ifdef TCP_KEEPCNT
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &count, sizeof(count));
+        if (ret < 0)
+            return ret;
+#endif /* TCP_KEEPCNT */
+    }
+
+    if (user_timeout) {
+#ifdef TCP_USER_TIMEOUT
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_USER_TIMEOUT, &user_timeout,
+                         sizeof(user_timeout));
+        if (ret < 0)
+            return ret;
+#elif defined(TCP_RXT_CONNDROPTIME)
+        int rxt = user_timeout / 1000;
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_RXT_CONNDROPTIME, &rxt,
+                         sizeof(rxt));
+        if (ret < 0)
+            return ret;
+#endif /* TCP_USER_TIMEOUT */
+    }
+
 #endif /* _WIN32 */
 
     return ret;
+}
+
+/** Example sockopt callback function
+ *  An example function that can be used to set reasonable default keepalive
+ *  options on sockets when registered for a connection with
+ *  xmpp_conn_set_sockopt_callback()
+ *
+ *  @param conn a Strophe connection object
+ *  @param socket pointer to a socket descriptor
+ *
+ *  @see xmpp_sockopt_callback for details on the `socket` parameter
+ *  @ingroup Connections
+ */
+int xmpp_sockopt_cb_keepalive(xmpp_conn_t *conn, void *socket)
+{
+    sock_t sock = *((sock_t *)socket);
+
+    return sock_set_keepalive(
+        sock, conn->ka_timeout, conn->ka_interval, conn->ka_count,
+        conn->ka_count
+            ? (conn->ka_timeout + conn->ka_interval * conn->ka_count) * 1000
+            : 0);
 }
 
 int sock_close(sock_t sock)

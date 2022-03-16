@@ -174,6 +174,7 @@ struct _xmpp_conn_t {
     sock_t sock;
     int ka_timeout;  /* TCP keepalive timeout */
     int ka_interval; /* TCP keepalive interval */
+    int ka_count;    /* TCP keepalive count */
 
     tls_t *tls;
     int tls_support;
@@ -233,6 +234,7 @@ struct _xmpp_conn_t {
     xmpp_handlist_t *timed_handlers;
     hash_t *id_handlers;
     xmpp_handlist_t *handlers;
+    xmpp_sockopt_callback sockopt_cb;
 };
 
 void conn_disconnect(xmpp_conn_t *conn);

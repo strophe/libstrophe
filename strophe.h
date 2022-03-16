@@ -269,6 +269,41 @@ typedef void (*xmpp_conn_handler)(xmpp_conn_t *conn,
 typedef int (*xmpp_certfail_handler)(const xmpp_tlscert_t *cert,
                                      const char *const errormsg);
 
+/** The function which will be called when Strophe creates a new socket.
+ *
+ *  The `sock` argument is a pointer that is dependent on the architecture
+ *  Strophe is compiled for.
+ *
+ *  For POSIX compatible systems usage shall be:
+ *  ```
+ *  int soc = *((int*)sock);
+ *  ```
+ *
+ *  On Windows usage shall be:
+ *  ```
+ *  SOCKET soc = *((SOCKET*)sock);
+ *  ```
+ *
+ *  This function will be called for each socket that is created.
+ *
+ *  `examples/bot.c` uses a libstrophe supplied callback function that sets
+ *  basic keepalive parameters (`xmpp_sockopt_cb_keepalive()`).
+ *
+ *  `examples/complex.c` implements a custom function that could be useful
+ *  for an application.
+ *
+ *  @param conn     The Strophe connection object this callback originates from.
+ *  @param sock     A pointer to the underlying file descriptor.
+ *
+ *  @return 0 on success, -1 on error
+ *
+ *  @ingroup Connections
+ */
+typedef int (*xmpp_sockopt_callback)(xmpp_conn_t *conn, void *sock);
+
+/* an example callback that sets basic keepalive parameters */
+int xmpp_sockopt_cb_keepalive(xmpp_conn_t *conn, void *sock);
+
 void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text);
 xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx);
 xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *conn);
@@ -294,7 +329,8 @@ void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass);
 xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *conn);
 void xmpp_conn_disable_tls(xmpp_conn_t *conn);
 int xmpp_conn_is_secured(xmpp_conn_t *conn);
-void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval);
+void xmpp_conn_set_sockopt_callback(xmpp_conn_t *conn,
+                                    xmpp_sockopt_callback callback);
 int xmpp_conn_is_connecting(xmpp_conn_t *conn);
 int xmpp_conn_is_connected(xmpp_conn_t *conn);
 int xmpp_conn_is_disconnected(xmpp_conn_t *conn);
@@ -592,9 +628,13 @@ void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len);
  * deprecation */
 #include <stdarg.h>
 
-#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
+#if defined(__GNUC__)
+#if (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
 #define XMPP_DEPRECATED \
     __attribute__((deprecated("Function is internal from next release on")))
+#elif (__GNUC__ * 100 + __GNUC_MINOR__ >= 300)
+#define XMPP_DEPRECATED __attribute__((deprecated))
+#endif
 #elif defined(_MSC_VER) && _MSC_VER >= 1500
 #define XMPP_DEPRECATED \
     __declspec(deprecated("Function is internal from next release on"))
@@ -629,6 +669,9 @@ XMPP_DEPRECATED void
 xmpp_debug(const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
 XMPP_DEPRECATED void xmpp_debug_verbose(
     int level, const xmpp_ctx_t *ctx, const char *area, const char *fmt, ...);
+
+XMPP_DEPRECATED void
+xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval);
 
 #ifdef __cplusplus
 }

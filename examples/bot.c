@@ -142,21 +142,66 @@ void conn_handler(xmpp_conn_t *conn,
     }
 }
 
+static void usage(int exit_code)
+{
+    fprintf(stderr,
+            "Usage: bot [options] <jid> <pass>\n\n"
+            "Options:\n"
+            "  --jid <jid>              The JID to use to authenticate.\n"
+            "  --pass <pass>            The password of the JID.\n"
+            "  --tcp-keepalive          Configure TCP keepalive.\n"
+            "  --disable-tls            Disable TLS.\n"
+            "  --mandatory-tls          Deny plaintext connection.\n"
+            "  --trust-tls              Trust TLS certificate.\n"
+            "  --legacy-ssl             Use old style SSL.\n"
+            "  --legacy-auth            Allow legacy authentication.\n"
+            "Note: --disable-tls conflicts with --mandatory-tls or "
+            "--legacy-ssl\n");
+
+    exit(exit_code);
+}
+
 int main(int argc, char **argv)
 {
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
-    char *jid, *pass;
+    char *jid = NULL, *password = NULL, *host = NULL;
+    long flags = 0;
+    int i, tcp_keepalive = 0;
+    unsigned long port = 0;
 
     /* take a jid and password on the command line */
-    if (argc != 3) {
-        fprintf(stderr, "Usage: bot <jid> <pass>\n\n");
-        return 1;
+    for (i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--help") == 0)
+            usage(0);
+        else if (strcmp(argv[i], "--disable-tls") == 0)
+            flags |= XMPP_CONN_FLAG_DISABLE_TLS;
+        else if (strcmp(argv[i], "--mandatory-tls") == 0)
+            flags |= XMPP_CONN_FLAG_MANDATORY_TLS;
+        else if (strcmp(argv[i], "--trust-tls") == 0)
+            flags |= XMPP_CONN_FLAG_TRUST_TLS;
+        else if (strcmp(argv[i], "--legacy-ssl") == 0)
+            flags |= XMPP_CONN_FLAG_LEGACY_SSL;
+        else if (strcmp(argv[i], "--legacy-auth") == 0)
+            flags |= XMPP_CONN_FLAG_LEGACY_AUTH;
+        else if ((strcmp(argv[i], "--jid") == 0) && (++i < argc))
+            jid = argv[i];
+        else if ((strcmp(argv[i], "--pass") == 0) && (++i < argc))
+            password = argv[i];
+        else if (strcmp(argv[i], "--tcp-keepalive") == 0)
+            tcp_keepalive = 1;
+        else
+            break;
+    }
+    if ((!jid) || (argc - i) > 2) {
+        usage(1);
     }
 
-    jid = argv[1];
-    pass = argv[2];
+    if (i < argc)
+        host = argv[i];
+    if (i + 1 < argc)
+        port = strtoul(argv[i + 1], NULL, 0);
 
     /* init library */
     xmpp_initialize();
@@ -169,23 +214,26 @@ int main(int argc, char **argv)
     /* create a connection */
     conn = xmpp_conn_new(ctx);
 
-    /*
-     * also you can disable TLS support or force legacy SSL
-     * connection without STARTTLS
-     *
-     * see xmpp_conn_set_flags() or examples/basic.c
-     */
+    /* configure connection properties (optional) */
+    xmpp_conn_set_flags(conn, flags);
 
     /* setup authentication information */
-    xmpp_conn_set_jid(conn, jid);
-    xmpp_conn_set_pass(conn, pass);
+    if (jid)
+        xmpp_conn_set_jid(conn, jid);
+    if (password)
+        xmpp_conn_set_pass(conn, password);
+
+    /* enable TCP keepalive, using canned callback function */
+    if (tcp_keepalive)
+        xmpp_conn_set_sockopt_callback(conn, xmpp_sockopt_cb_keepalive);
 
     /* initiate connection */
-    xmpp_connect_client(conn, NULL, 0, conn_handler, ctx);
+    if (xmpp_connect_client(conn, host, port, conn_handler, ctx) == XMPP_EOK) {
 
-    /* enter the event loop -
-       our connect handler will trigger an exit */
-    xmpp_run(ctx);
+        /* enter the event loop -
+           our connect handler will trigger an exit */
+        xmpp_run(ctx);
+    }
 
     /* release our connection and context */
     xmpp_conn_release(conn);

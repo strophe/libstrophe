@@ -22,6 +22,9 @@
 typedef int sock_t;
 #else
 #include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#include <mstcpip.h> /* tcp_keepalive */
 typedef SOCKET sock_t;
 #endif
 
@@ -30,7 +33,7 @@ void sock_shutdown(void);
 
 int sock_error(void);
 
-sock_t sock_connect(const char *host, unsigned short port);
+sock_t sock_connect(xmpp_conn_t *conn, const char *host, unsigned short port);
 int sock_close(sock_t sock);
 
 int sock_set_blocking(sock_t sock);
@@ -40,6 +43,10 @@ int sock_write(sock_t sock, const void *buff, size_t len);
 int sock_is_recoverable(int error);
 /* checks for an error after connect, return 0 if connect successful */
 int sock_connect_error(sock_t sock);
-int sock_set_keepalive(sock_t sock, int timeout, int interval);
+int sock_set_keepalive(sock_t sock,
+                       int timeout,
+                       int interval,
+                       int count,
+                       unsigned int user_timeout);
 
 #endif /* __LIBSTROPHE_SOCK_H__ */

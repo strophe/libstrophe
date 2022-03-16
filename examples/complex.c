@@ -13,11 +13,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#include <mstcpip.h> /* tcp_keepalive */
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#endif
+
 #include <strophe.h>
 
 /* hardcoded TCP keepalive timeout and interval */
 #define KA_TIMEOUT 60
-#define KA_INTERVAL 1
+#define KA_INTERVAL 30
+#define KA_COUNT 3
+#define USER_TIMEOUT 150
 
 static void print_tlscert(const xmpp_tlscert_t *cert)
 {
@@ -78,6 +91,86 @@ static int certfail_handler(const xmpp_tlscert_t *cert,
     }
     printf("\n");
     return read_char[0] == 'y' || read_char[0] == 'Y';
+}
+
+static int sockopt_cb(xmpp_conn_t *conn, void *socket)
+{
+    int timeout = KA_TIMEOUT;
+    int interval = KA_INTERVAL;
+    int count = KA_COUNT;
+    unsigned int user_timeout = USER_TIMEOUT;
+    int ret;
+    int optval = (timeout && interval) ? 1 : 0;
+
+    (void)conn;
+
+#ifdef _WIN32
+    (void)count;
+    (void)user_timeout;
+
+    SOCKET sock = *((SOCKET *)socket);
+    struct tcp_keepalive ka;
+    DWORD dw = 0;
+
+    ka.onoff = optval;
+    ka.keepalivetime = timeout * 1000;
+    ka.keepaliveinterval = interval * 1000;
+    ret = WSAIoctl(sock, SIO_KEEPALIVE_VALS, &ka, sizeof(ka), NULL, 0, &dw,
+                   NULL, NULL);
+#else
+    int sock = *((int *)socket);
+
+    fprintf(stderr, "DEBUG: setting socket options\n");
+
+    ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));
+    if (ret < 0)
+        return ret;
+
+    if (optval) {
+#ifdef TCP_KEEPIDLE
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &timeout,
+                         sizeof(timeout));
+#elif defined(TCP_KEEPALIVE)
+        /* QNX receives `struct timeval' as argument, but it seems OSX does int
+         */
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPALIVE, &timeout,
+                         sizeof(timeout));
+#endif /* TCP_KEEPIDLE */
+        if (ret < 0)
+            return ret;
+#ifdef TCP_KEEPINTVL
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &interval,
+                         sizeof(interval));
+        if (ret < 0)
+            return ret;
+#endif /* TCP_KEEPINTVL */
+    }
+
+    if (count) {
+#ifdef TCP_KEEPCNT
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &count, sizeof(count));
+        if (ret < 0)
+            return ret;
+#endif /* TCP_KEEPCNT */
+    }
+
+    if (user_timeout) {
+#ifdef TCP_USER_TIMEOUT
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_USER_TIMEOUT, &user_timeout,
+                         sizeof(user_timeout));
+        if (ret < 0)
+            return ret;
+#elif defined(TCP_RXT_CONNDROPTIME)
+        int rxt = user_timeout / 1000;
+        ret = setsockopt(sock, IPPROTO_TCP, TCP_RXT_CONNDROPTIME, &rxt,
+                         sizeof(rxt));
+        if (ret < 0)
+            return ret;
+#endif /* TCP_USER_TIMEOUT */
+    }
+#endif /* _WIN32 */
+
+    return ret;
 }
 
 static void usage(int exit_code)
@@ -184,7 +277,7 @@ int main(int argc, char **argv)
     xmpp_conn_set_flags(conn, flags);
     /* configure TCP keepalive (optional) */
     if (tcp_keepalive)
-        xmpp_conn_set_keepalive(conn, KA_TIMEOUT, KA_INTERVAL);
+        xmpp_conn_set_sockopt_callback(conn, sockopt_cb);
 
     /* setup authentication information */
     if (cert && key) {

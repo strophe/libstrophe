@@ -231,3 +231,26 @@ int xmpp_vsnprintf(char *str, size_t count, const char *fmt, va_list arg)
 {
     return strophe_vsnprintf(str, count, fmt, arg);
 }
+
+/** Set TCP keepalive parameters
+ *  Turn on TCP keepalive and set timeout and interval. Zero timeout
+ *  disables TCP keepalives. The parameters are applied immediately for
+ *  a non disconnected object. Also, they are applied when the connection
+ *  object connects successfully.
+ *
+ *  @param conn a Strophe connection object
+ *  @param timeout TCP keepalive timeout in seconds
+ *  @param interval TCP keepalive interval in seconds
+ *
+ *  @note this function is deprecated
+ *  @see xmpp_conn_set_sockopt_callback()
+ *
+ *  @ingroup Deprecated
+ */
+void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval)
+{
+    conn->ka_timeout = timeout;
+    conn->ka_interval = interval;
+    conn->ka_count = 0;
+    xmpp_conn_set_sockopt_callback(conn, xmpp_sockopt_cb_keepalive);
+}
