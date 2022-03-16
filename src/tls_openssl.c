@@ -48,6 +48,12 @@
 #endif
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#define STROPHE_ERR_func_error_string(e) ERR_func_error_string(e)
+#else
+#define STROPHE_ERR_func_error_string(e) ""
+#endif
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static const unsigned char *ASN1_STRING_get0_data(ASN1_STRING *asn1)
 {
@@ -891,9 +897,9 @@ static void _tls_log_error(xmpp_ctx_t *ctx)
     do {
         e = ERR_get_error();
         if (e != 0) {
-            strophe_debug(ctx, "tls", "error:%08X:%s:%s:%s", e,
-                          ERR_lib_error_string(e), ERR_func_error_string(e),
-                          ERR_reason_error_string(e));
+            strophe_debug(
+                ctx, "tls", "error:%08X:%s:%s:%s", e, ERR_lib_error_string(e),
+                STROPHE_ERR_func_error_string(e), ERR_reason_error_string(e));
         }
     } while (e != 0);
 }
