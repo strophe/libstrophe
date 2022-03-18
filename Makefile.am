@@ -325,7 +325,7 @@ test-release-all: dist-archives
 		echo "Success" && popd
 
 docs:
-	@doxygen -q
+	@SRCDIR=$(top_srcdir) doxygen -q $(top_srcdir)/Doxyfile
 
 @VALGRIND_CHECK_RULES@
 
