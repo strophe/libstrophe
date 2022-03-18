@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/param.h>
 
 #include "strophe.h"
 
@@ -44,6 +45,8 @@ int main()
         {1, NULL, "tests/cert.pfx"},
     };
 
+    const char *srcdir;
+    char *certbuf, *keybuf;
     char xmppaddr_num[] = "0";
     unsigned int m, n;
 
@@ -51,13 +54,26 @@ int main()
     log = xmpp_get_default_logger(XMPP_LEVEL_DEBUG);
     ctx = xmpp_ctx_new(NULL, log);
 
+    srcdir = getenv("srcdir");
+
+    certbuf = malloc(MAXPATHLEN);
+    keybuf = malloc(MAXPATHLEN);
+
     for (m = 0; m < sizeof(client_cert) / sizeof(client_cert[0]); ++m) {
+        char *certfile = certbuf, *keyfile = keybuf;
         conn = xmpp_conn_new(ctx);
+
+        if (client_cert[m].pem)
+            snprintf(certfile, MAXPATHLEN, "%s/%s", srcdir, client_cert[m].pem);
+        else
+            certfile = NULL;
+
+        snprintf(keyfile, MAXPATHLEN, "%s/%s", srcdir, client_cert[m].key);
 
         if (client_cert[m].needs_callback)
             xmpp_conn_set_password_callback(conn, password_callback, NULL);
 
-        xmpp_conn_set_client_cert(conn, client_cert[m].pem, client_cert[m].key);
+        xmpp_conn_set_client_cert(conn, certfile, keyfile);
 
         xmppaddr_num[0] = '0' + xmpp_conn_cert_xmppaddr_num(conn);
 
@@ -88,6 +104,8 @@ int main()
         }
         xmpp_conn_release(conn);
     }
+    free(certbuf);
+    free(keybuf);
 
     xmpp_ctx_free(ctx);
     xmpp_shutdown();
