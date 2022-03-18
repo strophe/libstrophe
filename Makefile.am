@@ -14,8 +14,10 @@ if TLS_WITH_GNUTLS
 SSL_CFLAGS = @gnutls_CFLAGS@
 SSL_LIBS = @gnutls_LIBS@
 else
+if !TLS_WITH_SCHANNEL
 SSL_CFLAGS = @openssl_CFLAGS@
 SSL_LIBS = @openssl_LIBS@
+endif
 endif
 
 MINGW_LIBS = @MINGW_LIBS@
@@ -86,7 +88,11 @@ else
 if TLS_WITH_GNUTLS
 libstrophe_la_SOURCES += src/tls_gnutls.c
 else
+if TLS_WITH_SCHANNEL
+libstrophe_la_SOURCES += src/tls_schannel.c
+else
 libstrophe_la_SOURCES += src/tls_openssl.c
+endif
 endif
 endif
 
@@ -113,7 +119,6 @@ EXTRA_DIST = \
 	jni/Android.mk \
 	jni/Application.mk \
 	m4/ax_valgrind_check.m4 \
-	src/tls_schannel.c \
 	tests/cert.pem \
 	tests/cert.pfx \
 	tests/cert.emptypass.pfx \

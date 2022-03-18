@@ -43,6 +43,8 @@ AC_ARG_WITH([libxml2],
     [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing, expat is the default])])
 AC_ARG_WITH([gnutls],
     [AS_HELP_STRING([--with-gnutls], [use GnuTLS for TLS support, OpenSSL is the default])])
+AC_ARG_WITH([schannel],
+    [AS_HELP_STRING([--with-schannel], [use Windows Schannel for TLS support, OpenSSL is the default])])
 AC_ARG_ENABLE([tls],
     [AS_HELP_STRING([--disable-tls], [disable TLS support])])
 AC_ARG_ENABLE([cares],
@@ -98,6 +100,10 @@ if test "x$enable_tls" != xno -a "x$with_gnutls" == xyes; then
             ],
             [AC_MSG_ERROR([gnutls not found; gnutls required])]
         )])
+elif test "x$enable_tls" != xno -a "x$with_schannel" == xyes; then
+    if test "x$PLATFORM" != xwin32; then
+        AC_MSG_ERROR([schannel is only supported on Windows])
+    fi
 elif test "x$enable_tls" != xno; then
     PKG_CHECK_MODULES([openssl], [openssl],
         [PC_REQUIRES="openssl ${PC_REQUIRES}"],
@@ -219,6 +225,7 @@ AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AM_CONDITIONAL([DISABLE_TLS], [test x$enable_tls = xno])
 AM_CONDITIONAL([NEED_SNPRINTF], [test x$have_snprintf = xno])
 AM_CONDITIONAL([TLS_WITH_GNUTLS], [test x$with_gnutls = xyes])
+AM_CONDITIONAL([TLS_WITH_SCHANNEL], [test x$with_schannel = xyes])
 
 # define while compiling
 AC_DEFINE_UNQUOTED(LIBXMPP_VERSION_MAJOR, [v_maj], [Major version])
