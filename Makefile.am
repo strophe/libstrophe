@@ -112,6 +112,7 @@ EXTRA_DIST = \
 	examples/README.md \
 	jni/Android.mk \
 	jni/Application.mk \
+	m4/ax_valgrind_check.m4 \
 	src/tls_schannel.c \
 	tests/cert.pem \
 	tests/cert.pfx \
@@ -310,5 +311,7 @@ test-release-all: dist-archives
 
 docs:
 	@doxygen -q
+
+@VALGRIND_CHECK_RULES@
 
 .PHONY: docs test-release

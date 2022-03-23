@@ -74,6 +74,12 @@ else
     COVERAGE_POST=""
 fi
 
+m4_include([m4/ax_valgrind_check.m4])
+AX_VALGRIND_DFLT([drd], [off])
+AX_VALGRIND_DFLT([helgrind], [off])
+AX_VALGRIND_DFLT([sgcheck], [off])
+AX_VALGRIND_CHECK
+
 AC_SEARCH_LIBS([socket], [network socket])
 AC_CHECK_FUNCS([snprintf vsnprintf], [], [have_snprintf=no])
 AC_CHECK_DECLS([va_copy], [], [], [#include <stdarg.h>])

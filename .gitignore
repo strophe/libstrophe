@@ -48,7 +48,7 @@ examples/vcard
 testbuild*.log
 test-release/
 test_stamp
-test-suite.log
+test-suite*.log
 tests/*.o
 tests/*.log
 tests/*.trs
@@ -72,7 +72,8 @@ tests/test_sock
 tests/test_stanza
 tests/test_string
 tests/test_xmppaddr
-m4/
+m4/lt*
+m4/libtool*
 libstrophe.project
 libs/
 obj/
