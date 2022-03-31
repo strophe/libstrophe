@@ -29,23 +29,6 @@ static const char response_md5[] =
     "MDAwMSxxb3A9YXV0aCxkaWdlc3QtdXJpPSJ4bXBwL3NvbWVyZWFsbSIscmVz"
     "cG9uc2U9NGVhNmU4N2JjMDkzMzUwNzQzZGIyOGQ3MDIwOGNhZmIsY2hhcnNl"
     "dD11dGYtOA==";
-static const char response_md5_rfc[] =
-    "dXNlcm5hbWU9InNvbWVub2RlIixyZWFsbT0ic29tZXJlYWxtIixub25jZT0i"
-    "T0E2TUc5dEVRR20yaGgiLGNub25jZT0iT0E2TUhYaDZWcVRyUmsiLG5jPTAw"
-    "MDAwMDAxLHFvcD1hdXRoLGRpZ2VzdC11cmk9InhtcHAvZXhhbXBsZS5jb20i"
-    "LHJlc3BvbnNlPWQzODhkYWQ5MGQ0YmJkNzYwYTE1MjMyMWYyMTQzYWY3LGNo"
-    "YXJzZXQ9dXRmLTgK";
-
-static const char challenge_md5_2[] =
-    "cmVhbG09ImVsd29vZC5pbm5vc29mdC5jb20iLG5vbmNlPSJPQTZNRzl0"
-    "RVFHbTJoaCIscW9wPSJhdXRoIixhbGdvcml0aG09bWQ1LXNlc3MsY2hh"
-    "cnNldD11dGYtOA==";
-static const char response_md5_2[] =
-    "Y2hhcnNldD11dGYtOCx1c2VybmFtZT0iY2hyaXMiLHJlYWxtPSJlbHdvb2"
-    "QuaW5ub3NvZnQuY29tIixub25jZT0iT0E2TUc5dEVRR20yaGgiLG5jPTAw"
-    "MDAwMDAxLGNub25jZT0iT0E2TUhYaDZWcVRyUmsiLGRpZ2VzdC11cmk9Im"
-    "ltYXAvZWx3b29kLmlubm9zb2Z0LmNvbSIscmVzcG9uc2U9ZDM4OGRhZDkw"
-    "ZDRiYmQ3NjBhMTUyMzIxZjIxNDNhZjcscW9wPWF1dGg=";
 
 int test_plain(xmpp_ctx_t *ctx)
 {

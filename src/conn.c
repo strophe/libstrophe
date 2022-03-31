@@ -1206,9 +1206,9 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags)
                       "for disconnected connection");
         return XMPP_EINVOP;
     }
-    if (flags & XMPP_CONN_FLAG_DISABLE_TLS &&
-        flags & (XMPP_CONN_FLAG_MANDATORY_TLS | XMPP_CONN_FLAG_LEGACY_SSL |
-                 XMPP_CONN_FLAG_TRUST_TLS)) {
+    if ((flags & XMPP_CONN_FLAG_DISABLE_TLS) &&
+        (flags & (XMPP_CONN_FLAG_MANDATORY_TLS | XMPP_CONN_FLAG_LEGACY_SSL |
+                  XMPP_CONN_FLAG_TRUST_TLS))) {
         strophe_error(conn->ctx, "conn", "Flags 0x%04lx conflict", flags);
         return XMPP_EINVOP;
     }
