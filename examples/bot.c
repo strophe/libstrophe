@@ -23,6 +23,8 @@
 
 #include <strophe.h>
 
+static int reconnect;
+
 int version_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_stanza_t *reply, *query, *name, *version, *text;
@@ -95,6 +97,10 @@ int message_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 
     if (strcmp(intext, "quit") == 0) {
         replytext = strdup("bye!");
+        quit = 1;
+    } else if (strcmp(intext, "reconnect") == 0) {
+        replytext = strdup("alright, let's see what happens!");
+        reconnect = 1;
         quit = 1;
     } else {
         replytext = (char *)malloc(strlen(" to you too!") + strlen(intext) + 1);
@@ -190,6 +196,7 @@ int main(int argc, char **argv)
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
+    xmpp_sm_state_t *sm_state = NULL;
     char *jid = NULL, *password = NULL, *host = NULL, *cert = NULL, *key = NULL;
     long flags = 0;
     int i, tcp_keepalive = 0;
@@ -239,6 +246,8 @@ int main(int argc, char **argv)
     /* create a context */
     ctx = xmpp_ctx_new(NULL, log);
 
+create_connection:
+    reconnect = 0;
     /* create a connection */
     conn = xmpp_conn_new(ctx);
 
@@ -261,6 +270,12 @@ int main(int argc, char **argv)
     if (tcp_keepalive)
         xmpp_conn_set_sockopt_callback(conn, xmpp_sockopt_cb_keepalive);
 
+    /* set Stream-Mangement state if available */
+    if (sm_state) {
+        xmpp_conn_set_sm_state(conn, sm_state);
+        sm_state = NULL;
+    }
+
     /* initiate connection */
     if (xmpp_connect_client(conn, host, port, conn_handler, ctx) == XMPP_EOK) {
 
@@ -269,8 +284,17 @@ int main(int argc, char **argv)
         xmpp_run(ctx);
     }
 
-    /* release our connection and context */
+    /* save the Stream-Mangement state if we should re-connect */
+    if (reconnect)
+        sm_state = xmpp_conn_get_sm_state(conn);
+
+    /* release our connection */
     xmpp_conn_release(conn);
+
+    if (reconnect)
+        goto create_connection;
+
+    /* release our context */
     xmpp_ctx_free(ctx);
 
     /* final shutdown of the library */
