@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <strophe.h>
 
@@ -142,6 +143,27 @@ void conn_handler(xmpp_conn_t *conn,
     }
 }
 
+static int
+password_callback(char *pw, size_t pw_max, xmpp_conn_t *conn, void *userdata)
+{
+    (void)userdata;
+    printf("Trying to unlock %s\n", xmpp_conn_get_keyfile(conn));
+    char *pass = getpass("Please enter password: ");
+    if (!pass)
+        return -1;
+    size_t passlen = strlen(pass);
+    int ret;
+    if (passlen >= pw_max) {
+        ret = -1;
+        goto out;
+    }
+    ret = passlen + 1;
+    memcpy(pw, pass, ret);
+out:
+    memset(pass, 0, passlen);
+    return ret;
+}
+
 static void usage(int exit_code)
 {
     fprintf(stderr,
@@ -149,6 +171,8 @@ static void usage(int exit_code)
             "Options:\n"
             "  --jid <jid>              The JID to use to authenticate.\n"
             "  --pass <pass>            The password of the JID.\n"
+            "  --tls-cert <cert>        Path to client certificate.\n"
+            "  --tls-key <key>          Path to private key or P12 file.\n\n"
             "  --tcp-keepalive          Configure TCP keepalive.\n"
             "  --disable-tls            Disable TLS.\n"
             "  --mandatory-tls          Deny plaintext connection.\n"
@@ -166,7 +190,7 @@ int main(int argc, char **argv)
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
-    char *jid = NULL, *password = NULL, *host = NULL;
+    char *jid = NULL, *password = NULL, *host = NULL, *cert = NULL, *key = NULL;
     long flags = 0;
     int i, tcp_keepalive = 0;
     unsigned long port = 0;
@@ -189,12 +213,16 @@ int main(int argc, char **argv)
             jid = argv[i];
         else if ((strcmp(argv[i], "--pass") == 0) && (++i < argc))
             password = argv[i];
+        else if ((strcmp(argv[i], "--tls-cert") == 0) && (++i < argc))
+            cert = argv[i];
+        else if ((strcmp(argv[i], "--tls-key") == 0) && (++i < argc))
+            key = argv[i];
         else if (strcmp(argv[i], "--tcp-keepalive") == 0)
             tcp_keepalive = 1;
         else
             break;
     }
-    if ((!jid) || (argc - i) > 2) {
+    if ((!jid && !key) || (argc - i) > 2) {
         usage(1);
     }
 
@@ -217,7 +245,13 @@ int main(int argc, char **argv)
     /* configure connection properties (optional) */
     xmpp_conn_set_flags(conn, flags);
 
+    /* ask for a password if key is protected */
+    xmpp_conn_set_password_callback(conn, password_callback, NULL);
+    /* try at max 3 times in case the user enters the password wrong */
+    xmpp_conn_set_password_retries(conn, 3);
     /* setup authentication information */
+    if (key)
+        xmpp_conn_set_client_cert(conn, cert, key);
     if (jid)
         xmpp_conn_set_jid(conn, jid);
     if (password)
