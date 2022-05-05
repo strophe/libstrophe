@@ -948,6 +948,25 @@ static X509 *_tls_cert_read_x509(xmpp_conn_t *conn)
     return c;
 }
 
+static int _tls_parse_p12(PKCS12 *p12,
+                          const char *pass,
+                          EVP_PKEY **pkey,
+                          X509 **cert,
+                          STACK_OF(X509) * *ca)
+{
+    /* For some reason `PKCS12_parse()` fails without a `EVP_PKEY`
+     * so if the user doesn't want it, use a local one and free it
+     * again directly after parsing.
+     */
+    EVP_PKEY *pkey_;
+    if (!pkey)
+        pkey = &pkey_;
+    int parse_ok = PKCS12_parse(p12, pass, pkey, cert, ca);
+    if (pkey == &pkey_ && pkey_)
+        EVP_PKEY_free(pkey_);
+    return parse_ok;
+}
+
 static X509 *
 _tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca)
 {
@@ -967,6 +986,12 @@ _tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca)
         goto error_out;
     }
 
+    /* First try to open file w/o a pass */
+    if (_tls_parse_p12(p12, NULL, pkey, &cert, ca)) {
+        goto success;
+    }
+    cert = NULL;
+
     unsigned int retries = 0;
 
     pem_password_cb *cb = PEM_def_callback;
@@ -981,17 +1006,7 @@ _tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca)
         int passlen = cb(pass, PEM_BUFSIZE, 0, userdata);
         if (passlen < 0 || passlen > PEM_BUFSIZE)
             goto error_out;
-
-        /* For some reason `PKCS12_parse()` fails without a `EVP_PKEY`
-         * so if the user doesn't want it, use a local one and free it
-         * again directly after parsing.
-         */
-        EVP_PKEY *pkey_;
-        if (!pkey)
-            pkey = &pkey_;
-        int parse_ok = PKCS12_parse(p12, pass, pkey, &cert, ca);
-        if (pkey == &pkey_ && pkey_)
-            EVP_PKEY_free(pkey_);
+        int parse_ok = _tls_parse_p12(p12, pass, pkey, &cert, ca);
         if (parse_ok) {
             goto success;
         }

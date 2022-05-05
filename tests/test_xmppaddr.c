@@ -33,10 +33,15 @@ int main()
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
     xmpp_log_t *log;
-    char *client_cert[][2] = {
-        {"tests/cert.pem", "tests/key.pem"},
-        {"tests/cert.pem", "tests/key_encrypted.pem"},
-        {NULL, "tests/cert.pfx"},
+    struct {
+        int needs_callback;
+        char *pem, *key;
+    } client_cert[] = {
+        {0, "tests/cert.pem", "tests/key.pem"},
+        {1, "tests/cert.pem", "tests/key_encrypted.pem"},
+        {0, NULL, "tests/cert.emptypass.pfx"},
+        {0, NULL, "tests/cert.nopass.pfx"},
+        {1, NULL, "tests/cert.pfx"},
     };
 
     char xmppaddr_num[] = "0";
@@ -49,9 +54,10 @@ int main()
     for (m = 0; m < sizeof(client_cert) / sizeof(client_cert[0]); ++m) {
         conn = xmpp_conn_new(ctx);
 
-        xmpp_conn_set_password_callback(conn, password_callback, NULL);
+        if (client_cert[m].needs_callback)
+            xmpp_conn_set_password_callback(conn, password_callback, NULL);
 
-        xmpp_conn_set_client_cert(conn, client_cert[m][0], client_cert[m][1]);
+        xmpp_conn_set_client_cert(conn, client_cert[m].pem, client_cert[m].key);
 
         xmppaddr_num[0] = '0' + xmpp_conn_cert_xmppaddr_num(conn);
 

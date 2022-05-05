@@ -93,10 +93,6 @@ static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
     gnutls_x509_privkey_t key;
     unsigned int cert_num = 0, retries = 0;
     int err = -1;
-    if (!conn->password_callback) {
-        strophe_error(conn->ctx, "tls", "No password callback set");
-        return NULL;
-    }
     if (gnutls_pkcs12_init(&p12) < 0)
         return NULL;
     if (gnutls_load_file(conn->tls_client_key, &data) < 0)
@@ -104,6 +100,22 @@ static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
     if (gnutls_pkcs12_import(p12, &data, GNUTLS_X509_FMT_DER, 0) < 0)
         goto error_out2;
 
+    /* First try to open file with no pass */
+    if ((err = gnutls_pkcs12_simple_parse(p12, NULL, &key, &cert, &cert_num,
+                                          NULL, NULL, NULL, 0)) == 0) {
+        goto done;
+    }
+    /* Now let's try to open file with an empty pass */
+    if ((err = gnutls_pkcs12_simple_parse(p12, "", &key, &cert, &cert_num, NULL,
+                                          NULL, NULL, 0)) == 0) {
+        goto done;
+    }
+
+    if (!conn->password_callback) {
+        strophe_error(conn->ctx, "tls", "No password callback set");
+        goto error_out2;
+    }
+    /* ... and only now ask the user for a password */
     while (retries++ < conn->password_retries) {
         char pass[GNUTLS_PKCS11_MAX_PIN_LEN];
         int passlen =
@@ -125,6 +137,7 @@ static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
         strophe_debug(conn->ctx, "tls", "wrong password?");
     }
 
+done:
     gnutls_pkcs12_deinit(p12);
     gnutls_free(data.data);
     if (err < 0)
