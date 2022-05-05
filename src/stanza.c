@@ -1640,8 +1640,11 @@ static void _stub_stream_end(char *name, void *userdata)
 
 static void _stream_stanza(xmpp_stanza_t *stanza, void *userdata)
 {
-    stanza = xmpp_stanza_clone(stanza);
-    *(xmpp_stanza_t **)userdata = stanza;
+    xmpp_stanza_t **dest = userdata;
+    if (*dest == NULL) {
+        stanza = xmpp_stanza_clone(stanza);
+        *dest = stanza;
+    }
 }
 
 /** Create a stanza object from the string.

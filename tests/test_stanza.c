@@ -99,7 +99,7 @@ static void test_stanza_from_string(xmpp_ctx_t *ctx)
     size_t buflen;
     int ret;
 
-    static const char *str =
+    const char *str =
         "<signcrypt xmlns=\"urn:xmpp:openpgp:0\"><to "
         "jid=\"user@domain.com\"/><time "
         "stamp=\"2020-06-03T21:26:24+0200\"/><rpad/><payload><body "
@@ -107,6 +107,22 @@ static void test_stanza_from_string(xmpp_ctx_t *ctx)
 
     stanza = xmpp_stanza_new_from_string(ctx, str);
     assert(stanza != NULL);
+    ret = xmpp_stanza_to_text(stanza, &buf, &buflen);
+    assert(ret == XMPP_EOK);
+    COMPARE(str, buf);
+    xmpp_free(ctx, buf);
+    xmpp_stanza_release(stanza);
+
+    /* create a string with two stanzas to make sure we don't
+     * leak any memory when we convert them to a xmpp_stanza_t
+     */
+    buf = malloc(strlen(str) * 2 + 1);
+    assert(buf != NULL);
+    memcpy(buf, str, strlen(str) + 1);
+    memcpy(&buf[strlen(str)], str, strlen(str) + 1);
+    stanza = xmpp_stanza_new_from_string(ctx, buf);
+    assert(stanza != NULL);
+    free(buf);
     ret = xmpp_stanza_to_text(stanza, &buf, &buflen);
     assert(ret == XMPP_EOK);
     COMPARE(str, buf);
