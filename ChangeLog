@@ -1,8 +1,10 @@
 0.12.0
 	- Fix potential infinite loop in resolver (#200)
-	- Add code coverage support
-	- Add support for password-protected TLS key & PKCS#12/PFX files
-	- Stream-Management support (XEP-0198)
+	- Prevent potential memory leak in `xmpp_stanza_new_from_string()` (#205)
+	- Do proper SO versioning
+	- Add code coverage support (#188)
+	- Add support for password-protected TLS key & PKCS#12/PFX files (#195, #205)
+	- Stream-Management support - XEP-0198 (#184)
 	- New API:
 		- xmpp_conn_send_queue_len()
 		- xmpp_conn_send_queue_drop_element()
@@ -15,6 +17,31 @@
 		- xmpp_stanza_get_child_by_path()
 		- xmpp_conn_set_sockopt_callback()
 		- xmpp_sockopt_cb_keepalive()
+	- The following APIs were public in the shared library, but not in `strophe.h`.
+	  Now they are officially public API:
+		- xmpp_rand_new()
+		- xmpp_rand_free()
+		- xmpp_rand()
+		- xmpp_rand_bytes()
+		- xmpp_rand_nonce()
+		- xmpp_rand_bytes()
+	- The following APIs were public in the shared library, but not in `strophe.h`.
+	  In a future version of the library they will be private without replacement:
+		- xmpp_alloc()
+		- xmpp_realloc()
+		- xmpp_strdup()
+		- xmpp_strndup()
+		- xmpp_strtok_r()
+		- xmpp_snprintf()
+		- xmpp_vsnprintf()
+		- xmpp_log()
+		- xmpp_error()
+		- xmpp_warn()
+		- xmpp_info()
+		- xmpp_debug()
+		- xmpp_debug_verbose()
+	- Deprecated the following API:
+		- xmpp_conn_set_keepalive() - replaced by xmpp_conn_set_sockopt_callback()
 
 0.11.0
 	- SASL EXTERNAL support (XEP-0178)
