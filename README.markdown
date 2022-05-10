@@ -1,4 +1,4 @@
-libstrophe [![Build Status](https://travis-ci.org/strophe/libstrophe.png?branch=master)](https://travis-ci.org/strophe/libstrophe)
+libstrophe [![Build Status](https://github.com/strophe/libstrophe/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/strophe/libstrophe/actions/workflows/main.yml?query=branch%3Amaster+++)
 ==========
 
 libstrophe is a lightweight XMPP client library written in C. It has
@@ -82,4 +82,17 @@ by running:
 
     doxygen
 
+or if you have everything configured properly:
+
+    make docs
+
 Then open `docs/html/index.html`.
+
+An online version of the documentation of the latest release is available on http://strophe.im/libstrophe/
+
+Releases
+--------
+
+Releases are signed with the GPG key with ID `F8ADC1F9A68A7AFF0E2C89E4391A5EFC2D1709DE`.
+
+It can be found e.g. on https://keys.openpgp.org/
