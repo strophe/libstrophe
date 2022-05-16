@@ -42,34 +42,43 @@ jobs:
         run: |
           cat test-suite*.log || true
 
-  libressl-tests:
-    runs-on: ubuntu-20.04
+  xssl-tests:
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        libressl_versions:
-           - { version: "v3.4.2",  continue: true }
-           - { version: "v3.1.5",  continue: false }
-           - { version: "v2.1.10", continue: false }
+        xssl_versions:
+           - { version: "master",        continue: true,  libressl: true }
+           - { version: "OPENBSD_7_1",   continue: true,  libressl: true }
+           - { version: "v3.5.2",        continue: true,  libressl: true }
+           - { version: "OPENBSD_7_0",   continue: true,  libressl: true }
+           - { version: "v3.4.3",        continue: true,  libressl: true }
+           - { version: "v3.4.2",        continue: true,  libressl: true }
+           - { version: "OPENBSD_6_9",   continue: true,  libressl: true }
+           - { version: "v3.1.5",        continue: true,  libressl: true }
+           - { version: "v2.1.10",       continue: true,  libressl: true }
+           - { version: "openssl-3.0",   continue: true,  libressl: false }
+           - { version: "openssl-3.0.4", continue: false, libressl: false }
         valgrind:
            - { configure: ''                    , make: 'check'          }
            - { configure: '--enable-valgrind'   , make: 'check-valgrind' }
-    name: LibreSSL tests
-    continue-on-error: ${{ matrix.libressl_versions.continue }}
+    name: xSSL tests
+    continue-on-error: ${{ matrix.xssl_versions.continue }}
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
         run: |
           sudo apt update
           sudo apt install -y libtool pkg-config libexpat1-dev valgrind
-      - name: build&install libressl
+      - name: build&install the TLS stack
         env:
-           LIBRESSL_COMMIT: ${{ matrix.libressl_versions.version }}
+           XSSL_COMMITISH: ${{ matrix.xssl_versions.version }}
+           LIBRESSL: ${{ matrix.xssl_versions.libressl }}
         run: |
           ./travis/before_script.sh
       - name: Build the library
         run: |
           ./bootstrap.sh
-          ./configure ${{ matrix.valgrind.configure }} PKG_CONFIG_PATH="${HOME}/libressl/lib/pkgconfig"  CFLAGS="-Werror -g3" --prefix="${HOME}/libressl"
+          ./configure ${{ matrix.valgrind.configure }} PKG_CONFIG_PATH="${HOME}/xssl/lib/pkgconfig" CFLAGS="-Werror -g3" --prefix="${HOME}/xssl"
           make -j$(nproc)
       - name: Run tests
         run: |
