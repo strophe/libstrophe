@@ -49,9 +49,11 @@ jobs:
         xssl_versions:
            - { version: "master",        continue: true,  libressl: true }
            - { version: "OPENBSD_7_1",   continue: true,  libressl: true }
-           - { version: "v3.5.2",        continue: true,  libressl: true }
+           # https://github.com/libressl-portable/portable/issues/760
+           # - { version: "v3.5.2",        continue: true,  libressl: true }
            - { version: "OPENBSD_7_0",   continue: true,  libressl: true }
-           - { version: "v3.4.3",        continue: true,  libressl: true }
+           # OPENBSD_7_0 is basically the "fixed v3.4.3"
+           # - { version: "v3.4.3",        continue: true,  libressl: true }
            - { version: "v3.4.2",        continue: true,  libressl: true }
            - { version: "OPENBSD_6_9",   continue: true,  libressl: true }
            - { version: "v3.1.5",        continue: true,  libressl: true }
