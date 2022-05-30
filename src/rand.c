@@ -23,6 +23,10 @@
 #include <string.h> /* memeset */
 #include <time.h>   /* clock, time */
 
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
+
 #if !defined(DONT_USE_GETRANDOM) && defined(__linux__) && \
     defined(__GLIBC_PREREQ)
 #if __GLIBC_PREREQ(2, 25)

@@ -21,6 +21,10 @@
 #include <stdarg.h>
 #include <string.h>
 
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
+
 #include "strophe.h"
 
 #include "common.h"
