@@ -79,6 +79,7 @@
 #endif
 
 static int _disconnect_cleanup(xmpp_conn_t *conn, void *userdata);
+static void _reset_sm_state_for_reconnect(xmpp_conn_t *conn);
 static char *_conn_build_stream_tag(xmpp_conn_t *conn,
                                     char **attributes,
                                     size_t attributes_len);
@@ -975,6 +976,7 @@ void conn_disconnect(xmpp_conn_t *conn)
         conn->tls = NULL;
     }
     sock_close(conn->sock);
+    _reset_sm_state_for_reconnect(conn);
 
     /* fire off connection handler */
     conn->conn_handler(conn, XMPP_CONN_DISCONNECT, conn->error,
@@ -1298,30 +1300,36 @@ xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn)
 
     ret = conn->sm_state;
     conn->sm_state = NULL;
-    if (ret->previd) {
-        strophe_free(conn->ctx, ret->previd);
-        ret->previd = NULL;
-    }
-
-    if (ret->can_resume) {
-        ret->previd = ret->id;
-        ret->id = NULL;
-
-        ret->bound_jid = conn->bound_jid;
-        conn->bound_jid = NULL;
-    } else if (ret->id) {
-        strophe_free(conn->ctx, ret->id);
-        ret->id = NULL;
-    }
-
-    ret->sm_enabled = ret->sm_support = ret->resume = 0;
-
-    if (ret->bind) {
-        xmpp_stanza_release(ret->bind);
-        ret->bind = NULL;
-    }
 
     return ret;
+}
+
+static void _reset_sm_state_for_reconnect(xmpp_conn_t *conn)
+{
+    xmpp_sm_state_t *s = conn->sm_state;
+
+    if (s->previd) {
+        strophe_free(conn->ctx, s->previd);
+        s->previd = NULL;
+    }
+
+    if (s->can_resume) {
+        s->previd = s->id;
+        s->id = NULL;
+
+        s->bound_jid = conn->bound_jid;
+        conn->bound_jid = NULL;
+    } else if (s->id) {
+        strophe_free(conn->ctx, s->id);
+        s->id = NULL;
+    }
+
+    s->sm_enabled = s->sm_support = s->resume = 0;
+
+    if (s->bind) {
+        xmpp_stanza_release(s->bind);
+        s->bind = NULL;
+    }
 }
 
 /**
