@@ -21,6 +21,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef _WIN32
+#include <conio.h>
+#include <ctype.h>
+#endif
+
 #include <strophe.h>
 
 static int reconnect;
@@ -149,12 +154,34 @@ void conn_handler(xmpp_conn_t *conn,
     }
 }
 
+#ifdef _WIN32
+static char *getpassword(const char *prompt, size_t maxlen)
+{
+    char *b, *buffer = malloc(maxlen);
+    size_t i = 0;
+
+    b = buffer;
+    fputs(prompt, stderr);
+    for (i = 0; i < maxlen; i++, b++) {
+        char c = _getch();
+        if (c == '\r' || c == '\n')
+            break;
+        *b = c;
+    }
+    *b = '\0';
+    fputs("\n", stderr);
+    return buffer;
+}
+#else
+#define getpassword(prompt, maxlen) getpass(prompt)
+#endif
+
 static int
 password_callback(char *pw, size_t pw_max, xmpp_conn_t *conn, void *userdata)
 {
     (void)userdata;
     printf("Trying to unlock %s\n", xmpp_conn_get_keyfile(conn));
-    char *pass = getpass("Please enter password: ");
+    char *pass = getpassword("Please enter password: ", pw_max);
     if (!pass)
         return -1;
     size_t passlen = strlen(pass);
