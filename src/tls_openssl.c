@@ -974,7 +974,7 @@ _tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca)
         return conn->tls->client_cert;
     X509 *cert = NULL;
     PKCS12 *p12 = NULL;
-    BIO *f = BIO_new_file(conn->tls_client_key, "r");
+    BIO *f = BIO_new_file(conn->tls_client_key, "rb");
     if (!f) {
         strophe_debug(conn->ctx, "tls", "f == NULL");
         goto error_out;
