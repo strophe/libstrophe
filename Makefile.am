@@ -122,6 +122,7 @@ EXTRA_DIST = \
 	tests/key_encrypted.pem \
 	tests/res_query_dump.c
 
+if EXAMPLES
 ## Examples
 noinst_PROGRAMS = \
 	examples/active \
@@ -165,6 +166,7 @@ examples_uuid_LDADD = $(STROPHE_LIBS)
 examples_vcard_SOURCES = examples/vcard.c
 examples_vcard_CFLAGS = $(STROPHE_FLAGS)
 examples_vcard_LDADD = $(STROPHE_LIBS)
+endif
 
 
 ## Tests

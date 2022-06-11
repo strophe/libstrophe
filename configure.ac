@@ -35,6 +35,10 @@ AS_CASE([$PLATFORM],
     [haiku],   [],
                [WARNING_FLAGS="$WARNING_FLAGS -Wextra"])
 
+AC_ARG_ENABLE([examples],
+    [AS_HELP_STRING([--disable-examples], [turn off examples])],
+    [case "${enableval}" in yes) examples=true ;; no)  examples=false ;; *) AC_MSG_ERROR([bad value ${enableval} for --disable-examples]) ;; esac],[examples=true])
+AM_CONDITIONAL([EXAMPLES], [test x$examples = xtrue])
 AC_ARG_WITH([libxml2],
     [AS_HELP_STRING([--with-libxml2], [use libxml2 for XML parsing, expat is the default])])
 AC_ARG_WITH([gnutls],
