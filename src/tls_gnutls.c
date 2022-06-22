@@ -95,7 +95,7 @@ static gnutls_x509_crt_t _tls_load_cert_p12(xmpp_conn_t *conn)
     int err = -1;
     if (gnutls_pkcs12_init(&p12) < 0)
         return NULL;
-    if (gnutls_load_file(conn->tls_client_key, &data) < 0)
+    if (gnutls_load_file(conn->tls_client_cert, &data) < 0)
         goto error_out;
     if (gnutls_pkcs12_import(p12, &data, GNUTLS_X509_FMT_DER, 0) < 0)
         goto error_out2;
@@ -168,7 +168,7 @@ static gnutls_x509_crt_t _tls_load_cert(xmpp_conn_t *conn)
 {
     if (conn->tls && conn->tls->client_cert)
         return conn->tls->client_cert;
-    if (!conn->tls_client_cert && conn->tls_client_key) {
+    if (conn->tls_client_cert && !conn->tls_client_key) {
         return _tls_load_cert_p12(conn);
     }
     return _tls_load_cert_x509(conn);
@@ -459,7 +459,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
                 }
                 strophe_debug(tls->ctx, "tls", "wrong password?");
             }
-        } else if (conn->tls_client_key) {
+        } else if (conn->tls_client_cert) {
             unsigned int retries = 0;
 
             while (retries++ < conn->password_retries) {
@@ -470,7 +470,8 @@ tls_t *tls_new(xmpp_conn_t *conn)
                 if (passlen < 0)
                     continue;
                 int err = gnutls_certificate_set_x509_simple_pkcs12_file(
-                    tls->cred, conn->tls_client_key, GNUTLS_X509_FMT_DER, pass);
+                    tls->cred, conn->tls_client_cert, GNUTLS_X509_FMT_DER,
+                    pass);
                 memset(pass, 0, sizeof(pass));
                 if (err == 0)
                     break;

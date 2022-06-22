@@ -221,7 +221,7 @@ int tls_caching_password_callback(char *pw, size_t pw_max, xmpp_conn_t *conn)
     int ret;
     unsigned char hash[XMPP_SHA1_DIGEST_SIZE];
 
-    const char *fname = conn->tls_client_key;
+    const char *fname = conn->tls_client_cert;
     size_t fname_len = strlen(fname);
     xmpp_sha1_digest((void *)fname, fname_len, hash);
     if (fname_len && fname_len == conn->password_cache.fnamelen &&

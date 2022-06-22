@@ -616,7 +616,7 @@ tls_t *tls_new(xmpp_conn_t *conn)
                               ERR_GET_LIB(err), ERR_GET_REASON(err));
                 goto err_free_ctx;
             }
-        } else if (conn->tls_client_key) {
+        } else if (conn->tls_client_cert) {
             EVP_PKEY *pkey = NULL;
             STACK_OF(X509) *ca = NULL;
             X509 *cert = _tls_cert_read_p12(conn, &pkey, &ca);
@@ -974,7 +974,7 @@ _tls_cert_read_p12(xmpp_conn_t *conn, EVP_PKEY **pkey, STACK_OF(X509) * *ca)
         return conn->tls->client_cert;
     X509 *cert = NULL;
     PKCS12 *p12 = NULL;
-    BIO *f = BIO_new_file(conn->tls_client_key, "rb");
+    BIO *f = BIO_new_file(conn->tls_client_cert, "rb");
     if (!f) {
         strophe_debug(conn->ctx, "tls", "f == NULL");
         goto error_out;
@@ -1034,7 +1034,7 @@ static X509 *_tls_cert_read(xmpp_conn_t *conn)
 {
     if (conn->tls && conn->tls->client_cert)
         return conn->tls->client_cert;
-    if (!conn->tls_client_cert && conn->tls_client_key) {
+    if (conn->tls_client_cert && !conn->tls_client_key) {
         return _tls_cert_read_p12(conn, NULL, NULL);
     }
     return _tls_cert_read_x509(conn);

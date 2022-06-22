@@ -573,11 +573,12 @@ const char *xmpp_conn_get_keyfile(const xmpp_conn_t *conn)
  *  \ref xmpp_conn_set_password_callback so the TLS stack can retrieve the
  *  password.
  *
- *  In case one wants to use a PKCS#12 encoded file, it must be passed via
- *  the `key` parameter and `cert` must be NULL.
+ *  In case one wants to use a PKCS#12 encoded file, it should be passed via
+ *  the `cert` parameter and `key` should be NULL. Passing a PKCS#12 file in
+ *  `key` is deprecated.
  *
  *  @param conn a Strophe connection object
- *  @param cert path to a certificate file
+ *  @param cert path to a certificate file or a P12 file
  *  @param key path to a private key file or a P12 file
  *
  *  @ingroup TLS
@@ -589,13 +590,21 @@ void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
     strophe_debug(conn->ctx, "conn", "set client cert %s %s", cert, key);
     if (conn->tls_client_cert)
         strophe_free(conn->ctx, conn->tls_client_cert);
-    if (cert)
-        conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
-    else
-        conn->tls_client_cert = NULL;
+    conn->tls_client_cert = NULL;
     if (conn->tls_client_key)
         strophe_free(conn->ctx, conn->tls_client_key);
-    conn->tls_client_key = strophe_strdup(conn->ctx, key);
+    conn->tls_client_key = NULL;
+    if (cert && key) {
+        conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
+        conn->tls_client_key = strophe_strdup(conn->ctx, key);
+    } else if (cert && !key) {
+        conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
+    } else if (!cert && key) {
+        strophe_warn(conn->ctx, "xmpp",
+                     "xmpp_conn_set_client_cert: Passing PKCS#12 in 'key' "
+                     "parameter is deprecated. Use 'cert' instead");
+        conn->tls_client_cert = strophe_strdup(conn->ctx, key);
+    }
 }
 
 /** Get the number of xmppAddr entries in the client certificate.

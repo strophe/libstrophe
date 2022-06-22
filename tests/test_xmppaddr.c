@@ -43,6 +43,9 @@ int main()
         {0, NULL, "tests/cert.emptypass.pfx"},
         {0, NULL, "tests/cert.nopass.pfx"},
         {1, NULL, "tests/cert.pfx"},
+        {0, "tests/cert.emptypass.pfx", NULL},
+        {0, "tests/cert.nopass.pfx", NULL},
+        {1, "tests/cert.pfx", NULL},
     };
 
     const char *srcdir;
@@ -68,7 +71,10 @@ int main()
         else
             certfile = NULL;
 
-        snprintf(keyfile, MAXPATHLEN, "%s/%s", srcdir, client_cert[m].key);
+        if (client_cert[m].key)
+            snprintf(keyfile, MAXPATHLEN, "%s/%s", srcdir, client_cert[m].key);
+        else
+            keyfile = NULL;
 
         if (client_cert[m].needs_callback)
             xmpp_conn_set_password_callback(conn, password_callback, NULL);
