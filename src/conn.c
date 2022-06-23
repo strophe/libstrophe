@@ -1177,6 +1177,7 @@ long xmpp_conn_get_flags(const xmpp_conn_t *conn)
  *    - XMPP_CONN_FLAG_LEGACY_SSL
  *    - XMPP_CONN_FLAG_TRUST_TLS
  *    - XMPP_CONN_FLAG_LEGACY_AUTH
+ *    - XMPP_CONN_FLAG_DISABLE_SM
  *
  *  @param conn a Strophe connection object
  *  @param flags ORed connection flags
