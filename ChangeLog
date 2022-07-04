@@ -1,3 +1,14 @@
+0.12.1
+	- Fix compilation in buildroot (#207)
+	- Fixes regarding OpenSSL (#208)
+	- Fix some build steps when builddir != srcdir (#208)
+	- Allow the user to disable build of examples (#209)
+	- CI builds against OpenSSL 3 (#206)
+	- Change the call signature of the following API:
+		- xmpp_conn_set_client_cert() - the PKCS#12 file has now to be passed via the `cert`
+				parameter. Originally it was via `key`. Currently both styles are supported,
+				but in a future release only passing via `cert` will be accepted.
+
 0.12.0
 	- Fix potential infinite loop in resolver (#200)
 	- Prevent potential memory leak in `xmpp_stanza_new_from_string()` (#205)
