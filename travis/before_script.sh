@@ -7,7 +7,7 @@ set -e
 if [ "x$LIBRESSL" = "xtrue" ]; then
     REPO_URL="https://github.com/libressl-portable/portable.git"
     AUTOGEN_CMD="./autogen.sh"
-    CONFIG_CMD="./configure --prefix=$HOME/xssl"
+    CONFIG_CMD="./configure --prefix=$HOME/xssl --disable-asm"
     MAKE_TARGET="install"
 else
     REPO_URL="https://github.com/openssl/openssl.git"
