@@ -50,10 +50,22 @@
 #include "resolver.h"
 #include "util.h"
 
-/* Workaround for systems without va_copy support. */
-#if defined(_MSC_VER) && _MSC_VER < 1800 || \
-    !defined(_MSC_VER) && !defined(HAVE_DECL_VA_COPY)
-#define va_copy(d, s) (memcpy(&d, &s, sizeof(va_list)))
+#ifndef va_copy
+#ifdef HAVE_VA_COPY
+#define va_copy(dest, src) va_copy(dest, src)
+#else
+#ifdef HAVE___VA_COPY
+#define va_copy(dest, src) __va_copy(dest, src)
+#else
+#ifndef VA_LIST_IS_ARRAY
+#define va_copy(dest, src) (dest) = (src)
+#else
+#include <string.h>
+#define va_copy(dest, src) \
+    memcpy((char *)(dest), (char *)(src), sizeof(va_list))
+#endif
+#endif
+#endif
 #endif
 
 /** Initialize the Strophe library.
