@@ -174,10 +174,10 @@ int main()
     xmpp_ctx_t *ctx;
     xmpp_rand_t *rand;
     resolver_srv_rr_t *srv_rr_list;
-    char *domain;
+    char *domain, *rnd_b64;
     unsigned char *buf;
     unsigned short port;
-    size_t i;
+    size_t i, slen;
     int ret;
 
     ctx = xmpp_ctx_new(NULL, NULL);
@@ -223,10 +223,18 @@ int main()
     ret = resolver_srv_lookup_buf(ctx, buf, sizeof(data2), &srv_rr_list);
     if (ret == XMPP_DOMAIN_FOUND && srv_rr_list != NULL)
         resolver_srv_free(ctx, srv_rr_list);
-    strophe_free(ctx, buf);
     xmpp_rand_free(ctx, rand);
     printf("ok\n");
 
+    printf("Broken message was:\n");
+    rnd_b64 = xmpp_base64_encode(ctx, buf, sizeof(data2));
+    slen = strlen(rnd_b64);
+    for (i = 0; i < slen; i += 64) {
+        printf("%.64s\n", &rnd_b64[i]);
+    }
+
+    strophe_free(ctx, buf);
+    strophe_free(ctx, rnd_b64);
     xmpp_ctx_free(ctx);
 
     return 0;
