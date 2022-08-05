@@ -1239,10 +1239,8 @@ static int _handle_sm(xmpp_conn_t *const conn,
             }
             strophe_free(conn->ctx, queue_element_free(conn->ctx, e));
         }
-        conn->authenticated = 1;
-
-        /* call connection handler */
-        conn->conn_handler(conn, XMPP_CONN_CONNECT, 0, NULL, conn->userdata);
+        strophe_debug(conn->ctx, "xmpp", "Session resumed successfully.");
+        _auth_success(conn);
     } else if (strcmp(name, "failed") == 0) {
         name = NULL;
 
