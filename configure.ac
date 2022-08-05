@@ -86,6 +86,7 @@ AX_VALGRIND_DFLT([helgrind], [off])
 AX_VALGRIND_DFLT([sgcheck], [off])
 AX_VALGRIND_CHECK
 
+AC_SEARCH_LIBS([clock_gettime], [rt], AC_DEFINE(HAVE_CLOCK_GETTIME,1))
 AC_SEARCH_LIBS([socket], [network socket])
 AC_CHECK_FUNCS([snprintf vsnprintf], [], [have_snprintf=no])
 

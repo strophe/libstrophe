@@ -20,16 +20,20 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <time.h>
 
 static void init_timer(void);
 static void t_start(void);
 static uint64_t t_read(void);
+static const char *perf_time_unit;
+
+#define NUM_SAMPLES 1000u
 
 static void perf_rand(xmpp_ctx_t *ctx)
 {
     xmpp_rand_t *rng = xmpp_rand_new(ctx);
 
-    uint64_t t1, t2;
+    uint64_t t1, t2, t3 = 0;
     unsigned int n;
     const size_t alloc_sz = 0x1000u;
     size_t sz;
@@ -37,12 +41,12 @@ static void perf_rand(xmpp_ctx_t *ctx)
 
     /* pre-heat */
     for (n = 1; n < 4; ++n) {
-        xmpp_rand_bytes(rng, buf, n * 10);
+        xmpp_rand_bytes(rng, buf, alloc_sz / n);
     }
 
     for (sz = 2; sz <= alloc_sz; sz <<= 1) {
         t2 = 0;
-        for (n = 0; n < 1000u; ++n) {
+        for (n = 0; n < NUM_SAMPLES; ++n) {
 
             t_start();
             t1 = t_read();
@@ -52,10 +56,15 @@ static void perf_rand(xmpp_ctx_t *ctx)
             t1 = t_read() - t1;
             t2 += t1;
         }
-        t2 /= 1000;
-        fprintf(stderr,
-                "Reading %6zu bytes from PRNG took %8" PRIu64 " cycles\n", sz,
-                t2);
+        t2 /= NUM_SAMPLES;
+        fprintf(stderr, "Reading %6zu bytes from PRNG took %8" PRIu64 " %s\n",
+                sz, t2, perf_time_unit);
+        if (t3) {
+            double d3 = (double)t3, d2 = (double)t2;
+            fprintf(stderr, "    +%.2f%%\n",
+                    (d2 - d3) / ((d2 + d3) * 0.5) * 100.);
+        }
+        t3 = t2;
     }
     free(buf);
     xmpp_rand_free(ctx, rng);
@@ -90,7 +99,7 @@ static uint64_t rdtsc(void)
     unsigned hi, lo;
     __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
     return ((uint64_t)lo) | (((uint64_t)hi) << 32);
-#elif defined(LTC_PPC32) || defined(TFM_PPC32)
+#elif defined(__POWERPC__)
     unsigned long a, b;
     __asm__ __volatile__("mftbu %1 \nmftb %0\n" : "=r"(a), "=r"(b));
     return (((uint64_t)b) << 32ULL) | ((uint64_t)a);
@@ -116,24 +125,40 @@ static uint64_t rdtsc(void)
     uint64_t CNTVCT_EL0;
     __asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(CNTVCT_EL0));
     return CNTVCT_EL0;
+#elif defined HAVE_CLOCK_GETTIME
+#define USE_CLOCK_GETTIME
+    struct timespec result;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &result);
+    return result.tv_sec * 1000000000 + result.tv_nsec;
 #else
     return clock();
-#endif
+#endif /* __GNUC__ */
 
 /* Microsoft and Intel Windows compilers */
-#elif defined _M_IX86 && !defined(LTC_NO_ASM)
+#elif defined _M_IX86
     __asm rdtsc
-#elif defined _M_AMD64 && !defined(LTC_NO_ASM)
+#elif defined _M_AMD64
     return __rdtsc();
-#elif defined _M_IA64 && !defined(LTC_NO_ASM)
+#elif defined _M_IA64
 #if defined __INTEL_COMPILER
 #include <ia64intrin.h>
 #endif
     return __getReg(3116);
+#elif defined HAVE_CLOCK_GETTIME
+#define USE_CLOCK_GETTIME
+    struct timespec result;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &result);
+    return result.tv_sec * 1000000000 + result.tv_nsec;
 #else
     return clock();
 #endif
 }
+
+#if defined USE_CLOCK_GETTIME
+static const char *perf_time_unit = "ns";
+#else
+static const char *perf_time_unit = "cycles";
+#endif
 
 static void t_start(void)
 {
