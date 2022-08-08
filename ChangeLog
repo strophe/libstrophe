@@ -1,3 +1,11 @@
+0.12.2
+	- Fix reconnect issues when Stream Management is enabled (#211)
+	- Fix resolver ... this time for real hopefully (fixup of #200) (#214)
+	- Fix clearing of password cache on resumed connection (#214)
+	- Improve detection&implementation of `va_copy` (#213)
+	- Fix Valgrind CI builds against LibreSSL (#212)
+	- Fix perf example on platforms where an `rdtsc()` equivalent isn't implemented (#212)
+
 0.12.1
 	- Fix compilation in buildroot (#207)
 	- Fixes regarding OpenSSL (#208)
