@@ -152,8 +152,7 @@ static void complete_inner_text(parser_t *parser)
         /* FIXME: disconnect on allocation error */
         if (stanza) {
             xmpp_stanza_set_text(stanza, parser->inner_text);
-            xmpp_stanza_add_child(parser->stanza, stanza);
-            xmpp_stanza_release(stanza);
+            xmpp_stanza_add_child_ex(parser->stanza, stanza, 0);
         }
         strophe_free(parser->ctx, parser->inner_text);
         parser->inner_text = NULL;
@@ -195,8 +194,7 @@ _start_element(void *userdata, const XML_Char *nsname, const XML_Char **attrs)
 
             if (parser->stanza != NULL) {
                 complete_inner_text(parser);
-                xmpp_stanza_add_child(parser->stanza, child);
-                xmpp_stanza_release(child);
+                xmpp_stanza_add_child_ex(parser->stanza, child, 0);
             }
             parser->stanza = child;
         }

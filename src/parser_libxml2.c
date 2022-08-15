@@ -164,10 +164,7 @@ static void _start_element(void *userdata,
                 xmpp_stanza_set_ns(child, (char *)uri);
 
             /* add child to parent */
-            xmpp_stanza_add_child(parser->stanza, child);
-
-            /* the child is owned by the toplevel stanza now */
-            xmpp_stanza_release(child);
+            xmpp_stanza_add_child_ex(parser->stanza, child, 0);
 
             /* make child the current stanza */
             parser->stanza = child;
@@ -223,8 +220,7 @@ static void _characters(void *userdata, const xmlChar *chr, int len)
     }
     xmpp_stanza_set_text_with_size(stanza, (char *)chr, len);
 
-    xmpp_stanza_add_child(parser->stanza, stanza);
-    xmpp_stanza_release(stanza);
+    xmpp_stanza_add_child_ex(parser->stanza, stanza, 0);
 }
 
 /* create a new parser */

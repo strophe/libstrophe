@@ -391,8 +391,7 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
         xmpp_stanza_set_text(authdata, response);
         strophe_free(conn->ctx, response);
 
-        xmpp_stanza_add_child(auth, authdata);
-        xmpp_stanza_release(authdata);
+        xmpp_stanza_add_child_ex(auth, authdata, 0);
 
         handler_add(conn, _handle_digestmd5_rspauth, XMPP_NS_SASL, NULL, NULL,
                     NULL);
@@ -489,8 +488,7 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
         xmpp_stanza_set_text(authdata, response);
         strophe_free(conn->ctx, response);
 
-        xmpp_stanza_add_child(auth, authdata);
-        xmpp_stanza_release(authdata);
+        xmpp_stanza_add_child_ex(auth, authdata, 0);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
 
@@ -684,8 +682,7 @@ static void _auth(xmpp_conn_t *conn)
         }
         strophe_free(conn->ctx, str);
 
-        xmpp_stanza_add_child(auth, authdata);
-        xmpp_stanza_release(authdata);
+        xmpp_stanza_add_child_ex(auth, authdata, 0);
 
         handler_add(conn, _handle_sasl_result, XMPP_NS_SASL, NULL, NULL,
                     "EXTERNAL");
@@ -748,8 +745,7 @@ static void _auth(xmpp_conn_t *conn)
         }
         xmpp_stanza_set_text(authdata, str);
         strophe_free(conn->ctx, str);
-        xmpp_stanza_add_child(auth, authdata);
-        xmpp_stanza_release(authdata);
+        xmpp_stanza_add_child_ex(auth, authdata, 0);
 
         handler_add(conn, _handle_scram_challenge, XMPP_NS_SASL, NULL, NULL,
                     (void *)scram_ctx);
@@ -797,8 +793,7 @@ static void _auth(xmpp_conn_t *conn)
         strophe_free(conn->ctx, str);
         strophe_free(conn->ctx, authid);
 
-        xmpp_stanza_add_child(auth, authdata);
-        xmpp_stanza_release(authdata);
+        xmpp_stanza_add_child_ex(auth, authdata, 0);
 
         handler_add(conn, _handle_sasl_result, XMPP_NS_SASL, NULL, NULL,
                     "PLAIN");
@@ -914,15 +909,12 @@ static int _do_bind(xmpp_conn_t *conn, xmpp_stanza_t *bind)
             return 0;
         }
         xmpp_stanza_set_text(text, resource);
-        xmpp_stanza_add_child(res, text);
-        xmpp_stanza_release(text);
-        xmpp_stanza_add_child(bind, res);
-        xmpp_stanza_release(res);
+        xmpp_stanza_add_child_ex(res, text, 0);
+        xmpp_stanza_add_child_ex(bind, res, 0);
         strophe_free(conn->ctx, resource);
     }
 
-    xmpp_stanza_add_child(iq, bind);
-    xmpp_stanza_release(bind);
+    xmpp_stanza_add_child_ex(iq, bind, 0);
 
     /* send bind request */
     send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
@@ -1069,8 +1061,7 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
             xmpp_stanza_set_name(session, "session");
             xmpp_stanza_set_ns(session, XMPP_NS_SESSION);
 
-            xmpp_stanza_add_child(iq, session);
-            xmpp_stanza_release(session);
+            xmpp_stanza_add_child_ex(iq, session, 0);
 
             /* send session establishment request */
             send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
@@ -1346,15 +1337,13 @@ static void _auth_legacy(xmpp_conn_t *conn)
         goto err_free;
     xmpp_stanza_set_name(query, "query");
     xmpp_stanza_set_ns(query, XMPP_NS_AUTH);
-    xmpp_stanza_add_child(iq, query);
-    xmpp_stanza_release(query);
+    xmpp_stanza_add_child_ex(iq, query, 0);
 
     child = xmpp_stanza_new(conn->ctx);
     if (!child)
         goto err_free;
     xmpp_stanza_set_name(child, "username");
-    xmpp_stanza_add_child(query, child);
-    xmpp_stanza_release(child);
+    xmpp_stanza_add_child_ex(query, child, 0);
 
     authdata = xmpp_stanza_new(conn->ctx);
     if (!authdata)
@@ -1366,29 +1355,25 @@ static void _auth_legacy(xmpp_conn_t *conn)
     }
     xmpp_stanza_set_text(authdata, str);
     strophe_free(conn->ctx, str);
-    xmpp_stanza_add_child(child, authdata);
-    xmpp_stanza_release(authdata);
+    xmpp_stanza_add_child_ex(child, authdata, 0);
 
     child = xmpp_stanza_new(conn->ctx);
     if (!child)
         goto err_free;
     xmpp_stanza_set_name(child, "password");
-    xmpp_stanza_add_child(query, child);
-    xmpp_stanza_release(child);
+    xmpp_stanza_add_child_ex(query, child, 0);
 
     authdata = xmpp_stanza_new(conn->ctx);
     if (!authdata)
         goto err_free;
     xmpp_stanza_set_text(authdata, conn->pass);
-    xmpp_stanza_add_child(child, authdata);
-    xmpp_stanza_release(authdata);
+    xmpp_stanza_add_child_ex(child, authdata, 0);
 
     child = xmpp_stanza_new(conn->ctx);
     if (!child)
         goto err_free;
     xmpp_stanza_set_name(child, "resource");
-    xmpp_stanza_add_child(query, child);
-    xmpp_stanza_release(child);
+    xmpp_stanza_add_child_ex(query, child, 0);
 
     authdata = xmpp_stanza_new(conn->ctx);
     if (!authdata)
@@ -1405,8 +1390,7 @@ static void _auth_legacy(xmpp_conn_t *conn)
         xmpp_disconnect(conn);
         return;
     }
-    xmpp_stanza_add_child(child, authdata);
-    xmpp_stanza_release(authdata);
+    xmpp_stanza_add_child_ex(child, authdata, 0);
 
     handler_add_id(conn, _handle_legacy, "_xmpp_auth1", NULL);
     handler_add_timed(conn, _handle_missing_legacy, LEGACY_TIMEOUT, NULL);

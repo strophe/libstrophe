@@ -1604,8 +1604,7 @@ xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t type, const char *text)
     }
 
     xmpp_stanza_set_ns(error_type, XMPP_NS_STREAMS_IETF);
-    xmpp_stanza_add_child(error, error_type);
-    xmpp_stanza_release(error_type);
+    xmpp_stanza_add_child_ex(error, error_type, 0);
 
     if (text) {
         xmpp_stanza_t *error_text = xmpp_stanza_new(ctx);
@@ -1615,11 +1614,9 @@ xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t type, const char *text)
         xmpp_stanza_set_ns(error_text, XMPP_NS_STREAMS_IETF);
 
         xmpp_stanza_set_text(content, text);
-        xmpp_stanza_add_child(error_text, content);
-        xmpp_stanza_release(content);
+        xmpp_stanza_add_child_ex(error_text, content, 0);
 
-        xmpp_stanza_add_child(error, error_text);
-        xmpp_stanza_release(error_text);
+        xmpp_stanza_add_child_ex(error, error_text, 0);
     }
 
     return error;
