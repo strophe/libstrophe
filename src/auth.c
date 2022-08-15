@@ -398,7 +398,6 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
                     NULL);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
     } else {
         return _handle_sasl_result(conn, stanza, "DIGEST-MD5");
@@ -432,7 +431,6 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t *conn,
         xmpp_stanza_set_name(auth, "response");
         xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
     } else {
         return _handle_sasl_result(conn, stanza, "DIGEST-MD5");
     }
@@ -495,7 +493,6 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
         xmpp_stanza_release(authdata);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
         rc = 1; /* Keep handler */
     } else {
@@ -625,7 +622,6 @@ static void _auth(xmpp_conn_t *conn)
                     NULL);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
         /* TLS was tried, unset flag */
         conn->tls_support = 0;
@@ -653,7 +649,6 @@ static void _auth(xmpp_conn_t *conn)
                     "ANONYMOUS");
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
         /* SASL ANONYMOUS was tried, unset flag */
         conn->sasl_support &= ~SASL_MASK_ANONYMOUS;
@@ -696,7 +691,6 @@ static void _auth(xmpp_conn_t *conn)
                     "EXTERNAL");
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
         /* SASL EXTERNAL was tried, unset flag */
         conn->sasl_support &= ~SASL_MASK_EXTERNAL;
@@ -761,7 +755,6 @@ static void _auth(xmpp_conn_t *conn)
                     (void *)scram_ctx);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
         /* SASL SCRAM-SHA-1 was tried, unset flag */
         conn->sasl_support &= ~scram_ctx->alg->mask;
@@ -776,7 +769,6 @@ static void _auth(xmpp_conn_t *conn)
                     NULL);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
         /* SASL DIGEST-MD5 was tried, unset flag */
         conn->sasl_support &= ~SASL_MASK_DIGESTMD5;
@@ -812,7 +804,6 @@ static void _auth(xmpp_conn_t *conn)
                     "PLAIN");
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
-        xmpp_stanza_release(auth);
 
         /* SASL PLAIN was tried */
         conn->sasl_support &= ~SASL_MASK_PLAIN;
@@ -935,7 +926,6 @@ static int _do_bind(xmpp_conn_t *conn, xmpp_stanza_t *bind)
 
     /* send bind request */
     send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
-    xmpp_stanza_release(iq);
     return 0;
 }
 
@@ -999,7 +989,6 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         strophe_snprintf(h, sizeof(h), "%u", conn->sm_state->sm_handled_nr);
         xmpp_stanza_set_attribute(resume, "h", h);
         send_stanza(conn, resume, XMPP_QUEUE_SM_STROPHE);
-        xmpp_stanza_release(resume);
         handler_add(conn, _handle_sm, XMPP_NS_SM, NULL, NULL, NULL);
     }
     /* if bind is required, go ahead and start it */
@@ -1085,7 +1074,6 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 
             /* send session establishment request */
             send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
-            xmpp_stanza_release(iq);
         }
 
         if (conn->sm_state->sm_support && !conn->sm_disable) {
@@ -1100,7 +1088,6 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                 xmpp_stanza_set_attribute(enable, "resume", "true");
             handler_add(conn, _handle_sm, XMPP_NS_SM, NULL, NULL, NULL);
             send_stanza(conn, enable, XMPP_QUEUE_SM_STROPHE);
-            xmpp_stanza_release(enable);
         }
 
         if (!conn->session_required) {
@@ -1425,7 +1412,6 @@ static void _auth_legacy(xmpp_conn_t *conn)
     handler_add_timed(conn, _handle_missing_legacy, LEGACY_TIMEOUT, NULL);
 
     send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
-    xmpp_stanza_release(iq);
     return;
 
 err_free:

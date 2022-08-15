@@ -123,8 +123,6 @@ void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text)
     xmpp_stanza_t *error = xmpp_error_new(conn->ctx, type, text);
 
     send_stanza(conn, error, XMPP_QUEUE_STROPHE);
-
-    xmpp_stanza_release(error);
 }
 
 /** Create a new Strophe connection object.
@@ -1073,7 +1071,7 @@ void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len)
  */
 void xmpp_send(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
 {
-    send_stanza(conn, stanza, XMPP_QUEUE_USER);
+    send_stanza(conn, xmpp_stanza_clone(stanza), XMPP_QUEUE_USER);
 }
 
 /** Send the opening &lt;stream:stream&gt; tag to the server.
@@ -1738,7 +1736,6 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
             strophe_snprintf(h, sizeof(h), "%u", conn->sm_state->sm_handled_nr);
             xmpp_stanza_set_attribute(a, "h", h);
             send_stanza(conn, a, XMPP_QUEUE_SM_STROPHE);
-            xmpp_stanza_release(a);
         } else if (strcmp(name, "a") == 0) {
             attr_h = xmpp_stanza_get_attribute(stanza, "h");
             if (!attr_h) {
@@ -1972,14 +1969,16 @@ void send_stanza(xmpp_conn_t *conn,
     size_t len;
 
     if (conn->state != XMPP_STATE_CONNECTED)
-        return;
+        goto out;
 
     if (xmpp_stanza_to_text(stanza, &buf, &len) != 0) {
         strophe_error(conn->ctx, "conn", "Failed to stanza_to_text");
-        return;
+        goto out;
     }
 
     _send_raw(conn, buf, len, owner, NULL);
+out:
+    xmpp_stanza_release(stanza);
 }
 
 void add_queue_back(xmpp_queue_t *queue, xmpp_send_queue_t *item)
