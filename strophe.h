@@ -83,6 +83,10 @@ extern "C" {
  *  Namespace definition for Stream Management.
  */
 #define XMPP_NS_SM "urn:xmpp:sm:3"
+/** @def XMPP_NS_PING
+ * Namespace definition for XEP-0199: XMPP Ping
+ */
+ #define XMPP_NS_PING "urn:xmpp:ping"
 
 /* error defines */
 /** @def XMPP_EOK
@@ -567,6 +571,7 @@ char *xmpp_message_get_body(xmpp_stanza_t *msg);
 int xmpp_message_set_body(xmpp_stanza_t *msg, const char *text);
 
 xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char *type, const char *id);
+xmpp_stanza_t *xmpp_ping_new(xmpp_ctx_t *ctx, const char *id);
 xmpp_stanza_t *xmpp_presence_new(xmpp_ctx_t *ctx);
 xmpp_stanza_t *
 xmpp_error_new(xmpp_ctx_t *ctx, xmpp_error_type_t type, const char *text);

@@ -1492,6 +1492,43 @@ xmpp_stanza_t *xmpp_iq_new(xmpp_ctx_t *ctx, const char *type, const char *id)
     return _stanza_new_with_attrs(ctx, "iq", type, id, NULL);
 }
 
+/** Create a `<iq><ping/></iq>` stanza object.
+ *
+ *  @param ctx a Strophe context object
+ *  @param id attribute 'id'
+ *
+ *  @return a new Strophe stanza object
+ *
+ *  @ingroup Stanza
+ */
+xmpp_stanza_t *xmpp_ping_new(xmpp_ctx_t *ctx, const char *id)
+{
+    xmpp_stanza_t *iq = xmpp_iq_new(ctx, "get", id);
+    if (!iq)
+        goto exit;
+
+    xmpp_stanza_t *ping = xmpp_stanza_new(ctx);
+    if (!ping) {
+        xmpp_stanza_release(iq);
+        iq = NULL;
+        goto exit;
+    }
+
+    int ret = xmpp_stanza_set_name(ping, "ping");
+    if (ret == XMPP_EOK)
+        ret = xmpp_stanza_set_ns(ping, XMPP_NS_PING);
+    if (ret == XMPP_EOK)
+        ret = xmpp_stanza_add_child(iq, ping);
+	xmpp_stanza_release(ping);
+    if (ret == XMPP_EOK)
+        goto exit;
+    xmpp_stanza_release(iq);
+    iq = NULL;
+
+exit:
+    return iq;
+}
+
 /** Create a `<presence/>` stanza object.
  *
  *  @param ctx a Strophe context object
