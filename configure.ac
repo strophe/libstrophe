@@ -123,7 +123,7 @@ if test x"$have_va_copy$have___va_copy" = x"nono"; then
       AC_DEFINE([VA_LIST_IS_ARRAY], [1],[Define if va_list is an array type])])
 fi
 
-if test "x$enable_tls" != xno -a "x$with_gnutls" == xyes; then
+if test "x$enable_tls" != xno -a "x$with_gnutls" = xyes; then
     PKG_CHECK_MODULES([gnutls], [gnutls],
         [PC_REQUIRES="gnutls ${PC_REQUIRES}"],
         [AC_CHECK_HEADER([gnutls/gnutls.h],
@@ -133,7 +133,7 @@ if test "x$enable_tls" != xno -a "x$with_gnutls" == xyes; then
             ],
             [AC_MSG_ERROR([gnutls not found; gnutls required])]
         )])
-elif test "x$enable_tls" != xno -a "x$with_schannel" == xyes; then
+elif test "x$enable_tls" != xno -a "x$with_schannel" = xyes; then
     if test "x$PLATFORM" != xwin32; then
         AC_MSG_ERROR([schannel is only supported on Windows])
     fi
