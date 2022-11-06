@@ -95,13 +95,18 @@ jobs:
     name: Check if release would work
     steps:
       - uses: actions/checkout@v2
-      - name: install dependencies
+      - name: install dependencies & bootstrap
         run: |
           sudo apt update
-          sudo apt install -y libtool pkg-config libexpat1-dev
-      - name: Setup the library
-        run: |
+          sudo apt install -y libtool pkg-config libexpat1-dev dash
           ./bootstrap.sh
+      - name: Check if configure works with non-bash shells
+        # https://github.com/actions/runner/issues/241 requires us to use this following line...
+        shell: 'script --return --quiet --command "bash {0}"'
+        run: |
+          [ "`CONFIG_SHELL=/bin/dash ./configure 2>&1 1>/dev/null | tee /dev/tty | wc -l`" = "0" ]
+      - name: Re-run configure with the default shell
+        run: |
           ./configure
       - name: Try release & tests
         run: |
