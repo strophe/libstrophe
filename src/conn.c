@@ -481,6 +481,8 @@ void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
  */
 void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
 {
+    if (conn->tls_cafile)
+        strophe_free(conn->ctx, conn->tls_cafile);
     conn->tls_cafile = strophe_strdup(conn->ctx, path);
 }
 
@@ -493,6 +495,8 @@ void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
  */
 void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path)
 {
+    if (conn->tls_capath)
+        strophe_free(conn->ctx, conn->tls_capath);
     conn->tls_capath = strophe_strdup(conn->ctx, path);
 }
 
