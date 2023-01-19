@@ -158,6 +158,10 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx,
     set = resolver_ares_srv_lookup_buf(ctx, buf, len, srv_rr_list);
 #else
     set = resolver_raw_srv_lookup_buf(ctx, buf, len, srv_rr_list);
+    if (set != XMPP_DOMAIN_FOUND && *srv_rr_list != NULL) {
+        resolver_srv_free(ctx, *srv_rr_list);
+        *srv_rr_list = NULL;
+    }
 #endif
     resolver_srv_list_sort(srv_rr_list);
 
