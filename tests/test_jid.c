@@ -15,114 +15,80 @@
 #include "strophe.h"
 #include "common.h"
 
-static const char jid1[] = "foo@bar.com";
-static const char jid2[] = "anyone@example.com/hullo";
-static const char jid3[] = "manic.porter@xyz.net/frob";
-static const char jid4[] = "domain.tld";
+#include "test.h"
 
 static const char *_s(const char *s)
 {
     return s == NULL ? "<NULL>" : s;
 }
 
-int test_jid(xmpp_ctx_t *ctx)
+static int test_jid(xmpp_ctx_t *ctx)
 {
     char *bare;
     char *node;
     char *domain;
     char *resource;
+    size_t n;
+    struct {
+        const char *jid;
+        const char *bare;
+        const char *node;
+        const char *domain;
+        const char *resource;
+    } testcases[] = {
+        {"foo@bar.com", "foo@bar.com", "foo", "bar.com", NULL},
+        {
+            "anyone@example.com/hullo",
+            "anyone@example.com",
+            "anyone",
+            "example.com",
+            "hullo",
+        },
+        {
+            "a.example.com/b@example.net",
+            "a.example.com",
+            NULL,
+            "a.example.com",
+            "b@example.net",
+        },
+        {
+            "manic.porter@xyz.net/frob",
+            "manic.porter@xyz.net",
+            "manic.porter",
+            "xyz.net",
+            "frob",
+        },
+        {
+            "domain.tld",
+            "domain.tld",
+            NULL,
+            "domain.tld",
+            NULL,
+        },
+    };
 
-    bare = xmpp_jid_bare(ctx, jid1);
-    node = xmpp_jid_node(ctx, jid1);
-    domain = xmpp_jid_domain(ctx, jid1);
-    resource = xmpp_jid_resource(ctx, jid1);
-    printf("jid '%s' parsed to %s, %s, %s\n", jid1, _s(node), _s(domain),
-           _s(resource));
-    if (bare == NULL || strcmp(bare, "foo@bar.com"))
-        return 1;
-    if (node == NULL || strcmp(node, "foo"))
-        return 1;
-    if (domain == NULL || strcmp(domain, "bar.com"))
-        return 1;
-    if (resource != NULL)
-        return 1;
-    if (bare)
-        strophe_free(ctx, bare);
-    if (node)
-        strophe_free(ctx, node);
-    if (domain)
-        strophe_free(ctx, domain);
-    if (resource)
-        strophe_free(ctx, resource);
+    for (n = 0; n < sizeof(testcases) / sizeof(testcases[0]); ++n) {
+        bare = xmpp_jid_bare(ctx, testcases[n].jid);
+        node = xmpp_jid_node(ctx, testcases[n].jid);
+        domain = xmpp_jid_domain(ctx, testcases[n].jid);
+        resource = xmpp_jid_resource(ctx, testcases[n].jid);
+        printf("jid '%s' parsed to %s, %s, %s\n", testcases[n].jid, _s(node),
+               _s(domain), _s(resource));
+        COMPARE(testcases[n].bare, bare);
+        COMPARE(testcases[n].node, node);
+        COMPARE(testcases[n].domain, domain);
+        COMPARE(testcases[n].resource, resource);
+        if (bare)
+            strophe_free(ctx, bare);
+        if (node)
+            strophe_free(ctx, node);
+        if (domain)
+            strophe_free(ctx, domain);
+        if (resource)
+            strophe_free(ctx, resource);
+    }
 
-    bare = xmpp_jid_bare(ctx, jid2);
-    node = xmpp_jid_node(ctx, jid2);
-    domain = xmpp_jid_domain(ctx, jid2);
-    resource = xmpp_jid_resource(ctx, jid2);
-    printf("jid '%s' parsed to %s, %s, %s\n", jid2, _s(node), _s(domain),
-           _s(resource));
-    if (bare == NULL || strcmp(bare, "anyone@example.com"))
-        return 1;
-    if (node == NULL || strcmp(node, "anyone"))
-        return 1;
-    if (domain == NULL || strcmp(domain, "example.com"))
-        return 1;
-    if (resource == NULL || strcmp(resource, "hullo"))
-        return 1;
-    if (bare)
-        strophe_free(ctx, bare);
-    if (node)
-        strophe_free(ctx, node);
-    if (domain)
-        strophe_free(ctx, domain);
-    if (resource)
-        strophe_free(ctx, resource);
-
-    bare = xmpp_jid_bare(ctx, jid3);
-    node = xmpp_jid_node(ctx, jid3);
-    domain = xmpp_jid_domain(ctx, jid3);
-    resource = xmpp_jid_resource(ctx, jid3);
-    printf("jid '%s' parsed to %s, %s, %s\n", jid3, _s(node), _s(domain),
-           _s(resource));
-    if (bare == NULL || strcmp(bare, "manic.porter@xyz.net"))
-        return 1;
-    if (node == NULL || strcmp(node, "manic.porter"))
-        return 1;
-    if (domain == NULL || strcmp(domain, "xyz.net"))
-        return 1;
-    if (resource == NULL || strcmp(resource, "frob"))
-        return 1;
-    if (bare)
-        strophe_free(ctx, bare);
-    if (node)
-        strophe_free(ctx, node);
-    if (domain)
-        strophe_free(ctx, domain);
-    if (resource)
-        strophe_free(ctx, resource);
-
-    bare = xmpp_jid_bare(ctx, jid4);
-    node = xmpp_jid_node(ctx, jid4);
-    domain = xmpp_jid_domain(ctx, jid4);
-    resource = xmpp_jid_resource(ctx, jid4);
-    printf("jid '%s' parsed to %s, %s, %s\n", jid4, _s(node), _s(domain),
-           _s(resource));
-    if (bare == NULL || strcmp(bare, "domain.tld"))
-        return 1;
-    if (node != NULL)
-        return 1;
-    if (domain == NULL || strcmp(domain, "domain.tld"))
-        return 1;
-    if (resource != NULL)
-        return 1;
-    if (bare)
-        strophe_free(ctx, bare);
-    if (node)
-        strophe_free(ctx, node);
-    if (domain)
-        strophe_free(ctx, domain);
-    if (resource)
-        strophe_free(ctx, resource);
+    printf("test_jid() finished successfully\n");
 
     return 0;
 }
@@ -142,6 +108,19 @@ int test_jid_new(xmpp_ctx_t *ctx)
     if (strcmp(jid, "foo@bar.com"))
         return 1;
     strophe_free(ctx, jid);
+
+    const char *invalid_chars = "\"&'/:<>@";
+    char localpart[] = "localpart";
+    do {
+        localpart[1] = *invalid_chars;
+        jid = xmpp_jid_new(ctx, localpart, "bar.com", NULL);
+        if (jid != NULL) {
+            printf("Shouldn't have created JID with localpart=\"%s\"\n",
+                   localpart);
+            return 1;
+        }
+        invalid_chars++;
+    } while (*invalid_chars != '\0');
 
     return 0;
 }

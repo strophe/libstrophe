@@ -37,14 +37,36 @@ char *xmpp_jid_new(xmpp_ctx_t *ctx,
     size_t len, nlen, dlen, rlen;
 
     /* jid must at least have a domain */
-    if (domain == NULL)
+    if (domain == NULL) {
+        strophe_error(ctx, "jid", "domainpart missing.");
         return NULL;
+    }
 
     /* accumulate lengths */
     dlen = strlen(domain);
     nlen = (node) ? strlen(node) + 1 : 0;
     rlen = (resource) ? strlen(resource) + 1 : 0;
     len = nlen + dlen + rlen;
+
+    if (dlen > 1023) {
+        strophe_error(ctx, "jid", "domainpart too long.");
+        return NULL;
+    }
+    if (nlen > 1024) {
+        strophe_error(ctx, "jid", "localpart too long.");
+        return NULL;
+    }
+    if (rlen > 1024) {
+        strophe_error(ctx, "jid", "resourcepart too long.");
+        return NULL;
+    }
+
+    if (node) {
+        if (strcspn(node, "\"&'/:<>@") != nlen - 1) {
+            strophe_error(ctx, "jid", "localpart contained invalid character.");
+            return NULL;
+        }
+    }
 
     /* concat components */
     result = strophe_alloc(ctx, len + 1);
@@ -96,17 +118,29 @@ char *xmpp_jid_bare(xmpp_ctx_t *ctx, const char *jid)
  */
 char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid)
 {
+    char *dup_jid = strophe_strdup(ctx, jid);
     char *result = NULL;
     const char *c;
 
-    c = strchr(jid, '@');
+    /* Apply the same parsing rules from rfc7622 Section 3.2
+     * 1. Strip resource
+     * 2. take part before the '@'
+     */
+
+    char *resource = strchr(dup_jid, '/');
+    if (resource != NULL) {
+        *resource = '\0';
+    }
+
+    c = strchr(dup_jid, '@');
     if (c != NULL) {
-        result = strophe_alloc(ctx, (c - jid) + 1);
+        result = strophe_alloc(ctx, (c - dup_jid) + 1);
         if (result != NULL) {
-            memcpy(result, jid, (c - jid));
-            result[c - jid] = '\0';
+            memcpy(result, dup_jid, (c - dup_jid));
+            result[c - dup_jid] = '\0';
         }
     }
+    strophe_free(ctx, dup_jid);
 
     return result;
 }
@@ -120,24 +154,29 @@ char *xmpp_jid_node(xmpp_ctx_t *ctx, const char *jid)
  */
 char *xmpp_jid_domain(xmpp_ctx_t *ctx, const char *jid)
 {
-    char *result = NULL;
-    const char *c;
-    size_t dlen;
+    char *dup_jid = strophe_strdup(ctx, jid);
 
-    c = strchr(jid, '@');
-    if (c == NULL) {
-        /* no node, assume domain */
-        c = jid;
+    /* rfc7622 Section 3.2
+     * 1.  Remove any portion from the first '/' character to the end of the
+     *     string (if there is a '/' character present).
+     */
+
+    char *resource = strchr(dup_jid, '/');
+    if (resource != NULL) {
+        *resource = '\0';
+    }
+
+    /* 2.  Remove any portion from the beginning of the string to the first
+     *     '@' character (if there is an '@' character present).
+     */
+    char *at_sign = strchr(dup_jid, '@');
+    char *result = NULL;
+    if (at_sign != NULL) {
+        result = strophe_strdup(ctx, (at_sign + 1));
     } else {
-        /* advance past the separator */
-        c++;
+        result = strophe_strdup(ctx, dup_jid);
     }
-    dlen = strcspn(c, "/"); /* do not include resource */
-    result = strophe_alloc(ctx, dlen + 1);
-    if (result != NULL) {
-        memcpy(result, c, dlen);
-        result[dlen] = '\0';
-    }
+    strophe_free(ctx, dup_jid);
 
     return result;
 }
