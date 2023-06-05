@@ -60,6 +60,18 @@
 /** Max buffer size for receiving messages. */
 #define STROPE_MESSAGE_BUFFER_SIZE 4096
 
+static int _connect_next(xmpp_conn_t *conn)
+{
+    sock_close(conn->sock);
+    conn->sock = sock_connect(conn->xsock);
+    if (conn->sock == INVALID_SOCKET)
+        return -1;
+
+    conn->timeout_stamp = time_stamp();
+
+    return 0;
+}
+
 /** Run the event loop once.
  *  This function will run send any data that has been queued by
  *  xmpp_send and related functions and run through the Strophe even
@@ -209,9 +221,14 @@ next_item:
                 conn->connect_timeout)
                 FD_SET(conn->sock, &wfds);
             else {
-                conn->error = ETIMEDOUT;
                 strophe_info(ctx, "xmpp", "Connection attempt timed out.");
-                conn_disconnect(conn);
+                ret = _connect_next(conn);
+                if (ret != 0) {
+                    conn->error = ETIMEDOUT;
+                    conn_disconnect(conn);
+                } else {
+                    FD_SET(conn->sock, &wfds);
+                }
             }
             break;
         case XMPP_STATE_CONNECTED:
@@ -272,7 +289,11 @@ next_item:
                     /* connection failed */
                     strophe_debug(ctx, "xmpp", "connection failed, error %d",
                                   ret);
-                    conn_disconnect(conn);
+                    ret = _connect_next(conn);
+                    if (ret != 0) {
+                        conn->error = ret;
+                        conn_disconnect(conn);
+                    }
                     break;
                 }
 

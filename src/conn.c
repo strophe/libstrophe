@@ -29,7 +29,6 @@
 #include "common.h"
 #include "util.h"
 #include "parser.h"
-#include "resolver.h"
 
 #ifndef DEFAULT_SEND_QUEUE_MAX
 /** @def DEFAULT_SEND_QUEUE_MAX
@@ -103,8 +102,6 @@ static unsigned short _conn_default_port(xmpp_conn_t *conn,
 static void _conn_reset(xmpp_conn_t *conn);
 static int _conn_connect(xmpp_conn_t *conn,
                          const char *domain,
-                         const char *host,
-                         unsigned short port,
                          xmpp_conn_type_t type,
                          xmpp_conn_handler callback,
                          void *userdata);
@@ -148,7 +145,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         conn->type = XMPP_UNKNOWN;
         conn->state = XMPP_STATE_DISCONNECTED;
 
-        conn->sock = -1;
+        conn->xsock = NULL;
+        conn->sock = INVALID_SOCKET;
         conn->ka_timeout = KEEPALIVE_TIMEOUT;
         conn->ka_interval = KEEPALIVE_INTERVAL;
         conn->ka_count = KEEPALIVE_COUNT;
@@ -402,6 +400,7 @@ int xmpp_conn_release(xmpp_conn_t *conn)
         if (conn->sm_state)
             xmpp_free_sm_state(conn->sm_state);
         tls_clear_password_cache(conn);
+        sock_free(conn->xsock);
         strophe_free(ctx, conn);
         released = 1;
     }
@@ -705,12 +704,7 @@ int xmpp_connect_client(xmpp_conn_t *conn,
                         xmpp_conn_handler callback,
                         void *userdata)
 {
-    resolver_srv_rr_t *srv_rr_list = NULL;
-    resolver_srv_rr_t *rr;
     char *domain;
-    const char *host = NULL;
-    unsigned short port = 0;
-    int found = XMPP_DOMAIN_NOT_FOUND;
     int rc;
 
     if (!conn->jid && (conn->tls_client_cert || conn->tls_client_key)) {
@@ -739,48 +733,35 @@ int xmpp_connect_client(xmpp_conn_t *conn,
     if (!conn->sm_state) {
         conn->sm_state = strophe_alloc(conn->ctx, sizeof(*conn->sm_state));
         if (!conn->sm_state)
-            return XMPP_EMEM;
+            goto err_mem;
         memset(conn->sm_state, 0, sizeof(*conn->sm_state));
         conn->sm_state->ctx = conn->ctx;
     }
 
-    if (altdomain != NULL) {
-        strophe_debug(conn->ctx, "xmpp", "Connecting via altdomain.");
-        host = altdomain;
-        port = altport ? altport : _conn_default_port(conn, XMPP_CLIENT);
-        found = XMPP_DOMAIN_ALTDOMAIN;
+    if (altdomain != NULL)
+        strophe_debug(conn->ctx, "conn", "Connecting via altdomain.");
 
+    if (conn->tls_legacy_ssl && !altdomain) {
         /* SSL tunneled connection on 5223 port is legacy and doesn't
          * have an SRV record. */
-    } else if (!conn->tls_legacy_ssl) {
-        found = resolver_srv_lookup(conn->ctx, "xmpp-client", "tcp", domain,
-                                    &srv_rr_list);
+        altdomain = domain;
     }
+    altport = altport ? altport : _conn_default_port(conn, XMPP_CLIENT);
 
-    if (XMPP_DOMAIN_NOT_FOUND == found) {
-        strophe_debug(conn->ctx, "xmpp",
-                      "SRV lookup failed, "
-                      "connecting via domain.");
-        host = domain;
-        port = altport ? altport : _conn_default_port(conn, XMPP_CLIENT);
-        found = XMPP_DOMAIN_ALTDOMAIN;
-    }
+    if (conn->xsock)
+        sock_free(conn->xsock);
+    conn->xsock = sock_new(conn, domain, altdomain, altport);
+    if (!conn->xsock)
+        goto err_mem;
 
-    rr = srv_rr_list;
-    do {
-        if (XMPP_DOMAIN_FOUND == found && rr != NULL) {
-            host = rr->target;
-            port = rr->port;
-            rr = rr->next;
-        }
-        rc = _conn_connect(conn, domain, host, port, XMPP_CLIENT, callback,
-                           userdata);
-    } while (rc != 0 && rr != NULL);
-
+    rc = _conn_connect(conn, domain, XMPP_CLIENT, callback, userdata);
     strophe_free(conn->ctx, domain);
-    resolver_srv_free(conn->ctx, srv_rr_list);
 
     return rc;
+
+err_mem:
+    strophe_free(conn->ctx, domain);
+    return XMPP_EMEM;
 }
 
 /** Initiate a component connection to server.
@@ -826,10 +807,15 @@ int xmpp_connect_component(xmpp_conn_t *conn,
     }
 
     port = port ? port : _conn_default_port(conn, XMPP_COMPONENT);
+    if (conn->xsock)
+        sock_free(conn->xsock);
+    conn->xsock = sock_new(conn, NULL, server, port);
+    if (!conn->xsock)
+        return XMPP_EMEM;
+
     /* JID serves as an identifier here and will be used as "to" attribute
        of the stream */
-    return _conn_connect(conn, conn->jid, server, port, XMPP_COMPONENT,
-                         callback, userdata);
+    return _conn_connect(conn, conn->jid, XMPP_COMPONENT, callback, userdata);
 }
 
 /** Initiate a raw connection to the XMPP server.
@@ -977,7 +963,8 @@ void conn_disconnect(xmpp_conn_t *conn)
         tls_free(conn->tls);
         conn->tls = NULL;
     }
-    sock_close(conn->sock);
+    if (conn->sock != INVALID_SOCKET)
+        sock_close(conn->sock);
     _reset_sm_state_for_reconnect(conn);
 
     /* fire off connection handler */
@@ -1845,8 +1832,6 @@ static void _conn_reset(xmpp_conn_t *conn)
 
 static int _conn_connect(xmpp_conn_t *conn,
                          const char *domain,
-                         const char *host,
-                         unsigned short port,
                          xmpp_conn_type_t type,
                          xmpp_conn_handler callback,
                          void *userdata)
@@ -1857,8 +1842,6 @@ static int _conn_connect(xmpp_conn_t *conn,
         return XMPP_EINVOP;
     if (type != XMPP_CLIENT && type != XMPP_COMPONENT)
         return XMPP_EINVOP;
-    if (host == NULL || port == 0)
-        return XMPP_EINT;
 
     _conn_reset(conn);
 
@@ -1867,10 +1850,8 @@ static int _conn_connect(xmpp_conn_t *conn,
     if (!conn->domain)
         return XMPP_EMEM;
 
-    conn->sock = sock_connect(conn, host, port);
-    strophe_debug(conn->ctx, "xmpp", "sock_connect() to %s:%u returned %d",
-                  host, port, conn->sock);
-    if (conn->sock == -1)
+    conn->sock = sock_connect(conn->xsock);
+    if (conn->sock == INVALID_SOCKET)
         return XMPP_EINT;
 
     /* setup handler */
@@ -1889,7 +1870,6 @@ static int _conn_connect(xmpp_conn_t *conn,
 
     conn->state = XMPP_STATE_CONNECTING;
     conn->timeout_stamp = time_stamp();
-    strophe_debug(conn->ctx, "xmpp", "Attempting to connect to %s", host);
 
     return 0;
 }

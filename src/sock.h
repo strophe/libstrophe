@@ -20,6 +20,7 @@
 
 #ifndef _WIN32
 typedef int sock_t;
+#define INVALID_SOCKET (-1)
 #else
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -28,12 +29,19 @@ typedef int sock_t;
 typedef SOCKET sock_t;
 #endif
 
+typedef struct _xmpp_sock_t xmpp_sock_t;
+
 void sock_initialize(void);
 void sock_shutdown(void);
 
 int sock_error(void);
 
-sock_t sock_connect(xmpp_conn_t *conn, const char *host, unsigned short port);
+xmpp_sock_t *sock_new(xmpp_conn_t *conn,
+                      const char *domain,
+                      const char *host,
+                      unsigned short port);
+void sock_free(xmpp_sock_t *xsock);
+sock_t sock_connect(xmpp_sock_t *xsock);
 int sock_close(sock_t sock);
 
 int sock_set_blocking(sock_t sock);

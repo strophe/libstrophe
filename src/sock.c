@@ -24,6 +24,7 @@
 #include <iphlpapi.h>
 #include <mstcpip.h> /* tcp_keepalive */
 #else
+#include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -34,6 +35,18 @@
 #endif
 
 #include "common.h"
+#include "resolver.h"
+
+struct _xmpp_sock_t {
+    xmpp_ctx_t *ctx;
+    xmpp_conn_t *conn;
+    struct addrinfo *ainfo_list;
+    struct addrinfo *ainfo_cur;
+    resolver_srv_rr_t *srv_rr_list;
+    resolver_srv_rr_t *srv_rr_cur;
+    const char *host;
+    unsigned short port;
+};
 
 void sock_initialize(void)
 {
@@ -68,50 +81,164 @@ static int _in_progress(int error)
 #endif
 }
 
-sock_t sock_connect(xmpp_conn_t *conn, const char *host, unsigned short port)
+static void sock_getaddrinfo(xmpp_sock_t *xsock)
 {
-    sock_t sock;
     char service[6];
-    struct addrinfo *res, *ainfo, hints;
-    int err;
+    struct addrinfo hints;
+    int rc;
 
-    strophe_snprintf(service, 6, "%u", port);
-
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;
-#ifdef AI_ADDRCONFIG
-    hints.ai_flags = AI_ADDRCONFIG;
-#endif /* AI_ADDRCONFIG */
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_socktype = SOCK_STREAM;
-
-    err = getaddrinfo(host, service, &hints, &res);
-    if (err != 0)
-        return -1;
-
-    for (ainfo = res; ainfo != NULL; ainfo = ainfo->ai_next) {
-        sock = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
-        if (sock < 0)
-            continue;
-
-        if (conn->sockopt_cb != NULL)
-            err = (conn->sockopt_cb)(conn, &sock);
-
-        if (err != 0) {
-            sock_close(sock);
-            continue;
-        }
-
-        err = sock_set_nonblocking(sock);
-        if (err == 0) {
-            err = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
-            if (err == 0 || _in_progress(sock_error()))
-                break;
-        }
-        sock_close(sock);
+    if (xsock->ainfo_list) {
+        freeaddrinfo(xsock->ainfo_list);
+        xsock->ainfo_list = NULL;
     }
-    freeaddrinfo(res);
-    sock = ainfo == NULL ? -1 : sock;
+
+    if (xsock->srv_rr_cur) {
+        /* Cache host and port for debug logs. */
+        xsock->host = xsock->srv_rr_cur->target;
+        xsock->port = xsock->srv_rr_cur->port;
+
+        strophe_snprintf(service, 6, "%u", xsock->srv_rr_cur->port);
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_UNSPEC;
+#ifdef AI_ADDRCONFIG
+        hints.ai_flags = AI_ADDRCONFIG;
+#endif /* AI_ADDRCONFIG */
+        hints.ai_protocol = IPPROTO_TCP;
+        hints.ai_socktype = SOCK_STREAM;
+
+        rc = getaddrinfo(xsock->srv_rr_cur->target, service, &hints,
+                         &xsock->ainfo_list);
+        if (rc != 0) {
+            strophe_debug(xsock->ctx, "sock", "getaddrinfo() failed with %d",
+                          rc);
+            xsock->ainfo_list = NULL;
+        }
+    }
+
+    xsock->ainfo_cur = xsock->ainfo_list;
+}
+
+xmpp_sock_t *sock_new(xmpp_conn_t *conn,
+                      const char *domain,
+                      const char *host,
+                      unsigned short port)
+{
+    xmpp_ctx_t *ctx = conn->ctx;
+    xmpp_sock_t *xsock;
+    int found = XMPP_DOMAIN_NOT_FOUND;
+
+    xsock = strophe_alloc(ctx, sizeof(*xsock));
+    if (!xsock) {
+        return NULL;
+    }
+
+    xsock->ctx = ctx;
+    xsock->conn = conn;
+    xsock->host = NULL;
+    xsock->port = 0;
+
+    if (!host) {
+        found = resolver_srv_lookup(ctx, "xmpp-client", "tcp", domain,
+                                    &xsock->srv_rr_list);
+        if (XMPP_DOMAIN_NOT_FOUND == found)
+            strophe_debug(ctx, "sock",
+                          "SRV lookup failed, connecting via domain.");
+    }
+    if (XMPP_DOMAIN_NOT_FOUND == found) {
+        /* Resolution failed or the host is provided explicitly. */
+        xsock->srv_rr_list =
+            resolver_srv_rr_new(ctx, host ? host : domain, port, 0, 0);
+    }
+    xsock->srv_rr_cur = xsock->srv_rr_list;
+
+    xsock->ainfo_list = NULL;
+    sock_getaddrinfo(xsock);
+    if (xsock->srv_rr_cur)
+        xsock->srv_rr_cur = xsock->srv_rr_cur->next;
+
+    return xsock;
+}
+
+void sock_free(xmpp_sock_t *xsock)
+{
+    if (!xsock)
+        return;
+
+    if (xsock->ainfo_list)
+        freeaddrinfo(xsock->ainfo_list);
+    if (xsock->srv_rr_list)
+        resolver_srv_free(xsock->ctx, xsock->srv_rr_list);
+    strophe_free(xsock->ctx, xsock);
+}
+
+static const char *_sockaddr2str(struct sockaddr *sa, char *buf, size_t buflen)
+{
+    buf[0] = '\0';
+
+    switch (sa->sa_family) {
+    case AF_INET:
+        inet_ntop(AF_INET, &((struct sockaddr_in *)sa)->sin_addr, buf, buflen);
+        break;
+    case AF_INET6:
+        inet_ntop(AF_INET6, &((struct sockaddr_in6 *)sa)->sin6_addr, buf,
+                  buflen);
+        break;
+    default:
+        strophe_snprintf(buf, buflen, "<Unknown>");
+    }
+    return buf;
+}
+
+sock_t sock_connect(xmpp_sock_t *xsock)
+{
+    struct addrinfo *ainfo;
+    sock_t sock;
+    int rc = 0;
+    char buf[64];
+
+    do {
+        if (!xsock->ainfo_cur) {
+            sock_getaddrinfo(xsock);
+            if (xsock->srv_rr_cur)
+                xsock->srv_rr_cur = xsock->srv_rr_cur->next;
+        }
+        if (!xsock->ainfo_cur) {
+            /* We tried all available addresses. */
+            return INVALID_SOCKET;
+        }
+
+        ainfo = xsock->ainfo_cur;
+        strophe_debug(xsock->ctx, "sock", "Connecting to %s:%u via %s",
+                      xsock->host, xsock->port,
+                      _sockaddr2str(ainfo->ai_addr, buf, sizeof(buf)));
+
+        sock = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
+        if (sock != INVALID_SOCKET) {
+            if (xsock->conn->sockopt_cb) {
+                /* Don't allow user to overwrite sockfd value. */
+                sock_t sock_copy = sock;
+                rc = xsock->conn->sockopt_cb(xsock->conn, &sock_copy);
+                if (rc != 0) {
+                    strophe_debug(xsock->ctx, "sock",
+                                  "User's setsockopt callback"
+                                  "failed with %d (errno=%d)",
+                                  rc, errno);
+                }
+            }
+            if (rc == 0)
+                rc = sock_set_nonblocking(sock);
+            if (rc == 0)
+                rc = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
+            /* Assume only connect() can cause "in progress" error. */
+            if (rc != 0 && !_in_progress(sock_error())) {
+                sock_close(sock);
+                sock = INVALID_SOCKET;
+            }
+        }
+        strophe_debug(xsock->ctx, "sock", "sock_connect() result %d", sock);
+
+        xsock->ainfo_cur = xsock->ainfo_cur->ai_next;
+    } while (sock == INVALID_SOCKET);
 
     return sock;
 }

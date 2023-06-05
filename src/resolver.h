@@ -36,6 +36,12 @@ typedef struct resolver_srv_rr_struc {
 void resolver_initialize(void);
 void resolver_shutdown(void);
 
+resolver_srv_rr_t *resolver_srv_rr_new(xmpp_ctx_t *ctx,
+                                       const char *host,
+                                       unsigned short port,
+                                       unsigned short prio,
+                                       unsigned short weight);
+
 /** Perform lookup for RFC1035 message format.
  *  This function allocates all elements.
  *

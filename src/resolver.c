@@ -91,6 +91,25 @@ void resolver_shutdown(void)
 #endif
 }
 
+resolver_srv_rr_t *resolver_srv_rr_new(xmpp_ctx_t *ctx,
+                                       const char *host,
+                                       unsigned short port,
+                                       unsigned short prio,
+                                       unsigned short weight)
+{
+    resolver_srv_rr_t *rr = strophe_alloc(ctx, sizeof(*rr));
+    if (rr) {
+        memset(rr, 0, sizeof(*rr));
+        rr->port = port;
+        rr->priority = prio;
+        rr->weight = weight;
+        if (host) {
+            snprintf(rr->target, sizeof(rr->target), "%s", host);
+        }
+    }
+    return rr;
+}
+
 static void resolver_srv_list_sort(resolver_srv_rr_t **srv_rr_list)
 {
     resolver_srv_rr_t *rr_head;
@@ -438,17 +457,19 @@ static int resolver_raw_srv_lookup_buf(xmpp_ctx_t *ctx,
         rdlength = xmpp_ntohs_ptr(&buf[j + 8]);
         j += 10;
         if (type == MESSAGE_T_SRV && class == MESSAGE_C_IN) {
-            rr = strophe_alloc(ctx, sizeof(*rr));
-            rr->next = *srv_rr_list;
-            rr->priority = xmpp_ntohs_ptr(&buf[j]);
-            rr->weight = xmpp_ntohs_ptr(&buf[j + 2]);
-            rr->port = xmpp_ntohs_ptr(&buf[j + 4]);
-            name_len = message_name_get(buf, len, j + 6, rr->target,
-                                        sizeof(rr->target));
-            if (name_len > 0)
-                *srv_rr_list = rr;
-            else
-                strophe_free(ctx, rr); /* skip broken record */
+            rr = resolver_srv_rr_new(ctx, NULL, 0, 0, 0);
+            if (rr) {
+                rr->next = *srv_rr_list;
+                rr->priority = xmpp_ntohs_ptr(&buf[j]);
+                rr->weight = xmpp_ntohs_ptr(&buf[j + 2]);
+                rr->port = xmpp_ntohs_ptr(&buf[j + 4]);
+                name_len = message_name_get(buf, len, j + 6, rr->target,
+                                            sizeof(rr->target));
+                if (name_len > 0)
+                    *srv_rr_list = rr;
+                else
+                    strophe_free(ctx, rr); /* skip broken record */
+            }
         }
         j += rdlength;
     }
