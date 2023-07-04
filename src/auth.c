@@ -956,10 +956,12 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         conn->sm_state->sm_support = 1;
     }
 
-    bind = xmpp_stanza_copy(bind);
-    if (!bind) {
-        disconnect_mem_error(conn);
-        return 0;
+    if (bind) {
+        bind = xmpp_stanza_copy(bind);
+        if (!bind) {
+            disconnect_mem_error(conn);
+            return 0;
+        }
     }
 
     /* we are expecting either <bind/> and <session/> since this is a
@@ -985,6 +987,11 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     }
     /* if bind is required, go ahead and start it */
     else if (conn->bind_required) {
+        if (bind == NULL) {
+            strophe_error(conn->ctx, "xmpp",
+                    "Bind is required but not provided.");
+            xmpp_disconnect(conn);
+        }
         /* bind resource */
         _do_bind(conn, bind);
     } else {
