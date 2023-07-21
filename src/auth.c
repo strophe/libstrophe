@@ -939,6 +939,13 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     if (bind) {
         ns = xmpp_stanza_get_ns(bind);
         conn->bind_required = ns != NULL && strcmp(ns, XMPP_NS_BIND) == 0;
+        bind = xmpp_stanza_copy(bind);
+        if (!bind) {
+            disconnect_mem_error(conn);
+            return 0;
+        }
+    } else {
+        conn->bind_required = 0;
     }
 
     /* check whether session establishment is required */
@@ -954,12 +961,6 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     if (xmpp_stanza_get_child_by_name_and_ns(stanza, "sm", XMPP_NS_SM)) {
         /* stream management supported */
         conn->sm_state->sm_support = 1;
-    }
-
-    bind = xmpp_stanza_copy(bind);
-    if (!bind) {
-        disconnect_mem_error(conn);
-        return 0;
     }
 
     /* we are expecting either <bind/> and <session/> since this is a
@@ -989,7 +990,9 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         _do_bind(conn, bind);
     } else {
         /* can't bind, disconnect */
-        xmpp_stanza_release(bind);
+        if (bind) {
+            xmpp_stanza_release(bind);
+        }
         strophe_error(conn->ctx, "xmpp",
                       "Stream features does not allow "
                       "resource bind.");
