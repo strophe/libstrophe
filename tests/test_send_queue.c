@@ -40,48 +40,48 @@ int main()
 
     xmpp_conn_set_sm_state(conn, sm_state);
 
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 0);
+    ENSURE_EQ(0, xmpp_conn_send_queue_len(conn));
 
     state = conn->state;
     conn->state = XMPP_STATE_CONNECTED;
 
     xmpp_send_raw(conn, "foo", 3);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 1);
+    ENSURE_EQ(1, xmpp_conn_send_queue_len(conn));
 
     xmpp_send_raw(conn, "bar", 3);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 2);
+    ENSURE_EQ(2, xmpp_conn_send_queue_len(conn));
 
     xmpp_send_raw(conn, "baz", 3);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 3);
+    ENSURE_EQ(3, xmpp_conn_send_queue_len(conn));
 
     xmpp_send_raw(conn, "baan", 4);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 4);
+    ENSURE_EQ(4, xmpp_conn_send_queue_len(conn));
 
     conn->send_queue_head->wip = 1;
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 3);
+    ENSURE_EQ(3, xmpp_conn_send_queue_len(conn));
 
     ret = xmpp_conn_send_queue_drop_element(conn, XMPP_QUEUE_OLDEST);
     COMPARE("bar", ret);
     xmpp_free(ctx, ret);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 2);
+    ENSURE_EQ(2, xmpp_conn_send_queue_len(conn));
 
     conn->send_queue_head->wip = 0;
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 3);
+    ENSURE_EQ(3, xmpp_conn_send_queue_len(conn));
 
     ret = xmpp_conn_send_queue_drop_element(conn, XMPP_QUEUE_OLDEST);
     COMPARE("foo", ret);
     xmpp_free(ctx, ret);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 2);
+    ENSURE_EQ(2, xmpp_conn_send_queue_len(conn));
 
     ret = xmpp_conn_send_queue_drop_element(conn, XMPP_QUEUE_YOUNGEST);
     COMPARE("baan", ret);
     xmpp_free(ctx, ret);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 1);
+    ENSURE_EQ(1, xmpp_conn_send_queue_len(conn));
 
     ret = xmpp_conn_send_queue_drop_element(conn, XMPP_QUEUE_YOUNGEST);
     COMPARE("baz", ret);
     xmpp_free(ctx, ret);
-    ENSURE_EQ(xmpp_conn_send_queue_len(conn), 0);
+    ENSURE_EQ(0, xmpp_conn_send_queue_len(conn));
 
     conn->state = state;
 

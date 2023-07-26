@@ -35,46 +35,48 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
-#define COMPARE(v1, v2)                                         \
-    do {                                                        \
-        const char *__v1 = v1;                                  \
-        const char *__v2 = v2;                                  \
-        if ((__v1 == NULL) && (__v2 == NULL)) {                 \
-            /* noop */                                          \
-        } else if (!__v1 || !__v2 || strcmp(__v1, __v2) != 0) { \
-            printf("Error:    %s\n"                             \
-                   "Expected: %s\n"                             \
-                   "Got:      %s\n",                            \
-                   #v1 " != " #v2, __v1, __v2);                 \
-            exit(1);                                            \
-        }                                                       \
+#define COMPARE(should, is)                                             \
+    do {                                                                \
+        const char *__should = should;                                  \
+        const char *__is = is;                                          \
+        if ((__should == NULL) && (__is == NULL)) {                     \
+            /* noop */                                                  \
+        } else if (!__should || !__is || strcmp(__should, __is) != 0) { \
+            printf("Error:    %s\n"                                     \
+                   "Expected: %s\n"                                     \
+                   "Got:      %s\n",                                    \
+                   #should " != " #is, __should, __is);                 \
+            exit(1);                                                    \
+        }                                                               \
     } while (0)
 
-#define COMPARE_BUF(v1, len1, v2, len2)                                \
-    do {                                                               \
-        const uint8_t *__v1 = (uint8_t *)(v1);                         \
-        const uint8_t *__v2 = (uint8_t *)(v2);                         \
-        size_t __len1 = len1;                                          \
-        size_t __len2 = len2;                                          \
-        if (__len1 != __len2 || memcmp(__v1, __v2, __len1) != 0) {     \
-            printf("Error:    %s\n", #v1 " != " #v2);                  \
-            printf("Expected: 0x%s\n", test_bin_to_hex(__v1, __len1)); \
-            printf("Got:      0x%s\n", test_bin_to_hex(__v2, __len2)); \
-            exit(1);                                                   \
-        }                                                              \
+#define COMPARE_BUF(should, should_len, is, is_len)                      \
+    do {                                                                 \
+        const uint8_t *__should = (uint8_t *)(should);                   \
+        const uint8_t *__is = (uint8_t *)(is);                           \
+        size_t __should_len = should_len;                                \
+        size_t __is_len = is_len;                                        \
+        if (__should_len != __is_len ||                                  \
+            memcmp(__should, __is, __should_len) != 0) {                 \
+            printf("Error:    %s\n", #should " != " #is);                \
+            printf("Expected: 0x%s\n",                                   \
+                   test_bin_to_hex(__should, __should_len));             \
+            printf("Got:      0x%s\n", test_bin_to_hex(__is, __is_len)); \
+            exit(1);                                                     \
+        }                                                                \
     } while (0)
 
-#define ENSURE_EQ(v1, v2)                       \
-    do {                                        \
-        int __v1 = v1;                          \
-        int __v2 = v2;                          \
-        if (__v1 != __v2) {                     \
-            printf("Error:    %s\n"             \
-                   "Expected: %d\n"             \
-                   "Got:      %d\n",            \
-                   #v1 " != " #v2, __v2, __v1); \
-            exit(1);                            \
-        }                                       \
+#define ENSURE_EQ(should, is)                           \
+    do {                                                \
+        int __should = should;                          \
+        int __is = is;                                  \
+        if (__should != __is) {                         \
+            printf("Error:    %s\n"                     \
+                   "Expected: %d\n"                     \
+                   "Got:      %d\n",                    \
+                   #should " != " #is, __is, __should); \
+            exit(1);                                    \
+        }                                               \
     } while (0)
 
 void test_hex_to_bin(const char *hex, uint8_t *bin, size_t *bin_len);
