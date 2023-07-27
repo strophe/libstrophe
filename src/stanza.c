@@ -182,6 +182,7 @@ int xmpp_stanza_release(xmpp_stanza_t *stanza)
         while (child) {
             tchild = child;
             child = child->next;
+            tchild->next = NULL;
             xmpp_stanza_release(tchild);
         }
 
