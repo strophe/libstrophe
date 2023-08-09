@@ -24,6 +24,7 @@ jobs:
            - { configure: '--disable-tls'       }
            - { configure: '--enable-cares'      }
            - { configure: '--disable-getrandom' }
+           - { configure: '--disable-static'    }
     name: Regular Tests
     steps:
       - uses: actions/checkout@v2

@@ -175,23 +175,29 @@ endif
 
 
 ## Tests
-TESTS = \
+STATIC_TESTS = \
 	tests/check_parser \
+	tests/test_hash \
+	tests/test_jid \
+	tests/test_ctx \
+	tests/test_send_queue \
+	tests/test_string \
+	tests/test_resolver
+
+TESTS = \
 	tests/test_sha1 \
 	tests/test_sha256 \
 	tests/test_sha512 \
 	tests/test_md5 \
 	tests/test_rand \
 	tests/test_scram \
-	tests/test_ctx \
 	tests/test_base64 \
-	tests/test_hash \
-	tests/test_jid \
-	tests/test_send_queue \
 	tests/test_snprintf \
-	tests/test_string \
-	tests/test_stanza \
-	tests/test_resolver
+	tests/test_stanza
+
+if !DISABLE_STATIC
+TESTS += $(STATIC_TESTS)
+endif
 
 if !DISABLE_TLS
 TESTS += tests/test_xmppaddr

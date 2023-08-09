@@ -256,6 +256,7 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
 
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
 AM_CONDITIONAL([DISABLE_TLS], [test x$enable_tls = xno])
+AM_CONDITIONAL([DISABLE_STATIC], [test x$enable_static = xno])
 AM_CONDITIONAL([NEED_SNPRINTF], [test x$have_snprintf = xno])
 AM_CONDITIONAL([TLS_WITH_GNUTLS], [test x$with_gnutls = xyes])
 AM_CONDITIONAL([TLS_WITH_SCHANNEL], [test x$with_schannel = xyes])
