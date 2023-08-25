@@ -5,7 +5,7 @@ libstrophe is a lightweight XMPP client library written in C. It has
 minimal dependencies and is configurable for various environments. It
 runs well on Linux, Unix and Windows based platforms.
 
-libstrophe is dual licensed under MIT and GPLv3.
+libstrophe is dual licensed under MIT or GPLv3.
 
 Build Instructions
 ------------------

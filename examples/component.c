@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT OR GPL-3.0-only */
 /* component.c
 ** libstrophe XMPP client library -- external component (XEP-0114) example
 **
@@ -6,7 +7,7 @@
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
 **
-** This program is dual licensed under the MIT and GPLv3 licenses.
+** This program is dual licensed under the MIT or GPLv3 licenses.
 */
 
 /* This example demonstrates simple connection to a server

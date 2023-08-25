@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT OR GPL-3.0-only */
 /* register.c
  * strophe XMPP client library -- In-band registration (XEP-0077)
  *
@@ -6,7 +7,7 @@
  *  This software is provided AS-IS with no warranty, either express
  *  or implied.
  *
- *  This program is dual licensed under the MIT and GPLv3 licenses.
+ *  This program is dual licensed under the MIT or GPLv3 licenses.
  */
 
 /*

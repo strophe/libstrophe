@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT OR GPL-3.0-only */
 /* check_rand.c
  * strophe XMPP client library -- test vectors for Hash_DRBG
  *
@@ -6,7 +7,7 @@
  *  This software is provided AS-IS with no warranty, either express
  *  or implied.
  *
- *  This program is dual licensed under the MIT and GPLv3 licenses.
+ *  This program is dual licensed under the MIT or GPLv3 licenses.
  */
 
 /* gcc -o test_rand -I./src tests/test_rand.c tests/test.c src/sha1.c */

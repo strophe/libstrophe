@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT OR GPL-3.0-only */
 /* ostypes.h
 ** strophe XMPP client library -- type definitions for platforms
 **     without stdint.h
@@ -7,7 +8,7 @@
 **  This software is provided AS-IS with no warranty, either express
 **  or implied.
 **
-**  This program is dual licensed under the MIT and GPLv3 licenses.
+**  This program is dual licensed under the MIT or GPLv3 licenses.
 */
 
 /** @file

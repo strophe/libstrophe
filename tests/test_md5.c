@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT OR GPL-3.0-only */
 /* test_md5.c
  * strophe XMPP client library -- test vectors for MD5
  *
@@ -6,7 +7,7 @@
  *  This software is provided AS-IS with no warranty, either express
  *  or implied.
  *
- *  This program is dual licensed under the MIT and GPLv3 licenses.
+ *  This program is dual licensed under the MIT or GPLv3 licenses.
  */
 
 /* gcc -o test_md5 -I./src tests/test_md5.c tests/test.c src/md5.c */

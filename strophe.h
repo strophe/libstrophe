@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT OR GPL-3.0-only */
 /* strophe.h
 ** strophe XMPP client library C API
 **
@@ -6,7 +7,7 @@
 **  This software is provided AS-IS with no warranty, either express or
 **  implied.
 **
-**  This software is dual licensed under the MIT and GPLv3 licenses.
+**  This software is dual licensed under the MIT or GPLv3 licenses.
 */
 
 /** @file
