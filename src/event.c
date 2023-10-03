@@ -58,8 +58,10 @@
 #include "common.h"
 #include "parser.h"
 
+#ifndef STROPHE_MESSAGE_BUFFER_SIZE
 /** Max buffer size for receiving messages. */
-#define STROPE_MESSAGE_BUFFER_SIZE 4096
+#define STROPHE_MESSAGE_BUFFER_SIZE 4096
+#endif
 
 static int _connect_next(xmpp_conn_t *conn)
 {
@@ -96,7 +98,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
     struct timeval tv;
     xmpp_send_queue_t *sq, *tsq;
     int towrite;
-    char buf[STROPE_MESSAGE_BUFFER_SIZE];
+    char buf[STROPHE_MESSAGE_BUFFER_SIZE];
     uint64_t next;
     uint64_t usec;
     int tls_read_bytes = 0;
@@ -308,10 +310,10 @@ next_item:
             if (FD_ISSET(conn->sock, &rfds) ||
                 (conn->tls && tls_pending(conn->tls))) {
                 if (conn->tls) {
-                    ret = tls_read(conn->tls, buf, STROPE_MESSAGE_BUFFER_SIZE);
+                    ret = tls_read(conn->tls, buf, STROPHE_MESSAGE_BUFFER_SIZE);
                 } else {
                     ret =
-                        sock_read(conn->sock, buf, STROPE_MESSAGE_BUFFER_SIZE);
+                        sock_read(conn->sock, buf, STROPHE_MESSAGE_BUFFER_SIZE);
                 }
 
                 if (ret > 0) {
