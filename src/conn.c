@@ -1314,7 +1314,7 @@ static void _reset_sm_state_for_reconnect(xmpp_conn_t *conn)
         s->id = NULL;
     }
 
-    s->sm_enabled = s->sm_support = s->resume = 0;
+    s->r_sent = s->sm_enabled = s->sm_support = s->resume = 0;
 
     if (s->bind) {
         xmpp_stanza_release(s->bind);
@@ -1751,6 +1751,7 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
                 c = queue_element_free(conn->ctx, e);
                 strophe_free(conn->ctx, c);
             }
+            conn->sm_state->r_sent = 0;
         }
     }
 }
@@ -2035,8 +2036,10 @@ static int _send_raw(xmpp_conn_t *conn,
         conn->send_queue_user_len++;
     strophe_debug_verbose(3, conn->ctx, "conn", "QUEUED: %s", data);
     strophe_debug_verbose(1, conn->ctx, "conn", "Q_ADD: %p", item);
-    if (!(owner & XMPP_QUEUE_SM) && conn->sm_state->sm_enabled) {
+    if (!(owner & XMPP_QUEUE_SM) && conn->sm_state->sm_enabled &&
+        !conn->sm_state->r_sent) {
         send_raw(conn, req_ack, strlen(req_ack), XMPP_QUEUE_SM_STROPHE, item);
+        conn->sm_state->r_sent = 1;
     }
     return XMPP_EOK;
 }

@@ -181,6 +181,7 @@ struct _xmpp_sm_t {
     int sm_support;
     int sm_enabled;
     int can_resume, resume, dont_request_resume;
+    int r_sent;
     uint32_t sm_handled_nr;
     uint32_t sm_sent_nr;
     xmpp_queue_t sm_queue;
