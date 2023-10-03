@@ -122,8 +122,9 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
 
             if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls))) {
                 /* an error occurred */
-                strophe_debug(ctx, "xmpp",
-                              "Send error occurred, disconnecting.");
+                strophe_debug(
+                    ctx, "xmpp",
+                    "Send error of pending data occurred, disconnecting.");
                 conn->error = ECONNABORTED;
                 conn_disconnect(conn);
                 goto next_item;
