@@ -412,8 +412,10 @@ _get_alg(const xmpp_ctx_t *ctx, X509 *err_cert, xmpp_cert_element_t el)
         alg_nid = OBJ_obj2nid(err_cert->sig_alg->algorithm);
 #else
         const X509_ALGOR *palg;
+        const ASN1_OBJECT *obj;
         X509_get0_signature(NULL, &palg, err_cert);
-        alg_nid = OBJ_obj2nid(palg->algorithm);
+        X509_ALGOR_get0(&obj, NULL, NULL, palg);
+        alg_nid = OBJ_obj2nid(obj);
 #endif
     } break;
     default:
