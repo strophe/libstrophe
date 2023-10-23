@@ -51,6 +51,10 @@ jobs:
       matrix:
         xssl_versions:
            - { version: "master",        continue: true,  libressl: true }
+           - { version: "OPENBSD_7_4",   continue: true,  libressl: true }
+           - { version: "v3.8.1",        continue: true,  libressl: true }
+           - { version: "OPENBSD_7_3",   continue: true,  libressl: true }
+           - { version: "OPENBSD_7_2",   continue: true,  libressl: true }
            - { version: "OPENBSD_7_1",   continue: true,  libressl: true }
            # https://github.com/libressl-portable/portable/issues/760
            # - { version: "v3.5.2",        continue: true,  libressl: true }
@@ -62,7 +66,9 @@ jobs:
            - { version: "v3.1.5",        continue: true,  libressl: true }
            - { version: "v2.1.10",       continue: true,  libressl: true }
            - { version: "openssl-3.0",   continue: true,  libressl: false }
-           - { version: "openssl-3.0.4", continue: false, libressl: false }
+           - { version: "openssl-3.0.10", continue: false, libressl: false }
+           - { version: "openssl-3.1",   continue: true,  libressl: false }
+           - { version: "openssl-3.1.2", continue: false, libressl: false }
         valgrind:
            - { configure: ''                    , make: 'check'          }
            - { configure: '--enable-valgrind'   , make: 'check-valgrind' }
