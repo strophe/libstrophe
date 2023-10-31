@@ -259,6 +259,7 @@ struct _xmpp_conn_t {
     int sasl_support; /* if true, field is a bitfield of supported
                          mechanisms */
     int auth_legacy_enabled;
+    int weak_auth_enabled;
     int secured; /* set when stream is secured with TLS */
     xmpp_certfail_handler certfail_handler;
     xmpp_password_callback password_callback;

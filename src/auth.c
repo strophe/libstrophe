@@ -857,7 +857,8 @@ static void _auth(xmpp_conn_t *conn)
 
         /* SASL algorithm was tried, unset flag */
         conn->sasl_support &= ~scram_ctx->alg->mask;
-    } else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
+    } else if ((conn->sasl_support & SASL_MASK_DIGESTMD5) &&
+               conn->weak_auth_enabled) {
         auth = _make_sasl_auth(conn, "DIGEST-MD5");
         if (!auth) {
             disconnect_mem_error(conn);
@@ -871,7 +872,8 @@ static void _auth(xmpp_conn_t *conn)
 
         /* SASL DIGEST-MD5 was tried, unset flag */
         conn->sasl_support &= ~SASL_MASK_DIGESTMD5;
-    } else if (conn->sasl_support & SASL_MASK_PLAIN) {
+    } else if ((conn->sasl_support & SASL_MASK_PLAIN) &&
+               conn->weak_auth_enabled) {
         auth = _make_sasl_auth(conn, "PLAIN");
         if (!auth) {
             disconnect_mem_error(conn);

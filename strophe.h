@@ -208,6 +208,10 @@ typedef struct _xmpp_sm_t xmpp_sm_state_t;
  *  Only enable this flag if you know what you're doing.
  */
 #define XMPP_CONN_FLAG_COMPRESSION_DONT_RESET (1UL << 7)
+/** @def XMPP_CONN_FLAG_WEAK_AUTH
+ *  Allow weak authentication methods (DIGEST-MD5 and PLAIN).
+ */
+#define XMPP_CONN_FLAG_WEAK_AUTH (1UL << 8)
 
 /* connect callback */
 typedef enum {
