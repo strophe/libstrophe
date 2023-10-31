@@ -83,7 +83,7 @@ void handler_fire_stanza(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
         while (item) {
             /* don't fire user handlers until authentication succeeds and
                and skip newly added handlers */
-            if ((item->user_handler && !conn->authenticated) ||
+            if ((item->user_handler && !conn->stream_negotiation_completed) ||
                 !item->enabled) {
                 item = item->next;
                 continue;
@@ -119,7 +119,8 @@ void handler_fire_stanza(xmpp_conn_t *conn, xmpp_stanza_t *stanza)
     while (item) {
         /* don't fire user handlers until authentication succeeds and
            skip newly added handlers */
-        if ((item->user_handler && !conn->authenticated) || !item->enabled) {
+        if ((item->user_handler && !conn->stream_negotiation_completed) ||
+            !item->enabled) {
             item = item->next;
             continue;
         }
@@ -177,7 +178,7 @@ uint64_t handler_fire_timed(xmpp_ctx_t *ctx)
         while (item) {
             /* don't fire user handlers until authentication succeeds and
                skip newly added handlers */
-            if ((item->user_handler && !conn->authenticated) ||
+            if ((item->user_handler && !conn->stream_negotiation_completed) ||
                 !item->enabled) {
                 item = item->next;
                 continue;

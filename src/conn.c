@@ -78,6 +78,7 @@
 #define KEEPALIVE_COUNT 3
 #endif
 
+static int _is_connected(xmpp_conn_t *conn, xmpp_send_queue_owner_t owner);
 static int _disconnect_cleanup(xmpp_conn_t *conn, void *userdata);
 static void _reset_sm_state_for_reconnect(xmpp_conn_t *conn);
 static char *_conn_build_stream_tag(xmpp_conn_t *conn,
@@ -207,7 +208,7 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
                        _handle_stream_stanza, conn);
         conn->reset_parser = 0;
 
-        conn->authenticated = 0;
+        conn->stream_negotiation_completed = 0;
         conn->conn_handler = NULL;
         conn->userdata = NULL;
         conn->timed_handlers = NULL;
@@ -864,9 +865,10 @@ void conn_established(xmpp_conn_t *conn)
 
     if (conn->is_raw) {
         handler_reset_timed(conn, 0);
-        /* we skip authentication for a "raw" connection, but the event loop
-           ignores user's handlers when conn->authenticated is not set. */
-        conn->authenticated = 1;
+        /* we skip all the mandatory steps of the stream negotiation for a "raw"
+           connection, but the event loop ignores user's handlers when
+           conn->stream_negotiation_completed is not set. */
+        conn->stream_negotiation_completed = 1;
         conn->conn_handler(conn, XMPP_CONN_RAW_CONNECT, 0, NULL,
                            conn->userdata);
     } else {
@@ -960,6 +962,7 @@ void conn_disconnect(xmpp_conn_t *conn)
 {
     strophe_debug(conn->ctx, "xmpp", "Closing socket.");
     conn->state = XMPP_STATE_DISCONNECTED;
+    conn->stream_negotiation_completed = 0;
     if (conn->tls) {
         tls_stop(conn->tls);
         tls_free(conn->tls);
@@ -1028,7 +1031,7 @@ void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...)
 {
     va_list ap;
 
-    if (conn->state != XMPP_STATE_CONNECTED)
+    if (!_is_connected(conn, XMPP_QUEUE_USER))
         return;
 
     va_start(ap, fmt);
@@ -1222,17 +1225,26 @@ int xmpp_conn_is_secured(xmpp_conn_t *conn)
  */
 int xmpp_conn_is_connecting(xmpp_conn_t *conn)
 {
-    return conn->state == XMPP_STATE_CONNECTING;
+    return conn->state == XMPP_STATE_CONNECTING ||
+           (conn->state == XMPP_STATE_CONNECTED &&
+            conn->stream_negotiation_completed == 0);
+}
+
+static int _is_connected(xmpp_conn_t *conn, xmpp_send_queue_owner_t owner)
+{
+    return conn->state == XMPP_STATE_CONNECTED &&
+           (owner != XMPP_QUEUE_USER ||
+            conn->stream_negotiation_completed == 1);
 }
 
 /**
- *  @return TRUE if connection is in connected state and FALSE otherwise
+ *  @return TRUE if connection is established and FALSE otherwise
  *
  *  @ingroup Connections
  */
 int xmpp_conn_is_connected(xmpp_conn_t *conn)
 {
-    return conn->state == XMPP_STATE_CONNECTED;
+    return _is_connected(conn, XMPP_QUEUE_USER);
 }
 
 /**
@@ -1793,7 +1805,7 @@ static void _conn_reset(xmpp_conn_t *conn)
     strophe_free_and_null(ctx, conn->domain);
     strophe_free_and_null(ctx, conn->bound_jid);
     strophe_free_and_null(ctx, conn->stream_id);
-    conn->authenticated = 0;
+    conn->stream_negotiation_completed = 0;
     conn->secured = 0;
     conn->tls_failed = 0;
     conn->error = 0;
@@ -1880,7 +1892,7 @@ static void _send_valist(xmpp_conn_t *conn,
     char buf[1024]; /* small buffer for common case */
     char *bigbuf;
 
-    if (conn->state != XMPP_STATE_CONNECTED)
+    if (!_is_connected(conn, owner))
         return;
 
     va_copy(apdup, ap);
@@ -1928,7 +1940,7 @@ void send_stanza(xmpp_conn_t *conn,
     char *buf = NULL;
     size_t len;
 
-    if (conn->state != XMPP_STATE_CONNECTED)
+    if (!_is_connected(conn, owner))
         goto out;
 
     if (xmpp_stanza_to_text(stanza, &buf, &len) != 0) {

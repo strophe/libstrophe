@@ -272,7 +272,7 @@ struct _xmpp_conn_t {
     xmpp_open_handler open_handler;
 
     /* user handlers only get called after authentication */
-    int authenticated;
+    int stream_negotiation_completed;
 
     /* connection events handler */
     xmpp_conn_handler conn_handler;
