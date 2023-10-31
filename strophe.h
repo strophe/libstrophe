@@ -212,6 +212,10 @@ typedef struct _xmpp_sm_t xmpp_sm_state_t;
  *  Allow weak authentication methods (DIGEST-MD5 and PLAIN).
  */
 #define XMPP_CONN_FLAG_WEAK_AUTH (1UL << 8)
+/** @def XMPP_CONN_FLAG_STRONG_AUTH
+ *  Only allow strong authentication methods (Only the SCRAM-*-PLUS variants).
+ */
+#define XMPP_CONN_FLAG_STRONG_AUTH (1UL << 9)
 
 /* connect callback */
 typedef enum {
