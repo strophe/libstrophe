@@ -93,6 +93,13 @@ void *strophe_realloc(const xmpp_ctx_t *ctx, void *p, size_t size);
 char *strophe_strdup(const xmpp_ctx_t *ctx, const char *s);
 char *strophe_strndup(const xmpp_ctx_t *ctx, const char *s, size_t len);
 void strophe_free(const xmpp_ctx_t *ctx, void *p);
+#define strophe_free_and_null(ctx, p) \
+    do {                              \
+        if (p) {                      \
+            strophe_free(ctx, (p));   \
+            (p) = NULL;               \
+        }                             \
+    } while (0)
 
 /* wrappers for xmpp_log at specific levels */
 void strophe_error(const xmpp_ctx_t *ctx,

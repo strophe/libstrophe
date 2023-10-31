@@ -1804,21 +1804,13 @@ static void _conn_reset(xmpp_conn_t *conn)
 
     if (conn->stream_error) {
         xmpp_stanza_release(conn->stream_error->stanza);
-        if (conn->stream_error->text)
-            strophe_free(ctx, conn->stream_error->text);
-        strophe_free(ctx, conn->stream_error);
-        conn->stream_error = NULL;
+        strophe_free_and_null(ctx, conn->stream_error->text);
+        strophe_free_and_null(ctx, conn->stream_error);
     }
 
-    if (conn->domain)
-        strophe_free(ctx, conn->domain);
-    if (conn->bound_jid)
-        strophe_free(ctx, conn->bound_jid);
-    if (conn->stream_id)
-        strophe_free(ctx, conn->stream_id);
-    conn->domain = NULL;
-    conn->bound_jid = NULL;
-    conn->stream_id = NULL;
+    strophe_free_and_null(ctx, conn->domain);
+    strophe_free_and_null(ctx, conn->bound_jid);
+    strophe_free_and_null(ctx, conn->stream_id);
     conn->authenticated = 0;
     conn->secured = 0;
     conn->tls_failed = 0;
