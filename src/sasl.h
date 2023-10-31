@@ -29,6 +29,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
                       const char *password);
 char *sasl_scram(xmpp_ctx_t *ctx,
                  const struct hash_alg *alg,
+                 const char *channel_binding,
                  const char *challenge,
                  const char *first_bare,
                  const char *jid,

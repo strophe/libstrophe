@@ -42,9 +42,27 @@ const struct hash_alg scram_sha1 = {
     (void (*)(void *, const uint8_t *, size_t))crypto_SHA1_Update,
     (void (*)(void *, uint8_t *))crypto_SHA1_Final};
 
+const struct hash_alg scram_sha1_plus = {
+    "SCRAM-SHA-1-PLUS",
+    SASL_MASK_SCRAMSHA1_PLUS,
+    SHA1_DIGEST_SIZE,
+    (void (*)(const uint8_t *, size_t, uint8_t *))crypto_SHA1,
+    (void (*)(void *))crypto_SHA1_Init,
+    (void (*)(void *, const uint8_t *, size_t))crypto_SHA1_Update,
+    (void (*)(void *, uint8_t *))crypto_SHA1_Final};
+
 const struct hash_alg scram_sha256 = {
     "SCRAM-SHA-256",
     SASL_MASK_SCRAMSHA256,
+    SHA256_DIGEST_SIZE,
+    (void (*)(const uint8_t *, size_t, uint8_t *))sha256_hash,
+    (void (*)(void *))sha256_init,
+    (void (*)(void *, const uint8_t *, size_t))sha256_process,
+    (void (*)(void *, uint8_t *))sha256_done};
+
+const struct hash_alg scram_sha256_plus = {
+    "SCRAM-SHA-256-PLUS",
+    SASL_MASK_SCRAMSHA256_PLUS,
     SHA256_DIGEST_SIZE,
     (void (*)(const uint8_t *, size_t, uint8_t *))sha256_hash,
     (void (*)(void *))sha256_init,
@@ -59,6 +77,32 @@ const struct hash_alg scram_sha512 = {
     (void (*)(void *))sha512_init,
     (void (*)(void *, const uint8_t *, size_t))sha512_process,
     (void (*)(void *, uint8_t *))sha512_done};
+
+/* The order of this list defines the order in which the SCRAM algorithms are
+ * tried if the server supports them.
+ * Their order is derived from
+ * https://datatracker.ietf.org/doc/html/draft-ietf-kitten-password-storage
+ */
+const struct hash_alg *scram_algs[] = {
+    /* *1 */
+    &scram_sha256_plus,
+    /* *1 */
+    &scram_sha1_plus,
+    /* *1 */
+    &scram_sha512,
+    /* *1 */
+    &scram_sha256,
+    /* *1 */
+    &scram_sha1,
+};
+/* *1 - I want to use clang-format here, but by default it will put multiple
+ * elements per line if there's no comment. Currently clang-format also doesn't
+ * have an option to enforce it to behave like that, besides by putting comments
+ * between each element (or I couldn't find a way to do it). In order to prevent
+ * clang-format from re-formatting the array I added the comments above and
+ * wrote this lengthy description.
+ */
+const size_t scram_algs_num = sizeof(scram_algs) / sizeof(scram_algs[0]);
 
 union common_hash_ctx {
     SHA1_CTX sha1;

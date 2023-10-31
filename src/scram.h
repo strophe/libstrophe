@@ -34,9 +34,8 @@ struct hash_alg {
     void (*final)(void *, uint8_t *);
 };
 
-extern const struct hash_alg scram_sha1;
-extern const struct hash_alg scram_sha256;
-extern const struct hash_alg scram_sha512;
+extern const struct hash_alg *scram_algs[];
+extern const size_t scram_algs_num;
 
 void SCRAM_ClientKey(const struct hash_alg *alg,
                      const uint8_t *password,

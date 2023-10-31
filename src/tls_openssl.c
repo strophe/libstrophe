@@ -107,6 +107,8 @@ struct _tls {
     SSL_CTX *ssl_ctx;
     SSL *ssl;
     X509 *client_cert;
+    void *channel_binding_data;
+    size_t channel_binding_size;
     int lasterror;
 };
 
@@ -715,6 +717,7 @@ err:
 
 void tls_free(tls_t *tls)
 {
+    strophe_free(tls->ctx, tls->channel_binding_data);
     SSL_free(tls->ssl);
     X509_free(tls->client_cert);
     SSL_CTX_free(tls->ssl_ctx);
@@ -739,6 +742,65 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
     UNUSED(tls);
     UNUSED(cafilename);
     return -1;
+}
+
+int tls_init_channel_binding(tls_t *tls,
+                             const char **binding_prefix,
+                             size_t *binding_prefix_len)
+{
+    const char *label = NULL;
+    size_t labellen = 0;
+
+    switch (SSL_version(tls->ssl)) {
+    case SSL3_VERSION:
+        *binding_prefix = "tls-unique";
+        *binding_prefix_len = strlen("tls-unique");
+        tls->channel_binding_size = 36;
+        break;
+    case TLS1_VERSION:
+    case TLS1_1_VERSION:
+    case TLS1_2_VERSION:
+        *binding_prefix = "tls-unique";
+        *binding_prefix_len = strlen("tls-unique");
+        tls->channel_binding_size = 12;
+        break;
+#ifdef TLS1_3_VERSION
+    case TLS1_3_VERSION:
+        label = "EXPORTER-Channel-Binding";
+        labellen = 24;
+        *binding_prefix = "tls-exporter";
+        *binding_prefix_len = strlen("tls-exporter");
+        tls->channel_binding_size = 32;
+        break;
+#endif
+    default:
+        strophe_error(tls->ctx, "tls", "Unsupported TLS Version: %s",
+                      SSL_get_version(tls->ssl));
+        return -1;
+    }
+
+    strophe_free_and_null(tls->ctx, tls->channel_binding_data);
+    tls->channel_binding_data =
+        strophe_alloc(tls->ctx, tls->channel_binding_size);
+    if (!tls->channel_binding_data)
+        return -1;
+
+    if (SSL_export_keying_material(tls->ssl, tls->channel_binding_data,
+                                   tls->channel_binding_size, label, labellen,
+                                   NULL, 0, 0) != 1) {
+        strophe_error(tls->ctx, "tls", "Could not get channel binding data");
+        return -1;
+    }
+    return 0;
+}
+
+const void *tls_get_channel_binding_data(tls_t *tls, size_t *size)
+{
+    if (!tls->channel_binding_data || !tls->channel_binding_size) {
+        strophe_error(tls->ctx, "tls", "No channel binding data available");
+    }
+    *size = tls->channel_binding_size;
+    return tls->channel_binding_data;
 }
 
 int tls_start(tls_t *tls)

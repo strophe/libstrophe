@@ -75,6 +75,23 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
     return -1;
 }
 
+int tls_init_channel_binding(tls_t *tls,
+                             const char **binding_prefix,
+                             size_t *binding_prefix_len)
+{
+    UNUSED(tls);
+    UNUSED(binding_prefix);
+    UNUSED(binding_prefix_len);
+    return -1;
+}
+
+const void *tls_get_channel_binding_data(tls_t *tls, size_t *size)
+{
+    UNUSED(tls);
+    UNUSED(size);
+    return NULL;
+}
+
 int tls_start(tls_t *tls)
 {
     UNUSED(tls);

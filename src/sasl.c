@@ -375,6 +375,7 @@ char *sasl_digest_md5(xmpp_ctx_t *ctx,
 /** generate auth response string for the SASL SCRAM mechanism */
 char *sasl_scram(xmpp_ctx_t *ctx,
                  const struct hash_alg *alg,
+                 const char *channel_binding,
                  const char *challenge,
                  const char *first_bare,
                  const char *jid,
@@ -398,6 +399,7 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     char *result = NULL;
     size_t response_len;
     size_t auth_len;
+    int l;
 
     UNUSED(jid);
 
@@ -428,37 +430,44 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     }
     ival = strtol(i, &saveptr, 10);
 
-    auth_len = 10 + strlen(r) + strlen(first_bare) + strlen(challenge);
-    auth = strophe_alloc(ctx, auth_len);
-    if (!auth) {
+    /* "c=<channel_binding>," + r + ",p=" + sign_b64 + '\0' */
+    response_len = 3 + strlen(channel_binding) + strlen(r) + 3 +
+                   ((alg->digest_size + 2) / 3 * 4) + 1;
+    response = strophe_alloc(ctx, response_len);
+    if (!response) {
         goto out_sval;
     }
 
-    /* "c=biws," + r + ",p=" + sign_b64 + '\0' */
-    response_len = 7 + strlen(r) + 3 + ((alg->digest_size + 2) / 3 * 4) + 1;
-    response = strophe_alloc(ctx, response_len);
-    if (!response) {
-        goto out_auth;
+    auth_len = 3 + response_len + strlen(first_bare) + strlen(challenge);
+    auth = strophe_alloc(ctx, auth_len);
+    if (!auth) {
+        goto out_response;
     }
 
-    strophe_snprintf(response, response_len, "c=biws,%s", r);
-    strophe_snprintf(auth, auth_len, "%s,%s,%s", first_bare + 3, challenge,
-                     response);
+    l = strophe_snprintf(response, response_len, "c=%s,%s", channel_binding, r);
+    if (l < 0 || (size_t)l >= response_len) {
+        goto out_auth;
+    }
+    l = strophe_snprintf(auth, auth_len, "%s,%s,%s", first_bare, challenge,
+                         response);
+    if (l < 0 || (size_t)l >= auth_len) {
+        goto out_auth;
+    }
 
     SCRAM_ClientKey(alg, (uint8_t *)password, strlen(password), (uint8_t *)sval,
                     sval_len, (uint32_t)ival, key);
     SCRAM_ClientSignature(alg, key, (uint8_t *)auth, strlen(auth), sign);
-    SCRAM_ClientProof(alg, sign, key, sign);
+    SCRAM_ClientProof(alg, key, sign, sign);
 
     sign_b64 = xmpp_base64_encode(ctx, sign, alg->digest_size);
     if (!sign_b64) {
-        goto out_response;
+        goto out_auth;
     }
 
     /* Check for buffer overflow */
     if (strlen(response) + strlen(sign_b64) + 3 + 1 > response_len) {
         strophe_free(ctx, sign_b64);
-        goto out_response;
+        goto out_auth;
     }
     strcat(response, ",p=");
     strcat(response, sign_b64);
@@ -467,14 +476,14 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     response_b64 =
         xmpp_base64_encode(ctx, (unsigned char *)response, strlen(response));
     if (!response_b64) {
-        goto out_response;
+        goto out_auth;
     }
     result = response_b64;
 
-out_response:
-    strophe_free(ctx, response);
 out_auth:
     strophe_free(ctx, auth);
+out_response:
+    strophe_free(ctx, response);
 out_sval:
     strophe_free(ctx, sval);
 out:

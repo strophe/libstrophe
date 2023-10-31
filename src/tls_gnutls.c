@@ -25,12 +25,26 @@
 #include "tls.h"
 #include "sock.h"
 
+#if GNUTLS_VERSION_NUMBER < 0x030702
+/* This is a very dirty workaround to make this file compile on older GnuTLS
+ * We simply define our own value for the later introduced
+ * `GNUTLS_CB_TLS_EXPORTER` which makes it compile, but it will fail on runtime
+ * when the combination of the following options happen:
+ * * GnuTLS < 3.7.2
+ * * TLS 1.3
+ * * A SCRAM PLUS variant to authenticate
+ * We will think about fixing this once a user pops up who has that problem.
+ */
+#define GNUTLS_CB_TLS_EXPORTER 3
+#endif
+
 struct _tls {
     xmpp_ctx_t *ctx; /* do we need this? */
     xmpp_conn_t *conn;
     gnutls_session_t session;
     gnutls_certificate_credentials_t cred;
     gnutls_x509_crt_t client_cert;
+    gnutls_datum_t channel_binding;
     int lasterror;
 };
 
@@ -507,8 +521,8 @@ error_out:
 
 void tls_free(tls_t *tls)
 {
-    if (tls->client_cert)
-        gnutls_x509_crt_deinit(tls->client_cert);
+    gnutls_free(tls->channel_binding.data);
+    gnutls_x509_crt_deinit(tls->client_cert);
     gnutls_deinit(tls->session);
     gnutls_certificate_free_credentials(tls->cred);
     strophe_free(tls->ctx, tls);
@@ -553,6 +567,55 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
     tls->lasterror = err;
 
     return err == GNUTLS_E_SUCCESS;
+}
+
+int tls_init_channel_binding(tls_t *tls,
+                             const char **binding_prefix,
+                             size_t *binding_prefix_len)
+{
+    gnutls_channel_binding_t binding_type;
+    gnutls_protocol_t tls_version = gnutls_protocol_get_version(tls->session);
+
+    switch (tls_version) {
+    case GNUTLS_SSL3:
+    case GNUTLS_TLS1_0:
+    case GNUTLS_TLS1_1:
+    case GNUTLS_TLS1_2:
+        *binding_prefix = "tls-unique";
+        *binding_prefix_len = strlen("tls-unique");
+        binding_type = GNUTLS_CB_TLS_UNIQUE;
+        break;
+    case GNUTLS_TLS1_3:
+        *binding_prefix = "tls-exporter";
+        *binding_prefix_len = strlen("tls-exporter");
+        binding_type = GNUTLS_CB_TLS_EXPORTER;
+        break;
+    default:
+        strophe_error(tls->ctx, "tls", "Unsupported TLS Version: %s",
+                      gnutls_protocol_get_name(tls_version));
+        return -1;
+    }
+
+    if (tls->channel_binding.data) {
+        gnutls_free(tls->channel_binding.data);
+        tls->channel_binding.data = NULL;
+    }
+    int ret = gnutls_session_channel_binding(tls->session, binding_type,
+                                             &tls->channel_binding);
+    if (ret) {
+        strophe_error(tls->ctx, "tls", "could not get channel binding: %s",
+                      gnutls_strerror(ret));
+    }
+    return ret;
+}
+
+const void *tls_get_channel_binding_data(tls_t *tls, size_t *size)
+{
+    if (!tls->channel_binding.data || !tls->channel_binding.size) {
+        strophe_error(tls->ctx, "tls", "No channel binding data available");
+    }
+    *size = tls->channel_binding.size;
+    return tls->channel_binding.data;
 }
 
 int tls_start(tls_t *tls)
