@@ -255,3 +255,22 @@ void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval)
     conn->ka_count = 0;
     xmpp_conn_set_sockopt_callback(conn, xmpp_sockopt_cb_keepalive);
 }
+
+/** Disable TLS for this connection, called by users of the library.
+ *  Occasionally a server will be misconfigured to send the starttls
+ *  feature, but will not support the handshake.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @note this function is deprecated
+ *  @see xmpp_conn_set_flags()
+ *
+ *  @ingroup Deprecated
+ */
+void xmpp_conn_disable_tls(xmpp_conn_t *conn)
+{
+    long flags = xmpp_conn_get_flags(conn);
+
+    flags |= XMPP_CONN_FLAG_DISABLE_TLS;
+    (void)xmpp_conn_set_flags(conn, flags);
+}

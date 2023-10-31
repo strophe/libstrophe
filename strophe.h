@@ -382,7 +382,6 @@ char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *conn, unsigned int n);
 const char *xmpp_conn_get_pass(const xmpp_conn_t *conn);
 void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass);
 xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *conn);
-void xmpp_conn_disable_tls(xmpp_conn_t *conn);
 int xmpp_conn_is_secured(xmpp_conn_t *conn);
 void xmpp_conn_set_sockopt_callback(xmpp_conn_t *conn,
                                     xmpp_sockopt_callback callback);
@@ -743,6 +742,8 @@ void xmpp_debug_verbose(
 
 XMPP_DEPRECATED(xmpp_conn_set_sockopt_callback)
 void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval);
+XMPP_DEPRECATED(xmpp_conn_set_flags)
+void xmpp_conn_disable_tls(xmpp_conn_t *conn);
 
 #ifdef __cplusplus
 }

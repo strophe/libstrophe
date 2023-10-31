@@ -799,7 +799,8 @@ int xmpp_connect_component(xmpp_conn_t *conn,
         return XMPP_EINVOP;
 
     /* XEP-0114 does not support TLS */
-    xmpp_conn_disable_tls(conn);
+    (void)xmpp_conn_set_flags(conn, xmpp_conn_get_flags(conn) |
+                                        XMPP_CONN_FLAG_DISABLE_TLS);
     if (!conn->tls_disabled) {
         strophe_error(conn->ctx, "conn",
                       "Failed to disable TLS. "
@@ -1201,25 +1202,6 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags)
     conn->sm_disable = (flags & XMPP_CONN_FLAG_DISABLE_SM) ? 1 : 0;
 
     return 0;
-}
-
-/** Disable TLS for this connection, called by users of the library.
- *  Occasionally a server will be misconfigured to send the starttls
- *  feature, but will not support the handshake.
- *
- *  @param conn a Strophe connection object
- *
- *  @note this function is deprecated
- *  @see xmpp_conn_set_flags()
- *
- *  @ingroup Connections
- */
-void xmpp_conn_disable_tls(xmpp_conn_t *conn)
-{
-    long flags = xmpp_conn_get_flags(conn);
-
-    flags |= XMPP_CONN_FLAG_DISABLE_TLS;
-    (void)xmpp_conn_set_flags(conn, flags);
 }
 
 /** Return whether TLS session is established or not.
