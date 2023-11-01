@@ -42,15 +42,10 @@ xmpp_stanza_t *xmpp_stanza_new(xmpp_ctx_t *ctx)
 
     stanza = strophe_alloc(ctx, sizeof(xmpp_stanza_t));
     if (stanza != NULL) {
+        memset(stanza, 0, sizeof(xmpp_stanza_t));
         stanza->ref = 1;
         stanza->ctx = ctx;
         stanza->type = XMPP_STANZA_UNKNOWN;
-        stanza->prev = NULL;
-        stanza->next = NULL;
-        stanza->children = NULL;
-        stanza->parent = NULL;
-        stanza->data = NULL;
-        stanza->attributes = NULL;
     }
 
     return stanza;

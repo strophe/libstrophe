@@ -465,6 +465,8 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *mem, const xmpp_log_t *log)
         ctx = mem->alloc(sizeof(xmpp_ctx_t), mem->userdata);
 
     if (ctx != NULL) {
+        memset(ctx, 0, sizeof(xmpp_ctx_t));
+
         if (mem != NULL)
             ctx->mem = mem;
         else
@@ -475,12 +477,9 @@ xmpp_ctx_t *xmpp_ctx_new(const xmpp_mem_t *mem, const xmpp_log_t *log)
         else
             ctx->log = log;
 
-        ctx->connlist = NULL;
-        ctx->timed_handlers = NULL;
         ctx->loop_status = XMPP_LOOP_NOTSTARTED;
         ctx->rand = xmpp_rand_new(ctx);
         ctx->timeout = EVENT_LOOP_DEFAULT_TIMEOUT;
-        ctx->verbosity = 0;
         if (ctx->rand == NULL) {
             strophe_free(ctx, ctx);
             ctx = NULL;

@@ -142,28 +142,19 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
 
     conn = strophe_alloc(ctx, sizeof(xmpp_conn_t));
     if (conn != NULL) {
+        memset(conn, 0, sizeof(xmpp_conn_t));
         conn->ctx = ctx;
 
         conn->type = XMPP_UNKNOWN;
         conn->state = XMPP_STATE_DISCONNECTED;
 
-        conn->xsock = NULL;
         conn->sock = INVALID_SOCKET;
         conn->ka_timeout = KEEPALIVE_TIMEOUT;
         conn->ka_interval = KEEPALIVE_INTERVAL;
         conn->ka_count = KEEPALIVE_COUNT;
-        conn->tls = NULL;
-        conn->timeout_stamp = 0;
-        conn->error = 0;
-        conn->stream_error = NULL;
 
         /* default send parameters */
-        conn->blocking_send = 0;
         conn->send_queue_max = DEFAULT_SEND_QUEUE_MAX;
-        conn->send_queue_len = 0;
-        conn->send_queue_user_len = 0;
-        conn->send_queue_head = NULL;
-        conn->send_queue_tail = NULL;
 
         /* default timeouts */
         conn->connect_timeout = CONNECT_TIMEOUT;
@@ -173,49 +164,14 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
             strophe_free(conn->ctx, conn);
             return NULL;
         }
-        conn->domain = NULL;
-        conn->jid = NULL;
-        conn->pass = NULL;
-        conn->stream_id = NULL;
-        conn->bound_jid = NULL;
-
-        conn->is_raw = 0;
-        conn->tls_support = 0;
-        conn->tls_disabled = 0;
-        conn->tls_mandatory = 0;
-        conn->tls_legacy_ssl = 0;
-        conn->tls_trust = 0;
-        conn->tls_failed = 0;
-        conn->tls_cafile = NULL;
-        conn->tls_capath = NULL;
-        conn->tls_client_cert = NULL;
-        conn->tls_client_key = NULL;
-        conn->sasl_support = 0;
-        conn->auth_legacy_enabled = 0;
-        conn->secured = 0;
-        conn->certfail_handler = NULL;
-        conn->password_callback = NULL;
-        conn->password_callback_userdata = NULL;
         tls_clear_password_cache(conn);
         conn->password_retries = 1;
-
-        conn->bind_required = 0;
-        conn->session_required = 0;
-        conn->sm_state = NULL;
 
         conn->parser =
             parser_new(conn->ctx, _handle_stream_start, _handle_stream_end,
                        _handle_stream_stanza, conn);
-        conn->reset_parser = 0;
-
-        conn->stream_negotiation_completed = 0;
-        conn->conn_handler = NULL;
-        conn->userdata = NULL;
-        conn->timed_handlers = NULL;
         /* we own (and will free) the hash values */
         conn->id_handlers = hash_new(conn->ctx, 32, NULL);
-        conn->handlers = NULL;
-        conn->sockopt_cb = NULL;
 
         /* give the caller a reference to connection */
         conn->ref = 1;
@@ -1154,6 +1110,7 @@ long xmpp_conn_get_flags(const xmpp_conn_t *conn)
             XMPP_CONN_FLAG_MANDATORY_TLS * conn->tls_mandatory |
             XMPP_CONN_FLAG_LEGACY_SSL * conn->tls_legacy_ssl |
             XMPP_CONN_FLAG_TRUST_TLS * conn->tls_trust |
+            XMPP_CONN_FLAG_DISABLE_SM * conn->sm_disable |
             XMPP_CONN_FLAG_LEGACY_AUTH * conn->auth_legacy_enabled;
 
     return flags;
