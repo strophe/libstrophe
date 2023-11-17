@@ -127,6 +127,12 @@ void strophe_log_internal(const xmpp_ctx_t *ctx,
                           const char *fmt,
                           va_list ap);
 
+#if defined(__OpenBSD__)
+#define STR_MAYBE_NULL(p) (p) ? (p) : "(null)"
+#else
+#define STR_MAYBE_NULL(p) (p)
+#endif
+
 /** connection **/
 
 /* opaque connection object */
@@ -193,10 +199,10 @@ struct _xmpp_sm_t {
     int sm_support;
     int sm_enabled;
     int can_resume, resume, dont_request_resume;
+    xmpp_queue_t sm_queue;
     int r_sent;
     uint32_t sm_handled_nr;
     uint32_t sm_sent_nr;
-    xmpp_queue_t sm_queue;
     char *id, *previd, *bound_jid;
     xmpp_stanza_t *bind;
 };
@@ -276,7 +282,8 @@ struct _xmpp_conn_t {
     /* stream open handler */
     xmpp_open_handler open_handler;
 
-    /* user handlers only get called after authentication */
+    /* user handlers only get called after the stream negotiation has completed
+     */
     int stream_negotiation_completed;
 
     /* connection events handler */
@@ -341,6 +348,7 @@ void handler_add(xmpp_conn_t *conn,
 void handler_system_delete_all(xmpp_conn_t *conn);
 
 /* utility functions */
+void reset_sm_state(xmpp_sm_state_t *sm_state);
 void disconnect_mem_error(xmpp_conn_t *conn);
 
 /* auth functions */
@@ -351,6 +359,7 @@ void auth_handle_open_stub(xmpp_conn_t *conn);
 
 /* queue functions */
 void add_queue_back(xmpp_queue_t *queue, xmpp_send_queue_t *item);
+xmpp_send_queue_t *peek_queue_front(xmpp_queue_t *queue);
 xmpp_send_queue_t *pop_queue_front(xmpp_queue_t *queue);
 char *queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e);
 

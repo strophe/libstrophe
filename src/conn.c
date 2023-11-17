@@ -1285,8 +1285,11 @@ static void _reset_sm_state_for_reconnect(xmpp_conn_t *conn)
 int xmpp_conn_set_sm_state(xmpp_conn_t *conn, xmpp_sm_state_t *sm_state)
 {
     /* We can only set the SM state when we're disconnected */
-    if (conn->state != XMPP_STATE_DISCONNECTED)
+    if (conn->state != XMPP_STATE_DISCONNECTED) {
+        strophe_error(conn->ctx, "conn",
+                      "SM state can only be set the when we're disconnected");
         return XMPP_EINVOP;
+    }
 
     if (conn->sm_state) {
         strophe_error(conn->ctx, "conn", "SM state is already set!");
@@ -1305,6 +1308,21 @@ int xmpp_conn_set_sm_state(xmpp_conn_t *conn, xmpp_sm_state_t *sm_state)
     return XMPP_EOK;
 }
 
+void reset_sm_state(xmpp_sm_state_t *sm_state)
+{
+    xmpp_ctx_t *ctx = sm_state->ctx;
+
+    strophe_free_and_null(ctx, sm_state->id);
+    strophe_free_and_null(ctx, sm_state->previd);
+    strophe_free_and_null(ctx, sm_state->bound_jid);
+    if (sm_state->bind)
+        xmpp_stanza_release(sm_state->bind);
+    sm_state->bind = NULL;
+    sm_state->sm_handled_nr = 0;
+    sm_state->sm_sent_nr = 0;
+    sm_state->r_sent = 0;
+}
+
 /**  c.f. \ref xmpp_conn_get_sm_state for usage documentation
  *
  *  @param sm_state   A Stream Management state returned from a call to
@@ -1314,8 +1332,8 @@ int xmpp_conn_set_sm_state(xmpp_conn_t *conn, xmpp_sm_state_t *sm_state)
  */
 void xmpp_free_sm_state(xmpp_sm_state_t *sm_state)
 {
-    xmpp_ctx_t *ctx;
     xmpp_send_queue_t *smq;
+    xmpp_ctx_t *ctx;
 
     if (!sm_state || !sm_state->ctx)
         return;
@@ -1326,15 +1344,7 @@ void xmpp_free_sm_state(xmpp_sm_state_t *sm_state)
         strophe_free(ctx, queue_element_free(ctx, smq));
     }
 
-    if (sm_state->bind)
-        xmpp_stanza_release(sm_state->bind);
-    if (sm_state->id)
-        strophe_free(ctx, sm_state->id);
-    if (sm_state->previd)
-        strophe_free(ctx, sm_state->previd);
-    if (sm_state->bound_jid)
-        strophe_free(ctx, sm_state->bound_jid);
-    memset(sm_state, 0, sizeof(*sm_state));
+    reset_sm_state(sm_state);
     strophe_free(ctx, sm_state);
 }
 
@@ -1698,7 +1708,8 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
             while (conn->sm_state->sm_queue.head &&
                    conn->sm_state->sm_queue.head->sm_h < ul_h) {
                 e = pop_queue_front(&conn->sm_state->sm_queue);
-                strophe_debug_verbose(2, conn->ctx, "conn", "SM_Q_DROP: %p", e);
+                strophe_debug_verbose(2, conn->ctx, "conn",
+                                      "SM_Q_DROP: %p, h=%lu", e, e->sm_h);
                 c = queue_element_free(conn->ctx, e);
                 strophe_free(conn->ctx, c);
             }
@@ -1922,6 +1933,11 @@ void add_queue_back(xmpp_queue_t *queue, xmpp_send_queue_t *item)
         queue->tail->next = item;
         queue->tail = item;
     }
+}
+
+xmpp_send_queue_t *peek_queue_front(xmpp_queue_t *queue)
+{
+    return queue->head;
 }
 
 xmpp_send_queue_t *pop_queue_front(xmpp_queue_t *queue)

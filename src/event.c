@@ -162,7 +162,8 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
             if (!(tsq->owner & XMPP_QUEUE_SM) && conn->sm_state->sm_enabled) {
                 tsq->sm_h = conn->sm_state->sm_sent_nr;
                 conn->sm_state->sm_sent_nr++;
-                strophe_debug_verbose(1, ctx, "xmpp", "SM_Q_MOVE: %p", tsq);
+                strophe_debug_verbose(1, ctx, "xmpp", "SM_Q_MOVE: %p, h=%lu",
+                                      tsq, tsq->sm_h);
                 add_queue_back(&conn->sm_state->sm_queue, tsq);
                 tsq = NULL;
             }
