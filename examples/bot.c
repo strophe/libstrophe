@@ -214,7 +214,10 @@ static void usage(int exit_code)
             "  --legacy-ssl             Use old style SSL.\n"
             "  --legacy-auth            Allow legacy authentication.\n"
             "Note: --disable-tls conflicts with --mandatory-tls or "
-            "--legacy-ssl\n");
+            "--legacy-ssl\n"
+            "  --zlib                   Enable compression via zlib.\n"
+            "  --dont-flush             When using zlib, don't flush after "
+            "compression.\n");
 
     exit(exit_code);
 }
@@ -244,6 +247,10 @@ int main(int argc, char **argv)
             flags |= XMPP_CONN_FLAG_LEGACY_SSL;
         else if (strcmp(argv[i], "--legacy-auth") == 0)
             flags |= XMPP_CONN_FLAG_LEGACY_AUTH;
+        else if (strcmp(argv[i], "--zlib") == 0)
+            flags |= XMPP_CONN_FLAG_ENABLE_COMPRESSION;
+        else if (strcmp(argv[i], "--dont-flush") == 0)
+            flags |= XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH;
         else if ((strcmp(argv[i], "--jid") == 0) && (++i < argc))
             jid = argv[i];
         else if ((strcmp(argv[i], "--pass") == 0) && (++i < argc))

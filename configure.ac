@@ -51,6 +51,8 @@ AC_ARG_ENABLE([cares],
     [AS_HELP_STRING([--enable-cares], [use c-ares for DNS resolution])])
 AC_ARG_ENABLE([getrandom],
     [AS_HELP_STRING([--disable-getrandom], [disable usage of the getrandom() system call])])
+AC_ARG_ENABLE([zlib],
+    [AS_HELP_STRING([--disable-zlib], [disable compression support])])
 
 AC_ARG_ENABLE([fuzzing],
     [AS_HELP_STRING([--enable-fuzzing], [turn on fuzzing test])],
@@ -247,6 +249,18 @@ fi
 
 fi
 
+if test "x$enable_zlib" != xno; then
+    PKG_CHECK_MODULES([zlib], [zlib >= 1.2.0],
+        [
+            PC_REQUIRES="libzlib ${PC_REQUIRES}"
+            ZLIB_CFLAGS=$zlib_CFLAGS
+            ZLIB_LIBS=$zlib_LIBS
+            AC_DEFINE([HAVE_ZLIB])
+        ],
+        [AC_MSG_ERROR([zlib not found])])
+        # TODO: if pkg-config doesn't find, check the library manually
+fi
+
 m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
     [AC_ARG_WITH([pkgconfigdir],
         [AS_HELP_STRING([--with-pkgconfigdir],
@@ -290,5 +304,7 @@ AC_SUBST(PARSER_LIBS)
 AC_SUBST(RESOLV_CFLAGS)
 AC_SUBST(RESOLV_LIBS)
 AC_SUBST(WARNING_FLAGS)
+AC_SUBST(ZLIB_CFLAGS)
+AC_SUBST(ZLIB_LIBS)
 AC_CONFIG_FILES([Makefile libstrophe.pc])
 AC_OUTPUT

@@ -1106,12 +1106,15 @@ long xmpp_conn_get_flags(const xmpp_conn_t *conn)
 {
     long flags;
 
-    flags = XMPP_CONN_FLAG_DISABLE_TLS * conn->tls_disabled |
-            XMPP_CONN_FLAG_MANDATORY_TLS * conn->tls_mandatory |
-            XMPP_CONN_FLAG_LEGACY_SSL * conn->tls_legacy_ssl |
-            XMPP_CONN_FLAG_TRUST_TLS * conn->tls_trust |
-            XMPP_CONN_FLAG_DISABLE_SM * conn->sm_disable |
-            XMPP_CONN_FLAG_LEGACY_AUTH * conn->auth_legacy_enabled;
+    flags =
+        XMPP_CONN_FLAG_DISABLE_TLS * conn->tls_disabled |
+        XMPP_CONN_FLAG_MANDATORY_TLS * conn->tls_mandatory |
+        XMPP_CONN_FLAG_LEGACY_SSL * conn->tls_legacy_ssl |
+        XMPP_CONN_FLAG_TRUST_TLS * conn->tls_trust |
+        XMPP_CONN_FLAG_DISABLE_SM * conn->sm_disable |
+        XMPP_CONN_FLAG_ENABLE_COMPRESSION * conn->compression_allowed |
+        XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH * conn->compression_dont_flush |
+        XMPP_CONN_FLAG_LEGACY_AUTH * conn->auth_legacy_enabled;
 
     return flags;
 }
@@ -1160,6 +1163,19 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags)
     conn->tls_trust = (flags & XMPP_CONN_FLAG_TRUST_TLS) ? 1 : 0;
     conn->auth_legacy_enabled = (flags & XMPP_CONN_FLAG_LEGACY_AUTH) ? 1 : 0;
     conn->sm_disable = (flags & XMPP_CONN_FLAG_DISABLE_SM) ? 1 : 0;
+    conn->compression_allowed =
+        (flags & XMPP_CONN_FLAG_ENABLE_COMPRESSION) ? 1 : 0;
+    conn->compression_dont_flush =
+        (flags & XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH) ? 1 : 0;
+    flags &= ~(XMPP_CONN_FLAG_DISABLE_TLS | XMPP_CONN_FLAG_MANDATORY_TLS |
+               XMPP_CONN_FLAG_LEGACY_SSL | XMPP_CONN_FLAG_TRUST_TLS |
+               XMPP_CONN_FLAG_LEGACY_AUTH | XMPP_CONN_FLAG_DISABLE_SM |
+               XMPP_CONN_FLAG_ENABLE_COMPRESSION |
+               XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH);
+    if (flags) {
+        strophe_error(conn->ctx, "conn", "Flags 0x%04lx unknown", flags);
+        return XMPP_EINVOP;
+    }
 
     return 0;
 }
@@ -1752,6 +1768,14 @@ static void _conn_reset(xmpp_conn_t *conn)
         return;
     }
 
+    if (conn->compression.buffer) {
+        deflateEnd(&conn->compression.stream);
+        strophe_free_and_null(ctx, conn->compression.buffer);
+    }
+    if (conn->decompression.buffer) {
+        inflateEnd(&conn->decompression.stream);
+        strophe_free_and_null(ctx, conn->decompression.buffer);
+    }
     /* free queued */
     sq = conn->send_queue_head;
     while (sq) {

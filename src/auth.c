@@ -62,6 +62,7 @@
 
 static void _auth(xmpp_conn_t *conn);
 static void _auth_legacy(xmpp_conn_t *conn);
+static void _handle_open_compress(xmpp_conn_t *conn);
 static void _handle_open_sasl(xmpp_conn_t *conn);
 static void _handle_open_tls(xmpp_conn_t *conn);
 
@@ -72,6 +73,9 @@ static int _handle_component_hs_response(xmpp_conn_t *conn,
 
 static int
 _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata);
+static int _handle_features_compress(xmpp_conn_t *conn,
+                                     xmpp_stanza_t *stanza,
+                                     void *userdata);
 static int
 _handle_sasl_result(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata);
 static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
@@ -207,10 +211,61 @@ static int _handle_missing_features(xmpp_conn_t *conn, void *userdata)
     return 0;
 }
 
+typedef void (*text_handler)(xmpp_conn_t *conn, const char *text);
+static void _foreach_child(xmpp_conn_t *conn,
+                           xmpp_stanza_t *parent,
+                           const char *name,
+                           text_handler hndl)
+{
+    xmpp_stanza_t *children;
+    for (children = xmpp_stanza_get_children(parent); children;
+         children = xmpp_stanza_get_next(children)) {
+        const char *child_name = xmpp_stanza_get_name(children);
+        if (child_name && strcmp(child_name, name) == 0) {
+            char *text = xmpp_stanza_get_text(children);
+            if (text == NULL)
+                continue;
+
+            hndl(conn, text);
+
+            strophe_free(conn->ctx, text);
+        }
+    }
+}
+
+static void _handle_sasl_children(xmpp_conn_t *conn, const char *text)
+{
+    if (strcasecmp(text, "PLAIN") == 0) {
+        conn->sasl_support |= SASL_MASK_PLAIN;
+    } else if (strcasecmp(text, "EXTERNAL") == 0 &&
+               (conn->tls_client_cert || conn->tls_client_key)) {
+        conn->sasl_support |= SASL_MASK_EXTERNAL;
+    } else if (strcasecmp(text, "DIGEST-MD5") == 0) {
+        conn->sasl_support |= SASL_MASK_DIGESTMD5;
+    } else if (strcasecmp(text, "ANONYMOUS") == 0) {
+        conn->sasl_support |= SASL_MASK_ANONYMOUS;
+    } else {
+        size_t n;
+        for (n = 0; n < scram_algs_num; ++n) {
+            if (strcasecmp(text, scram_algs[n]->scram_name) == 0) {
+                conn->sasl_support |= scram_algs[n]->mask;
+                break;
+            }
+        }
+    }
+}
+
+static void _handle_compression_children(xmpp_conn_t *conn, const char *text)
+{
+    if (strcasecmp(text, "zlib") == 0) {
+        conn->compression_supported = 1;
+    }
+}
+
 static int
 _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
-    xmpp_stanza_t *child, *mech;
+    xmpp_stanza_t *child, *children;
     const char *ns;
     char *text;
 
@@ -222,10 +277,9 @@ _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     /* check for TLS */
     if (!conn->secured) {
         if (!conn->tls_disabled) {
-            child = xmpp_stanza_get_child_by_name(stanza, "starttls");
-            if (child) {
-                ns = xmpp_stanza_get_ns(child);
-                conn->tls_support = ns != NULL && strcmp(ns, XMPP_NS_TLS) == 0;
+            if (xmpp_stanza_get_child_by_name_and_ns(stanza, "starttls",
+                                                     XMPP_NS_TLS)) {
+                conn->tls_support = 1;
             }
         } else {
             conn->tls_support = 0;
@@ -233,44 +287,22 @@ _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     }
 
     /* check for SASL */
-    child = xmpp_stanza_get_child_by_name(stanza, "mechanisms");
-    ns = child ? xmpp_stanza_get_ns(child) : NULL;
-    if (child && ns && strcmp(ns, XMPP_NS_SASL) == 0) {
-        for (mech = xmpp_stanza_get_children(child); mech;
-             mech = xmpp_stanza_get_next(mech)) {
-            if (xmpp_stanza_get_name(mech) &&
-                strcmp(xmpp_stanza_get_name(mech), "mechanism") == 0) {
-                text = xmpp_stanza_get_text(mech);
-                if (text == NULL)
-                    continue;
-
-                if (strcasecmp(text, "PLAIN") == 0) {
-                    conn->sasl_support |= SASL_MASK_PLAIN;
-                } else if (strcasecmp(text, "EXTERNAL") == 0 &&
-                           (conn->tls_client_cert || conn->tls_client_key)) {
-                    conn->sasl_support |= SASL_MASK_EXTERNAL;
-                } else if (strcasecmp(text, "DIGEST-MD5") == 0) {
-                    conn->sasl_support |= SASL_MASK_DIGESTMD5;
-                } else if (strcasecmp(text, "ANONYMOUS") == 0) {
-                    conn->sasl_support |= SASL_MASK_ANONYMOUS;
-                } else {
-                    size_t n;
-                    for (n = 0; n < scram_algs_num; ++n) {
-                        if (strcasecmp(text, scram_algs[n]->scram_name) == 0) {
-                            conn->sasl_support |= scram_algs[n]->mask;
-                            break;
-                        }
-                    }
-                }
-
-                strophe_free(conn->ctx, text);
-            }
-        }
+    child = xmpp_stanza_get_child_by_name_and_ns(stanza, "mechanisms",
+                                                 XMPP_NS_SASL);
+    if (child) {
+        _foreach_child(conn, child, "mechanism", _handle_sasl_children);
     }
 
     /* Disable PLAIN when other secure mechanisms are supported */
     if (conn->sasl_support & ~(SASL_MASK_PLAIN | SASL_MASK_ANONYMOUS))
         conn->sasl_support &= ~SASL_MASK_PLAIN;
+
+    /* check for compression */
+    child = xmpp_stanza_get_child_by_name_and_ns(stanza, "compression",
+                                                 XMPP_NS_COMPRESSION);
+    if (conn->compression_allowed && child) {
+        _foreach_child(conn, child, "method", _handle_compression_children);
+    }
 
     _auth(conn);
 
@@ -339,7 +371,9 @@ _handle_sasl_result(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                       (char *)userdata);
 
         /* reset parser */
-        conn_prepare_reset(conn, _handle_open_sasl);
+        conn_prepare_reset(conn, conn->compression_allowed
+                                     ? _handle_open_compress
+                                     : _handle_open_sasl);
 
         /* send stream tag */
         conn_open_stream(conn);
@@ -950,6 +984,17 @@ static void _handle_open_sasl(xmpp_conn_t *conn)
                       NULL);
 }
 
+/* called when stream:stream tag received after compression has been enabled */
+static void _handle_open_compress(xmpp_conn_t *conn)
+{
+    strophe_debug(conn->ctx, "xmpp", "Reopened stream successfully.");
+
+    /* setup stream:features handlers */
+    handler_add(conn, _handle_features_compress, XMPP_NS_STREAMS, "features",
+                NULL, NULL);
+    handler_add_timed(conn, _handle_missing_features, FEATURES_TIMEOUT, NULL);
+}
+
 static int _do_bind(xmpp_conn_t *conn, xmpp_stanza_t *bind)
 {
     xmpp_stanza_t *iq, *res, *text;
@@ -1004,6 +1049,49 @@ static int _do_bind(xmpp_conn_t *conn, xmpp_stanza_t *bind)
 
     /* send bind request */
     send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
+    return 0;
+}
+
+static int _handle_compress_result(xmpp_conn_t *const conn,
+                                   xmpp_stanza_t *const stanza,
+                                   void *const userdata)
+{
+    const char *name = xmpp_stanza_get_name(stanza);
+
+    if (!name)
+        return 0;
+    if (strcmp(name, "compressed") == 0) {
+        /* Stream compression enabled, we need to restart the stream */
+        strophe_debug(conn->ctx, "xmpp", "Stream compression enabled");
+
+        /* reset parser */
+        conn_prepare_reset(conn, _handle_open_sasl);
+
+        /* make compression effective */
+        conn->compress = 1;
+
+        /* send stream tag */
+        conn_open_stream(conn);
+    }
+    return 0;
+}
+
+static int _handle_features_compress(xmpp_conn_t *conn,
+                                     xmpp_stanza_t *stanza,
+                                     void *userdata)
+{
+    const char *compress = "<compress xmlns='" XMPP_NS_COMPRESSION
+                           "'><method>zlib</method></compress>";
+
+    UNUSED(userdata);
+
+    /* remove missing features handler */
+    xmpp_timed_handler_delete(conn, _handle_missing_features);
+
+    send_raw(conn, compress, strlen(compress), XMPP_QUEUE_STROPHE, NULL);
+    handler_add(conn, _handle_compress_result, XMPP_NS_COMPRESSION, NULL, NULL,
+                NULL);
+
     return 0;
 }
 

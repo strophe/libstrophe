@@ -75,6 +75,202 @@ static int _connect_next(xmpp_conn_t *conn)
     return 0;
 }
 
+static int
+_conn_write_to_network(xmpp_conn_t *conn, const void *buff, size_t len)
+{
+    int ret;
+    if (conn->tls) {
+        ret = tls_write(conn->tls, buff, len);
+        if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls)))
+            conn->error = tls_error(conn->tls);
+    } else {
+        ret = sock_write(conn->sock, buff, len);
+        if (ret < 0 && !sock_is_recoverable(sock_error()))
+            conn->error = sock_error();
+    }
+    return ret;
+}
+
+static int _try_compressed_write_to_network(xmpp_conn_t *conn, int force)
+{
+    int ret = 0;
+    size_t len =
+        conn->compression.stream.next_out - (Bytef *)conn->compression.buffer;
+    int buffer_full =
+        conn->compression.stream.next_out == conn->compression.buffer_end;
+    if ((buffer_full || force) && len) {
+        ret = _conn_write_to_network(conn, conn->compression.buffer, len);
+        if (ret < 0)
+            return ret;
+        //        print_hex(xmpp_base64_encode(conn->ctx,
+        //        conn->compression.buffer, len),
+        //                  conn->compression.buffer, len);
+        char *b = xmpp_base64_encode(conn->ctx, conn->compression.buffer, len);
+        printf("Sent: %s\n", b);
+        xmpp_free(conn->ctx, b);
+
+        conn->compression.stream.next_out = conn->compression.buffer;
+        conn->compression.stream.avail_out = STROPHE_MESSAGE_BUFFER_SIZE;
+    }
+    return ret;
+}
+
+static int _conn_compress(xmpp_conn_t *conn, void *buff, size_t len, int flush)
+{
+    int ret;
+    void *buff_end = buff + len;
+    conn->compression.stream.next_in = buff;
+    conn->compression.stream.avail_in = len;
+    do {
+        ret = _try_compressed_write_to_network(conn, 0);
+        if (ret < 0) {
+            return ret;
+        }
+
+        ret = deflate(&conn->compression.stream, flush);
+        if (ret == Z_STREAM_END) {
+            break;
+        }
+        if (flush && ret == Z_BUF_ERROR) {
+            break;
+        }
+        if (ret != Z_OK) {
+            strophe_error(conn->ctx, "zlib", "deflate error %d", ret);
+            conn->error = EBADFD;
+            conn_disconnect(conn);
+            return ret;
+        }
+        ret = conn->compression.stream.next_in - (const Bytef *)buff;
+    } while (conn->compression.stream.next_in < (const Bytef *)buff_end);
+    if (flush) {
+        ret = _try_compressed_write_to_network(conn, 1);
+        if (ret < 0) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+static void *_zlib_alloc(void *opaque, unsigned int items, unsigned int size)
+{
+    size_t sz = items * size;
+    if (sz < items || sz < size)
+        return NULL;
+    return strophe_alloc(opaque, sz);
+}
+
+static void _init_zlib_compression(xmpp_ctx_t *ctx, struct zlib_compression *s)
+{
+    s->buffer = strophe_alloc(ctx, STROPHE_MESSAGE_BUFFER_SIZE);
+    s->buffer_end = s->buffer + STROPHE_MESSAGE_BUFFER_SIZE;
+
+    s->stream.opaque = ctx;
+    s->stream.zalloc = _zlib_alloc;
+    s->stream.zfree = (free_func)strophe_free;
+}
+
+static int _conn_write(xmpp_conn_t *conn, void *buff, size_t len)
+{
+    if (conn->compress) {
+        if (conn->compression.buffer == NULL) {
+            _init_zlib_compression(conn->ctx, &conn->compression);
+
+            conn->compression.stream.next_out = conn->compression.buffer;
+            conn->compression.stream.avail_out = STROPHE_MESSAGE_BUFFER_SIZE;
+            int err =
+                deflateInit(&conn->compression.stream, Z_DEFAULT_COMPRESSION);
+            if (err != Z_OK) {
+                strophe_free_and_null(conn->ctx, conn->compression.buffer);
+                conn->error = EBADFD;
+                conn_disconnect(conn);
+                return err;
+            }
+        }
+        return _conn_compress(conn, buff, len, Z_NO_FLUSH);
+    } else {
+        return _conn_write_to_network(conn, buff, len);
+    }
+}
+
+static int _conn_read_from_network(xmpp_conn_t *conn, void *buff, size_t len)
+{
+    if (conn->tls) {
+        return tls_read(conn->tls, buff, len);
+    } else {
+        return sock_read(conn->sock, buff, len);
+    }
+}
+
+static int
+_conn_decompress(xmpp_conn_t *conn, size_t c_len, void *buff, size_t len)
+{
+    if (conn->decompression.stream.next_in == NULL) {
+        conn->decompression.stream.next_in = conn->decompression.buffer;
+        conn->decompression.buffer_end =
+            conn->decompression.stream.next_in + c_len;
+        conn->decompression.stream.avail_in = c_len;
+    } else if (c_len) {
+        strophe_error(conn->ctx, "zlib",
+                      "_conn_decompress() called with c_len=%zu", c_len);
+    }
+    conn->decompression.stream.next_out = buff;
+    conn->decompression.stream.avail_out = len;
+    int ret = inflate(&conn->decompression.stream, Z_SYNC_FLUSH);
+    switch (ret) {
+    case Z_STREAM_END:
+    case Z_OK:
+        if (conn->decompression.buffer_end ==
+            conn->decompression.stream.next_in)
+            conn->decompression.stream.next_in = NULL;
+        /* -fallthrough */
+        return conn->decompression.stream.next_out - (Bytef *)buff;
+    case Z_BUF_ERROR:
+        break;
+    default:
+        strophe_error(conn->ctx, "zlib", "inflate error %d", ret);
+        conn->error = EBADFD;
+        conn_disconnect(conn);
+        break;
+    }
+    return 0;
+}
+
+static int _conn_read(xmpp_conn_t *conn, void *buff, size_t len)
+{
+    void *dbuff = buff;
+    size_t dlen = len;
+    if (conn->compress) {
+        if (conn->decompression.buffer == NULL) {
+            _init_zlib_compression(conn->ctx, &conn->decompression);
+
+            int err = inflateInit(&conn->decompression.stream);
+            if (err != Z_OK) {
+                strophe_free_and_null(conn->ctx, conn->decompression.buffer);
+                return err;
+            }
+        }
+        if (conn->decompression.stream.next_in != NULL) {
+            return _conn_decompress(conn, 0, buff, len);
+        }
+        dbuff = conn->decompression.buffer;
+        dlen = STROPHE_MESSAGE_BUFFER_SIZE;
+    }
+    int ret = _conn_read_from_network(conn, dbuff, dlen);
+    if (ret > 0 && conn->compress) {
+        char *b = xmpp_base64_encode(conn->ctx, dbuff, ret);
+        printf("Read: %s\n", b);
+        xmpp_free(conn->ctx, b);
+        return _conn_decompress(conn, ret, buff, len);
+    }
+    return ret;
+}
+
+static int _conn_pending(xmpp_conn_t *conn)
+{
+    return (conn->compress && conn->decompression.stream.next_in != NULL) ||
+           (conn->tls && tls_pending(conn->tls));
+}
+
 /** Run the event loop once.
  *  This function will run send any data that has been queued by
  *  xmpp_send and related functions and run through the Strophe even
@@ -136,15 +332,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
         while (sq) {
             towrite = sq->len - sq->written;
 
-            if (conn->tls) {
-                ret = tls_write(conn->tls, &sq->data[sq->written], towrite);
-                if (ret < 0 && !tls_is_recoverable(tls_error(conn->tls)))
-                    conn->error = tls_error(conn->tls);
-            } else {
-                ret = sock_write(conn->sock, &sq->data[sq->written], towrite);
-                if (ret < 0 && !sock_is_recoverable(sock_error()))
-                    conn->error = sock_error();
-            }
+            ret = _conn_write(conn, &sq->data[sq->written], towrite);
             if (ret > 0 && ret < towrite)
                 sq->written += ret; /* not all data could be sent now */
             sq->wip = 1;
@@ -180,6 +368,11 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
             /* if we've sent everything update the tail */
             if (!sq)
                 conn->send_queue_tail = NULL;
+        }
+        if (conn->compress) {
+            _conn_compress(conn, conn->compression.buffer, 0,
+                           conn->compression_dont_flush ? Z_SYNC_FLUSH
+                                                        : Z_FULL_FLUSH);
         }
 
         /* tear down connection on error */
@@ -309,14 +502,9 @@ next_item:
 
             break;
         case XMPP_STATE_CONNECTED:
-            if (FD_ISSET(conn->sock, &rfds) ||
-                (conn->tls && tls_pending(conn->tls))) {
-                if (conn->tls) {
-                    ret = tls_read(conn->tls, buf, STROPHE_MESSAGE_BUFFER_SIZE);
-                } else {
-                    ret =
-                        sock_read(conn->sock, buf, STROPHE_MESSAGE_BUFFER_SIZE);
-                }
+            if (FD_ISSET(conn->sock, &rfds) || _conn_pending(conn)) {
+
+                ret = _conn_read(conn, buf, STROPHE_MESSAGE_BUFFER_SIZE);
 
                 if (ret > 0) {
                     ret = parser_feed(conn->parser, buf, ret);

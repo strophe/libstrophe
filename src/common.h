@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <zlib.h>
 
 #include "strophe.h"
 #include "ostypes.h"
@@ -254,6 +255,13 @@ struct _xmpp_conn_t {
     int session_required;
     int sm_disable;
     xmpp_sm_state_t *sm_state;
+
+    int compression_allowed, compression_supported;
+    int compress, compression_dont_flush;
+    struct zlib_compression {
+        void *buffer, *buffer_end;
+        z_stream stream;
+    } compression, decompression;
 
     char *lang;
     char *domain;

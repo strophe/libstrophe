@@ -84,6 +84,10 @@ extern "C" {
  *  Namespace definition for Stream Management.
  */
 #define XMPP_NS_SM "urn:xmpp:sm:3"
+/** @def XMPP_NS_COMPRESSION
+ *  Namespace definition for Stream Compression.
+ */
+#define XMPP_NS_COMPRESSION "http://jabber.org/protocol/compress"
 
 /* error defines */
 /** @def XMPP_EOK
@@ -191,6 +195,15 @@ typedef struct _xmpp_sm_t xmpp_sm_state_t;
  *  Disable Stream-Management XEP-0198.
  */
 #define XMPP_CONN_FLAG_DISABLE_SM (1UL << 5)
+/** @def XMPP_CONN_FLAG_ENABLE_COMPRESSION
+ *  Enable Stream-Compression XEP-0138.
+ */
+#define XMPP_CONN_FLAG_ENABLE_COMPRESSION (1UL << 6)
+/** @def XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH
+ *  Don't flush the compressed stream after each stanza.
+ *  Only enable this flag if you know what you're doing.
+ */
+#define XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH (1UL << 7)
 
 /* connect callback */
 typedef enum {
