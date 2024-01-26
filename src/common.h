@@ -19,7 +19,6 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <zlib.h>
 
 #include "strophe.h"
 #include "ostypes.h"
@@ -208,7 +207,28 @@ struct _xmpp_sm_t {
     xmpp_stanza_t *bind;
 };
 
+struct conn_interface {
+    int (*read)(struct conn_interface *intf, void *buff, size_t len);
+    int (*write)(struct conn_interface *intf, const void *buff, size_t len);
+    int (*flush)(struct conn_interface *intf);
+    int (*pending)(struct conn_interface *intf);
+    int (*get_error)(struct conn_interface *intf);
+    int (*error_is_recoverable)(struct conn_interface *intf, int err);
+    xmpp_conn_t *conn;
+};
+
+int conn_interface_write(struct conn_interface *intf,
+                         const void *buff,
+                         size_t len);
+int conn_int_nop(struct conn_interface *intf);
+
+int compression_init(xmpp_conn_t *conn);
+void compression_free(xmpp_conn_t *conn);
+void compression_handle_feature_children(xmpp_conn_t *conn, const char *text);
+
 struct _xmpp_conn_t {
+    struct conn_interface intf;
+
     unsigned int ref;
     xmpp_ctx_t *ctx;
     xmpp_conn_type_t type;
@@ -256,12 +276,10 @@ struct _xmpp_conn_t {
     int sm_disable;
     xmpp_sm_state_t *sm_state;
 
-    int compression_allowed, compression_supported;
-    int compress, compression_dont_flush;
-    struct zlib_compression {
-        void *buffer, *buffer_end;
-        z_stream stream;
-    } compression, decompression;
+    struct {
+        struct xmpp_compression *state;
+        int allowed, supported, dont_reset;
+    } compression;
 
     char *lang;
     char *domain;

@@ -1062,6 +1062,23 @@ void conn_open_stream(xmpp_conn_t *conn)
         strophe_free(conn->ctx, from);
 }
 
+int conn_interface_write(struct conn_interface *intf,
+                         const void *buff,
+                         size_t len)
+{
+    int ret = intf->write(intf, buff, len);
+    if (ret < 0 && !intf->error_is_recoverable(intf, intf->get_error(intf))) {
+        intf->conn->error = intf->get_error(intf);
+    }
+    return ret;
+}
+
+int conn_int_nop(struct conn_interface *intf)
+{
+    UNUSED(intf);
+    return 0;
+}
+
 int conn_tls_start(xmpp_conn_t *conn)
 {
     int rc;
@@ -1075,11 +1092,13 @@ int conn_tls_start(xmpp_conn_t *conn)
     }
 
     if (conn->tls != NULL) {
+        conn->intf = tls_intf;
+        conn->intf.conn = conn;
         if (tls_start(conn->tls)) {
             conn->secured = 1;
         } else {
             rc = XMPP_EINT;
-            conn->error = tls_error(conn->tls);
+            conn->error = tls_error(&conn->intf);
             tls_free(conn->tls);
             conn->tls = NULL;
             conn->tls_failed = 1;
@@ -1112,8 +1131,8 @@ long xmpp_conn_get_flags(const xmpp_conn_t *conn)
         XMPP_CONN_FLAG_LEGACY_SSL * conn->tls_legacy_ssl |
         XMPP_CONN_FLAG_TRUST_TLS * conn->tls_trust |
         XMPP_CONN_FLAG_DISABLE_SM * conn->sm_disable |
-        XMPP_CONN_FLAG_ENABLE_COMPRESSION * conn->compression_allowed |
-        XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH * conn->compression_dont_flush |
+        XMPP_CONN_FLAG_ENABLE_COMPRESSION * conn->compression.allowed |
+        XMPP_CONN_FLAG_COMPRESSION_DONT_RESET * conn->compression.dont_reset |
         XMPP_CONN_FLAG_LEGACY_AUTH * conn->auth_legacy_enabled;
 
     return flags;
@@ -1134,6 +1153,8 @@ long xmpp_conn_get_flags(const xmpp_conn_t *conn)
  *    - XMPP_CONN_FLAG_TRUST_TLS
  *    - XMPP_CONN_FLAG_LEGACY_AUTH
  *    - XMPP_CONN_FLAG_DISABLE_SM
+ *    - XMPP_CONN_FLAG_ENABLE_COMPRESSION
+ *    - XMPP_CONN_FLAG_COMPRESSION_DONT_RESET
  *
  *  @param conn a Strophe connection object
  *  @param flags ORed connection flags
@@ -1163,15 +1184,15 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags)
     conn->tls_trust = (flags & XMPP_CONN_FLAG_TRUST_TLS) ? 1 : 0;
     conn->auth_legacy_enabled = (flags & XMPP_CONN_FLAG_LEGACY_AUTH) ? 1 : 0;
     conn->sm_disable = (flags & XMPP_CONN_FLAG_DISABLE_SM) ? 1 : 0;
-    conn->compression_allowed =
+    conn->compression.allowed =
         (flags & XMPP_CONN_FLAG_ENABLE_COMPRESSION) ? 1 : 0;
-    conn->compression_dont_flush =
-        (flags & XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH) ? 1 : 0;
+    conn->compression.dont_reset =
+        (flags & XMPP_CONN_FLAG_COMPRESSION_DONT_RESET) ? 1 : 0;
     flags &= ~(XMPP_CONN_FLAG_DISABLE_TLS | XMPP_CONN_FLAG_MANDATORY_TLS |
                XMPP_CONN_FLAG_LEGACY_SSL | XMPP_CONN_FLAG_TRUST_TLS |
                XMPP_CONN_FLAG_LEGACY_AUTH | XMPP_CONN_FLAG_DISABLE_SM |
                XMPP_CONN_FLAG_ENABLE_COMPRESSION |
-               XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH);
+               XMPP_CONN_FLAG_COMPRESSION_DONT_RESET);
     if (flags) {
         strophe_error(conn->ctx, "conn", "Flags 0x%04lx unknown", flags);
         return XMPP_EINVOP;
@@ -1768,14 +1789,11 @@ static void _conn_reset(xmpp_conn_t *conn)
         return;
     }
 
-    if (conn->compression.buffer) {
-        deflateEnd(&conn->compression.stream);
-        strophe_free_and_null(ctx, conn->compression.buffer);
-    }
-    if (conn->decompression.buffer) {
-        inflateEnd(&conn->decompression.stream);
-        strophe_free_and_null(ctx, conn->decompression.buffer);
-    }
+    compression_free(conn);
+
+    conn->intf = sock_intf;
+    conn->intf.conn = conn;
+
     /* free queued */
     sq = conn->send_queue_head;
     while (sq) {

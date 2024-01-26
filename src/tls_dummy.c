@@ -104,43 +104,43 @@ int tls_stop(tls_t *tls)
     return -1;
 }
 
-int tls_error(tls_t *tls)
+int tls_error(struct conn_interface *intf)
 {
-    UNUSED(tls);
-    /* todo: some kind of error polling/dump */
+    UNUSED(intf);
     return 0;
 }
 
-int tls_pending(tls_t *tls)
+int tls_pending(struct conn_interface *intf)
 {
-    UNUSED(tls);
+    UNUSED(intf);
     return 0;
 }
 
-int tls_read(tls_t *tls, void *buff, size_t len)
+int tls_read(struct conn_interface *intf, void *buff, size_t len)
 {
-    UNUSED(tls);
+    UNUSED(intf);
     UNUSED(buff);
     UNUSED(len);
     return -1;
 }
 
-int tls_write(tls_t *tls, const void *buff, size_t len)
+int tls_write(struct conn_interface *intf, const void *buff, size_t len)
 {
-    UNUSED(tls);
+    UNUSED(intf);
     UNUSED(buff);
     UNUSED(len);
     return -1;
 }
 
-int tls_clear_pending_write(tls_t *tls)
+int tls_clear_pending_write(struct conn_interface *intf)
 {
-    UNUSED(tls);
+    UNUSED(intf);
     return -1;
 }
 
-int tls_is_recoverable(int error)
+int tls_is_recoverable(struct conn_interface *intf, int error)
 {
+    UNUSED(intf);
     UNUSED(error);
     return 0;
 }

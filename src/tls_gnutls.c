@@ -633,24 +633,26 @@ int tls_stop(tls_t *tls)
     return tls->lasterror == GNUTLS_E_SUCCESS;
 }
 
-int tls_error(tls_t *tls)
+int tls_error(struct conn_interface *intf)
 {
-    return tls->lasterror;
+    return intf->conn->tls->lasterror;
 }
 
-int tls_is_recoverable(int error)
+int tls_is_recoverable(struct conn_interface *intf, int error)
 {
+    UNUSED(intf);
     return !gnutls_error_is_fatal(error);
 }
 
-int tls_pending(tls_t *tls)
+int tls_pending(struct conn_interface *intf)
 {
-    return gnutls_record_check_pending(tls->session);
+    return gnutls_record_check_pending(intf->conn->tls->session);
 }
 
-int tls_read(tls_t *tls, void *buff, size_t len)
+int tls_read(struct conn_interface *intf, void *buff, size_t len)
 {
     int ret;
+    tls_t *tls = intf->conn->tls;
 
     ret = gnutls_record_recv(tls->session, buff, len);
     tls->lasterror = ret < 0 ? ret : 0;
@@ -658,9 +660,10 @@ int tls_read(tls_t *tls, void *buff, size_t len)
     return ret;
 }
 
-int tls_write(tls_t *tls, const void *buff, size_t len)
+int tls_write(struct conn_interface *intf, const void *buff, size_t len)
 {
     int ret;
+    tls_t *tls = intf->conn->tls;
 
     ret = gnutls_record_send(tls->session, buff, len);
     tls->lasterror = ret < 0 ? ret : 0;
@@ -668,8 +671,8 @@ int tls_write(tls_t *tls, const void *buff, size_t len)
     return ret;
 }
 
-int tls_clear_pending_write(tls_t *tls)
+int tls_clear_pending_write(struct conn_interface *intf)
 {
-    UNUSED(tls);
+    UNUSED(intf);
     return 0;
 }

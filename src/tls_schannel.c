@@ -262,9 +262,11 @@ int tls_start(tls_t *tls)
     SECURITY_STATUS ret;
     int sent;
     char *name;
+    struct conn_interface *intf;
 
     /* use the domain there as our name */
     name = tls->conn->domain;
+    intf = tls->conn->intf;
 
     ctxtreq = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT |
               ISC_REQ_CONFIDENTIALITY | ISC_RET_EXTENDED_ERROR |
@@ -313,9 +315,9 @@ int tls_start(tls_t *tls)
             unsigned char *writebuff = sbdout.pBuffers[0].pvBuffer;
             unsigned int writelen = sbdout.pBuffers[0].cbBuffer;
 
-            sent = sock_write(tls->sock, writebuff, writelen);
+            sent = sock_write(intf, writebuff, writelen);
             if (sent == -1) {
-                tls->lasterror = sock_error();
+                tls->lasterror = sock_error(intf);
             } else {
                 writebuff += sent;
                 writelen -= sent;
@@ -353,13 +355,13 @@ int tls_start(tls_t *tls)
 
             select(tls->sock, &fds, NULL, NULL, &tv);
 
-            inbytes = sock_read(tls->sock, p, tls->spi->cbMaxToken - len);
+            inbytes = sock_read(intf, p, tls->spi->cbMaxToken - len);
 
             if (inbytes > 0) {
                 len += inbytes;
                 p += inbytes;
             } else {
-                tls->lasterror = sock_error();
+                tls->lasterror = sock_error(intf);
             }
         }
 
@@ -374,9 +376,9 @@ int tls_start(tls_t *tls)
         if (sbdout.pBuffers[0].cbBuffer) {
             unsigned char *writebuff = sbdout.pBuffers[0].pvBuffer;
             unsigned int writelen = sbdout.pBuffers[0].cbBuffer;
-            sent = sock_write(tls->sock, writebuff, writelen);
+            sent = sock_write(intf, writebuff, writelen);
             if (sent == -1) {
-                tls->lasterror = sock_error();
+                tls->lasterror = sock_error(intf);
             } else {
                 writebuff += sent;
                 writelen -= sent;
@@ -423,20 +425,22 @@ int tls_stop(tls_t *tls)
     return -1;
 }
 
-int tls_error(tls_t *tls)
+int tls_error(struct conn_interface *intf)
 {
-    return tls->lasterror;
+    return intf->conn->tls->lasterror;
 }
 
-int tls_is_recoverable(int error)
+int tls_is_recoverable(struct conn_interface *intf, int error)
 {
+    UNUSED(intf);
     return (error == SEC_E_OK || error == SEC_E_INCOMPLETE_MESSAGE ||
             error == WSAEWOULDBLOCK || error == WSAEMSGSIZE ||
             error == WSAEINPROGRESS);
 }
 
-int tls_pending(tls_t *tls)
+int tls_pending(struct conn_interface *intf)
 {
+    tls_t *tls = intf->conn->tls;
     // There are 3 cases:
     // - there is data in ready buffer, so it is by default pending
     // - there is data in recv buffer. If it is not decrypted yet, means it
@@ -452,9 +456,10 @@ int tls_pending(tls_t *tls)
     return 0;
 }
 
-int tls_read(tls_t *tls, void *buff, size_t len)
+int tls_read(struct conn_interface *intf, void *buff, size_t len)
 {
     int bytes;
+    tls_t *tls = intf->conn->tls;
 
     /* first, if we've got some ready data, put that in the buffer */
     if (tls->readybufferpos < tls->readybufferlen) {
@@ -477,7 +482,7 @@ int tls_read(tls_t *tls, void *buff, size_t len)
             read = tls_read(tls, newbuff, len - bytes);
 
             if (read == -1) {
-                if (tls_is_recoverable(tls->lasterror)) {
+                if (tls_is_recoverable(intf, tls->lasterror)) {
                     return bytes;
                 }
 
@@ -489,7 +494,7 @@ int tls_read(tls_t *tls, void *buff, size_t len)
     }
 
     /* next, top up our recv buffer */
-    bytes = sock_read(tls->sock, tls->recvbuffer + tls->recvbufferpos,
+    bytes = sock_read(intf, tls->recvbuffer + tls->recvbufferpos,
                       tls->recvbuffermaxlen - tls->recvbufferpos);
 
     if (bytes == 0) {
@@ -498,8 +503,8 @@ int tls_read(tls_t *tls, void *buff, size_t len)
     }
 
     if (bytes == -1) {
-        if (!tls_is_recoverable(sock_error())) {
-            tls->lasterror = sock_error();
+        if (!tls_is_recoverable(intf, sock_error(intf))) {
+            tls->lasterror = sock_error(intf);
             return -1;
         }
     }
@@ -574,16 +579,17 @@ int tls_read(tls_t *tls, void *buff, size_t len)
     return -1;
 }
 
-int tls_clear_pending_write(tls_t *tls)
+int tls_clear_pending_write(struct conn_interface *intf)
 {
+    tls_t *tls = intf->conn->tls;
     if (tls->sendbufferpos < tls->sendbufferlen) {
         int bytes;
 
-        bytes = sock_write(tls->sock, tls->sendbuffer + tls->sendbufferpos,
+        bytes = sock_write(intf, tls->sendbuffer + tls->sendbufferpos,
                            tls->sendbufferlen - tls->sendbufferpos);
 
         if (bytes == -1) {
-            tls->lasterror = sock_error();
+            tls->lasterror = sock_error(intf);
             return -1;
         } else if (bytes > 0) {
             tls->sendbufferpos += bytes;
@@ -597,12 +603,13 @@ int tls_clear_pending_write(tls_t *tls)
     return 1;
 }
 
-int tls_write(tls_t *tls, const void *buff, size_t len)
+int tls_write(struct conn_interface *intf, const void *buff, size_t len)
 {
     SecBufferDesc sbdenc;
     SecBuffer sbenc[4];
     const unsigned char *p = buff;
     int sent = 0, ret, remain = len;
+    tls_t *tls = intf->conn->tls;
 
     ret = tls_clear_pending_write(tls);
     if (ret <= 0) {
@@ -662,7 +669,7 @@ int tls_write(tls_t *tls, const void *buff, size_t len)
 
         ret = tls_clear_pending_write(tls);
 
-        if (ret == -1 && !tls_is_recoverable(tls_error(tls))) {
+        if (ret == -1 && !tls_is_recoverable(intf, tls_error(tls))) {
             return -1;
         }
 
@@ -674,7 +681,8 @@ int tls_write(tls_t *tls, const void *buff, size_t len)
             remain = 0;
         }
 
-        if (ret == 0 || (ret == -1 && tls_is_recoverable(tls_error(tls)))) {
+        if (ret == 0 ||
+            (ret == -1 && tls_is_recoverable(intf, tls_error(tls)))) {
             return sent;
         }
     }

@@ -283,9 +283,9 @@ void tls_shutdown(void)
 #endif
 }
 
-int tls_error(tls_t *tls)
+int tls_error(struct conn_interface *intf)
 {
-    return tls->lasterror;
+    return intf->conn->tls->lasterror;
 }
 
 /** Search through the SubjectAlternativeNames and return the next
@@ -815,7 +815,7 @@ int tls_start(tls_t *tls)
         ret = SSL_connect(tls->ssl);
         error = ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0;
 
-        if (ret == -1 && tls_is_recoverable(error)) {
+        if (ret == -1 && tls_is_recoverable(NULL, error)) {
             /* wait for something to happen on the sock before looping back */
             _tls_sock_wait(tls, error);
             continue;
@@ -856,7 +856,7 @@ int tls_stop(tls_t *tls)
         ++retries;
         ret = SSL_shutdown(tls->ssl);
         error = ret < 0 ? SSL_get_error(tls->ssl, ret) : 0;
-        if (ret == 1 || !tls_is_recoverable(error) ||
+        if (ret == 1 || !tls_is_recoverable(NULL, error) ||
             retries >= TLS_SHUTDOWN_MAX_RETRIES) {
             break;
         }
@@ -875,21 +875,23 @@ int tls_stop(tls_t *tls)
     return ret <= 0 ? 0 : 1;
 }
 
-int tls_is_recoverable(int error)
+int tls_is_recoverable(struct conn_interface *intf, int error)
 {
+    UNUSED(intf);
     return (error == SSL_ERROR_NONE || error == SSL_ERROR_WANT_READ ||
             error == SSL_ERROR_WANT_WRITE || error == SSL_ERROR_WANT_CONNECT ||
             error == SSL_ERROR_WANT_ACCEPT);
 }
 
-int tls_pending(tls_t *tls)
+int tls_pending(struct conn_interface *intf)
 {
-    return SSL_pending(tls->ssl);
+    return SSL_pending(intf->conn->tls->ssl);
 }
 
-int tls_read(tls_t *tls, void *buff, size_t len)
+int tls_read(struct conn_interface *intf, void *buff, size_t len)
 {
     int ret;
+    tls_t *tls = intf->conn->tls;
 
     ret = SSL_read(tls->ssl, buff, len);
     _tls_set_error(tls, ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0);
@@ -897,9 +899,10 @@ int tls_read(tls_t *tls, void *buff, size_t len)
     return ret;
 }
 
-int tls_write(tls_t *tls, const void *buff, size_t len)
+int tls_write(struct conn_interface *intf, const void *buff, size_t len)
 {
     int ret;
+    tls_t *tls = intf->conn->tls;
 
     ret = SSL_write(tls->ssl, buff, len);
     _tls_set_error(tls, ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0);
@@ -907,9 +910,9 @@ int tls_write(tls_t *tls, const void *buff, size_t len)
     return ret;
 }
 
-int tls_clear_pending_write(tls_t *tls)
+int tls_clear_pending_write(struct conn_interface *intf)
 {
-    UNUSED(tls);
+    UNUSED(intf);
     return 0;
 }
 
@@ -947,7 +950,7 @@ static const char *_tls_error_str(int error, const char **tbl, size_t tbl_size)
 
 static void _tls_set_error(tls_t *tls, int error)
 {
-    if (error != 0 && !tls_is_recoverable(error)) {
+    if (error != 0 && !tls_is_recoverable(NULL, error)) {
         strophe_debug(tls->ctx, "tls", "error=%s(%d) errno=%d lasterror=%d",
                       TLS_ERROR_STR(error, tls_errors), error, errno,
                       tls->lasterror);

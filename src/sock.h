@@ -30,12 +30,14 @@ typedef int sock_t;
 typedef SOCKET sock_t;
 #endif
 
+extern const struct conn_interface sock_intf;
+
 typedef struct _xmpp_sock_t xmpp_sock_t;
 
 void sock_initialize(void);
 void sock_shutdown(void);
 
-int sock_error(void);
+int sock_error(struct conn_interface *intf);
 
 xmpp_sock_t *sock_new(xmpp_conn_t *conn,
                       const char *domain,
@@ -47,9 +49,9 @@ int sock_close(sock_t sock);
 
 int sock_set_blocking(sock_t sock);
 int sock_set_nonblocking(sock_t sock);
-int sock_read(sock_t sock, void *buff, size_t len);
-int sock_write(sock_t sock, const void *buff, size_t len);
-int sock_is_recoverable(int error);
+int sock_read(struct conn_interface *intf, void *buff, size_t len);
+int sock_write(struct conn_interface *intf, const void *buff, size_t len);
+int sock_is_recoverable(struct conn_interface *intf, int error);
 /* checks for an error after connect, return 0 if connect successful */
 int sock_connect_error(sock_t sock);
 int sock_set_keepalive(sock_t sock,

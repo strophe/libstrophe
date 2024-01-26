@@ -255,19 +255,10 @@ static void _handle_sasl_children(xmpp_conn_t *conn, const char *text)
     }
 }
 
-static void _handle_compression_children(xmpp_conn_t *conn, const char *text)
-{
-    if (strcasecmp(text, "zlib") == 0) {
-        conn->compression_supported = 1;
-    }
-}
-
 static int
 _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
-    xmpp_stanza_t *child, *children;
-    const char *ns;
-    char *text;
+    xmpp_stanza_t *child;
 
     UNUSED(userdata);
 
@@ -296,13 +287,6 @@ _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     /* Disable PLAIN when other secure mechanisms are supported */
     if (conn->sasl_support & ~(SASL_MASK_PLAIN | SASL_MASK_ANONYMOUS))
         conn->sasl_support &= ~SASL_MASK_PLAIN;
-
-    /* check for compression */
-    child = xmpp_stanza_get_child_by_name_and_ns(stanza, "compression",
-                                                 XMPP_NS_COMPRESSION);
-    if (conn->compression_allowed && child) {
-        _foreach_child(conn, child, "method", _handle_compression_children);
-    }
 
     _auth(conn);
 
@@ -371,7 +355,7 @@ _handle_sasl_result(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                       (char *)userdata);
 
         /* reset parser */
-        conn_prepare_reset(conn, conn->compression_allowed
+        conn_prepare_reset(conn, conn->compression.allowed
                                      ? _handle_open_compress
                                      : _handle_open_sasl);
 
@@ -1058,6 +1042,8 @@ static int _handle_compress_result(xmpp_conn_t *const conn,
 {
     const char *name = xmpp_stanza_get_name(stanza);
 
+    UNUSED(userdata);
+
     if (!name)
         return 0;
     if (strcmp(name, "compressed") == 0) {
@@ -1068,7 +1054,7 @@ static int _handle_compress_result(xmpp_conn_t *const conn,
         conn_prepare_reset(conn, _handle_open_sasl);
 
         /* make compression effective */
-        conn->compress = 1;
+        compression_init(conn);
 
         /* send stream tag */
         conn_open_stream(conn);
@@ -1082,15 +1068,26 @@ static int _handle_features_compress(xmpp_conn_t *conn,
 {
     const char *compress = "<compress xmlns='" XMPP_NS_COMPRESSION
                            "'><method>zlib</method></compress>";
-
-    UNUSED(userdata);
+    xmpp_stanza_t *child;
 
     /* remove missing features handler */
     xmpp_timed_handler_delete(conn, _handle_missing_features);
 
-    send_raw(conn, compress, strlen(compress), XMPP_QUEUE_STROPHE, NULL);
-    handler_add(conn, _handle_compress_result, XMPP_NS_COMPRESSION, NULL, NULL,
-                NULL);
+    /* check for compression */
+    child = xmpp_stanza_get_child_by_name_and_ns(stanza, "compression",
+                                                 XMPP_NS_FEATURE_COMPRESSION);
+    if (conn->compression.allowed && child) {
+        _foreach_child(conn, child, "method",
+                       compression_handle_feature_children);
+    }
+
+    if (conn->compression.supported) {
+        send_raw(conn, compress, strlen(compress), XMPP_QUEUE_STROPHE, NULL);
+        handler_add(conn, _handle_compress_result, XMPP_NS_COMPRESSION, NULL,
+                    NULL, NULL);
+    } else {
+        return _handle_features_sasl(conn, stanza, userdata);
+    }
 
     return 0;
 }

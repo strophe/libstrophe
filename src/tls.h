@@ -53,16 +53,16 @@ const void *tls_get_channel_binding_data(tls_t *tls, size_t *size);
 int tls_start(tls_t *tls);
 int tls_stop(tls_t *tls);
 
-int tls_error(tls_t *tls);
+int tls_pending(struct conn_interface *intf);
+int tls_read(struct conn_interface *intf, void *buff, size_t len);
+int tls_write(struct conn_interface *intf, const void *buff, size_t len);
+int tls_clear_pending_write(struct conn_interface *intf);
 
-int tls_pending(tls_t *tls);
-int tls_read(tls_t *tls, void *buff, size_t len);
-int tls_write(tls_t *tls, const void *buff, size_t len);
-
-int tls_clear_pending_write(tls_t *tls);
-int tls_is_recoverable(int error);
+int tls_error(struct conn_interface *intf);
+int tls_is_recoverable(struct conn_interface *intf, int error);
 
 /* provided by tls.c */
+extern const struct conn_interface tls_intf;
 
 xmpp_tlscert_t *tlscert_new(xmpp_ctx_t *ctx);
 int tlscert_add_dnsname(xmpp_tlscert_t *cert, const char *dnsname);

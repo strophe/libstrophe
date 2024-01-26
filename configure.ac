@@ -252,7 +252,7 @@ fi
 if test "x$enable_zlib" != xno; then
     PKG_CHECK_MODULES([zlib], [zlib >= 1.2.0],
         [
-            PC_REQUIRES="libzlib ${PC_REQUIRES}"
+            PC_REQUIRES="zlib ${PC_REQUIRES}"
             ZLIB_CFLAGS=$zlib_CFLAGS
             ZLIB_LIBS=$zlib_LIBS
             AC_DEFINE([HAVE_ZLIB])
@@ -269,6 +269,7 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
     AC_SUBST([pkgconfigdir], [${with_pkgconfigdir}])])
 
 AM_CONDITIONAL([PARSER_EXPAT], [test x$with_parser != xlibxml2])
+AM_CONDITIONAL([DISABLE_COMPRESSION], [test x$enable_zlib = xno])
 AM_CONDITIONAL([DISABLE_TLS], [test x$enable_tls = xno])
 AM_CONDITIONAL([DISABLE_STATIC], [test x$enable_static = xno])
 AM_CONDITIONAL([NEED_SNPRINTF], [test x$have_snprintf = xno])

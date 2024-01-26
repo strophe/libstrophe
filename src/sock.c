@@ -38,6 +38,18 @@
 #include "common.h"
 #include "resolver.h"
 
+const struct conn_interface sock_intf = {
+    sock_read,
+    sock_write,
+    /* no flush */
+    conn_int_nop,
+    /* no pending */
+    conn_int_nop,
+    sock_error,
+    sock_is_recoverable,
+    NULL,
+};
+
 struct _xmpp_sock_t {
     xmpp_ctx_t *ctx;
     xmpp_conn_t *conn;
@@ -64,8 +76,9 @@ void sock_shutdown(void)
 #endif
 }
 
-int sock_error(void)
+int sock_error(struct conn_interface *intf)
 {
+    UNUSED(intf);
 #ifdef _WIN32
     return WSAGetLastError();
 #else
@@ -231,7 +244,7 @@ sock_t sock_connect(xmpp_sock_t *xsock)
             if (rc == 0)
                 rc = connect(sock, ainfo->ai_addr, ainfo->ai_addrlen);
             /* Assume only connect() can cause "in progress" error. */
-            if (rc != 0 && !_in_progress(sock_error())) {
+            if (rc != 0 && !_in_progress(sock_error(NULL))) {
                 sock_close(sock);
                 sock = INVALID_SOCKET;
             }
@@ -376,18 +389,19 @@ int sock_set_nonblocking(sock_t sock)
     return _sock_set_blocking_mode(sock, 0);
 }
 
-int sock_read(sock_t sock, void *buff, size_t len)
+int sock_read(struct conn_interface *intf, void *buff, size_t len)
 {
-    return recv(sock, buff, len, 0);
+    return recv(intf->conn->sock, buff, len, 0);
 }
 
-int sock_write(sock_t sock, const void *buff, size_t len)
+int sock_write(struct conn_interface *intf, const void *buff, size_t len)
 {
-    return send(sock, buff, len, 0);
+    return send(intf->conn->sock, buff, len, 0);
 }
 
-int sock_is_recoverable(int error)
+int sock_is_recoverable(struct conn_interface *intf, int error)
 {
+    UNUSED(intf);
 #ifdef _WIN32
     return (error == WSAEINTR || error == WSAEWOULDBLOCK ||
             error == WSAEINPROGRESS);
@@ -416,15 +430,15 @@ int sock_connect_error(sock_t sock)
     /* it's possible that the error wasn't ENOTCONN, so if it wasn't,
      * return that */
 #ifdef _WIN32
-    if (sock_error() != WSAENOTCONN)
-        return sock_error();
+    if (sock_error(NULL) != WSAENOTCONN)
+        return sock_error(NULL);
 #else
-    if (sock_error() != ENOTCONN)
-        return sock_error();
+    if (sock_error(NULL) != ENOTCONN)
+        return sock_error(NULL);
 #endif
 
     /* load the correct error into errno through error slippage */
     recv(sock, &temp, 1, 0);
 
-    return sock_error();
+    return sock_error(NULL);
 }

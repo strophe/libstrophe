@@ -77,13 +77,19 @@ int version_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     return 1;
 }
 
+static int _quit_handler(xmpp_conn_t *conn, void *userdata)
+{
+    (void)userdata;
+    xmpp_disconnect(conn);
+    return 0;
+}
+
 int message_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     xmpp_ctx_t *ctx = (xmpp_ctx_t *)userdata;
     xmpp_stanza_t *body, *reply;
     const char *type;
     char *intext, *replytext;
-    int quit = 0;
 
     body = xmpp_stanza_get_child_by_name(stanza, "body");
     if (body == NULL)
@@ -103,11 +109,11 @@ int message_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 
     if (strcmp(intext, "quit") == 0) {
         replytext = strdup("bye!");
-        quit = 1;
+        xmpp_timed_handler_add(conn, _quit_handler, 500, NULL);
     } else if (strcmp(intext, "reconnect") == 0) {
         replytext = strdup("alright, let's see what happens!");
         reconnect = 1;
-        quit = 1;
+        xmpp_timed_handler_add(conn, _quit_handler, 500, NULL);
     } else {
         replytext = (char *)malloc(strlen(" to you too!") + strlen(intext) + 1);
         strcpy(replytext, intext);
@@ -119,9 +125,6 @@ int message_handler(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     xmpp_send(conn, reply);
     xmpp_stanza_release(reply);
     free(replytext);
-
-    if (quit)
-        xmpp_disconnect(conn);
 
     return 1;
 }
@@ -216,8 +219,8 @@ static void usage(int exit_code)
             "Note: --disable-tls conflicts with --mandatory-tls or "
             "--legacy-ssl\n"
             "  --zlib                   Enable compression via zlib.\n"
-            "  --dont-flush             When using zlib, don't flush after "
-            "compression.\n");
+            "  --dont-reset             When using zlib, don't do a full-flush "
+            "after compression.\n");
 
     exit(exit_code);
 }
@@ -249,8 +252,8 @@ int main(int argc, char **argv)
             flags |= XMPP_CONN_FLAG_LEGACY_AUTH;
         else if (strcmp(argv[i], "--zlib") == 0)
             flags |= XMPP_CONN_FLAG_ENABLE_COMPRESSION;
-        else if (strcmp(argv[i], "--dont-flush") == 0)
-            flags |= XMPP_CONN_FLAG_COMPRESSION_DONT_FLUSH;
+        else if (strcmp(argv[i], "--dont-reset") == 0)
+            flags |= XMPP_CONN_FLAG_COMPRESSION_DONT_RESET;
         else if ((strcmp(argv[i], "--jid") == 0) && (++i < argc))
             jid = argv[i];
         else if ((strcmp(argv[i], "--pass") == 0) && (++i < argc))

@@ -30,6 +30,17 @@
 
 #include "common.h"
 
+const struct conn_interface tls_intf = {
+    tls_read,
+    tls_write,
+    tls_clear_pending_write,
+    tls_pending,
+    tls_error,
+    tls_is_recoverable,
+    /* init conn */
+    NULL,
+};
+
 struct _dnsname_t {
     char **data;
     size_t cur, max;

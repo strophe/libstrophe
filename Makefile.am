@@ -85,6 +85,12 @@ if NEED_SNPRINTF
 libstrophe_la_SOURCES += src/snprintf.c
 endif
 
+if DISABLE_COMPRESSION
+libstrophe_la_SOURCES += src/compression_dummy.c
+else
+libstrophe_la_SOURCES += src/compression.c
+endif
+
 if DISABLE_TLS
 libstrophe_la_SOURCES += src/tls_dummy.c
 else
