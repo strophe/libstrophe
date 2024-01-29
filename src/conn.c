@@ -217,32 +217,6 @@ xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *conn)
     return conn;
 }
 
-/** Register sockopt callback
- *  Set function to be called when a new socket is created to allow setting
- *  socket options before connection is started.
- *
- *  If the connection is already connected, this callback will be called
- *  immediately.
- *
- *  To set options that can only be applied to disconnected sockets, the
- *  callback must be registered before connecting.
- *
- *  @param conn The Strophe connection object this callback is being registered
- * for
- *  @param callback a xmpp_sockopt_callback callback function that will receive
- *      notifications of connection status
- *
- *  @ingroup Connections
- */
-
-void xmpp_conn_set_sockopt_callback(xmpp_conn_t *conn,
-                                    xmpp_sockopt_callback callback)
-{
-    conn->sockopt_cb = callback;
-    if (conn->state != XMPP_STATE_DISCONNECTED)
-        callback(conn, &conn->sock);
-}
-
 /** Release a Strophe connection object.
  *  Decrement the reference count by one for a connection, freeing the
  *  connection object if the count reaches 0.
@@ -366,6 +340,197 @@ int xmpp_conn_release(xmpp_conn_t *conn)
     return released;
 }
 
+/** Configure a connection-related int setting
+ *
+ * `setting` can be one of:
+ * - \ref XMPP_SETTING_PASSWORD_RETRIES
+ *      Set the number of retry attempts to decrypt a private key file. \n
+ *      In case the user enters the password manually it can be useful to
+ *      directly retry if the decryption of the key file failed.
+ *
+ *  @param conn a   Strophe connection object
+ *  @param setting  The setting that shall be configured
+ *  @param value    The value, the settings should get
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_int(xmpp_conn_t *conn,
+                       xmpp_conn_setting_t setting,
+                       int value)
+{
+    switch (setting) {
+    case XMPP_SETTING_PASSWORD_RETRIES:
+        if (value <= 0)
+            conn->password_retries = 1;
+        else
+            conn->password_retries = value;
+        break;
+    default:
+        strophe_warn(conn->ctx, "xmpp", "Invalid Int setting %d", setting);
+        return;
+    }
+}
+
+/** Configure a connection-related string setting
+ *
+ * `setting` can be one of:
+ * - \ref XMPP_SETTING_JID
+ *      Set the JID of the user that will be bound to the connection. \n
+ *      This should not be used after a connection is created. \n
+ *      If the supplied JID is missing the node, SASL ANONYMOUS authentication
+ *      will be used.
+ *
+ * - \ref XMPP_SETTING_PASS
+ *      Set the password used to authenticate the connection.
+ *
+ * - \ref XMPP_SETTING_CAFILE
+ *      Set CAfile.
+ *
+ * - \ref XMPP_SETTING_CAPATH
+ *      Set CApath.
+ *
+ * - \ref XMPP_SETTING_CLIENT_CERT
+ *      Set the Client Certificate or PKCS#12 encoded file that will be bound to
+ *      the connection. \n
+ *      This should not be used after a connection is created. \n
+ *      In case the PKCS#12 file is encrypted, a callback must be set via
+ *      \ref xmpp_conn_set_functionpointer with the option
+ *      \ref XMPP_SETTING_PASSWORD_CALLBACK so the TLS stack can retrieve the
+ *      password.
+ *
+ * - \ref XMPP_SETTING_CLIENT_KEY
+ *      Set the Private Key that will be bound to the connection. \n
+ *      This should not be used after a connection is created. \n
+ *      In case the Private Key is encrypted, a callback must be set via
+ *      \ref xmpp_conn_set_functionpointer with the option
+ *      \ref XMPP_SETTING_PASSWORD_CALLBACK so the TLS stack can retrieve the
+ *      password.
+ *
+ *
+ *
+ *  If any value was previously set, it will be discarded.
+ *  The function will make a copy of the value given.
+ *
+ *  @param conn a   Strophe connection object
+ *  @param setting  The setting that shall be configured
+ *  @param value    The value, the settings should get
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_string(xmpp_conn_t *conn,
+                          xmpp_conn_setting_t setting,
+                          const char *value)
+{
+    char **target;
+    switch (setting) {
+    case XMPP_SETTING_JID:
+        target = &conn->jid;
+        break;
+    case XMPP_SETTING_PASS:
+        target = &conn->pass;
+        break;
+    case XMPP_SETTING_CAFILE:
+        target = &conn->tls_cafile;
+        break;
+    case XMPP_SETTING_CAPATH:
+        target = &conn->tls_capath;
+        break;
+    case XMPP_SETTING_CLIENT_CERT:
+        target = &conn->tls_client_cert;
+        break;
+    case XMPP_SETTING_CLIENT_KEY:
+        target = &conn->tls_client_key;
+        break;
+    default:
+        strophe_warn(conn->ctx, "xmpp", "Invalid String setting %d", setting);
+        return;
+    }
+
+    if (*target)
+        strophe_free(conn->ctx, *target);
+    *target = NULL;
+    if (value) {
+        *target = strophe_strdup(conn->ctx, value);
+    }
+}
+
+/** Configure a connection-related pointer setting
+ *
+ * `setting` can be one of:
+ * - \ref XMPP_SETTING_PASSWORD_CALLBACK_USERDATA
+ *      Set the userdata pointer that is pass when the password-retrieval
+ *      callback is called. \ref XMPP_SETTING_PASSWORD_CALLBACK
+ *
+ *  @param conn a   Strophe connection object
+ *  @param setting  The setting that shall be configured
+ *  @param value    The value, the settings should get
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_pointer(xmpp_conn_t *conn,
+                           xmpp_conn_setting_t setting,
+                           void *value)
+{
+    switch (setting) {
+    case XMPP_SETTING_PASSWORD_CALLBACK_USERDATA:
+        conn->password_callback_userdata = value;
+        break;
+    default:
+        strophe_warn(conn->ctx, "xmpp", "Invalid Pointer setting %d", setting);
+        return;
+    }
+}
+
+/** Configure a connection-related functionpointer setting
+ *
+ * `setting` can be one of:
+ * - \ref XMPP_SETTING_PASSWORD_CALLBACK
+ *      Set the Callback function which will be called when the TLS stack can't
+ *      decrypt a password protected key file. The userdata pointer can be set
+ *      via \ref xmpp_conn_set_pointer with the setting
+ *      \ref XMPP_SETTING_PASSWORD_CALLBACK_USERDATA
+ *
+ * - \ref XMPP_SETTING_CERTFAIL_HANDLER
+ *      Set the Handler function which will be called when the TLS stack can't
+ *      verify the CA of the server we're trying to connect to.
+ *
+ * - \ref XMPP_SETTING_SOCKOPT_CALLBACK
+ *      Set function to be called when a new socket is created to allow setting
+ *      socket options before connection is started. \n
+ *      If the connection is already connected, this callback will be called
+ *      immediately. \n
+ *      To set options that can only be applied to disconnected sockets, the
+ *      callback must be registered before connecting.
+ *
+ *  @param conn a   Strophe connection object
+ *  @param setting  The setting that shall be configured
+ *  @param value    The value, the settings should get
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_functionpointer_impl(xmpp_conn_t *conn,
+                                        xmpp_conn_setting_t setting,
+                                        xmpp_conn_pfn_t value)
+{
+    switch (setting) {
+    case XMPP_SETTING_PASSWORD_CALLBACK:
+        conn->password_callback = (xmpp_password_callback)value;
+        break;
+    case XMPP_SETTING_CERTFAIL_HANDLER:
+        conn->certfail_handler = (xmpp_certfail_handler)value;
+        break;
+    case XMPP_SETTING_SOCKOPT_CALLBACK:
+        conn->sockopt_cb = (xmpp_sockopt_callback)value;
+        if (conn->state != XMPP_STATE_DISCONNECTED)
+            conn->sockopt_cb(conn, &conn->sock);
+        break;
+    default:
+        strophe_warn(conn->ctx, "xmpp", "Invalid Functionpointer setting %d",
+                     setting);
+        return;
+    }
+}
+
 /** Get the JID which is or will be bound to the connection.
  *
  *  @param conn a Strophe connection object
@@ -397,66 +562,6 @@ const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *conn)
     return conn->bound_jid;
 }
 
-/** Set the JID of the user that will be bound to the connection.
- *  If any JID was previously set, it will be discarded.  This should not be
- *  be used after a connection is created.  The function will make a copy of
- *  the JID string.  If the supplied JID is missing the node, SASL
- *  ANONYMOUS authentication will be used.
- *
- *  @param conn a Strophe connection object
- *  @param jid a full or bare JID
- *
- *  @ingroup Connections
- */
-void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid)
-{
-    if (conn->jid)
-        strophe_free(conn->ctx, conn->jid);
-    conn->jid = strophe_strdup(conn->ctx, jid);
-}
-
-/** Set the Handler function which will be called when the TLS stack can't
- *  verify the CA of the server we're trying to connect to.
- *
- *  @param conn a Strophe connection object
- *  @param hndl certfail Handler function
- *
- *  @ingroup TLS
- */
-void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
-                                    xmpp_certfail_handler hndl)
-{
-    conn->certfail_handler = hndl;
-}
-
-/** Set the CAfile
- *
- *  @param conn a Strophe connection object
- *  @param path path to a certificate file
- *
- *  @ingroup TLS
- */
-void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path)
-{
-    if (conn->tls_cafile)
-        strophe_free(conn->ctx, conn->tls_cafile);
-    conn->tls_cafile = strophe_strdup(conn->ctx, path);
-}
-
-/** Set the CApath
- *
- *  @param conn a Strophe connection object
- *  @param path path to a folder containing certificates
- *
- *  @ingroup TLS
- */
-void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path)
-{
-    if (conn->tls_capath)
-        strophe_free(conn->ctx, conn->tls_capath);
-    conn->tls_capath = strophe_strdup(conn->ctx, path);
-}
-
 /** Retrieve the peer certificate
  *
  *  The returned Certificate object must be free'd by calling
@@ -473,41 +578,6 @@ xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn)
     return tls_peer_cert(conn);
 }
 
-/** Set the Callback function which will be called when the TLS stack can't
- *  decrypt a password protected key file.
- *
- *  @param conn a   Strophe connection object
- *  @param cb       The callback function that shall be called
- *  @param userdata An opaque data pointer that will be passed to the callback
- *
- *  @ingroup TLS
- */
-void xmpp_conn_set_password_callback(xmpp_conn_t *conn,
-                                     xmpp_password_callback cb,
-                                     void *userdata)
-{
-    conn->password_callback = cb;
-    conn->password_callback_userdata = userdata;
-}
-
-/** Set the number of retry attempts to decrypt a private key file.
- *
- *  In case the user enters the password manually it can be useful to
- *  directly retry if the decryption of the key file failed.
- *
- *  @param conn a   Strophe connection object
- *  @param retries  The number of retries that should be tried
- *
- *  @ingroup TLS
- */
-void xmpp_conn_set_password_retries(xmpp_conn_t *conn, unsigned int retries)
-{
-    if (retries == 0)
-        conn->password_retries = 1;
-    else
-        conn->password_retries = retries;
-}
-
 /** Retrieve the path of the key file that shall be unlocked.
  *
  *  This makes usually sense to be called from the
@@ -522,49 +592,6 @@ void xmpp_conn_set_password_retries(xmpp_conn_t *conn, unsigned int retries)
 const char *xmpp_conn_get_keyfile(const xmpp_conn_t *conn)
 {
     return conn->tls_client_key;
-}
-
-/** Set the Client Certificate and Private Key or PKCS#12 encoded file that
- *  will be bound to the connection. If any of them was previously set, it
- *  will be discarded. This should not be used after a connection is created.
- *  The function will make a copy of the strings passed in.
- *
- *  In case the Private Key is encrypted, a callback must be set via
- *  \ref xmpp_conn_set_password_callback so the TLS stack can retrieve the
- *  password.
- *
- *  In case one wants to use a PKCS#12 encoded file, it should be passed via
- *  the `cert` parameter and `key` should be NULL. Passing a PKCS#12 file in
- *  `key` is deprecated.
- *
- *  @param conn a Strophe connection object
- *  @param cert path to a certificate file or a P12 file
- *  @param key path to a private key file or a P12 file
- *
- *  @ingroup TLS
- */
-void xmpp_conn_set_client_cert(xmpp_conn_t *const conn,
-                               const char *const cert,
-                               const char *const key)
-{
-    strophe_debug(conn->ctx, "conn", "set client cert %s %s", cert, key);
-    if (conn->tls_client_cert)
-        strophe_free(conn->ctx, conn->tls_client_cert);
-    conn->tls_client_cert = NULL;
-    if (conn->tls_client_key)
-        strophe_free(conn->ctx, conn->tls_client_key);
-    conn->tls_client_key = NULL;
-    if (cert && key) {
-        conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
-        conn->tls_client_key = strophe_strdup(conn->ctx, key);
-    } else if (cert && !key) {
-        conn->tls_client_cert = strophe_strdup(conn->ctx, cert);
-    } else if (!cert && key) {
-        strophe_warn(conn->ctx, "xmpp",
-                     "xmpp_conn_set_client_cert: Passing PKCS#12 in 'key' "
-                     "parameter is deprecated. Use 'cert' instead");
-        conn->tls_client_cert = strophe_strdup(conn->ctx, key);
-    }
 }
 
 /** Get the number of xmppAddr entries in the client certificate.
@@ -605,22 +632,6 @@ char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *const conn, unsigned int n)
 const char *xmpp_conn_get_pass(const xmpp_conn_t *conn)
 {
     return conn->pass;
-}
-
-/** Set the password used to authenticate the connection.
- *  If any password was previously set, it will be discarded.  The function
- *  will make a copy of the password string.
- *
- *  @param conn a Strophe connection object
- *  @param pass the password
- *
- *  @ingroup Connections
- */
-void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass)
-{
-    if (conn->pass)
-        strophe_free(conn->ctx, conn->pass);
-    conn->pass = pass ? strophe_strdup(conn->ctx, pass) : NULL;
 }
 
 /** Get the strophe context that the connection is associated with.

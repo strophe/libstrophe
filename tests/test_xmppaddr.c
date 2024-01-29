@@ -16,6 +16,7 @@
 #include <string.h>
 #include <sys/param.h>
 
+#define XMPP_DEPRECATED(x)
 #include "strophe.h"
 
 #include "test.h"
@@ -41,12 +42,14 @@ int main()
     } client_cert[] = {
         {0, "tests/cert.pem", "tests/key.pem"},
         {1, "tests/cert.pem", "tests/key_encrypted.pem"},
-        {0, NULL, "tests/cert.emptypass.pfx"},
-        {0, NULL, "tests/cert.nopass.pfx"},
-        {1, NULL, "tests/cert.pfx"},
         {0, "tests/cert.emptypass.pfx", NULL},
         {0, "tests/cert.nopass.pfx", NULL},
         {1, "tests/cert.pfx", NULL},
+        /* Backward compatibility checks for change introduced in #208
+         * To be removed, once xmpp_conn_set_client_cert() is gone */
+        {0, NULL, "tests/cert.emptypass.pfx"},
+        {0, NULL, "tests/cert.nopass.pfx"},
+        {1, NULL, "tests/cert.pfx"},
     };
 
     const char *srcdir;
@@ -78,9 +81,15 @@ int main()
             keyfile = NULL;
 
         if (client_cert[m].needs_callback)
-            xmpp_conn_set_password_callback(conn, password_callback, NULL);
+            xmpp_conn_set_functionpointer(conn, XMPP_SETTING_PASSWORD_CALLBACK,
+                                          password_callback);
 
-        xmpp_conn_set_client_cert(conn, certfile, keyfile);
+        if (certfile) {
+            xmpp_conn_set_string(conn, XMPP_SETTING_CLIENT_CERT, certfile);
+            xmpp_conn_set_string(conn, XMPP_SETTING_CLIENT_KEY, keyfile);
+        } else {
+            xmpp_conn_set_client_cert(conn, certfile, keyfile);
+        }
 
         xmppaddr_num[0] = '0' + xmpp_conn_cert_xmppaddr_num(conn);
 
