@@ -167,6 +167,8 @@ xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx)
         tls_clear_password_cache(conn);
         conn->password_retries = 1;
 
+        conn->compression.level = -1;
+
         conn->parser =
             parser_new(conn->ctx, _handle_stream_start, _handle_stream_end,
                        _handle_stream_stanza, conn);
@@ -348,6 +350,10 @@ int xmpp_conn_release(xmpp_conn_t *conn)
  *      In case the user enters the password manually it can be useful to
  *      directly retry if the decryption of the key file failed.
  *
+ * - \ref XMPP_SETTING_COMPRESSION_LEVEL
+ *      Set the compression level. \n
+ *      For zlib the valid range is `-1` to `9`.
+ *
  *  @param conn a   Strophe connection object
  *  @param setting  The setting that shall be configured
  *  @param value    The value, the settings should get
@@ -364,6 +370,9 @@ void xmpp_conn_set_int(xmpp_conn_t *conn,
             conn->password_retries = 1;
         else
             conn->password_retries = value;
+        break;
+    case XMPP_SETTING_COMPRESSION_LEVEL:
+        conn->compression.level = value;
         break;
     default:
         strophe_warn(conn->ctx, "xmpp", "Invalid Int setting %d", setting);

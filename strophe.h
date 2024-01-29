@@ -389,6 +389,7 @@ typedef enum xmpp_conn_setting_t {
     /* Int values */
     XMPP_SETTING_PASSWORD_RETRIES = 0x40, /**< Number of retry attempts to
                                       decrypt a private key file. */
+    XMPP_SETTING_COMPRESSION_LEVEL,       /**< Compression level. */
 
     /* Pointer values */
     XMPP_SETTING_PASSWORD_CALLBACK_USERDATA = 0x80, /**< Userdata for password
