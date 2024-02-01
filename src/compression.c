@@ -227,7 +227,7 @@ int compression_init(xmpp_conn_t *conn)
 
     comp->compression.stream.next_out = comp->compression.buffer;
     comp->compression.stream.avail_out = STROPHE_COMPRESSION_BUFFER_SIZE;
-    int err = deflateInit(&comp->compression.stream, Z_DEFAULT_COMPRESSION);
+    int err = deflateInit(&comp->compression.stream, conn->compression.level);
     if (err != Z_OK) {
         strophe_free_and_null(conn->ctx, comp->compression.buffer);
         conn->error = EBADFD;
