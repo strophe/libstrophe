@@ -1,3 +1,13 @@
+0.13.0
+	- Fix connected/connecting signaling to user (#227)
+	- Fix wording of licensing terms (#225)
+	- Prepare for future changes in OpenSSL (#226)
+	- Improve Stream Management (#227) (#230)
+	- Add SCRAM-PLUS Variants (#228)
+	- Introduce XEP-0138 stream compression (#231)
+	- Deprecated the following API (#227):
+		- xmpp_conn_disable_tls() - replaced by a flag set by xmpp_conn_set_flags()
+
 0.12.3
 	- Improve TCP-connection establishment (#221)
 	- Handle case where the server doesn't provide the `bind` feature (#224)
@@ -21,7 +31,7 @@
 	- Fix some build steps when builddir != srcdir (#208)
 	- Allow the user to disable build of examples (#209)
 	- CI builds against OpenSSL 3 (#206)
-	- Change the call signature of the following API:
+	- Change the call signature of the following API (#208):
 		- xmpp_conn_set_client_cert() - the PKCS#12 file has now to be passed via the `cert`
 				parameter. Originally it was via `key`. Currently both styles are supported,
 				but in a future release only passing via `cert` will be accepted.
