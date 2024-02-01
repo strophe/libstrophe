@@ -707,11 +707,18 @@ void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len);
  */
 void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len);
 
-/**
+/*
  * Formerly "private but exported" functions made public for now to announce
  * deprecation */
 #include <stdarg.h>
 
+/**
+ * XMPP_DEPRECATED(x) macro to show a compiler warning for deprecated API
+ * functions
+ *
+ * @param x The function that can be used as a replacement or 'internal' if
+ * there is no replacement
+ */
 #if defined(__GNUC__)
 #if (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
 #define XMPP_DEPRECATED(x) __attribute__((deprecated("replaced by " #x)))

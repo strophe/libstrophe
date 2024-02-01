@@ -1102,10 +1102,10 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 
     UNUSED(userdata);
 
-    /* remove missing features handler */
+    /* Remove missing features handler */
     xmpp_timed_handler_delete(conn, _handle_missing_features_sasl);
 
-    /* check whether resource binding is required */
+    /* Check whether resource binding is required */
     bind = xmpp_stanza_get_child_by_name(stanza, "bind");
     if (bind) {
         ns = xmpp_stanza_get_ns(bind);
@@ -1129,15 +1129,15 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
                 ns != NULL && strcmp(ns, XMPP_NS_SESSION) == 0;
     }
 
+    /* Check stream-management support */
     if (xmpp_stanza_get_child_by_name_and_ns(stanza, "sm", XMPP_NS_SM)) {
-        /* stream management supported */
         conn->sm_state->sm_support = 1;
     }
 
-    /* we are expecting either <bind/> and <session/> since this is a
+    /* We are expecting either <bind/> and optionally <session/> since this is a
        XMPP style connection or we <resume/> the previous session */
 
-    /* check whether we can <resume/> the previous session */
+    /* Check whether we can <resume/> the previous session */
     if (!conn->sm_disable && conn->sm_state->can_resume &&
         conn->sm_state->previd && conn->sm_state->bound_jid) {
         resume = xmpp_stanza_new(conn->ctx);

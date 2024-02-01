@@ -1147,14 +1147,14 @@ long xmpp_conn_get_flags(const xmpp_conn_t *conn)
  *
  *  Supported flags are:
  *
- *    - XMPP_CONN_FLAG_DISABLE_TLS
- *    - XMPP_CONN_FLAG_MANDATORY_TLS
- *    - XMPP_CONN_FLAG_LEGACY_SSL
- *    - XMPP_CONN_FLAG_TRUST_TLS
- *    - XMPP_CONN_FLAG_LEGACY_AUTH
- *    - XMPP_CONN_FLAG_DISABLE_SM
- *    - XMPP_CONN_FLAG_ENABLE_COMPRESSION
- *    - XMPP_CONN_FLAG_COMPRESSION_DONT_RESET
+ *    - \ref XMPP_CONN_FLAG_DISABLE_TLS
+ *    - \ref XMPP_CONN_FLAG_MANDATORY_TLS
+ *    - \ref XMPP_CONN_FLAG_LEGACY_SSL
+ *    - \ref XMPP_CONN_FLAG_TRUST_TLS
+ *    - \ref XMPP_CONN_FLAG_LEGACY_AUTH
+ *    - \ref XMPP_CONN_FLAG_DISABLE_SM
+ *    - \ref XMPP_CONN_FLAG_ENABLE_COMPRESSION
+ *    - \ref XMPP_CONN_FLAG_COMPRESSION_DONT_RESET
  *
  *  @param conn a Strophe connection object
  *  @param flags ORed connection flags

@@ -88,7 +88,7 @@ or if you have everything configured properly:
 
 Then open `docs/html/index.html`.
 
-An online version of the documentation of the latest release is available on http://strophe.im/libstrophe/
+An online version of the documentation of the latest release is available on https://strophe.im/libstrophe/
 
 Releases
 --------
