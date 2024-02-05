@@ -63,7 +63,7 @@ static int _conn_decompress(struct xmpp_compression *comp,
         break;
     default:
         strophe_error(comp->conn->ctx, "zlib", "inflate error %d", ret);
-        comp->conn->error = EBADFD;
+        comp->conn->error = ret;
         conn_disconnect(comp->conn);
         break;
     }
@@ -129,7 +129,7 @@ _compression_write(xmpp_conn_t *conn, const void *buff, size_t len, int flush)
         }
         if (ret != Z_OK) {
             strophe_error(conn->ctx, "zlib", "deflate error %d", ret);
-            conn->error = EBADFD;
+            conn->error = ret;
             conn_disconnect(conn);
             return ret;
         }
@@ -227,22 +227,22 @@ int compression_init(xmpp_conn_t *conn)
 
     comp->compression.stream.next_out = comp->compression.buffer;
     comp->compression.stream.avail_out = STROPHE_COMPRESSION_BUFFER_SIZE;
-    int err = deflateInit(&comp->compression.stream, Z_DEFAULT_COMPRESSION);
-    if (err != Z_OK) {
+    int ret = deflateInit(&comp->compression.stream, Z_DEFAULT_COMPRESSION);
+    if (ret != Z_OK) {
         strophe_free_and_null(conn->ctx, comp->compression.buffer);
-        conn->error = EBADFD;
+        conn->error = ret;
         conn_disconnect(conn);
-        return err;
+        return ret;
     }
 
     _init_zlib_compression(conn->ctx, &comp->decompression);
 
-    err = inflateInit(&comp->decompression.stream);
-    if (err != Z_OK) {
+    ret = inflateInit(&comp->decompression.stream);
+    if (ret != Z_OK) {
         strophe_free_and_null(conn->ctx, comp->decompression.buffer);
-        conn->error = EBADFD;
+        conn->error = ret;
         conn_disconnect(conn);
-        return err;
+        return ret;
     }
     return 0;
 }
