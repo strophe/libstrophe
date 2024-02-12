@@ -175,7 +175,7 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
         xmpp_stanza_reply_error(stanza, "cancel", "service-unavailable", NULL);
     assert(error != NULL);
     mood = xmpp_stanza_new_from_string(ctx, str_mood);
-    assert(stanza != NULL);
+    assert(mood != NULL);
 
     assert(xmpp_stanza_get_to(error) != NULL);
     COMPARE("romeo@montague.lit/home", xmpp_stanza_get_to(error));

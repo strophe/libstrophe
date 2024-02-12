@@ -1106,10 +1106,9 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
     xmpp_timed_handler_delete(conn, _handle_missing_features_sasl);
 
     /* Check whether resource binding is required */
-    bind = xmpp_stanza_get_child_by_name(stanza, "bind");
+    bind = xmpp_stanza_get_child_by_name_and_ns(stanza, "bind", XMPP_NS_BIND);
     if (bind) {
-        ns = xmpp_stanza_get_ns(bind);
-        conn->bind_required = ns != NULL && strcmp(ns, XMPP_NS_BIND) == 0;
+        conn->bind_required = 1;
         bind = xmpp_stanza_copy(bind);
         if (!bind) {
             disconnect_mem_error(conn);
