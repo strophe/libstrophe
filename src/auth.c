@@ -1095,9 +1095,8 @@ static int _handle_features_compress(xmpp_conn_t *conn,
 static int
 _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
-    xmpp_stanza_t *bind, *session, *opt;
+    xmpp_stanza_t *bind, *session;
     xmpp_stanza_t *resume;
-    const char *ns;
     char h[11];
 
     UNUSED(userdata);
@@ -1118,14 +1117,20 @@ _handle_features_sasl(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         conn->bind_required = 0;
     }
 
-    /* check whether session establishment is required */
-    session = xmpp_stanza_get_child_by_name(stanza, "session");
+    /* Check whether session establishment is required.
+     *
+     * The mechanism is deprecated, but we still support it.
+     *
+     * RFC3921 contains Ch. 3 "Session Establishment".
+     *
+     * RFC6121 removes this and explains in Ch. 1.4:
+     * "Interoperability Note: [...] Implementation and deployment experience
+     * has shown that this additional step is unnecessary. [...]" */
+    session = xmpp_stanza_get_child_by_name_and_ns(stanza, "session",
+                                                   XMPP_NS_SESSION);
     if (session) {
-        ns = xmpp_stanza_get_ns(session);
-        opt = xmpp_stanza_get_child_by_name(session, "optional");
-        if (!opt)
-            conn->session_required =
-                ns != NULL && strcmp(ns, XMPP_NS_SESSION) == 0;
+        conn->session_required =
+            xmpp_stanza_get_child_by_name(session, "optional") == NULL;
     }
 
     /* Check stream-management support */
@@ -1183,11 +1188,57 @@ static int _handle_missing_features_sasl(xmpp_conn_t *conn, void *userdata)
     return 0;
 }
 
+static void _session_start(xmpp_conn_t *conn)
+{
+    xmpp_stanza_t *session;
+    xmpp_stanza_t *iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_session1");
+    if (!iq) {
+        disconnect_mem_error(conn);
+        return;
+    }
+
+    session = xmpp_stanza_new(conn->ctx);
+    if (!session) {
+        xmpp_stanza_release(iq);
+        disconnect_mem_error(conn);
+        return;
+    }
+
+    /* setup response handlers */
+    handler_add_id(conn, _handle_session, "_xmpp_session1", NULL);
+    handler_add_timed(conn, _handle_missing_session, SESSION_TIMEOUT, NULL);
+
+    xmpp_stanza_set_name(session, "session");
+    xmpp_stanza_set_ns(session, XMPP_NS_SESSION);
+
+    xmpp_stanza_add_child_ex(iq, session, 0);
+
+    /* send session establishment request */
+    send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
+}
+
+static void _sm_enable(xmpp_conn_t *conn)
+{
+    xmpp_stanza_t *enable = xmpp_stanza_new(conn->ctx);
+    if (!enable) {
+        disconnect_mem_error(conn);
+        return;
+    }
+    xmpp_stanza_set_name(enable, "enable");
+    xmpp_stanza_set_ns(enable, XMPP_NS_SM);
+    if (!conn->sm_state->dont_request_resume)
+        xmpp_stanza_set_attribute(enable, "resume", "true");
+    handler_add(conn, _handle_sm, XMPP_NS_SM, NULL, NULL, NULL);
+    send_stanza(conn, enable, XMPP_QUEUE_SM_STROPHE);
+    conn->sm_state->sm_sent_nr = 0;
+    conn->sm_state->sm_enabled = 1;
+}
+
 static int
 _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
 {
     const char *type;
-    xmpp_stanza_t *iq, *session, *binding, *jid_stanza, *enable = NULL;
+    xmpp_stanza_t *binding, *jid_stanza;
 
     UNUSED(userdata);
 
@@ -1210,58 +1261,19 @@ _handle_bind(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
             }
         }
 
-        /* send enable directly after the bind request */
-        if (conn->sm_state->sm_support && !conn->sm_disable) {
-            enable = xmpp_stanza_new(conn->ctx);
-            if (!enable) {
-                disconnect_mem_error(conn);
-                return 0;
-            }
-            xmpp_stanza_set_name(enable, "enable");
-            xmpp_stanza_set_ns(enable, XMPP_NS_SM);
-            if (!conn->sm_state->dont_request_resume)
-                xmpp_stanza_set_attribute(enable, "resume", "true");
-            handler_add(conn, _handle_sm, XMPP_NS_SM, NULL, NULL, NULL);
-            send_stanza(conn, enable, XMPP_QUEUE_SM_STROPHE);
-            conn->sm_state->sm_sent_nr = 0;
-            conn->sm_state->sm_enabled = 1;
-        }
-
         /* establish a session if required */
         if (conn->session_required) {
-            /* setup response handlers */
-            handler_add_id(conn, _handle_session, "_xmpp_session1", NULL);
-            handler_add_timed(conn, _handle_missing_session, SESSION_TIMEOUT,
-                              NULL);
-
-            /* send session request */
-            iq = xmpp_iq_new(conn->ctx, "set", "_xmpp_session1");
-            if (!iq) {
-                disconnect_mem_error(conn);
-                return 0;
-            }
-
-            session = xmpp_stanza_new(conn->ctx);
-            if (!session) {
-                xmpp_stanza_release(iq);
-                disconnect_mem_error(conn);
-                return 0;
-            }
-
-            xmpp_stanza_set_name(session, "session");
-            xmpp_stanza_set_ns(session, XMPP_NS_SESSION);
-
-            xmpp_stanza_add_child_ex(iq, session, 0);
-
-            /* send session establishment request */
-            send_stanza(conn, iq, XMPP_QUEUE_STROPHE);
+            _session_start(conn);
         }
-
+        /* send enable directly after the bind request */
+        else if (conn->sm_state->sm_support && !conn->sm_disable) {
+            _sm_enable(conn);
+        }
         /* if there's no xmpp session required and we didn't try to enable
          * stream-management, we're done here and the stream-negotiation was
          * successful
          */
-        if (!conn->session_required && !enable) {
+        else {
             _stream_negotiation_success(conn);
         }
     } else {
@@ -1298,8 +1310,11 @@ _handle_session(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         xmpp_disconnect(conn);
     } else if (type && strcmp(type, "result") == 0) {
         strophe_debug(conn->ctx, "xmpp", "Session establishment successful.");
-
-        _stream_negotiation_success(conn);
+        if (conn->sm_state->sm_support && !conn->sm_disable) {
+            _sm_enable(conn);
+        } else {
+            _stream_negotiation_success(conn);
+        }
     } else {
         strophe_error(conn->ctx, "xmpp",
                       "Server sent malformed session reply.");
