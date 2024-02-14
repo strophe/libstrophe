@@ -207,7 +207,7 @@ sock_t sock_connect(xmpp_sock_t *xsock)
 {
     struct addrinfo *ainfo;
     sock_t sock;
-    int rc = 0;
+    int rc;
     char buf[64];
 
     do {
@@ -228,6 +228,7 @@ sock_t sock_connect(xmpp_sock_t *xsock)
 
         sock = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
         if (sock != INVALID_SOCKET) {
+            rc = 0;
             if (xsock->conn->sockopt_cb) {
                 /* Don't allow user to overwrite sockfd value. */
                 sock_t sock_copy = sock;
