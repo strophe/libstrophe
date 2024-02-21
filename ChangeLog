@@ -1,3 +1,9 @@
+0.13.1
+	- Fix SCRAM-*-PLUS SASL mechanisms with OpenSSL and TLS < v1.3 (40f2452)
+	- Only signal "stream negotiation success" once (1cf09b1)
+	- Fix `sock_connect()` not looping over all DNS records returned if no `sockopt_cb` is set (5edc480)
+	- Replace usage of EBADFD, it's not in POSIX (#235)
+
 0.13.0
 	- Fix connected/connecting signaling to user (#227)
 	- Fix wording of licensing terms (#225)
