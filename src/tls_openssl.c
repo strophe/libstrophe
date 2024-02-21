@@ -750,8 +750,9 @@ int tls_init_channel_binding(tls_t *tls,
 {
     const char *label = NULL;
     size_t labellen = 0;
+    int ssl_version = SSL_version(tls->ssl);
 
-    switch (SSL_version(tls->ssl)) {
+    switch (ssl_version) {
     case SSL3_VERSION:
         *binding_prefix = "tls-unique";
         *binding_prefix_len = strlen("tls-unique");
@@ -774,7 +775,7 @@ int tls_init_channel_binding(tls_t *tls,
         break;
 #endif
     default:
-        strophe_error(tls->ctx, "tls", "Unsupported TLS Version: %s",
+        strophe_error(tls->ctx, "tls", "Unsupported TLS/SSL Version: %s",
                       SSL_get_version(tls->ssl));
         return -1;
     }
@@ -785,11 +786,28 @@ int tls_init_channel_binding(tls_t *tls,
     if (!tls->channel_binding_data)
         return -1;
 
-    if (SSL_export_keying_material(tls->ssl, tls->channel_binding_data,
-                                   tls->channel_binding_size, label, labellen,
-                                   NULL, 0, 0) != 1) {
-        strophe_error(tls->ctx, "tls", "Could not get channel binding data");
-        return -1;
+    if (ssl_version <= TLS1_2_VERSION) {
+        size_t len;
+        if (SSL_session_reused(tls->ssl)) {
+            len = SSL_get_peer_finished(tls->ssl, tls->channel_binding_data,
+                                        tls->channel_binding_size);
+        } else {
+            len = SSL_get_finished(tls->ssl, tls->channel_binding_data,
+                                   tls->channel_binding_size);
+        }
+        if (len != tls->channel_binding_size) {
+            strophe_error(tls->ctx, "tls",
+                          "Got channel binding data of wrong size %zu", len);
+            return -1;
+        }
+    } else {
+        if (SSL_export_keying_material(tls->ssl, tls->channel_binding_data,
+                                       tls->channel_binding_size, label,
+                                       labellen, NULL, 0, 0) != 1) {
+            strophe_error(tls->ctx, "tls",
+                          "Could not get channel binding data");
+            return -1;
+        }
     }
     return 0;
 }
