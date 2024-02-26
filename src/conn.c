@@ -1282,6 +1282,80 @@ xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn)
     return ret;
 }
 
+struct xmpp_sm_serializable_state_t *xmpp_conn_get_sm_serializable_state(xmpp_conn_t *conn)
+{
+    if (!conn->sm_state->sm_support || !conn->sm_state->sm_enabled || !conn->sm_state->can_resume) {
+        return NULL;
+    }
+
+    struct xmpp_sm_serializable_state_t *ser = strophe_alloc(conn->ctx, sizeof(ser));
+    ser->sm_handled_nr = conn->sm_state->sm_handled_nr;
+    ser->sm_sent_nr = conn->sm_state->sm_sent_nr;
+    ser->id = strophe_strdup(conn->ctx, conn->sm_state->id);
+    ser->q_size = 0;
+    size_t capacity = 10;
+    ser->q = strophe_alloc(conn->ctx, capacity * sizeof(*ser->q));
+    xmpp_send_queue_t *peek = conn->sm_state->sm_queue.head;
+    while (peek) {
+        ser->q_size++;
+        if (ser->q_size > capacity) {
+            capacity *= 2;
+            ser->q = strophe_realloc(conn->ctx, ser->q, capacity * sizeof(*ser->q));
+        }
+        ser->q[ser->q_size - 1] = strophe_strdup(conn->ctx, peek->data);
+        peek = peek->next;
+    }
+    return ser;
+}
+
+int xmpp_conn_set_sm_serializable_state(xmpp_conn_t *conn, uint32_t sm_handled_nr, uint32_t sm_sent_nr, char *id, char **q, size_t q_size)
+{
+    /* We can only set the SM state when we're disconnected */
+    if (conn->state != XMPP_STATE_DISCONNECTED) {
+        strophe_error(conn->ctx, "conn",
+                      "SM state can only be set the when we're disconnected");
+        return XMPP_EINVOP;
+    }
+
+    if (conn->sm_state) {
+        strophe_error(conn->ctx, "conn", "SM state is already set!");
+        return XMPP_EINVOP;
+    }
+
+    conn->sm_state = strophe_alloc(conn->ctx, sizeof(*conn->sm_state));
+    if (!conn->sm_state) return XMPP_EMEM;
+    memset(conn->sm_state, 0, sizeof(*conn->sm_state));
+    conn->sm_state->ctx = conn->ctx;
+
+    conn->sm_state->sm_support = 1;
+    conn->sm_state->sm_enabled = 1;
+    conn->sm_state->can_resume = 1;
+    conn->sm_state->resume = 1;
+    conn->sm_state->sm_handled_nr = sm_handled_nr;
+    conn->sm_state->sm_sent_nr = sm_sent_nr;
+    conn->sm_state->id = id;
+
+    for (size_t i = 0; i < q_size; i++) {
+        xmpp_send_queue_t *item = strophe_alloc(conn->ctx, sizeof(*item));
+        if (!item) {
+            reset_sm_state(conn->sm_state);
+            strophe_free(conn->ctx, conn->sm_state);
+            conn->sm_state = NULL;
+            return XMPP_EMEM;
+        }
+
+        item->data = q[i];
+        item->len = strlen(q[i]);
+        item->written = 0;
+        item->wip = 0;
+        item->userdata = NULL;
+        item->owner = XMPP_QUEUE_USER;
+        add_queue_back(&conn->sm_state->sm_queue, item);
+    }
+
+    return XMPP_EOK;
+}
+
 static void _reset_sm_state_for_reconnect(xmpp_conn_t *conn)
 {
     xmpp_sm_state_t *s = conn->sm_state;
