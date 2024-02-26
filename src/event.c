@@ -174,6 +174,7 @@ void xmpp_run_once(xmpp_ctx_t *ctx, unsigned long timeout)
             /* if we've sent everything update the tail */
             if (!sq)
                 conn->send_queue_tail = NULL;
+            trigger_sm_callback(conn);
         }
         intf->flush(intf);
 

@@ -323,6 +323,8 @@ struct _xmpp_conn_t {
     hash_t *id_handlers;
     xmpp_handlist_t *handlers;
     xmpp_sockopt_callback sockopt_cb;
+    xmpp_sm_callback sm_callback;
+    void *sm_callback_ctx;
 };
 
 void conn_disconnect(xmpp_conn_t *conn);
@@ -376,6 +378,7 @@ void handler_add(xmpp_conn_t *conn,
 void handler_system_delete_all(xmpp_conn_t *conn);
 
 /* utility functions */
+void trigger_sm_callback(xmpp_conn_t *conn);
 void reset_sm_state(xmpp_sm_state_t *sm_state);
 void disconnect_mem_error(xmpp_conn_t *conn);
 
