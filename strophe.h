@@ -18,6 +18,7 @@
 #define __LIBSTROPHE_STROPHE_H__
 
 #include <stddef.h> /* size_t */
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -182,6 +183,14 @@ xmpp_log_t *xmpp_get_default_logger(xmpp_log_level_t level);
 typedef struct _xmpp_conn_t xmpp_conn_t;
 typedef struct _xmpp_stanza_t xmpp_stanza_t;
 typedef struct _xmpp_sm_t xmpp_sm_state_t;
+
+struct xmpp_sm_serializable_state_t {
+    uint32_t sm_handled_nr;
+    uint32_t sm_sent_nr;
+    char *id;
+    char **q;
+    size_t q_size;
+};
 
 /* connection flags */
 #define XMPP_CONN_FLAG_DISABLE_TLS (1UL << 0)
