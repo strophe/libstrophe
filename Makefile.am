@@ -190,6 +190,7 @@ STATIC_TESTS = \
 	tests/test_jid \
 	tests/test_ctx \
 	tests/test_send_queue \
+	tests/test_serialize_sm \
 	tests/test_string \
 	tests/test_resolver
 
@@ -284,6 +285,11 @@ tests_test_send_queue_SOURCES = tests/test_send_queue.c
 tests_test_send_queue_CFLAGS = -I$(top_srcdir)/src
 tests_test_send_queue_LDADD = $(STROPHE_LIBS)
 tests_test_send_queue_LDFLAGS = -static
+
+tests_test_serialize_sm_SOURCES = tests/test_serialize_sm.c tests/test.c tests/test.h
+tests_test_serialize_sm_CFLAGS = -I$(top_srcdir)/src
+tests_test_serialize_sm_LDADD = $(STROPHE_LIBS)
+tests_test_serialize_sm_LDFLAGS = -static
 
 tests_test_snprintf_SOURCES = tests/test_snprintf.c
 tests_test_snprintf_CFLAGS = -I$(top_srcdir)/src
