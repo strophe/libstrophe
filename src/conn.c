@@ -1481,8 +1481,11 @@ char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
     /* In case there exists a SM stanza that is linked to the
      * one we're currently dropping, also delete that one.
      */
-    if (t->next && t->next->userdata == t)
+    if (t->next && t->next->userdata == t) {
         strophe_free(conn->ctx, _drop_send_queue_element(conn, t->next));
+        /* reset the flag, so we restart to send `<r>` stanzas */
+        conn->sm_state->r_sent = 0;
+    }
     /* Finally drop the element */
     return _drop_send_queue_element(conn, t);
 }
