@@ -1435,6 +1435,7 @@ char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
                                         xmpp_queue_element_t which)
 {
     xmpp_send_queue_t *t;
+    int disconnected = conn->state == XMPP_STATE_DISCONNECTED;
 
     /* Fast return paths */
     /* empty queue */
@@ -1443,7 +1444,7 @@ char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
     /* one element in queue */
     if (conn->send_queue_head == conn->send_queue_tail) {
         /* head is already sent out partially */
-        if (conn->send_queue_head->wip)
+        if (conn->send_queue_head->wip && !disconnected)
             return NULL;
         /* the element is no USER element */
         if (conn->send_queue_head->owner != XMPP_QUEUE_USER)
@@ -1467,7 +1468,7 @@ char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
         return NULL;
 
     /* head is already sent out partially */
-    if (t == conn->send_queue_head && t->wip)
+    if (t == conn->send_queue_head && t->wip && !disconnected)
         t = t->next;
 
     /* search forward to find the first USER element */
