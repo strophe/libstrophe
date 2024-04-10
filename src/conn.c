@@ -1092,6 +1092,7 @@ int conn_tls_start(xmpp_conn_t *conn)
     }
 
     if (conn->tls != NULL) {
+        struct conn_interface old_intf = conn->intf;
         conn->intf = tls_intf;
         conn->intf.conn = conn;
         if (tls_start(conn->tls)) {
@@ -1102,6 +1103,7 @@ int conn_tls_start(xmpp_conn_t *conn)
             tls_free(conn->tls);
             conn->tls = NULL;
             conn->tls_failed = 1;
+            conn->intf = old_intf;
         }
     }
     if (rc != 0) {
