@@ -78,12 +78,23 @@ const struct hash_alg scram_sha512 = {
     (void (*)(void *, const uint8_t *, size_t))sha512_process,
     (void (*)(void *, uint8_t *))sha512_done};
 
+const struct hash_alg scram_sha512_plus = {
+    "SCRAM-SHA-512-PLUS",
+    SASL_MASK_SCRAMSHA512_PLUS,
+    SHA512_DIGEST_SIZE,
+    (void (*)(const uint8_t *, size_t, uint8_t *))sha512_hash,
+    (void (*)(void *))sha512_init,
+    (void (*)(void *, const uint8_t *, size_t))sha512_process,
+    (void (*)(void *, uint8_t *))sha512_done};
+
 /* The order of this list defines the order in which the SCRAM algorithms are
  * tried if the server supports them.
  * Their order is derived from
  * https://datatracker.ietf.org/doc/html/draft-ietf-kitten-password-storage
  */
 const struct hash_alg *scram_algs[] = {
+    /* *1 */
+    &scram_sha512_plus,
     /* *1 */
     &scram_sha256_plus,
     /* *1 */
