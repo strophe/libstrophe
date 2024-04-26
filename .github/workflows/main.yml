@@ -75,9 +75,6 @@ jobs:
            - { version: "openssl-3.2.1",   continue: false, libressl: false }
            - { version: "openssl-3.3",     continue: true,  libressl: false }
            - { version: "openssl-3.3.0",   continue: false, libressl: false }
-        valgrind:
-           - { configure: ''                    , make: 'check'          }
-           - { configure: '--enable-valgrind'   , make: 'check-valgrind' }
     name: xSSL tests
     continue-on-error: ${{ matrix.xssl_versions.continue }}
     steps:
@@ -95,11 +92,19 @@ jobs:
       - name: Build the library
         run: |
           ./bootstrap.sh
-          ./configure ${{ matrix.valgrind.configure }} PKG_CONFIG_PATH="${HOME}/xssl/lib/pkgconfig" CFLAGS="-Werror -g3" --prefix="${HOME}/xssl"
+          ./configure PKG_CONFIG_PATH="${HOME}/xssl/lib/pkgconfig" CFLAGS="-Werror -g3" --prefix="${HOME}/xssl"
           make -j$(nproc)
       - name: Run tests
         run: |
-          make -j$(nproc) ${{ matrix.valgrind.make }}
+          make -j$(nproc) check
+      - name: Build the library with Valgrind enabled
+        run: |
+          ./bootstrap.sh
+          ./configure --enable-valgrind PKG_CONFIG_PATH="${HOME}/xssl/lib/pkgconfig" CFLAGS="-Werror -g3" --prefix="${HOME}/xssl"
+          make -j$(nproc)
+      - name: Run tests with Valgrind enabled
+        run: |
+          make -j$(nproc) check-valgrind
       - name: Error logs
         if: ${{ failure() }}
         run: |
