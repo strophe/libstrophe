@@ -123,7 +123,8 @@ static void sock_getaddrinfo(xmpp_sock_t *xsock)
         rc = getaddrinfo(xsock->srv_rr_cur->target, service, &hints,
                          &xsock->ainfo_list);
         if (rc != 0) {
-            strophe_debug(xsock->ctx, "sock", "getaddrinfo() failed with %d",
+            strophe_debug(xsock->ctx, "sock",
+                          "getaddrinfo() failed with %s (%d)", gai_strerror(rc),
                           rc);
             xsock->ainfo_list = NULL;
         }
@@ -236,7 +237,7 @@ sock_t sock_connect(xmpp_sock_t *xsock)
                 if (rc != 0) {
                     strophe_debug(xsock->ctx, "sock",
                                   "User's setsockopt callback"
-                                  "failed with %d (errno=%d)",
+                                  " failed with %d (errno=%d)",
                                   rc, errno);
                 }
             }
