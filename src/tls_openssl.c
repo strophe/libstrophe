@@ -51,8 +51,10 @@
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
 #define STROPHE_ERR_func_error_string(e) ERR_func_error_string(e)
+#define STROPHE_SSL_get1_peer_certificate(s) SSL_get_peer_certificate(s)
 #else
 #define STROPHE_ERR_func_error_string(e) ""
+#define STROPHE_SSL_get1_peer_certificate(s) SSL_get1_peer_certificate(s)
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -762,7 +764,7 @@ void tls_free(tls_t *tls)
 xmpp_tlscert_t *tls_peer_cert(xmpp_conn_t *conn)
 {
     if (conn && conn->tls && conn->tls->ssl) {
-        X509 *cert = SSL_get_peer_certificate(conn->tls->ssl);
+        X509 *cert = STROPHE_SSL_get1_peer_certificate(conn->tls->ssl);
         if (cert) {
             xmpp_tlscert_t *tlscert = _x509_to_tlscert(conn->ctx, cert);
             X509_free(cert);
@@ -1034,7 +1036,7 @@ static void _tls_dump_cert_info(tls_t *tls)
     X509 *cert;
     char *name;
 
-    cert = SSL_get_peer_certificate(tls->ssl);
+    cert = STROPHE_SSL_get1_peer_certificate(tls->ssl);
     if (cert == NULL)
         strophe_debug(tls->ctx, "tls", "Certificate was not presented by peer");
     else {
