@@ -1232,6 +1232,7 @@ static void _sm_enable(xmpp_conn_t *conn)
     send_stanza(conn, enable, XMPP_QUEUE_SM_STROPHE);
     conn->sm_state->sm_sent_nr = 0;
     conn->sm_state->sm_enabled = 1;
+    trigger_sm_callback(conn);
 }
 
 static int
@@ -1485,6 +1486,8 @@ static int _handle_sm(xmpp_conn_t *const conn,
         /* unknown stanza received */
         name = NULL;
     }
+
+    trigger_sm_callback(conn);
 
 err_sm:
     if (!name) {
