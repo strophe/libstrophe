@@ -181,6 +181,7 @@ struct _xmpp_send_queue_t {
 #define SASL_MASK_SCRAMSHA1_PLUS (1 << 7)
 #define SASL_MASK_SCRAMSHA256_PLUS (1 << 8)
 #define SASL_MASK_SCRAMSHA512_PLUS (1 << 9)
+#define SASL_MASK_SASL2 (1 << 10)
 
 #define SASL_MASK_SCRAM_PLUS                                 \
     (SASL_MASK_SCRAMSHA1_PLUS | SASL_MASK_SCRAMSHA256_PLUS | \
