@@ -53,6 +53,10 @@ extern "C" {
  *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-sasl'.
  */
 #define XMPP_NS_SASL "urn:ietf:params:xml:ns:xmpp-sasl"
+/** @def XMPP_NS_SASL2
+ *  Namespace definition for 'urn:xmpp:sasl:2'.
+ */
+#define XMPP_NS_SASL2 "urn:xmpp:sasl:2"
 /** @def XMPP_NS_BIND
  *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-bind'.
  */
