@@ -293,6 +293,9 @@ struct _xmpp_conn_t {
     char *domain;
     char *jid;
     char *pass;
+    char *user_agent_id;
+    char *user_agent_software;
+    char *user_agent_device;
     char *bound_jid;
     char *stream_id;
 
