@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #undef HAVE_VSNPRINTF
 #undef HAVE_SNPRINTF
@@ -28,7 +29,14 @@ int main(void)
     char *int_fmt[] = {"%-1.5d", "%1.5d",   "%123.9d",  "%5.5d",
                        "%10.5d", "% 10.5d", "%+22.33d", "%01.3d",
                        "%4d",    "0x%x",    "0x%04x",   NULL};
-    int int_nums[] = {-1, 134, 91340, 341, 0203, 0x76543210, 0};
+    int int_nums[] = {-1,         134,     91340,   341, 0203,
+                      0x76543210, INT_MIN, INT_MAX, 0};
+    char *long_fmt[] = {"%-1.5ld", "%1.5ld",   "%123.9ld",  "%5.5ld",
+                        "%10.5ld", "% 10.5ld", "%+22.33ld", "%01.3ld",
+                        "%4ld",    "0x%lx",    "0x%04lx",   NULL};
+    long long_nums[] = {-1L,      134L,     91340L,
+                        341L,     0203L,    0xFEDCBA9876543210L,
+                        LONG_MIN, LONG_MAX, 0L};
     int x, y;
     int fail = 0;
     int num = 0;
@@ -56,6 +64,19 @@ int main(void)
                 printf("xmpp_snprintf doesn't match Format: "
                        "%s\n\txmpp_snprintf = %s\n\tsprintf  = %s\n",
                        int_fmt[x], buf1, buf2);
+                fail++;
+            }
+            num++;
+        }
+
+    for (x = 0; long_fmt[x] != NULL; x++)
+        for (y = 0; long_nums[y] != 0; y++) {
+            strophe_snprintf(buf1, sizeof(buf1), long_fmt[x], long_nums[y]);
+            sprintf(buf2, long_fmt[x], long_nums[y]);
+            if (strcmp(buf1, buf2)) {
+                printf("xmpp_snprintf doesn't match Format: "
+                       "%s\n\txmpp_snprintf = %s\n\tsprintf  = %s\n",
+                       long_fmt[x], buf1, buf2);
                 fail++;
             }
             num++;
