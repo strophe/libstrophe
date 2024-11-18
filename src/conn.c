@@ -21,6 +21,7 @@
  */
 
 #include <errno.h>
+#include <netinet/in.h>
 #include <stdarg.h>
 #include <string.h>
 #include <limits.h>
@@ -1284,13 +1285,66 @@ xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn)
     return ret;
 }
 
-void xmpp_sm_state_set_callback(xmpp_conn_t *conn, xmpp_sm_callback cb, void *ctx)
+void xmpp_conn_set_sm_callback(xmpp_conn_t *conn,
+                               xmpp_sm_callback cb,
+                               void *ctx)
 {
     conn->sm_callback = cb;
     conn->sm_callback_ctx = ctx;
 }
 
-int xmpp_sm_state_restore(xmpp_conn_t *conn, const unsigned char *sm_state, size_t sm_state_len)
+struct sm_restore {
+    xmpp_conn_t *conn;
+    const unsigned char *state;
+    const unsigned char *const state_end, *const orig;
+};
+
+static int sm_load_u32(struct sm_restore *sm, uint8_t type, uint32_t *val)
+{
+    if (*sm->state != type) {
+        strophe_error(
+            sm->conn->ctx, "conn",
+            "Invalid CBOR type at position %u: 0x%02x, expected: 0x%02x",
+            sm->state - sm->orig, *sm->state, type);
+        return XMPP_EINVOP;
+    }
+    sm->state++;
+    if ((sm->state + 4) > sm->state_end) {
+        strophe_error(sm->conn->ctx, "conn",
+                      "Provided sm_state data is too short");
+        return XMPP_EINVOP;
+    }
+    uint32_t v;
+    memcpy(&v, sm->state, 4);
+    sm->state += 4;
+    *val = ntohl(v);
+    return 0;
+}
+
+static int sm_load_string(struct sm_restore *sm, char **val, size_t *len)
+{
+    uint32_t l;
+    int ret = sm_load_u32(sm, 0x7a, &l);
+    if (ret)
+        return ret;
+    if ((sm->state + l) > sm->state_end) {
+        strophe_error(sm->conn->ctx, "conn",
+                      "Provided sm_state data is too short");
+        return XMPP_EINVOP;
+    }
+    *val = strophe_alloc(sm->conn->ctx, l + 1);
+    if (!*val)
+        return XMPP_EMEM;
+    memcpy(*val, sm->state, l);
+    (*val)[l] = '\0';
+    sm->state += l;
+    *len = l;
+    return 0;
+}
+
+int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
+                               const unsigned char *sm_state,
+                               size_t sm_state_len)
 {
     /* We can only set the SM state when we're disconnected */
     if (conn->state != XMPP_STATE_DISCONNECTED) {
@@ -1304,23 +1358,32 @@ int xmpp_sm_state_restore(xmpp_conn_t *conn, const unsigned char *sm_state, size
         return XMPP_EINVOP;
     }
 
-    if (sm_state_len < 5*6) {
+    if (sm_state_len < 5 * 6) {
         strophe_error(conn->ctx, "conn", "Provided sm_state data is too short");
         return XMPP_EINVOP;
     }
+    struct sm_restore sm = {.conn = conn,
+                            .state = sm_state,
+                            .state_end = sm_state + sm_state_len,
+                            .orig = sm_state};
+    /* Check for pointer wrap-around, which should never happen */
+    if (sm.state_end < sm.state) {
+        strophe_error(conn->ctx, "conn",
+                      "Internal error, pointer wrapped around");
+        return XMPP_EINVOP;
+    }
 
-    if (memcmp(sm_state, "\x1a\x00\x00\x00\x00", 5) != 0) {
+    if (memcmp(sm.state, "\x1a\x00\x00\x00\x00", 5) != 0) {
         strophe_error(conn->ctx, "conn", "Unknown sm_state version");
         return XMPP_EINVOP;
     }
-    sm_state += 5;
+    sm.state += 5;
 
     conn->sm_state = strophe_alloc(conn->ctx, sizeof(*conn->sm_state));
-    if (!conn->sm_state) return XMPP_EMEM;
+    if (!conn->sm_state)
+        return XMPP_EMEM;
 
     memset(conn->sm_state, 0, sizeof(*conn->sm_state));
-    conn->sm_state->sm_queue.head = NULL;
-    conn->sm_state->sm_queue.tail = NULL;
     conn->sm_state->ctx = conn->ctx;
 
     conn->sm_state->sm_support = 1;
@@ -1328,64 +1391,32 @@ int xmpp_sm_state_restore(xmpp_conn_t *conn, const unsigned char *sm_state, size
     conn->sm_state->can_resume = 1;
     conn->sm_state->resume = 1;
 
-    sm_state++;
-    conn->sm_state->sm_sent_nr = *sm_state++ << 24;
-    conn->sm_state->sm_sent_nr |= *sm_state++ << 16;
-    conn->sm_state->sm_sent_nr |= *sm_state++ << 8;
-    conn->sm_state->sm_sent_nr |= *sm_state++;
+    int ret;
+    ret = sm_load_u32(&sm, 0x1a, &conn->sm_state->sm_sent_nr);
+    if (ret)
+        goto err_reload;
 
-    sm_state++;
-    conn->sm_state->sm_handled_nr = *sm_state++ << 24;
-    conn->sm_state->sm_handled_nr |= *sm_state++ << 16;
-    conn->sm_state->sm_handled_nr |= *sm_state++ << 8;
-    conn->sm_state->sm_handled_nr |= *sm_state++;
+    ret = sm_load_u32(&sm, 0x1a, &conn->sm_state->sm_handled_nr);
+    if (ret)
+        goto err_reload;
 
-    sm_state++;
-    size_t id_len = *sm_state++ << 24;
-    id_len |= *sm_state++ << 16;
-    id_len |= *sm_state++ << 8;
-    id_len |= *sm_state++;
-    conn->sm_state->id = strophe_alloc(conn->ctx, id_len + 1);
-    if (!conn->sm_state->id) {
-        xmpp_free_sm_state(conn->sm_state);
-        return XMPP_EMEM;
-    }
-    memcpy(conn->sm_state->id, sm_state, id_len);
-    conn->sm_state->id[id_len] = '\0';
-    sm_state += id_len;
+    size_t id_len;
+    ret = sm_load_string(&sm, &conn->sm_state->id, &id_len);
+    if (ret)
+        goto err_reload;
 
-    sm_state++;
-    conn->send_queue_len = *sm_state++ << 24;
-    conn->send_queue_len |= *sm_state++ << 16;
-    conn->send_queue_len |= *sm_state++ << 8;
-    conn->send_queue_len |= *sm_state++;
-    conn->send_queue_user_len = conn->send_queue_len;
-    for (int i = 0; i < conn->send_queue_len; i++) {
+    uint32_t len, i;
+    ret = sm_load_u32(&sm, 0x9a, &len);
+    if (ret)
+        goto err_reload;
+    conn->send_queue_user_len = conn->send_queue_len = len;
+    for (i = 0; i < len; i++) {
         xmpp_send_queue_t *item = strophe_alloc(conn->ctx, sizeof(*item));
         if (!item) {
-            xmpp_free_sm_state(conn->sm_state);
-            return XMPP_EMEM;
+            ret = XMPP_EMEM;
+            goto err_reload;
         }
         memset(item, 0, sizeof(*item));
-
-        sm_state++;
-        item->len = *sm_state++ << 24;
-        item->len |= *sm_state++ << 16;
-        item->len |= *sm_state++ << 8;
-        item->len |= *sm_state++;
-        item->data = strophe_alloc(conn->ctx, item->len + 1);
-        if (!item->data) {
-            xmpp_free_sm_state(conn->sm_state);
-            return XMPP_EMEM;
-        }
-        memcpy(item->data, sm_state, item->len);
-        item->data[item->len] = '\0';
-        sm_state += item->len;
-
-        item->written = 0;
-        item->wip = 0;
-        item->userdata = NULL;
-        item->owner = XMPP_QUEUE_USER;
 
         if (!conn->send_queue_tail) {
             conn->send_queue_head = item;
@@ -1394,58 +1425,69 @@ int xmpp_sm_state_restore(xmpp_conn_t *conn, const unsigned char *sm_state, size
             conn->send_queue_tail->next = item;
             conn->send_queue_tail = item;
         }
+
+        ret = sm_load_string(&sm, &item->data, &item->len);
+        if (ret)
+            goto err_reload;
+
+        item->owner = XMPP_QUEUE_USER;
     }
 
-    sm_state++;
-    size_t sm_q_len = *sm_state++ << 24;
-    sm_q_len |= *sm_state++ << 16;
-    sm_q_len |= *sm_state++ << 8;
-    sm_q_len |= *sm_state++;
-    for (size_t i = 0; i < sm_q_len; i++) {
+    ret = sm_load_u32(&sm, 0xba, &len);
+    if (ret)
+        goto err_reload;
+    for (i = 0; i < len; i++) {
         xmpp_send_queue_t *item = strophe_alloc(conn->ctx, sizeof(*item));
         if (!item) {
-            xmpp_free_sm_state(conn->sm_state);
-            return XMPP_EMEM;
+            ret = XMPP_EMEM;
+            goto err_reload;
         }
         memset(item, 0, sizeof(*item));
 
-        sm_state++;
-        item->sm_h = *sm_state++ << 24;
-        item->sm_h |= *sm_state++ << 16;
-        item->sm_h |= *sm_state++ << 8;
-        item->sm_h |= *sm_state++;
-        sm_state++;
-        item->len = *sm_state++ << 24;
-        item->len |= *sm_state++ << 16;
-        item->len |= *sm_state++ << 8;
-        item->len |= *sm_state++;
-        item->data = strophe_alloc(conn->ctx, item->len + 1);
-        if (!item->data) {
-            xmpp_free_sm_state(conn->sm_state);
-            return XMPP_EMEM;
-        }
-        memcpy(item->data, sm_state, item->len);
-        item->data[item->len] = '\0';
-        sm_state += item->len;
-
-        item->written = 0;
-        item->wip = 0;
-        item->userdata = NULL;
-        item->owner = XMPP_QUEUE_USER;
         add_queue_back(&conn->sm_state->sm_queue, item);
+
+        ret = sm_load_u32(&sm, 0x1a, &item->sm_h);
+        if (ret)
+            goto err_reload;
+        ret = sm_load_string(&sm, &item->data, &item->len);
+        if (ret)
+            goto err_reload;
+
+        item->owner = XMPP_QUEUE_USER;
     }
 
     return XMPP_EOK;
+
+err_reload:
+    xmpp_free_sm_state(conn->sm_state);
+    return ret;
 }
 
-size_t xmpp_conn_serialize_sm_state(xmpp_conn_t *conn, unsigned char **buf)
+static int sm_store_u32(unsigned char **next_,
+                        const unsigned char *const end,
+                        uint8_t type,
+                        uint32_t val)
 {
-    if (!conn->sm_state->sm_support || !conn->sm_state->sm_enabled || !conn->sm_state->can_resume) {
+    unsigned char *next = *next_;
+    if (next + 5 > end)
+        return 1;
+    *next++ = type;
+    uint32_t v = htonl(val);
+    memcpy(next, &v, 4);
+    next += 4;
+    *next_ = next;
+    return 0;
+}
+
+static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
+{
+    if (!conn->sm_state->sm_support || !conn->sm_state->sm_enabled ||
+        !conn->sm_state->can_resume) {
         *buf = NULL;
         return 0;
     }
 
-    size_t id_len = strlen(conn->sm_state->id);
+    uint32_t id_len = strlen(conn->sm_state->id);
     xmpp_send_queue_t *peek = conn->sm_state->sm_queue.head;
     size_t sm_queue_len = 0;
     size_t sm_queue_size = 0;
@@ -1455,7 +1497,7 @@ size_t xmpp_conn_serialize_sm_state(xmpp_conn_t *conn, unsigned char **buf)
         peek = peek->next;
     }
 
-    size_t send_queue_len = 0;
+    uint32_t send_queue_len = 0;
     size_t send_queue_size = 0;
     peek = conn->send_queue_head;
     while (peek) {
@@ -1464,83 +1506,79 @@ size_t xmpp_conn_serialize_sm_state(xmpp_conn_t *conn, unsigned char **buf)
         peek = peek->next;
     }
 
-    size_t buf_size = 5 + 5 + 5 + 5 + id_len + 5 + send_queue_size + 5 + sm_queue_size;
+    size_t buf_size =
+        5 + 5 + 5 + 5 + id_len + 5 + send_queue_size + 5 + sm_queue_size;
     *buf = strophe_alloc(conn->ctx, buf_size);
+    if (*buf == NULL)
+        return 0;
     unsigned char *next = *buf;
+    const unsigned char *const end = next + buf_size;
+    /* Check for pointer wrap-around, which should never happen */
+    if (end < next) {
+        strophe_error(conn->ctx, "conn",
+                      "Internal error, pointer wrapped around");
+        return 0;
+    }
 
     memcpy(next, "\x1a\x00\x00\x00\x00", 5); // Version
     next += 5;
 
-    *next++ = 0x1a;
-    *next++ = (conn->sm_state->sm_sent_nr >> 24) & 0xFF;
-    *next++ = (conn->sm_state->sm_sent_nr >> 16) & 0xFF;
-    *next++ = (conn->sm_state->sm_sent_nr >> 8) & 0xFF;
-    *next++ = conn->sm_state->sm_sent_nr & 0xFF;
+    if (sm_store_u32(&next, end, 0x1a, conn->sm_state->sm_sent_nr))
+        goto err_serialize;
+    if (sm_store_u32(&next, end, 0x1a, conn->sm_state->sm_handled_nr))
+        goto err_serialize;
 
-    *next++ = 0x1a;
-    *next++ = (conn->sm_state->sm_handled_nr >> 24) & 0xFF;
-    *next++ = (conn->sm_state->sm_handled_nr >> 16) & 0xFF;
-    *next++ = (conn->sm_state->sm_handled_nr >> 8) & 0xFF;
-    *next++ = conn->sm_state->sm_handled_nr & 0xFF;
-
-    *next++ = 0x7a;
-    *next++ = (id_len >> 24) & 0xFF;
-    *next++ = (id_len >> 16) & 0xFF;
-    *next++ = (id_len >> 8) & 0xFF;
-    *next++ = id_len & 0xFF;
+    if (sm_store_u32(&next, end, 0x7a, id_len))
+        goto err_serialize;
     memcpy(next, conn->sm_state->id, id_len);
     next += id_len;
 
-    *next++ = 0x9a;
-    *next++ = (send_queue_len >> 24) & 0xFF;
-    *next++ = (send_queue_len >> 16) & 0xFF;
-    *next++ = (send_queue_len >> 8) & 0xFF;
-    *next++ = send_queue_len & 0xFF;
+    if (sm_store_u32(&next, end, 0x9a, send_queue_len))
+        goto err_serialize;
 
     peek = conn->send_queue_head;
     while (peek) {
-        *next++ = 0x7a;
-        *next++ = (peek->len >> 24) & 0xFF;
-        *next++ = (peek->len >> 16) & 0xFF;
-        *next++ = (peek->len >> 8) & 0xFF;
-        *next++ = peek->len & 0xFF;
+        if (sm_store_u32(&next, end, 0x7a, (uint32_t)peek->len))
+            goto err_serialize;
+        if (next + peek->len > end)
+            goto err_serialize;
         memcpy(next, peek->data, peek->len);
         next += peek->len;
         peek = peek->next;
     }
 
-    *next++ = 0xba;
-    *next++ = (sm_queue_len >> 24) & 0xFF;
-    *next++ = (sm_queue_len >> 16) & 0xFF;
-    *next++ = (sm_queue_len >> 8) & 0xFF;
-    *next++ = sm_queue_len & 0xFF;
+    if (sm_store_u32(&next, end, 0xba, sm_queue_len))
+        goto err_serialize;
 
     peek = conn->sm_state->sm_queue.head;
     while (peek) {
-        *next++ = 0x1a;
-        *next++ = (peek->sm_h >> 24) & 0xFF;
-        *next++ = (peek->sm_h >> 16) & 0xFF;
-        *next++ = (peek->sm_h >> 8) & 0xFF;
-        *next++ = peek->sm_h & 0xFF;
+        if (sm_store_u32(&next, end, 0x1a, peek->sm_h))
+            goto err_serialize;
 
-        *next++ = 0x7a;
-        *next++ = (peek->len >> 24) & 0xFF;
-        *next++ = (peek->len >> 16) & 0xFF;
-        *next++ = (peek->len >> 8) & 0xFF;
-        *next++ = peek->len & 0xFF;
+        if (sm_store_u32(&next, end, 0x7a, (uint32_t)peek->len))
+            goto err_serialize;
+        if (next + peek->len > end)
+            goto err_serialize;
         memcpy(next, peek->data, peek->len);
         next += peek->len;
         peek = peek->next;
     }
 
     return buf_size;
+
+err_serialize:
+    strophe_error(conn->ctx, "conn", "Can't serialize more data, buffer full");
+    strophe_free(conn->ctx, buf);
+    return 0;
 }
 
-void trigger_sm_callback(xmpp_conn_t *conn) {
-    if (!conn || !conn->sm_callback) return;
+void trigger_sm_callback(xmpp_conn_t *conn)
+{
+    if (!conn || !conn->sm_callback)
+        return;
 
     unsigned char *buf;
-    size_t size = xmpp_conn_serialize_sm_state(conn, &buf);
+    size_t size = sm_state_serialize(conn, &buf);
     conn->sm_callback(conn, conn->sm_callback_ctx, buf, size);
     strophe_free(conn->ctx, buf);
 }

@@ -415,11 +415,19 @@ typedef enum {
 char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
                                         xmpp_queue_element_t which);
 
-typedef void (*xmpp_sm_callback)(xmpp_conn_t *conn, void *ctx, const unsigned char *sm_state, size_t sm_state_len);
 int xmpp_conn_set_sm_state(xmpp_conn_t *conn, xmpp_sm_state_t *sm_state);
 xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn);
-void xmpp_sm_state_set_callback(xmpp_conn_t *conn, xmpp_sm_callback cb, void *ctx);
-int xmpp_sm_state_restore(xmpp_conn_t *conn, const unsigned char *sm_state, size_t sm_state_len);
+
+typedef void (*xmpp_sm_callback)(xmpp_conn_t *conn,
+                                 void *ctx,
+                                 const unsigned char *sm_state,
+                                 size_t sm_state_len);
+void xmpp_conn_set_sm_callback(xmpp_conn_t *conn,
+                               xmpp_sm_callback cb,
+                               void *ctx);
+int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
+                               const unsigned char *sm_state,
+                               size_t sm_state_len);
 
 void xmpp_free_sm_state(xmpp_sm_state_t *sm_state);
 

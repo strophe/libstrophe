@@ -19,23 +19,29 @@
 
 #include "test.h"
 
-void callback(xmpp_conn_t *conn, void *ctx, const unsigned char *sm_state, size_t sm_state_len)
+void callback(xmpp_conn_t *conn,
+              void *ctx,
+              const unsigned char *sm_state,
+              size_t sm_state_len)
 {
     int *callback_count = ctx;
     (*callback_count)++;
     COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state, 5);
-    COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state+10, 5);
-    COMPARE_BUF("\x7a\x00\x00\x00\x04SMID", 9, sm_state+15, 9);
+    COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state + 10, 5);
+    COMPARE_BUF("\x7a\x00\x00\x00\x04SMID", 9, sm_state + 15, 9);
     if (*callback_count == 1) {
-        COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state+5, 5);
-        COMPARE_BUF("\x9a\x00\x00\x00\x02", 5, sm_state+24, 5);
-        COMPARE_BUF("\x7a\x00\x00\x00\x03""foo", 8, sm_state+29, 8);
-        COMPARE_BUF("\x7a\x00\x00\x00\x1a<r xmlns='urn:xmpp:sm:3'/>", 31, sm_state+37, 31);
-        COMPARE_BUF("\xba\x00\x00\x00\x00", 5, sm_state+68, 5);
+        COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state + 5, 5);
+        COMPARE_BUF("\x9a\x00\x00\x00\x02", 5, sm_state + 24, 5);
+        COMPARE_BUF("\x7a\x00\x00\x00\x03"
+                    "foo",
+                    8, sm_state + 29, 8);
+        COMPARE_BUF("\x7a\x00\x00\x00\x1a<r xmlns='urn:xmpp:sm:3'/>", 31,
+                    sm_state + 37, 31);
+        COMPARE_BUF("\xba\x00\x00\x00\x00", 5, sm_state + 68, 5);
         ENSURE_EQ(sm_state_len, 73);
 
         xmpp_conn_t *newconn = xmpp_conn_new(conn->ctx);
-        xmpp_sm_state_restore(newconn, sm_state, sm_state_len);
+        xmpp_conn_restore_sm_state(newconn, sm_state, sm_state_len);
         ENSURE_EQ(newconn->sm_state->sm_sent_nr, 0);
         ENSURE_EQ(newconn->sm_state->sm_handled_nr, 0);
         COMPARE(newconn->sm_state->id, "SMID");
@@ -45,16 +51,19 @@ void callback(xmpp_conn_t *conn, void *ctx, const unsigned char *sm_state, size_
         xmpp_conn_release(newconn);
     }
     if (*callback_count == 2) {
-        COMPARE_BUF("\x1a\x00\x00\x00\x01", 5, sm_state+5, 5);
-        COMPARE_BUF("\x9a\x00\x00\x00\x01", 5, sm_state+24, 5);
-        COMPARE_BUF("\x7a\x00\x00\x00\x1a<r xmlns='urn:xmpp:sm:3'/>", 31, sm_state+29, 31);
-        COMPARE_BUF("\xba\x00\x00\x00\x01", 5, sm_state+60, 5);
-        COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state+65, 5);
-        COMPARE_BUF("\x7a\x00\x00\x00\x03""foo", 8, sm_state+70, 8);
+        COMPARE_BUF("\x1a\x00\x00\x00\x01", 5, sm_state + 5, 5);
+        COMPARE_BUF("\x9a\x00\x00\x00\x01", 5, sm_state + 24, 5);
+        COMPARE_BUF("\x7a\x00\x00\x00\x1a<r xmlns='urn:xmpp:sm:3'/>", 31,
+                    sm_state + 29, 31);
+        COMPARE_BUF("\xba\x00\x00\x00\x01", 5, sm_state + 60, 5);
+        COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state + 65, 5);
+        COMPARE_BUF("\x7a\x00\x00\x00\x03"
+                    "foo",
+                    8, sm_state + 70, 8);
         ENSURE_EQ(sm_state_len, 78);
 
         xmpp_conn_t *newconn = xmpp_conn_new(conn->ctx);
-        xmpp_sm_state_restore(newconn, sm_state, sm_state_len);
+        xmpp_conn_restore_sm_state(newconn, sm_state, sm_state_len);
         ENSURE_EQ(newconn->sm_state->sm_sent_nr, 1);
         ENSURE_EQ(newconn->sm_state->sm_handled_nr, 0);
         COMPARE(newconn->sm_state->id, "SMID");
@@ -64,15 +73,17 @@ void callback(xmpp_conn_t *conn, void *ctx, const unsigned char *sm_state, size_
         xmpp_conn_release(newconn);
     }
     if (*callback_count == 3) {
-        COMPARE_BUF("\x1a\x00\x00\x00\x01", 5, sm_state+5, 5);
-        COMPARE_BUF("\x9a\x00\x00\x00\x00", 5, sm_state+24, 5);
-        COMPARE_BUF("\xba\x00\x00\x00\x01", 5, sm_state+29, 5);
-        COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state+34, 5);
-        COMPARE_BUF("\x7a\x00\x00\x00\x03""foo", 8, sm_state+39, 8);
+        COMPARE_BUF("\x1a\x00\x00\x00\x01", 5, sm_state + 5, 5);
+        COMPARE_BUF("\x9a\x00\x00\x00\x00", 5, sm_state + 24, 5);
+        COMPARE_BUF("\xba\x00\x00\x00\x01", 5, sm_state + 29, 5);
+        COMPARE_BUF("\x1a\x00\x00\x00\x00", 5, sm_state + 34, 5);
+        COMPARE_BUF("\x7a\x00\x00\x00\x03"
+                    "foo",
+                    8, sm_state + 39, 8);
         ENSURE_EQ(sm_state_len, 47);
 
         xmpp_conn_t *newconn = xmpp_conn_new(conn->ctx);
-        xmpp_sm_state_restore(newconn, sm_state, sm_state_len);
+        xmpp_conn_restore_sm_state(newconn, sm_state, sm_state_len);
         ENSURE_EQ(newconn->sm_state->sm_sent_nr, 1);
         ENSURE_EQ(newconn->sm_state->sm_handled_nr, 0);
         COMPARE(newconn->sm_state->id, "SMID");
@@ -125,19 +136,14 @@ int main()
     sm_state->id = strophe_strdup(ctx, "SMID");
 
     xmpp_conn_set_sm_state(conn, sm_state);
-    xmpp_sm_state_set_callback(conn, callback, &callback_count);
+    xmpp_conn_set_sm_callback(conn, callback, &callback_count);
 
     ENSURE_EQ(xmpp_conn_send_queue_len(conn), 0);
 
-    struct conn_interface intf = {
-       fake_read,
-       fake_write,
-       fake_flush,
-       fake_flush,
-       fake_flush,
-       fake_error_is_recoverable,
-       conn
-    };
+    struct conn_interface intf = {fake_read,  fake_write,
+                                  fake_flush, fake_flush,
+                                  fake_flush, fake_error_is_recoverable,
+                                  conn};
     conn->intf = intf;
     state = conn->state;
     conn->state = XMPP_STATE_CONNECTED;
