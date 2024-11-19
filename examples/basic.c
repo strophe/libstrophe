@@ -116,9 +116,9 @@ int main(int argc, char **argv)
 
     /* setup authentication information */
     if (jid)
-        xmpp_conn_set_jid(conn, jid);
+        xmpp_conn_set_string(conn, XMPP_SETTING_JID, jid);
     if (password)
-        xmpp_conn_set_pass(conn, password);
+        xmpp_conn_set_string(conn, XMPP_SETTING_PASS, password);
 
     /* initiate connection */
     if (xmpp_connect_client(conn, host, port, conn_handler, ctx) == XMPP_EOK) {

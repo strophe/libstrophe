@@ -280,7 +280,8 @@ struct _xmpp_conn_t {
 
     struct {
         struct xmpp_compression *state;
-        int allowed, supported, dont_reset;
+        int allowed, dont_reset, level;
+        int supported;
     } compression;
 
     char *lang;
