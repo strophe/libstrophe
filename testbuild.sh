@@ -1,6 +1,7 @@
 #!/bin/sh
 
 logfile="../../testbuild.log"
+errfile="../../testerr.log"
 
 err_out() {
   tail $logfile
@@ -8,6 +9,6 @@ err_out() {
 }
 
 ./bootstrap.sh
-./configure >> $logfile || err_out
-make -j$(( `nproc` * 2 + 1 )) >> $logfile || err_out
-make check >> $logfile || err_out
+./configure >> $logfile 2>> $errfile || err_out
+make -j$(( `nproc` * 2 + 1 )) >> $logfile 2>> $errfile || err_out
+make check >> $logfile 2>> $errfile || err_out

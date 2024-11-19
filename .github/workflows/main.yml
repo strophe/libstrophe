@@ -14,8 +14,8 @@ jobs:
     strategy:
       matrix:
         valgrind:
-           - { configure: ''                  , make: 'check' }
-           - { configure: '--enable-valgrind' , make: 'check-valgrind'  }
+           - { configure: ''                  , cflags: '',    make: 'check' }
+           - { configure: '--enable-valgrind' , cflags: '-O2', make: 'check-valgrind'  }
         options:
            - { configure: ''                    }
            - { configure: '--without-libxml2'   }
@@ -35,7 +35,7 @@ jobs:
       - name: Build the library
         run: |
           ./bootstrap.sh
-          ./configure ${{ matrix.options.configure }} ${{ matrix.valgrind.configure }} CFLAGS="-Werror -g3"
+          ./configure ${{ matrix.options.configure }} ${{ matrix.valgrind.configure }} CFLAGS="-Werror -g3 ${{ matrix.valgrind.cflags }}"
           make -j$(nproc)
       - name: Run tests
         run: |
@@ -135,6 +135,11 @@ jobs:
         if: ${{ !failure() }}
         run: |
           cat testbuild.log
+      - name: Error logs
+        if: ${{ failure() }}
+        run: |
+          cat testbuild.log || true
+          cat testerr.log || true
 
   code-style:
     runs-on: ubuntu-20.04

@@ -147,6 +147,7 @@ int main()
     conn->intf = intf;
     state = conn->state;
     conn->state = XMPP_STATE_CONNECTED;
+    conn->sock = 123;
 
     xmpp_send_raw(conn, "foo", 3);
     ENSURE_EQ(xmpp_conn_send_queue_len(conn), 1);

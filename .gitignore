@@ -46,6 +46,7 @@ examples/roster
 examples/uuid
 examples/vcard
 testbuild*.log
+testerr*.log
 test-release/
 test_stamp
 test-suite*.log
