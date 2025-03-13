@@ -18,9 +18,10 @@ PKG_PROG_PKG_CONFIG
 
 AC_CANONICAL_HOST
 AS_CASE([$host_os],
+    [dragonfly*],  [PLATFORM="bsd"],
     [freebsd*],    [PLATFORM="bsd"],
-    [openbsd*],    [PLATFORM="bsd"],
     [netbsd*],     [PLATFORM="bsd"],
+    [openbsd*],    [PLATFORM="bsd"],
     [*nto*|*qnx*], [PLATFORM="qnx"],
     [*solaris*],   [PLATFORM="solaris"],
     [*android*],   [PLATFORM="android"],
