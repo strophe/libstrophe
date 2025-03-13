@@ -1,6 +1,6 @@
 m4_define([v_maj], [0])
-m4_define([v_min], [13])
-m4_define([v_patch], [1])
+m4_define([v_min], [14])
+m4_define([v_patch], [0])
 m4_define([project_version], [v_maj.v_min.v_patch])
 
 m4_define([lt_cur], m4_eval(v_maj + v_min))

@@ -1,3 +1,13 @@
+0.14.0
+	- Add SM-state serialization mechanism (#239)
+	- Add support for `SCRAM-SHA-512-PLUS` (da122981)
+	- Add support for `SSLKEYLOGFILE` with OpenSSL (d82df127)
+	- Fix some issues related to Stream Management (03d43132, 4359536a)
+	- Fix a potential segfault (9fef4b7d)
+	- New API:
+		- xmpp_conn_set_sm_callback()
+		- xmpp_conn_restore_sm_state()
+
 0.13.1
 	- Fix SCRAM-*-PLUS SASL mechanisms with OpenSSL and TLS < v1.3 (40f2452)
 	- Only signal "stream negotiation success" once (1cf09b1)
