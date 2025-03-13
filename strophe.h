@@ -418,6 +418,25 @@ char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
 int xmpp_conn_set_sm_state(xmpp_conn_t *conn, xmpp_sm_state_t *sm_state);
 xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn);
 
+/** The function which will be called when Strophe updates its internal SM
+ *  state.
+ *
+ *  Please note that you have to create a copy of the buffer, since the library
+ *  will free the buffer right after return of the callback function.
+ *
+ *
+ *  @param conn            The Strophe connection object this callback
+ *                         originates from.
+ *  @param ctx             The `ctx` pointer as passed to
+ *                         \ref xmpp_conn_set_sm_callback
+ *  @param sm_state        A pointer to a buffer containing the serialized SM
+ *                         state.
+ *  @param sm_state_len    The length of `sm_state`.
+ *
+ *  @return 0 on success, -1 on error
+ *
+ *  @ingroup Connections
+ */
 typedef void (*xmpp_sm_callback)(xmpp_conn_t *conn,
                                  void *ctx,
                                  const unsigned char *sm_state,

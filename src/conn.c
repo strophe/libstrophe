@@ -1255,36 +1255,22 @@ int xmpp_conn_is_disconnected(xmpp_conn_t *conn)
 }
 
 /**
- *  This returns the Stream Management state of a connection object after
- *  it has been disconnected.
- *  One can then initialise a fresh connection object and set this Stream
- *  Management state by calling \ref xmpp_conn_set_sm_state
+ *  This sets the Stream Management callback function
  *
- *  In case one wants to dispose of the state w/o setting it into a fresh
- *  connection object, one can call \ref xmpp_free_sm_state
+ *  After setting this API, the library will call the given callback function
+ *  each time when the internal SM state is updated.
  *
- *  After calling this function to retrieve the state, only call one of the
- *  other two.
+ *  This can be used in conjunction with \ref xmpp_conn_restore_sm_state to
+ *  e.g. implement a mechanism that retains an SM state over potential
+ *  application terminations.
  *
  *  @param conn   a Strophe connection object
- *  @return The Stream Management state of the connection or NULL on error
+ *  @param cb     a callback function or NULL to disable
+ *  @param ctx    a context that will be passed on invocation of the callback
+ *                function
  *
  *  @ingroup Connections
  */
-xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn)
-{
-    xmpp_sm_state_t *ret;
-
-    /* We can only return the SM state when we're disconnected */
-    if (conn->state != XMPP_STATE_DISCONNECTED)
-        return NULL;
-
-    ret = conn->sm_state;
-    conn->sm_state = NULL;
-
-    return ret;
-}
-
 void xmpp_conn_set_sm_callback(xmpp_conn_t *conn,
                                xmpp_sm_callback cb,
                                void *ctx)
@@ -1342,6 +1328,22 @@ static int sm_load_string(struct sm_restore *sm, char **val, size_t *len)
     return 0;
 }
 
+/**
+ *  This restores the serialized Stream Management state
+ *
+ *  After setting this API, the library will call the given callback function
+ *  each time when the internal SM state is updated.
+ *
+ *  This can be used in conjunction with \ref xmpp_conn_restore_sm_state to
+ *  e.g. implement a mechanism that retains an SM state over potential
+ *  application terminations.
+ *
+ *  @param conn            a Strophe connection object
+ *  @param sm_state        a buffer as passed to the SM callback
+ *  @param sm_state_len    the length of `sm_state`
+ *
+ *  @ingroup Connections
+ */
 int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
                                const unsigned char *sm_state,
                                size_t sm_state_len)
@@ -1609,6 +1611,37 @@ static void _reset_sm_state_for_reconnect(xmpp_conn_t *conn)
         xmpp_stanza_release(s->bind);
         s->bind = NULL;
     }
+}
+
+/**
+ *  This returns the Stream Management state of a connection object after
+ *  it has been disconnected.
+ *  One can then initialise a fresh connection object and set this Stream
+ *  Management state by calling \ref xmpp_conn_set_sm_state
+ *
+ *  In case one wants to dispose of the state w/o setting it into a fresh
+ *  connection object, one can call \ref xmpp_free_sm_state
+ *
+ *  After calling this function to retrieve the state, only call one of the
+ *  other two.
+ *
+ *  @param conn   a Strophe connection object
+ *  @return The Stream Management state of the connection or NULL on error
+ *
+ *  @ingroup Connections
+ */
+xmpp_sm_state_t *xmpp_conn_get_sm_state(xmpp_conn_t *conn)
+{
+    xmpp_sm_state_t *ret;
+
+    /* We can only return the SM state when we're disconnected */
+    if (conn->state != XMPP_STATE_DISCONNECTED)
+        return NULL;
+
+    ret = conn->sm_state;
+    conn->sm_state = NULL;
+
+    return ret;
 }
 
 /**
