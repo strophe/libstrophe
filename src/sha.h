@@ -53,7 +53,7 @@ extern "C" {
         (y)[0] = (uint8_t)(((x) >> 24) & 255); \
         (y)[1] = (uint8_t)(((x) >> 16) & 255); \
         (y)[2] = (uint8_t)(((x) >> 8) & 255);  \
-        (y)[3] = (uint8_t)((x)&255);           \
+        (y)[3] = (uint8_t)((x) & 255);         \
     } while (0)
 
 #define LOAD32H(x, y)                                                     \
@@ -72,7 +72,7 @@ extern "C" {
         (y)[4] = (uint8_t)(((x) >> 24) & 255); \
         (y)[5] = (uint8_t)(((x) >> 16) & 255); \
         (y)[6] = (uint8_t)(((x) >> 8) & 255);  \
-        (y)[7] = (uint8_t)((x)&255);           \
+        (y)[7] = (uint8_t)((x) & 255);         \
     } while (0)
 
 #define LOAD64H(x, y)                                                         \
@@ -96,13 +96,13 @@ extern "C" {
 #define CONST64(n) n##ULL
 #endif
 
-#define RORc(x, y)                                           \
-    (((((uint32_t)(x)&0xFFFFFFFFUL) >> (uint32_t)((y)&31)) | \
-      ((uint32_t)(x) << (uint32_t)((32 - ((y)&31)) & 31))) & \
+#define RORc(x, y)                                               \
+    (((((uint32_t)(x) & 0xFFFFFFFFUL) >> (uint32_t)((y) & 31)) | \
+      ((uint32_t)(x) << (uint32_t)((32 - ((y) & 31)) & 31))) &   \
      0xFFFFFFFFUL)
-#define ROR64c(x, y)                                                       \
-    (((((x)&CONST64(0xFFFFFFFFFFFFFFFF)) >> ((uint64_t)(y)&CONST64(63))) | \
-      ((x) << (((uint64_t)64 - ((y)&63)) & 63))) &                         \
+#define ROR64c(x, y)                                                           \
+    (((((x) & CONST64(0xFFFFFFFFFFFFFFFF)) >> ((uint64_t)(y) & CONST64(63))) | \
+      ((x) << (((uint64_t)64 - ((y) & 63)) & 63))) &                           \
      CONST64(0xFFFFFFFFFFFFFFFF))
 
 #ifdef __cplusplus

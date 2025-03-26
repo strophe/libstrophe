@@ -37,7 +37,7 @@
 
 #define PUT_32BIT_LSB_FIRST(cp, value)    \
     do {                                  \
-        (cp)[0] = (value)&0xFF;           \
+        (cp)[0] = (value) & 0xFF;         \
         (cp)[1] = ((value) >> 8) & 0xFF;  \
         (cp)[2] = ((value) >> 16) & 0xFF; \
         (cp)[3] = ((value) >> 24) & 0xFF; \

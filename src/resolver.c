@@ -630,7 +630,7 @@ static void netbuf_add_16bitnum(unsigned char *buf,
 
     /* assuming big endian */
     *p++ = (num >> 8) & 0xff;
-    *p++ = (num)&0xff;
+    *p++ = (num) & 0xff;
 
     *offset += 2;
 }

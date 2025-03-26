@@ -68,9 +68,9 @@ struct _xmpp_rand_t {
 };
 
 /* returns smallest number mupliple of y that not less than x */
-#define round_up(x, y) (((x) + (y)-1) / (y) * (y))
+#define round_up(x, y) (((x) + (y) - 1) / (y) * (y))
 /* returns smallest integer number that not less than x/y */
-#define div_round_up(x, y) (((x) + (y)-1) / (y))
+#define div_round_up(x, y) (((x) + (y) - 1) / (y))
 
 /* adds two arrays as numbers in big-endian representation and stores
  * result in the first one.
