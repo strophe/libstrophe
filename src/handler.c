@@ -25,8 +25,6 @@
 #include "common.h"
 #include "ostypes.h"
 
-typedef int (*xmpp_void_handler)();
-
 /* Remove item from the list pointed by head, but don't free it.
  * There can be a situation when user's handler deletes another handler which
  * is the previous in the list. handler_fire_stanza() and handler_fire_timed()

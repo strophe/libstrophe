@@ -30,12 +30,17 @@
 #include "snprintf.h"
 
 /** handlers **/
+#if (__STDC_VERSION__ >= 202000L)
+typedef void* xmpp_void_handler;
+#else
+typedef int (*xmpp_void_handler)();
+#endif
 
 typedef struct _xmpp_handlist_t xmpp_handlist_t;
 struct _xmpp_handlist_t {
     /* common members */
     int user_handler;
-    int (*handler)();
+    xmpp_void_handler handler;
     void *userdata;
     int enabled; /* handlers are added disabled and enabled after the
                   * handler chain is processed to prevent stanzas from
