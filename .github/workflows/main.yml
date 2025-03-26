@@ -10,7 +10,7 @@ on:
 
 jobs:
   linux-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         valgrind:
@@ -46,7 +46,7 @@ jobs:
           cat test-suite*.log || true
 
   xssl-tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         xssl_versions:
@@ -142,7 +142,7 @@ jobs:
           cat testerr.log || true
 
   code-style:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     name: Check coding style
     continue-on-error: true
     steps:
