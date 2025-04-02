@@ -74,6 +74,23 @@ xmpp_conn_t *xmpp_tlscert_get_conn(const xmpp_tlscert_t *cert)
     return cert->conn;
 }
 
+/** Get the userdata of a Strophe connection which is assigned to this
+ *  certificate.
+ *
+ *  @param cert a Strophe TLS certificate object
+ *
+ *  @return the userdata of a Strophe connection object where this certificate
+ *  originates from
+ *
+ *  @ingroup TLS
+ */
+void *xmpp_tlscert_get_userdata(const xmpp_tlscert_t *cert)
+{
+    if (cert->conn == NULL)
+        return NULL;
+    return cert->conn->userdata;
+}
+
 /** Get the complete PEM of this certificate.
  *
  *  @param cert a Strophe TLS certificate object

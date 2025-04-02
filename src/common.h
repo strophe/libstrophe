@@ -31,7 +31,7 @@
 
 /** handlers **/
 #if (__STDC_VERSION__ >= 202000L)
-typedef void* xmpp_void_handler;
+typedef void *xmpp_void_handler;
 #else
 typedef int (*xmpp_void_handler)();
 #endif

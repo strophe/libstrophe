@@ -642,6 +642,7 @@ void xmpp_ctx_set_timeout(xmpp_ctx_t *ctx, unsigned long timeout);
 
 xmpp_ctx_t *xmpp_tlscert_get_ctx(const xmpp_tlscert_t *cert);
 xmpp_conn_t *xmpp_tlscert_get_conn(const xmpp_tlscert_t *cert);
+void *xmpp_tlscert_get_userdata(const xmpp_tlscert_t *cert);
 const char *xmpp_tlscert_get_pem(const xmpp_tlscert_t *cert);
 const char *xmpp_tlscert_get_dnsname(const xmpp_tlscert_t *cert, size_t n);
 const char *xmpp_tlscert_get_string(const xmpp_tlscert_t *cert,
