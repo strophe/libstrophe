@@ -53,6 +53,10 @@ extern "C" {
  *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-sasl'.
  */
 #define XMPP_NS_SASL "urn:ietf:params:xml:ns:xmpp-sasl"
+/** @def XMPP_NS_SASL2
+ *  Namespace definition for 'urn:xmpp:sasl:2'.
+ */
+#define XMPP_NS_SASL2 "urn:xmpp:sasl:2"
 /** @def XMPP_NS_BIND
  *  Namespace definition for 'urn:ietf:params:xml:ns:xmpp-bind'.
  */
@@ -399,6 +403,14 @@ unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *conn);
 char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *conn, unsigned int n);
 const char *xmpp_conn_get_pass(const xmpp_conn_t *conn);
 void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass);
+const char *xmpp_conn_get_user_agent_id(const xmpp_conn_t *conn);
+void xmpp_conn_set_user_agent_id(xmpp_conn_t *conn, const char *user_agent_id);
+const char *xmpp_conn_get_user_agent_software(const xmpp_conn_t *conn);
+void xmpp_conn_set_user_agent_software(xmpp_conn_t *conn,
+                                       const char *user_agent_software);
+const char *xmpp_conn_get_user_agent_device(const xmpp_conn_t *conn);
+void xmpp_conn_set_user_agent_device(xmpp_conn_t *conn,
+                                     const char *user_agent_device);
 xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *conn);
 int xmpp_conn_is_secured(xmpp_conn_t *conn);
 void xmpp_conn_set_sockopt_callback(xmpp_conn_t *conn,
