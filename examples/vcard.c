@@ -269,8 +269,8 @@ int main(int argc, char **argv)
     log = xmpp_get_default_logger(XMPP_LEVEL_INFO);
     ctx = xmpp_ctx_new(NULL, log);
     conn = xmpp_conn_new(ctx);
-    xmpp_conn_set_jid(conn, jid);
-    xmpp_conn_set_pass(conn, pass);
+    xmpp_conn_set_string(conn, XMPP_SETTING_JID, jid);
+    xmpp_conn_set_string(conn, XMPP_SETTING_PASS, pass);
     vcard.ctx = ctx;
     xmpp_connect_client(conn, NULL, 0, conn_handler, &vcard);
     xmpp_run(ctx);

@@ -372,37 +372,70 @@ typedef int (*xmpp_sockopt_callback)(xmpp_conn_t *conn, void *sock);
 /* an example callback that sets basic keepalive parameters */
 int xmpp_sockopt_cb_keepalive(xmpp_conn_t *conn, void *sock);
 
-void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text);
 xmpp_conn_t *xmpp_conn_new(xmpp_ctx_t *ctx);
 xmpp_conn_t *xmpp_conn_clone(xmpp_conn_t *conn);
 int xmpp_conn_release(xmpp_conn_t *conn);
+
+/** Connection settings
+ */
+typedef enum xmpp_conn_setting_t {
+    /* String values */
+    XMPP_SETTING_JID = 0x0,   /**< JID */
+    XMPP_SETTING_PASS,        /**< Password */
+    XMPP_SETTING_CAFILE,      /**< CAfile */
+    XMPP_SETTING_CAPATH,      /**< CApath */
+    XMPP_SETTING_CLIENT_CERT, /**< Client Certificate */
+    XMPP_SETTING_CLIENT_KEY,  /**< Key of Client Certificate */
+
+    /* Int values */
+    XMPP_SETTING_PASSWORD_RETRIES = 0x40, /**< Number of retry attempts to
+                                      decrypt a private key file. */
+    XMPP_SETTING_COMPRESSION_LEVEL,       /**< Compression level. */
+
+    /* Pointer values */
+    XMPP_SETTING_PASSWORD_CALLBACK_USERDATA = 0x80, /**< Userdata for password
+                                                callback function */
+
+    /* Functionpointer values */
+    XMPP_SETTING_PASSWORD_CALLBACK = 0xC0, /**< Callback function to retrieve
+                                       password for key file. */
+    XMPP_SETTING_CERTFAIL_HANDLER, /**< Handler function when certificate chain
+                                      can't be verified */
+    XMPP_SETTING_SOCKOPT_CALLBACK, /**< Callback function when a new socket is
+                                      created. */
+} xmpp_conn_setting_t;
+
+void xmpp_conn_set_int(xmpp_conn_t *conn,
+                       xmpp_conn_setting_t setting,
+                       int value);
+void xmpp_conn_set_string(xmpp_conn_t *conn,
+                          xmpp_conn_setting_t setting,
+                          const char *value);
+void xmpp_conn_set_pointer(xmpp_conn_t *conn,
+                           xmpp_conn_setting_t setting,
+                           void *value);
+/* Provide a wrapper macro, so users don't have to cast their function pointer
+ * type manually. */
+typedef int (*xmpp_conn_pfn_t)();
+#define xmpp_conn_set_functionpointer(c, s, p)                        \
+    do {                                                              \
+        xmpp_conn_set_functionpointer_impl(c, s, (xmpp_conn_pfn_t)p); \
+    } while (0)
+void xmpp_conn_set_functionpointer_impl(xmpp_conn_t *conn,
+                                        xmpp_conn_setting_t setting,
+                                        xmpp_conn_pfn_t pfn);
 
 long xmpp_conn_get_flags(const xmpp_conn_t *conn);
 int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags);
 const char *xmpp_conn_get_jid(const xmpp_conn_t *conn);
 const char *xmpp_conn_get_bound_jid(const xmpp_conn_t *conn);
-void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid);
-void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path);
-void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path);
-void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
-                                    xmpp_certfail_handler hndl);
 xmpp_tlscert_t *xmpp_conn_get_peer_cert(xmpp_conn_t *const conn);
-void xmpp_conn_set_password_callback(xmpp_conn_t *conn,
-                                     xmpp_password_callback cb,
-                                     void *userdata);
-void xmpp_conn_set_password_retries(xmpp_conn_t *conn, unsigned int retries);
 const char *xmpp_conn_get_keyfile(const xmpp_conn_t *conn);
-void xmpp_conn_set_client_cert(xmpp_conn_t *conn,
-                               const char *cert,
-                               const char *key);
 unsigned int xmpp_conn_cert_xmppaddr_num(xmpp_conn_t *conn);
 char *xmpp_conn_cert_xmppaddr(xmpp_conn_t *conn, unsigned int n);
 const char *xmpp_conn_get_pass(const xmpp_conn_t *conn);
-void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass);
 xmpp_ctx_t *xmpp_conn_get_context(xmpp_conn_t *conn);
 int xmpp_conn_is_secured(xmpp_conn_t *conn);
-void xmpp_conn_set_sockopt_callback(xmpp_conn_t *conn,
-                                    xmpp_sockopt_callback callback);
 int xmpp_conn_is_connecting(xmpp_conn_t *conn);
 int xmpp_conn_is_connected(xmpp_conn_t *conn);
 int xmpp_conn_is_disconnected(xmpp_conn_t *conn);
@@ -476,6 +509,7 @@ int xmpp_conn_tls_start(xmpp_conn_t *conn);
 void xmpp_disconnect(xmpp_conn_t *conn);
 
 void xmpp_send(xmpp_conn_t *conn, xmpp_stanza_t *stanza);
+void xmpp_send_error(xmpp_conn_t *conn, xmpp_error_type_t type, char *text);
 
 void xmpp_send_raw_string(xmpp_conn_t *conn, const char *fmt, ...);
 void xmpp_send_raw(xmpp_conn_t *conn, const char *data, size_t len);
@@ -744,6 +778,7 @@ void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len);
  * deprecation */
 #include <stdarg.h>
 
+#if !defined(XMPP_DEPRECATED)
 /**
  * XMPP_DEPRECATED(x) macro to show a compiler warning for deprecated API
  * functions
@@ -761,6 +796,7 @@ void xmpp_rand_nonce(xmpp_rand_t *rand, char *output, size_t len);
 #define XMPP_DEPRECATED(x) __declspec(deprecated("replaced by " #x))
 #else
 #define XMPP_DEPRECATED(x)
+#endif
 #endif
 
 XMPP_DEPRECATED(internal) void *xmpp_alloc(const xmpp_ctx_t *ctx, size_t size);
@@ -800,6 +836,31 @@ XMPP_DEPRECATED(xmpp_conn_set_sockopt_callback)
 void xmpp_conn_set_keepalive(xmpp_conn_t *conn, int timeout, int interval);
 XMPP_DEPRECATED(xmpp_conn_set_flags)
 void xmpp_conn_disable_tls(xmpp_conn_t *conn);
+
+XMPP_DEPRECATED(xmpp_conn_set_string)
+void xmpp_conn_set_jid(xmpp_conn_t *conn, const char *jid);
+XMPP_DEPRECATED(xmpp_conn_set_string)
+void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass);
+XMPP_DEPRECATED(xmpp_conn_set_string)
+void xmpp_conn_set_cafile(xmpp_conn_t *const conn, const char *path);
+XMPP_DEPRECATED(xmpp_conn_set_string)
+void xmpp_conn_set_capath(xmpp_conn_t *const conn, const char *path);
+XMPP_DEPRECATED(xmpp_conn_set_string)
+void xmpp_conn_set_client_cert(xmpp_conn_t *conn,
+                               const char *cert,
+                               const char *key);
+XMPP_DEPRECATED(xmpp_conn_set_int)
+void xmpp_conn_set_password_retries(xmpp_conn_t *conn, unsigned int retries);
+XMPP_DEPRECATED(xmpp_conn_set_functionpointer)
+void xmpp_conn_set_password_callback(xmpp_conn_t *conn,
+                                     xmpp_password_callback cb,
+                                     void *userdata);
+XMPP_DEPRECATED(xmpp_conn_set_functionpointer)
+void xmpp_conn_set_certfail_handler(xmpp_conn_t *const conn,
+                                    xmpp_certfail_handler hndl);
+XMPP_DEPRECATED(xmpp_conn_set_functionpointer)
+void xmpp_conn_set_sockopt_callback(xmpp_conn_t *conn,
+                                    xmpp_sockopt_callback callback);
 
 #ifdef __cplusplus
 }

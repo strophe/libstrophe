@@ -293,20 +293,24 @@ create_connection:
     xmpp_conn_set_flags(conn, flags);
 
     /* ask for a password if key is protected */
-    xmpp_conn_set_password_callback(conn, password_callback, NULL);
+    xmpp_conn_set_functionpointer(conn, XMPP_SETTING_PASSWORD_CALLBACK,
+                                  password_callback);
     /* try at max 3 times in case the user enters the password wrong */
-    xmpp_conn_set_password_retries(conn, 3);
+    xmpp_conn_set_int(conn, XMPP_SETTING_PASSWORD_RETRIES, 3);
     /* setup authentication information */
-    if (key)
-        xmpp_conn_set_client_cert(conn, cert, key);
+    if (key) {
+        xmpp_conn_set_string(conn, XMPP_SETTING_CLIENT_CERT, cert);
+        xmpp_conn_set_string(conn, XMPP_SETTING_CLIENT_KEY, key);
+    }
     if (jid)
-        xmpp_conn_set_jid(conn, jid);
+        xmpp_conn_set_string(conn, XMPP_SETTING_JID, jid);
     if (password)
-        xmpp_conn_set_pass(conn, password);
+        xmpp_conn_set_string(conn, XMPP_SETTING_PASS, password);
 
     /* enable TCP keepalive, using canned callback function */
     if (tcp_keepalive)
-        xmpp_conn_set_sockopt_callback(conn, xmpp_sockopt_cb_keepalive);
+        xmpp_conn_set_functionpointer(conn, XMPP_SETTING_SOCKOPT_CALLBACK,
+                                      xmpp_sockopt_cb_keepalive);
 
     /* set Stream-Mangement state if available */
     if (sm_state) {
