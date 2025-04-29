@@ -448,6 +448,16 @@ int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
                                const unsigned char *sm_state,
                                size_t sm_state_len);
 
+typedef void (*xmpp_sm_ack_callback)(xmpp_conn_t *conn,
+                                     void *ctx,
+                                     const char *id);
+void xmpp_conn_set_sm_ack_callback(xmpp_conn_t *conn,
+                                   xmpp_sm_ack_callback cb,
+                                   void *ctx);
+void xmpp_conn_set_sm_fail_callback(xmpp_conn_t *conn,
+                                    xmpp_sm_ack_callback cb,
+                                    void *ctx);
+
 void xmpp_free_sm_state(xmpp_sm_state_t *sm_state);
 
 int xmpp_connect_client(xmpp_conn_t *conn,
