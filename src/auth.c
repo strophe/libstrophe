@@ -1359,13 +1359,18 @@ static int _get_h_attribute(xmpp_stanza_t *stanza, unsigned long *ul_h)
     return 0;
 }
 
-static void _sm_queue_cleanup(xmpp_conn_t *conn, unsigned long ul_h)
+static void _sm_queue_cleanup(xmpp_conn_t *conn, unsigned long ul_h, int failed)
 {
     xmpp_send_queue_t *e;
     while ((e = peek_queue_front(&conn->sm_state->sm_queue))) {
         if (e->sm_h >= ul_h)
             break;
         e = pop_queue_front(&conn->sm_state->sm_queue);
+        if (failed && conn->sm_fail_callback && e->id) {
+            conn->sm_fail_callback(conn, conn->sm_fail_callback_ctx, e->id);
+        } else if (conn->sm_ack_callback && e->id) {
+            conn->sm_ack_callback(conn, conn->sm_ack_callback_ctx, e->id);
+        }
         strophe_free(conn->ctx, queue_element_free(conn->ctx, e));
     }
 }
@@ -1441,7 +1446,7 @@ static int _handle_sm(xmpp_conn_t *const conn,
             conn->sm_state->sm_sent_nr = conn->sm_state->sm_queue.head->sm_h;
         else
             conn->sm_state->sm_sent_nr = ul_h;
-        _sm_queue_cleanup(conn, ul_h);
+        _sm_queue_cleanup(conn, ul_h, 0);
         _sm_queue_resend(conn);
         strophe_debug(conn->ctx, "xmpp", "Session resumed successfully.");
         _stream_negotiation_success(conn);
@@ -1468,7 +1473,7 @@ static int _handle_sm(xmpp_conn_t *const conn,
                     /* In cases there's no `h` included, drop all elements. */
                     ul_h = (unsigned long)-1;
                 }
-                _sm_queue_cleanup(conn, ul_h);
+                _sm_queue_cleanup(conn, ul_h, 1);
             }
         } else if (!strcmp(cause, "feature-not-implemented")) {
             conn->sm_state->resume = 0;

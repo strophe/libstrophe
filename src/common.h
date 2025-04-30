@@ -163,6 +163,7 @@ struct _xmpp_send_queue_t {
     xmpp_send_queue_owner_t owner;
     void *userdata;
     uint32_t sm_h;
+    char *id;
 
     xmpp_send_queue_t *prev, *next;
 };
@@ -330,6 +331,10 @@ struct _xmpp_conn_t {
     xmpp_sockopt_callback sockopt_cb;
     xmpp_sm_callback sm_callback;
     void *sm_callback_ctx;
+    xmpp_sm_ack_callback sm_ack_callback;
+    void *sm_ack_callback_ctx;
+    xmpp_sm_ack_callback sm_fail_callback;
+    void *sm_fail_callback_ctx;
 };
 
 void conn_disconnect(xmpp_conn_t *conn);

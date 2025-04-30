@@ -20,6 +20,7 @@
  *  A part of those functions is listed under the \ref TLS section.
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdarg.h>
@@ -115,6 +116,7 @@ static void _send_valist(xmpp_conn_t *conn,
 static int _send_raw(xmpp_conn_t *conn,
                      char *data,
                      size_t len,
+                     const char *id,
                      xmpp_send_queue_owner_t owner,
                      void *userdata);
 
@@ -1279,6 +1281,22 @@ void xmpp_conn_set_sm_callback(xmpp_conn_t *conn,
     conn->sm_callback_ctx = ctx;
 }
 
+void xmpp_conn_set_sm_ack_callback(xmpp_conn_t *conn,
+                                   xmpp_sm_ack_callback cb,
+                                   void *ctx)
+{
+    conn->sm_ack_callback = cb;
+    conn->sm_ack_callback_ctx = ctx;
+}
+
+void xmpp_conn_set_sm_fail_callback(xmpp_conn_t *conn,
+                                    xmpp_sm_ack_callback cb,
+                                    void *ctx)
+{
+    conn->sm_fail_callback = cb;
+    conn->sm_fail_callback_ctx = ctx;
+}
+
 struct sm_restore {
     xmpp_conn_t *conn;
     const unsigned char *state;
@@ -1324,7 +1342,8 @@ static int sm_load_string(struct sm_restore *sm, char **val, size_t *len)
     memcpy(*val, sm->state, l);
     (*val)[l] = '\0';
     sm->state += l;
-    *len = l;
+    if (len)
+        *len = l;
     return 0;
 }
 
@@ -1454,9 +1473,16 @@ int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
         ret = sm_load_string(&sm, &item->data, &item->len);
         if (ret)
             goto err_reload;
+        if (sm.state < sm.state_end) {
+            ret = sm_load_string(&sm, &item->id, NULL);
+            if (ret)
+                goto err_reload;
+        }
 
         item->owner = XMPP_QUEUE_USER;
     }
+
+    assert(sm.state == sm.state_end);
 
     return XMPP_EOK;
 
@@ -1496,6 +1522,7 @@ static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
     while (peek) {
         sm_queue_len++;
         sm_queue_size += 10 + peek->len;
+        if (peek->id) sm_queue_size += 5 + strlen(peek->id);
         peek = peek->next;
     }
 
@@ -1505,6 +1532,7 @@ static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
     while (peek) {
         send_queue_len++;
         send_queue_size += 5 + peek->len;
+        if (peek->id) send_queue_size += 5 + strlen(peek->id);
         peek = peek->next;
     }
 
@@ -1563,6 +1591,17 @@ static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
             goto err_serialize;
         memcpy(next, peek->data, peek->len);
         next += peek->len;
+
+        if (peek->id) {
+            uint32_t len = strlen(peek->id);
+            if (sm_store_u32(&next, end, 0x7a, len))
+                goto err_serialize;
+            if (next + len > end)
+                goto err_serialize;
+            memcpy(next, peek->id, len);
+            next += len;
+        }
+
         peek = peek->next;
     }
 
@@ -1812,6 +1851,10 @@ char *xmpp_conn_send_queue_drop_element(xmpp_conn_t *conn,
     /* there was no USER element in the queue we could drop */
     if (!t)
         return NULL;
+
+    if (conn->sm_ack_callback && t->id) {
+        conn->sm_ack_callback(conn, conn->sm_ack_callback_ctx, t->id);
+    }
 
     /* In case there exists a SM stanza that is linked to the
      * one we're currently dropping, also delete that one.
@@ -2088,6 +2131,10 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
                 e = pop_queue_front(&conn->sm_state->sm_queue);
                 strophe_debug_verbose(2, conn->ctx, "conn",
                                       "SM_Q_DROP: %p, h=%lu", e, e->sm_h);
+                if (conn->sm_ack_callback && e->id) {
+                    conn->sm_ack_callback(conn, conn->sm_ack_callback_ctx,
+                                          e->id);
+                }
                 c = queue_element_free(conn->ctx, e);
                 strophe_free(conn->ctx, c);
             }
@@ -2115,6 +2162,7 @@ char *queue_element_free(xmpp_ctx_t *ctx, xmpp_send_queue_t *e)
 {
     char *ret = e->data;
     strophe_debug_verbose(2, ctx, "conn", "Q_FREE: %p", e);
+    strophe_free(ctx, e->id);
     memset(e, 0, sizeof(*e));
     strophe_free(ctx, e);
     strophe_debug_verbose(3, ctx, "conn", "Q_CONTENT: %s", ret);
@@ -2231,7 +2279,7 @@ void send_raw(xmpp_conn_t *conn,
         return;
     }
 
-    _send_raw(conn, d, len, owner, userdata);
+    _send_raw(conn, d, len, NULL, owner, userdata);
 }
 
 static void _send_valist(xmpp_conn_t *conn,
@@ -2266,7 +2314,7 @@ static void _send_valist(xmpp_conn_t *conn,
         va_end(apdup);
 
         /* len - 1 so we don't send trailing \0 */
-        _send_raw(conn, bigbuf, len - 1, owner, NULL);
+        _send_raw(conn, bigbuf, len - 1, NULL, owner, NULL);
     } else {
         /* go through send_raw() which does the strdup() for us */
         send_raw(conn, buf, len, owner, NULL);
@@ -2300,7 +2348,8 @@ void send_stanza(xmpp_conn_t *conn,
         goto out;
     }
 
-    _send_raw(conn, buf, len, owner, NULL);
+    _send_raw(conn, buf, len, xmpp_stanza_get_attribute(stanza, "id"), owner,
+              NULL);
 out:
     xmpp_stanza_release(stanza);
 }
@@ -2342,6 +2391,7 @@ xmpp_send_queue_t *pop_queue_front(xmpp_queue_t *queue)
 static int _send_raw(xmpp_conn_t *conn,
                      char *data,
                      size_t len,
+                     const char *id,
                      xmpp_send_queue_owner_t owner,
                      void *userdata)
 {
@@ -2358,6 +2408,7 @@ static int _send_raw(xmpp_conn_t *conn,
 
     item->data = data;
     item->len = len;
+    item->id = id ? strophe_strdup(conn->ctx, id) : NULL;
     item->next = NULL;
     item->prev = conn->send_queue_tail;
     item->written = 0;
