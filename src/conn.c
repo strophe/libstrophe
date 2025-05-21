@@ -1571,7 +1571,7 @@ static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
 
 err_serialize:
     strophe_error(conn->ctx, "conn", "Can't serialize more data, buffer full");
-    strophe_free(conn->ctx, buf);
+    strophe_free(conn->ctx, *buf);
     return 0;
 }
 
