@@ -1485,7 +1485,7 @@ static int sm_store_u32(unsigned char **next_,
 static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
 {
     if (!conn->sm_state->sm_support || !conn->sm_state->sm_enabled ||
-        !conn->sm_state->can_resume) {
+        !conn->sm_state->can_resume || !conn->sm_state->id) {
         *buf = NULL;
         return 0;
     }
