@@ -1577,7 +1577,7 @@ err_serialize:
 
 void trigger_sm_callback(xmpp_conn_t *conn)
 {
-    if (!conn || !conn->sm_callback)
+    if (!conn || !conn->sm_callback || !conn->sm_state->sm_enabled)
         return;
 
     unsigned char *buf;
