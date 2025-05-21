@@ -1388,8 +1388,9 @@ int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
     memset(conn->sm_state, 0, sizeof(*conn->sm_state));
     conn->sm_state->ctx = conn->ctx;
 
+    conn->sm_state->bound_jid = strophe_strdup(conn->ctx, conn->jid);
     conn->sm_state->sm_support = 1;
-    conn->sm_state->sm_enabled = 1;
+    conn->sm_state->sm_enabled = 0;
     conn->sm_state->can_resume = 1;
     conn->sm_state->resume = 1;
 
@@ -1403,7 +1404,7 @@ int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
         goto err_reload;
 
     size_t id_len;
-    ret = sm_load_string(&sm, &conn->sm_state->id, &id_len);
+    ret = sm_load_string(&sm, &conn->sm_state->previd, &id_len);
     if (ret)
         goto err_reload;
 

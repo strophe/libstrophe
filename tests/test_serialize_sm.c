@@ -44,7 +44,7 @@ void callback(xmpp_conn_t *conn,
         xmpp_conn_restore_sm_state(newconn, sm_state, sm_state_len);
         ENSURE_EQ(newconn->sm_state->sm_sent_nr, 0);
         ENSURE_EQ(newconn->sm_state->sm_handled_nr, 0);
-        COMPARE(newconn->sm_state->id, "SMID");
+        COMPARE(newconn->sm_state->previd, "SMID");
         ENSURE_EQ(newconn->send_queue_len, 2);
         ENSURE_EQ(newconn->send_queue_user_len, 2);
         ENSURE_EQ((size_t)(newconn->sm_state->sm_queue.head), 0);
@@ -66,7 +66,7 @@ void callback(xmpp_conn_t *conn,
         xmpp_conn_restore_sm_state(newconn, sm_state, sm_state_len);
         ENSURE_EQ(newconn->sm_state->sm_sent_nr, 1);
         ENSURE_EQ(newconn->sm_state->sm_handled_nr, 0);
-        COMPARE(newconn->sm_state->id, "SMID");
+        COMPARE(newconn->sm_state->previd, "SMID");
         ENSURE_EQ(newconn->send_queue_len, 1);
         ENSURE_EQ(newconn->send_queue_user_len, 1);
         ENSURE_EQ(newconn->sm_state->sm_queue.head->sm_h, 0);
@@ -86,7 +86,7 @@ void callback(xmpp_conn_t *conn,
         xmpp_conn_restore_sm_state(newconn, sm_state, sm_state_len);
         ENSURE_EQ(newconn->sm_state->sm_sent_nr, 1);
         ENSURE_EQ(newconn->sm_state->sm_handled_nr, 0);
-        COMPARE(newconn->sm_state->id, "SMID");
+        COMPARE(newconn->sm_state->previd, "SMID");
         ENSURE_EQ(newconn->send_queue_len, 0);
         ENSURE_EQ(newconn->send_queue_user_len, 0);
         ENSURE_EQ(newconn->sm_state->sm_queue.head->sm_h, 0);
