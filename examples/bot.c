@@ -20,11 +20,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #ifdef _WIN32
 #include <conio.h>
 #include <ctype.h>
+#else
+#include <unistd.h>
 #endif
 
 #include <strophe.h>

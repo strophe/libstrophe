@@ -29,6 +29,10 @@
 #include "strophe.h"
 
 #include "common.h"
+#ifdef _MSC_VER
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
 
 const struct conn_interface tls_intf = {
     tls_read,

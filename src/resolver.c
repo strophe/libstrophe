@@ -982,7 +982,7 @@ resolver_win32_srv_query(const char *fulldomain, unsigned char *buf, size_t len)
                     insize = recvfrom(sock, (char *)buf, (int)len, 0,
                                       (struct sockaddr *)&dnsaddr, &addrlen);
                     if (insize == SOCKET_ERROR) {
-                        if (sock_error() == WSAEWOULDBLOCK) {
+                        if (sock_error(NULL) == WSAEWOULDBLOCK) {
                             Sleep(100);
                         } else {
                             break;

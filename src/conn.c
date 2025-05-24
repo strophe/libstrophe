@@ -21,7 +21,9 @@
  */
 
 #include <errno.h>
+#ifndef _MSC_VER
 #include <netinet/in.h>
+#endif
 #include <stdarg.h>
 #include <string.h>
 #include <limits.h>

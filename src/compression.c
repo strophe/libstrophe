@@ -18,6 +18,9 @@
 #include <errno.h>
 
 #include "common.h"
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#endif
 
 #ifndef STROPHE_COMPRESSION_BUFFER_SIZE
 /** Max buffer size for compressed data (send & receive). */
@@ -110,7 +113,7 @@ static int
 _compression_write(xmpp_conn_t *conn, const void *buff, size_t len, int flush)
 {
     int ret;
-    const void *buff_end = buff + len;
+    const void *buff_end = (const char *)buff + len;
     struct xmpp_compression *comp = conn->compression.state;
     comp->compression.stream.next_in = (Bytef *)buff;
     comp->compression.stream.avail_in = len;
@@ -201,7 +204,7 @@ static void *_zlib_alloc(void *opaque, unsigned int items, unsigned int size)
 static void _init_zlib_compression(xmpp_ctx_t *ctx, struct zlib_compression *s)
 {
     s->buffer = strophe_alloc(ctx, STROPHE_COMPRESSION_BUFFER_SIZE);
-    s->buffer_end = s->buffer + STROPHE_COMPRESSION_BUFFER_SIZE;
+    s->buffer_end = (char *)s->buffer + STROPHE_COMPRESSION_BUFFER_SIZE;
 
     s->stream.opaque = ctx;
     s->stream.zalloc = _zlib_alloc;

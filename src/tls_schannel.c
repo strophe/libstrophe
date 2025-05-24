@@ -266,7 +266,7 @@ int tls_start(tls_t *tls)
 
     /* use the domain there as our name */
     name = tls->conn->domain;
-    intf = tls->conn->intf;
+    intf = &tls->conn->intf;
 
     ctxtreq = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT |
               ISC_REQ_CONFIDENTIALITY | ISC_RET_EXTENDED_ERROR |

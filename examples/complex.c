@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #ifdef _WIN32
 #include <conio.h>
@@ -23,6 +22,7 @@
 #include <iphlpapi.h>
 #include <mstcpip.h> /* tcp_keepalive */
 #else
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
