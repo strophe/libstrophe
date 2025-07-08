@@ -422,6 +422,8 @@ static int _tls_verify(gnutls_session_t session)
             return -1;
         }
 
+        tlscert->conn = tls->conn;
+
         if (tls->conn->certfail_handler(tlscert, (char *)out.data) == 0) {
             xmpp_tlscert_free(tlscert);
             gnutls_x509_crt_deinit(cert);

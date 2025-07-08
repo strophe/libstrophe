@@ -540,6 +540,8 @@ static int _tls_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
     if (!tlscert)
         return 0;
 
+    tlscert->conn = conn;
+
     strophe_debug(conn->ctx, "tls", "preverify_ok:%d\nSubject: %s\nIssuer: %s",
                   preverify_ok, tlscert->elements[XMPP_CERT_SUBJECT],
                   tlscert->elements[XMPP_CERT_ISSUER]);
