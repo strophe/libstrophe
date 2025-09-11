@@ -342,7 +342,7 @@ int main(int argc, char **argv)
 
     /* jid can be a jid or domain for "raw" connection */
     domain = xmpp_jid_domain(ctx, jid);
-    xmpp_conn_set_jid(conn, domain);
+    xmpp_conn_set_string(conn, XMPP_SETTING_JID, domain);
     xmpp_free(ctx, domain);
 
     /* private data */

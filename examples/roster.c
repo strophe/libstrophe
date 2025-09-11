@@ -118,8 +118,8 @@ int main(int argc, char **argv)
      */
 
     /* setup authentication information */
-    xmpp_conn_set_jid(conn, argv[1]);
-    xmpp_conn_set_pass(conn, argv[2]);
+    xmpp_conn_set_string(conn, XMPP_SETTING_JID, argv[1]);
+    xmpp_conn_set_string(conn, XMPP_SETTING_PASS, argv[2]);
 
     /* initiate connection */
     xmpp_connect_client(conn, NULL, 0, conn_handler, ctx);
