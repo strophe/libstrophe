@@ -1136,6 +1136,8 @@ long xmpp_conn_get_flags(const xmpp_conn_t *conn)
         XMPP_CONN_FLAG_DISABLE_SM * conn->sm_disable |
         XMPP_CONN_FLAG_ENABLE_COMPRESSION * conn->compression.allowed |
         XMPP_CONN_FLAG_COMPRESSION_DONT_RESET * conn->compression.dont_reset |
+        XMPP_CONN_FLAG_WEAK_AUTH * conn->weak_auth_enabled |
+        XMPP_CONN_FLAG_STRONG_AUTH * conn->only_strong_auth |
         XMPP_CONN_FLAG_LEGACY_AUTH * conn->auth_legacy_enabled;
 
     return flags;
@@ -1191,11 +1193,14 @@ int xmpp_conn_set_flags(xmpp_conn_t *conn, long flags)
         (flags & XMPP_CONN_FLAG_ENABLE_COMPRESSION) ? 1 : 0;
     conn->compression.dont_reset =
         (flags & XMPP_CONN_FLAG_COMPRESSION_DONT_RESET) ? 1 : 0;
+    conn->weak_auth_enabled = (flags & XMPP_CONN_FLAG_WEAK_AUTH) ? 1 : 0;
+    conn->only_strong_auth = (flags & XMPP_CONN_FLAG_STRONG_AUTH) ? 1 : 0;
     flags &= ~(XMPP_CONN_FLAG_DISABLE_TLS | XMPP_CONN_FLAG_MANDATORY_TLS |
                XMPP_CONN_FLAG_LEGACY_SSL | XMPP_CONN_FLAG_TRUST_TLS |
                XMPP_CONN_FLAG_LEGACY_AUTH | XMPP_CONN_FLAG_DISABLE_SM |
                XMPP_CONN_FLAG_ENABLE_COMPRESSION |
-               XMPP_CONN_FLAG_COMPRESSION_DONT_RESET);
+               XMPP_CONN_FLAG_COMPRESSION_DONT_RESET |
+               XMPP_CONN_FLAG_WEAK_AUTH | XMPP_CONN_FLAG_STRONG_AUTH);
     if (flags) {
         strophe_error(conn->ctx, "conn", "Flags 0x%04lx unknown", flags);
         return XMPP_EINVOP;
