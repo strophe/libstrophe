@@ -103,11 +103,11 @@ static void _conn_sm_handle_stanza(xmpp_conn_t *const conn,
 static unsigned short _conn_default_port(xmpp_conn_t *conn,
                                          xmpp_conn_type_t type);
 static void _conn_reset(xmpp_conn_t *conn);
-static int _conn_connect(xmpp_conn_t *conn,
-                         const char *domain,
-                         xmpp_conn_type_t type,
-                         xmpp_conn_handler callback,
-                         void *userdata);
+static int _conn_preconnect(xmpp_conn_t *conn,
+                            char *domain,
+                            xmpp_conn_type_t type,
+                            xmpp_conn_handler callback,
+                            void *userdata);
 static void _send_valist(xmpp_conn_t *conn,
                          const char *fmt,
                          va_list ap,
@@ -709,14 +709,14 @@ int xmpp_connect_client(xmpp_conn_t *conn,
 
     if (conn->xsock)
         sock_free(conn->xsock);
-    conn->xsock = sock_new(conn, domain, altdomain, altport);
-    if (!conn->xsock)
-        goto err_mem;
 
-    rc = _conn_connect(conn, domain, XMPP_CLIENT, callback, userdata);
-    strophe_free(conn->ctx, domain);
+    /* domain ownership transfers to conn */
+    if ((rc =
+             _conn_preconnect(conn, domain, XMPP_CLIENT, callback, userdata))) {
+        return rc;
+    }
 
-    return rc;
+    return sock_new(conn, domain, altdomain, altport);
 
 err_mem:
     strophe_free(conn->ctx, domain);
@@ -752,6 +752,7 @@ int xmpp_connect_component(xmpp_conn_t *conn,
                            xmpp_conn_handler callback,
                            void *userdata)
 {
+    int rc;
     /*  The server domain, jid and password MUST be specified. */
     if (!(server && conn->jid && conn->pass))
         return XMPP_EINVOP;
@@ -769,13 +770,15 @@ int xmpp_connect_component(xmpp_conn_t *conn,
     port = port ? port : _conn_default_port(conn, XMPP_COMPONENT);
     if (conn->xsock)
         sock_free(conn->xsock);
-    conn->xsock = sock_new(conn, NULL, server, port);
-    if (!conn->xsock)
-        return XMPP_EMEM;
 
     /* JID serves as an identifier here and will be used as "to" attribute
        of the stream */
-    return _conn_connect(conn, conn->jid, XMPP_COMPONENT, callback, userdata);
+    if ((rc = _conn_preconnect(conn, strophe_strdup(conn->ctx, conn->jid),
+                               XMPP_COMPONENT, callback, userdata))) {
+        return rc;
+    }
+
+    return sock_new(conn, NULL, server, port);
 }
 
 /** Initiate a raw connection to the XMPP server.
@@ -2170,11 +2173,11 @@ static void _conn_reset(xmpp_conn_t *conn)
     handler_system_delete_all(conn);
 }
 
-static int _conn_connect(xmpp_conn_t *conn,
-                         const char *domain,
-                         xmpp_conn_type_t type,
-                         xmpp_conn_handler callback,
-                         void *userdata)
+static int _conn_preconnect(xmpp_conn_t *conn,
+                            char *domain,
+                            xmpp_conn_type_t type,
+                            xmpp_conn_handler callback,
+                            void *userdata)
 {
     xmpp_open_handler open_handler;
 
@@ -2186,13 +2189,9 @@ static int _conn_connect(xmpp_conn_t *conn,
     _conn_reset(conn);
 
     conn->type = type;
-    conn->domain = strophe_strdup(conn->ctx, domain);
+    conn->domain = domain;
     if (!conn->domain)
         return XMPP_EMEM;
-
-    conn->sock = sock_connect(conn->xsock);
-    if (conn->sock == INVALID_SOCKET)
-        return XMPP_EINT;
 
     /* setup handler */
     conn->conn_handler = callback;
@@ -2208,6 +2207,7 @@ static int _conn_connect(xmpp_conn_t *conn,
      * hard to fix, since we'd have to detect and fire off the callback
      * from within the event loop */
 
+    conn->sock = INVALID_SOCKET;
     conn->state = XMPP_STATE_CONNECTING;
     conn->timeout_stamp = time_stamp();
 
