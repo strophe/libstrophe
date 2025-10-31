@@ -18,10 +18,10 @@
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <netdb.h>
 #endif /* _WIN32 && HAVE_CARES */
 
 #ifdef HAVE_CARES
-#include <ares.h>
 /* for select(2) */
 #ifdef _WIN32
 #include <winsock2.h>
@@ -48,14 +48,22 @@
  * Forward declarations.
  ******************************************************************************/
 
+struct resolver_ctx {
+    xmpp_ctx_t *ctx;
+    const char *domain;
+    resolver_srv_rr_t **srv_rr_list;
+    void (*callback)(xmpp_sock_t *xsock, const char *domain);
+    xmpp_sock_t *xsock;
+};
+
 #ifdef HAVE_CARES
+ares_channel ares_chan = NULL;
 static int resolver_ares_srv_lookup_buf(xmpp_ctx_t *ctx,
                                         const unsigned char *buf,
                                         size_t len,
                                         resolver_srv_rr_t **srv_rr_list);
-static int resolver_ares_srv_lookup(xmpp_ctx_t *ctx,
-                                    const char *fulldomain,
-                                    resolver_srv_rr_t **srv_rr_list);
+static void resolver_ares_srv_lookup(const char *fulldomain,
+                                     struct resolver_ctx *rctx);
 #endif /* HAVE_CARES */
 
 #ifndef HAVE_CARES
@@ -81,13 +89,19 @@ static int resolver_win32_srv_query(const char *fulldomain,
 void resolver_initialize(void)
 {
 #ifdef HAVE_CARES
+    int rc;
     ares_library_init(ARES_LIB_INIT_ALL);
+    rc = ares_init(&ares_chan);
+    if (rc != ARES_SUCCESS) {
+        /* This is bad */
+    }
 #endif
 }
 
 void resolver_shutdown(void)
 {
 #ifdef HAVE_CARES
+    ares_destroy(ares_chan);
     ares_library_cleanup();
 #endif
 }
@@ -188,11 +202,14 @@ int resolver_srv_lookup_buf(xmpp_ctx_t *ctx,
     return set;
 }
 
-int resolver_srv_lookup(xmpp_ctx_t *ctx,
-                        const char *service,
-                        const char *proto,
-                        const char *domain,
-                        resolver_srv_rr_t **srv_rr_list)
+void resolver_srv_lookup(xmpp_ctx_t *ctx,
+                         const char *service,
+                         const char *proto,
+                         const char *domain,
+                         resolver_srv_rr_t **srv_rr_list,
+                         void (*callback)(xmpp_sock_t *xsock,
+                                          const char *domain),
+                         xmpp_sock_t *xsock)
 {
 #define RESOLVER_BUF_MAX 65536
     unsigned char *buf;
@@ -210,19 +227,33 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx,
 
 #ifdef HAVE_CARES
 
-    set = resolver_ares_srv_lookup(ctx, fulldomain, srv_rr_list);
+    struct resolver_ctx *rctx = strophe_alloc(ctx, sizeof(*rctx));
+    rctx->ctx = ctx;
+    rctx->domain = domain;
+    rctx->srv_rr_list = srv_rr_list;
+    rctx->callback = callback;
+    rctx->xsock = xsock;
+
+    (void)set;
+    resolver_ares_srv_lookup(fulldomain, rctx);
 
 #else /* HAVE_CARES */
 
 #ifdef _WIN32
     set = resolver_win32_srv_lookup(ctx, fulldomain, srv_rr_list);
-    if (set == XMPP_DOMAIN_FOUND)
-        return set;
+    if (set != XMPP_DOMAIN_FOUND) {
+        *srv_rr_list = NULL;
+        callback(xsock, domain);
+        return;
+    }
 #endif /* _WIN32 */
 
     buf = strophe_alloc(ctx, RESOLVER_BUF_MAX);
-    if (buf == NULL)
-        return XMPP_DOMAIN_NOT_FOUND;
+    if (buf == NULL) {
+        *srv_rr_list = NULL;
+        callback(xsock, domain);
+        return;
+    }
 
 #ifdef _WIN32
     len = resolver_win32_srv_query(fulldomain, buf, RESOLVER_BUF_MAX);
@@ -236,9 +267,13 @@ int resolver_srv_lookup(xmpp_ctx_t *ctx,
 
     strophe_free(ctx, buf);
 
-#endif /* HAVE_CARES */
+    if (set != XMPP_DOMAIN_FOUND) {
+        *srv_rr_list = NULL;
+    }
 
-    return set;
+    callback(xsock, domain);
+
+#endif /* HAVE_CARES */
 }
 
 void resolver_srv_free(xmpp_ctx_t *ctx, resolver_srv_rr_t *srv_rr_list)
@@ -478,18 +513,24 @@ static int resolver_raw_srv_lookup_buf(xmpp_ctx_t *ctx,
     return *srv_rr_list != NULL ? XMPP_DOMAIN_FOUND : XMPP_DOMAIN_NOT_FOUND;
 }
 
+/* WARNING this version is blocking */
+void resolver_getaddrinfo(const char *name,
+                          const char *service,
+                          const resolver_addrinfo_hints *hints,
+                          resolver_addrinfo_callback callback,
+                          void *arg)
+{
+    struct addrinfo *result;
+    int rc = getaddrinfo(name, service, hints, &result);
+    callback(arg, rc, 0, result);
+}
+
 #endif /* !HAVE_CARES */
 
 #ifdef HAVE_CARES
 /*******************************************************************************
  * Resolver implementation using c-ares library.
  ******************************************************************************/
-
-struct resolver_ares_ctx {
-    xmpp_ctx_t *ctx;
-    int result;
-    resolver_srv_rr_t *srv_rr_list;
-};
 
 static int resolver_ares_srv_lookup_buf(xmpp_ctx_t *ctx,
                                         const unsigned char *buf,
@@ -529,53 +570,33 @@ static int resolver_ares_srv_lookup_buf(xmpp_ctx_t *ctx,
 static void ares_srv_lookup_callback(
     void *arg, int status, int timeouts, unsigned char *buf, int len)
 {
-    struct resolver_ares_ctx *actx = arg;
+    struct resolver_ctx *rctx = arg;
 
     (void)timeouts;
 
     if (status != ARES_SUCCESS)
-        actx->result = XMPP_DOMAIN_NOT_FOUND;
+        *rctx->srv_rr_list = NULL;
     else
-        actx->result = resolver_ares_srv_lookup_buf(actx->ctx, buf, len,
-                                                    &actx->srv_rr_list);
+        resolver_ares_srv_lookup_buf(rctx->ctx, buf, len, rctx->srv_rr_list);
+
+    rctx->callback(rctx->xsock, rctx->domain);
+    strophe_free(rctx->ctx, rctx);
 }
 
-static int resolver_ares_srv_lookup(xmpp_ctx_t *ctx,
-                                    const char *fulldomain,
-                                    resolver_srv_rr_t **srv_rr_list)
+static void resolver_ares_srv_lookup(const char *fulldomain,
+                                     struct resolver_ctx *rctx)
 {
-    struct resolver_ares_ctx actx;
-    ares_channel chan;
-    struct timeval tv;
-    struct timeval *tvp;
-    fd_set rfds;
-    fd_set wfds;
-    int nfds;
-    int rc;
+    ares_query(ares_chan, fulldomain, MESSAGE_C_IN, MESSAGE_T_SRV,
+               ares_srv_lookup_callback, rctx);
+}
 
-    actx.ctx = ctx;
-    actx.result = XMPP_DOMAIN_NOT_FOUND;
-    actx.srv_rr_list = NULL;
-
-    rc = ares_init(&chan);
-    if (rc == ARES_SUCCESS) {
-        ares_query(chan, fulldomain, MESSAGE_C_IN, MESSAGE_T_SRV,
-                   ares_srv_lookup_callback, &actx);
-        while (1) {
-            FD_ZERO(&rfds);
-            FD_ZERO(&wfds);
-            nfds = ares_fds(chan, &rfds, &wfds);
-            if (nfds == 0)
-                break;
-            tvp = ares_timeout(chan, NULL, &tv);
-            select(nfds, &rfds, &wfds, NULL, tvp);
-            ares_process(chan, &rfds, &wfds);
-        }
-        ares_destroy(chan);
-    }
-
-    *srv_rr_list = actx.srv_rr_list;
-    return actx.result;
+void resolver_getaddrinfo(const char *name,
+                          const char *service,
+                          const resolver_addrinfo_hints *hints,
+                          resolver_addrinfo_callback callback,
+                          void *arg)
+{
+    ares_getaddrinfo(ares_chan, name, service, hints, callback, arg);
 }
 
 #endif /* HAVE_CARES */
