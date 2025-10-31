@@ -177,13 +177,9 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
     mood = xmpp_stanza_new_from_string(ctx, str_mood);
     assert(mood != NULL);
 
-    assert(xmpp_stanza_get_to(error) != NULL);
     COMPARE("romeo@montague.lit/home", xmpp_stanza_get_to(error));
-    assert(xmpp_stanza_get_from(error) != NULL);
     COMPARE("juliet@capulet.lit/chamber", xmpp_stanza_get_from(error));
-    assert(xmpp_stanza_get_id(error) != NULL);
     COMPARE("e2e1", xmpp_stanza_get_id(error));
-    assert(xmpp_stanza_get_type(error) != NULL);
     COMPARE("error", xmpp_stanza_get_type(error));
 
     /* FAIL - no list given */
@@ -212,7 +208,6 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
                                          "item", "mood", NULL);
     assert(item != NULL);
     assert(xmpp_stanza_get_children(item) != NULL);
-    assert(xmpp_stanza_get_name(xmpp_stanza_get_children(item)) != NULL);
     COMPARE("annoyed", xmpp_stanza_get_name(xmpp_stanza_get_children(item)));
 
     item = xmpp_stanza_get_child_by_path(
@@ -223,7 +218,6 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
         NULL);
     assert(item != NULL);
     assert(xmpp_stanza_get_children(item) != NULL);
-    assert(xmpp_stanza_get_name(xmpp_stanza_get_children(item)) != NULL);
     COMPARE("annoyed", xmpp_stanza_get_name(xmpp_stanza_get_children(item)));
 
     ret = xmpp_stanza_get_attributes(error, attr, attrlen);
@@ -243,6 +237,50 @@ static void test_stanza_error(xmpp_ctx_t *ctx)
     xmpp_stanza_release(error);
 }
 
+static void test_stanza_bookmark(xmpp_ctx_t *ctx)
+{
+    // clang-format off
+   static const char *str =
+         "<item xmlns=\"http://jabber.org/protocol/pubsub\" id=\"\">"
+            "<conference autojoin=\"\" name=\"Symbol(lit-nothing)\" xmlns=\"urn:xmpp:bookmarks:1\" />"
+         "</item>";
+    // clang-format on
+
+    xmpp_stanza_t *stanza = xmpp_stanza_new_from_string(ctx, str);
+    assert(stanza != NULL);
+    const char *id = xmpp_stanza_get_id(stanza);
+    assert(id != NULL);
+    assert(strcmp(id, "") == 0);
+    xmpp_stanza_t *child = xmpp_stanza_get_children(stanza);
+    COMPARE("conference", xmpp_stanza_get_name(child));
+    const char *autojoin = xmpp_stanza_get_attribute(child, "autojoin");
+    assert(autojoin != NULL);
+    assert(strcmp(autojoin, "") == 0);
+    xmpp_stanza_release(stanza);
+}
+
+static void test_stanza_copy(xmpp_ctx_t *ctx)
+{
+    // clang-format off
+   static const char *str =
+         "<item xmlns=\"http://jabber.org/protocol/pubsub\" id=\"\">"
+            "<conference autojoin=\"\" name=\"Symbol(lit-nothing)\" xmlns=\"urn:xmpp:bookmarks:1\" />"
+         "</item>";
+    // clang-format on
+
+    xmpp_stanza_t *stanza = xmpp_stanza_new_from_string(ctx, str);
+    assert(stanza != NULL);
+    const char *id = xmpp_stanza_get_id(stanza);
+    assert(id != NULL);
+    assert(strcmp(id, "") == 0);
+    xmpp_stanza_t *child = xmpp_stanza_get_children(stanza);
+    COMPARE("conference", xmpp_stanza_get_name(child));
+    xmpp_stanza_t *copy = xmpp_stanza_copy(child);
+    xmpp_stanza_release(stanza);
+    COMPARE("conference", xmpp_stanza_get_name(copy));
+    xmpp_stanza_release(copy);
+}
+
 int main()
 {
     xmpp_ctx_t *ctx;
@@ -251,6 +289,8 @@ int main()
     ctx = xmpp_ctx_new(&stanza_mem, NULL);
     assert(ctx != NULL);
 
+    test_stanza_bookmark(ctx);
+    test_stanza_copy(ctx);
     test_stanza_add_child(ctx);
     test_stanza_from_string(ctx);
     test_stanza_error(ctx);
