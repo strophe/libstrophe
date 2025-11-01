@@ -277,11 +277,20 @@ _handle_features(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         }
     }
 
-    /* check for SASL */
-    child = xmpp_stanza_get_child_by_name_and_ns(stanza, "mechanisms",
-                                                 XMPP_NS_SASL);
+    /* check for SASL2 */
+    child = xmpp_stanza_get_child_by_name_and_ns(stanza, "authentication",
+                                                 XMPP_NS_SASL2);
+
     if (child) {
+        conn->sasl_support |= SASL_MASK_SASL2;
         _foreach_child(conn, child, "mechanism", _handle_sasl_children);
+    } else {
+        /* check for SASL */
+        child = xmpp_stanza_get_child_by_name_and_ns(stanza, "mechanisms",
+                                                     XMPP_NS_SASL);
+        if (child) {
+            _foreach_child(conn, child, "mechanism", _handle_sasl_children);
+        }
     }
 
     /* Disable PLAIN when other secure mechanisms are supported */
@@ -350,17 +359,27 @@ _handle_sasl_result(xmpp_conn_t *conn, xmpp_stanza_t *stanza, void *userdata)
         /* fall back to next auth method */
         _auth(conn);
     } else if (strcmp(name, "success") == 0) {
-        /* SASL auth successful, we need to restart the stream */
         strophe_debug(conn->ctx, "xmpp", "SASL %s auth successful",
                       (char *)userdata);
 
-        /* reset parser */
-        conn_prepare_reset(conn, conn->compression.allowed
-                                     ? _handle_open_compress
-                                     : _handle_open_sasl);
+        if (conn->sasl_support & SASL_MASK_SASL2) {
+            /* New features will come, but no restart */
+            if (conn->compression.allowed) {
+                _handle_open_compress(conn);
+            } else {
+                _handle_open_sasl(conn);
+            }
+        } else {
+            /* SASL auth successful, we need to restart the stream */
 
-        /* send stream tag */
-        conn_open_stream(conn);
+            /* reset parser */
+            conn_prepare_reset(conn, conn->compression.allowed
+                                         ? _handle_open_compress
+                                         : _handle_open_sasl);
+
+            /* send stream tag */
+            conn_open_stream(conn);
+        }
     } else {
         /* got unexpected reply */
         strophe_error(conn->ctx, "xmpp",
@@ -389,6 +408,8 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
                   "handle digest-md5 (challenge) called for %s", name);
 
     if (strcmp(name, "challenge") == 0) {
+        const char *sasl_ns =
+            conn->sasl_support & SASL_MASK_SASL2 ? XMPP_NS_SASL2 : XMPP_NS_SASL;
         text = xmpp_stanza_get_text(stanza);
         response = sasl_digest_md5(conn->ctx, text, conn->jid, conn->pass);
         if (!response) {
@@ -403,7 +424,7 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
             return 0;
         }
         xmpp_stanza_set_name(auth, "response");
-        xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
+        xmpp_stanza_set_ns(auth, sasl_ns);
 
         authdata = xmpp_stanza_new(conn->ctx);
         if (!authdata) {
@@ -416,8 +437,7 @@ static int _handle_digestmd5_challenge(xmpp_conn_t *conn,
 
         xmpp_stanza_add_child_ex(auth, authdata, 0);
 
-        handler_add(conn, _handle_digestmd5_rspauth, XMPP_NS_SASL, NULL, NULL,
-                    NULL);
+        handler_add(conn, _handle_digestmd5_rspauth, sasl_ns, NULL, NULL, NULL);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
 
@@ -444,6 +464,8 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t *conn,
                   "handle digest-md5 (rspauth) called for %s", name);
 
     if (strcmp(name, "challenge") == 0) {
+        const char *sasl_ns =
+            conn->sasl_support & SASL_MASK_SASL2 ? XMPP_NS_SASL2 : XMPP_NS_SASL;
         /* assume it's an rspauth response */
         auth = xmpp_stanza_new(conn->ctx);
         if (!auth) {
@@ -451,7 +473,7 @@ static int _handle_digestmd5_rspauth(xmpp_conn_t *conn,
             return 0;
         }
         xmpp_stanza_set_name(auth, "response");
-        xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
+        xmpp_stanza_set_ns(auth, sasl_ns);
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
     } else {
         return _handle_sasl_result(conn, stanza, "DIGEST-MD5");
@@ -488,6 +510,8 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
                   scram_ctx->alg->scram_name, name);
 
     if (strcmp(name, "challenge") == 0) {
+        const char *sasl_ns =
+            conn->sasl_support & SASL_MASK_SASL2 ? XMPP_NS_SASL2 : XMPP_NS_SASL;
         text = xmpp_stanza_get_text(stanza);
         if (!text)
             goto err;
@@ -508,7 +532,7 @@ static int _handle_scram_challenge(xmpp_conn_t *conn,
         if (!auth)
             goto err_free_response;
         xmpp_stanza_set_name(auth, "response");
-        xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
+        xmpp_stanza_set_ns(auth, sasl_ns);
 
         authdata = xmpp_stanza_new(conn->ctx);
         if (!authdata)
@@ -658,16 +682,103 @@ static xmpp_stanza_t *_make_starttls(xmpp_conn_t *conn)
     return starttls;
 }
 
-static xmpp_stanza_t *_make_sasl_auth(xmpp_conn_t *conn, const char *mechanism)
+static xmpp_stanza_t *_make_sasl_auth(xmpp_conn_t *conn,
+                                      const char *mechanism,
+                                      const char *initial_data)
 {
-    xmpp_stanza_t *auth;
+    xmpp_stanza_t *auth, *init, *user_agent;
+    xmpp_stanza_t *inittxt = NULL;
 
     /* build auth stanza */
+    if (initial_data) {
+        inittxt = xmpp_stanza_new(conn->ctx);
+        if (!inittxt)
+            return NULL;
+    }
     auth = xmpp_stanza_new(conn->ctx);
     if (auth) {
-        xmpp_stanza_set_name(auth, "auth");
-        xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
+        if (conn->sasl_support & SASL_MASK_SASL2) {
+            xmpp_stanza_set_name(auth, "authenticate");
+            xmpp_stanza_set_ns(auth, XMPP_NS_SASL2);
+            if (initial_data) {
+                init = xmpp_stanza_new(conn->ctx);
+                if (!init) {
+                    xmpp_stanza_release(auth);
+                    return NULL;
+                }
+                xmpp_stanza_set_name(init, "initial-response");
+                xmpp_stanza_set_ns(init, XMPP_NS_SASL2);
+                xmpp_stanza_set_text(inittxt, initial_data);
+                xmpp_stanza_add_child_ex(init, inittxt, 0);
+                xmpp_stanza_add_child_ex(auth, init, 0);
+            }
+            if (conn->user_agent_id || conn->user_agent_software ||
+                conn->user_agent_device) {
+                user_agent = xmpp_stanza_new(conn->ctx);
+                if (!user_agent) {
+                    xmpp_stanza_release(auth);
+                    return NULL;
+                }
+                xmpp_stanza_set_name(user_agent, "user-agent");
+                xmpp_stanza_set_ns(user_agent, XMPP_NS_SASL2);
+                if (conn->user_agent_id) {
+                    xmpp_stanza_set_attribute(user_agent, "id",
+                                              conn->user_agent_id);
+                }
+                if (conn->user_agent_software) {
+                    xmpp_stanza_t *software = xmpp_stanza_new(conn->ctx);
+                    if (!software) {
+                        xmpp_stanza_release(user_agent);
+                        xmpp_stanza_release(auth);
+                        return NULL;
+                    }
+                    xmpp_stanza_set_name(software, "software");
+                    xmpp_stanza_set_ns(software, XMPP_NS_SASL2);
+                    xmpp_stanza_t *txt = xmpp_stanza_new(conn->ctx);
+                    if (!txt) {
+                        xmpp_stanza_release(software);
+                        xmpp_stanza_release(user_agent);
+                        xmpp_stanza_release(auth);
+                        return NULL;
+                    }
+                    xmpp_stanza_set_text(txt, conn->user_agent_software);
+                    xmpp_stanza_add_child_ex(software, txt, 0);
+                    xmpp_stanza_add_child_ex(user_agent, software, 0);
+                }
+                if (conn->user_agent_device) {
+                    xmpp_stanza_t *device = xmpp_stanza_new(conn->ctx);
+                    if (!device) {
+                        xmpp_stanza_release(user_agent);
+                        xmpp_stanza_release(auth);
+                        return NULL;
+                    }
+                    xmpp_stanza_set_name(device, "device");
+                    xmpp_stanza_set_ns(device, XMPP_NS_SASL2);
+                    xmpp_stanza_t *txt = xmpp_stanza_new(conn->ctx);
+                    if (!txt) {
+                        xmpp_stanza_release(device);
+                        xmpp_stanza_release(user_agent);
+                        xmpp_stanza_release(auth);
+                        return NULL;
+                    }
+                    xmpp_stanza_set_text(txt, conn->user_agent_device);
+                    xmpp_stanza_add_child_ex(device, txt, 0);
+                    xmpp_stanza_add_child_ex(user_agent, device, 0);
+                }
+                xmpp_stanza_add_child_ex(auth, user_agent, 0);
+            }
+        } else {
+            xmpp_stanza_set_name(auth, "auth");
+            xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
+            if (initial_data) {
+                xmpp_stanza_set_text(inittxt, initial_data);
+                xmpp_stanza_add_child_ex(auth, inittxt, 0);
+            }
+        }
         xmpp_stanza_set_attribute(auth, "mechanism", mechanism);
+    } else {
+        if (inittxt)
+            xmpp_stanza_release(inittxt);
     }
 
     return auth;
@@ -681,7 +792,6 @@ static xmpp_stanza_t *_make_sasl_auth(xmpp_conn_t *conn, const char *mechanism)
 static void _auth(xmpp_conn_t *conn)
 {
     xmpp_stanza_t *auth;
-    xmpp_stanza_t *authdata;
     struct scram_user_data *scram_ctx;
     char *authid;
     char *str;
@@ -734,15 +844,18 @@ static void _auth(xmpp_conn_t *conn)
         return;
     }
 
+    const char *sasl_ns =
+        conn->sasl_support & SASL_MASK_SASL2 ? XMPP_NS_SASL2 : XMPP_NS_SASL;
+
     if (anonjid && (conn->sasl_support & SASL_MASK_ANONYMOUS)) {
         /* some crap here */
-        auth = _make_sasl_auth(conn, "ANONYMOUS");
+        auth = _make_sasl_auth(conn, "ANONYMOUS", NULL);
         if (!auth) {
             disconnect_mem_error(conn);
             return;
         }
 
-        handler_add(conn, _handle_sasl_result, XMPP_NS_SASL, NULL, NULL,
+        handler_add(conn, _handle_sasl_result, sasl_ns, NULL, NULL,
                     "ANONYMOUS");
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
@@ -751,40 +864,28 @@ static void _auth(xmpp_conn_t *conn)
         conn->sasl_support &= ~SASL_MASK_ANONYMOUS;
     } else if (conn->sasl_support & SASL_MASK_EXTERNAL) {
         /* more crap here */
-        auth = _make_sasl_auth(conn, "EXTERNAL");
-        if (!auth) {
-            disconnect_mem_error(conn);
-            return;
-        }
-
-        authdata = xmpp_stanza_new(conn->ctx);
-        if (!authdata) {
-            xmpp_stanza_release(auth);
-            disconnect_mem_error(conn);
-            return;
-        }
         str = tls_id_on_xmppaddr(conn, 0);
         if (!str || (tls_id_on_xmppaddr_num(conn) == 1 &&
                      strcmp(str, conn->jid) == 0)) {
-            xmpp_stanza_set_text(authdata, "=");
+            str = strophe_strdup(conn->ctx, "=");
         } else {
             strophe_free(conn->ctx, str);
             str = xmpp_base64_encode(conn->ctx, (void *)conn->jid,
                                      strlen(conn->jid));
             if (!str) {
-                xmpp_stanza_release(authdata);
-                xmpp_stanza_release(auth);
                 disconnect_mem_error(conn);
                 return;
             }
-            xmpp_stanza_set_text(authdata, str);
         }
+
+        auth = _make_sasl_auth(conn, "EXTERNAL", str);
         strophe_free(conn->ctx, str);
+        if (!auth) {
+            disconnect_mem_error(conn);
+            return;
+        }
 
-        xmpp_stanza_add_child_ex(auth, authdata, 0);
-
-        handler_add(conn, _handle_sasl_result, XMPP_NS_SASL, NULL, NULL,
-                    "EXTERNAL");
+        handler_add(conn, _handle_sasl_result, sasl_ns, NULL, NULL, "EXTERNAL");
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
 
@@ -810,18 +911,11 @@ static void _auth(xmpp_conn_t *conn)
             }
         }
 
-        auth = _make_sasl_auth(conn, scram_ctx->alg->scram_name);
-        if (!auth) {
-            disconnect_mem_error(conn);
-            return;
-        }
-
         scram_ctx->conn = conn;
         scram_ctx->sasl_plus =
             scram_ctx->alg->mask & SASL_MASK_SCRAM_PLUS ? 1 : 0;
         if (_make_scram_init_msg(scram_ctx)) {
             strophe_free(conn->ctx, scram_ctx);
-            xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
             return;
         }
@@ -832,25 +926,18 @@ static void _auth(xmpp_conn_t *conn)
         if (!str) {
             strophe_free(conn->ctx, scram_ctx->scram_init);
             strophe_free(conn->ctx, scram_ctx);
-            xmpp_stanza_release(auth);
             disconnect_mem_error(conn);
             return;
         }
 
-        authdata = xmpp_stanza_new(conn->ctx);
-        if (!authdata) {
-            strophe_free(conn->ctx, str);
-            strophe_free(conn->ctx, scram_ctx->scram_init);
-            strophe_free(conn->ctx, scram_ctx);
-            xmpp_stanza_release(auth);
-            disconnect_mem_error(conn);
-            return;
-        }
-        xmpp_stanza_set_text(authdata, str);
+        auth = _make_sasl_auth(conn, scram_ctx->alg->scram_name, str);
         strophe_free(conn->ctx, str);
-        xmpp_stanza_add_child_ex(auth, authdata, 0);
+        if (!auth) {
+            disconnect_mem_error(conn);
+            return;
+        }
 
-        handler_add(conn, _handle_scram_challenge, XMPP_NS_SASL, NULL, NULL,
+        handler_add(conn, _handle_scram_challenge, sasl_ns, NULL, NULL,
                     (void *)scram_ctx);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
@@ -858,13 +945,13 @@ static void _auth(xmpp_conn_t *conn)
         /* SASL algorithm was tried, unset flag */
         conn->sasl_support &= ~scram_ctx->alg->mask;
     } else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
-        auth = _make_sasl_auth(conn, "DIGEST-MD5");
+        auth = _make_sasl_auth(conn, "DIGEST-MD5", NULL);
         if (!auth) {
             disconnect_mem_error(conn);
             return;
         }
 
-        handler_add(conn, _handle_digestmd5_challenge, XMPP_NS_SASL, NULL, NULL,
+        handler_add(conn, _handle_digestmd5_challenge, sasl_ns, NULL, NULL,
                     NULL);
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
@@ -872,16 +959,6 @@ static void _auth(xmpp_conn_t *conn)
         /* SASL DIGEST-MD5 was tried, unset flag */
         conn->sasl_support &= ~SASL_MASK_DIGESTMD5;
     } else if (conn->sasl_support & SASL_MASK_PLAIN) {
-        auth = _make_sasl_auth(conn, "PLAIN");
-        if (!auth) {
-            disconnect_mem_error(conn);
-            return;
-        }
-        authdata = xmpp_stanza_new(conn->ctx);
-        if (!authdata) {
-            disconnect_mem_error(conn);
-            return;
-        }
         authid = _get_authid(conn);
         if (!authid) {
             disconnect_mem_error(conn);
@@ -892,14 +969,16 @@ static void _auth(xmpp_conn_t *conn)
             disconnect_mem_error(conn);
             return;
         }
-        xmpp_stanza_set_text(authdata, str);
+
+        auth = _make_sasl_auth(conn, "PLAIN", str);
         strophe_free(conn->ctx, str);
         strophe_free(conn->ctx, authid);
+        if (!auth) {
+            disconnect_mem_error(conn);
+            return;
+        }
 
-        xmpp_stanza_add_child_ex(auth, authdata, 0);
-
-        handler_add(conn, _handle_sasl_result, XMPP_NS_SASL, NULL, NULL,
-                    "PLAIN");
+        handler_add(conn, _handle_sasl_result, sasl_ns, NULL, NULL, "PLAIN");
 
         send_stanza(conn, auth, XMPP_QUEUE_STROPHE);
 

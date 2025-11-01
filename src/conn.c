@@ -626,6 +626,99 @@ void xmpp_conn_set_pass(xmpp_conn_t *conn, const char *pass)
     conn->pass = pass ? strophe_strdup(conn->ctx, pass) : NULL;
 }
 
+/** Get the user-agent id used for authentication of a connection.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return a string containing the id or NULL if it has not been set
+ *
+ *  @ingroup Connections
+ */
+const char *xmpp_conn_get_user_agent_id(const xmpp_conn_t *conn)
+{
+    return conn->user_agent_id;
+}
+
+/** Set the user-agent id used to authenticate the connection.
+ *  If any id was previously set, it will be discarded.  The function
+ *  will make a copy of the string.
+ *
+ *  @param conn a Strophe connection object
+ *  @param user_agent_id the id
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_user_agent_id(xmpp_conn_t *conn, const char *user_agent_id)
+{
+    if (conn->user_agent_id)
+        strophe_free(conn->ctx, conn->user_agent_id);
+    conn->user_agent_id =
+        user_agent_id ? strophe_strdup(conn->ctx, user_agent_id) : NULL;
+}
+
+/** Get the software name used for authentication of a connection.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return a string containing the name or NULL if it has not been set
+ *
+ *  @ingroup Connections
+ */
+const char *xmpp_conn_get_user_agent_software(const xmpp_conn_t *conn)
+{
+    return conn->user_agent_software;
+}
+
+/** Set the user-agent software name used to authenticate the connection.
+ *  If any name was previously set, it will be discarded.  The function
+ *  will make a copy of the string.
+ *
+ *  @param conn a Strophe connection object
+ *  @param user_agent_software the name
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_user_agent_software(xmpp_conn_t *conn,
+                                       const char *user_agent_software)
+{
+    if (conn->user_agent_software)
+        strophe_free(conn->ctx, conn->user_agent_software);
+    conn->user_agent_software =
+        user_agent_software ? strophe_strdup(conn->ctx, user_agent_software)
+                            : NULL;
+}
+
+/** Get the device name used for authentication of a connection.
+ *
+ *  @param conn a Strophe connection object
+ *
+ *  @return a string containing the name or NULL if it has not been set
+ *
+ *  @ingroup Connections
+ */
+const char *xmpp_conn_get_user_agent_device(const xmpp_conn_t *conn)
+{
+    return conn->user_agent_device;
+}
+
+/** Set the user-agent device name used to authenticate the connection.
+ *  If any name was previously set, it will be discarded.  The function
+ *  will make a copy of the string.
+ *
+ *  @param conn a Strophe connection object
+ *  @param user_agent_device the name
+ *
+ *  @ingroup Connections
+ */
+void xmpp_conn_set_user_agent_device(xmpp_conn_t *conn,
+                                     const char *user_agent_device)
+{
+    if (conn->user_agent_device)
+        strophe_free(conn->ctx, conn->user_agent_device);
+    conn->user_agent_device =
+        user_agent_device ? strophe_strdup(conn->ctx, user_agent_device) : NULL;
+}
+
 /** Get the strophe context that the connection is associated with.
  *  @param conn a Strophe connection object
  *
