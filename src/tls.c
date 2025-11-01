@@ -166,9 +166,13 @@ const char *xmpp_tlscert_get_description(xmpp_cert_element_t elmnt)
         "Expires On",
         "Public Key Algorithm",
         "Certificate Signature Algorithm",
-        "Fingerprint SHA-1",
-        "Fingerprint SHA-256",
+        "Certificate Fingerprint SHA-1",
+        "Certificate Fingerprint SHA-256",
+        "Public Key Fingerprint SHA-256",
     };
+    STROPHE_STATIC_ASSERT(
+        ARRAY_SIZE(descriptions) == XMPP_CERT_ELEMENT_MAX,
+        "descriptions don't match the number of enum elements");
     if (elmnt < 0 || elmnt >= XMPP_CERT_ELEMENT_MAX)
         return NULL;
     return descriptions[elmnt];

@@ -376,18 +376,26 @@ _get_fingerprint(const xmpp_ctx_t *ctx, X509 *err_cert, xmpp_cert_element_t el)
 {
     unsigned char buf[EVP_MAX_MD_SIZE];
     unsigned int len;
+    int (*digest_fn)(const X509 *data, const EVP_MD *type, unsigned char *md,
+                     unsigned int *len);
     const EVP_MD *digest;
     switch (el) {
     case XMPP_CERT_FINGERPRINT_SHA1:
+        digest_fn = X509_digest;
         digest = EVP_sha1();
         break;
     case XMPP_CERT_FINGERPRINT_SHA256:
+        digest_fn = X509_digest;
+        digest = EVP_sha256();
+        break;
+    case XMPP_CERT_PUBKEY_FINGERPRINT_SHA256:
+        digest_fn = X509_pubkey_digest;
         digest = EVP_sha256();
         break;
     default:
         return NULL;
     }
-    if (X509_digest(err_cert, digest, buf, &len) != 0) {
+    if (digest_fn(err_cert, digest, buf, &len) != 0) {
         char fingerprint[4 * EVP_MAX_MD_SIZE];
         hex_encode(fingerprint, buf, len);
         return strophe_strdup(ctx, fingerprint);
@@ -475,6 +483,8 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, X509 *cert)
         _get_fingerprint(ctx, cert, XMPP_CERT_FINGERPRINT_SHA1);
     tlscert->elements[XMPP_CERT_FINGERPRINT_SHA256] =
         _get_fingerprint(ctx, cert, XMPP_CERT_FINGERPRINT_SHA256);
+    tlscert->elements[XMPP_CERT_PUBKEY_FINGERPRINT_SHA256] =
+        _get_fingerprint(ctx, cert, XMPP_CERT_PUBKEY_FINGERPRINT_SHA256);
 
     strophe_snprintf(buf, sizeof(buf), "%ld", X509_get_version(cert) + 1);
     tlscert->elements[XMPP_CERT_VERSION] = strophe_strdup(ctx, buf);
