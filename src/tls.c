@@ -29,6 +29,10 @@
 #include "strophe.h"
 
 #include "common.h"
+#ifdef _MSC_VER
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
 
 const struct conn_interface tls_intf = {
     tls_read,
@@ -106,8 +110,6 @@ const char *xmpp_tlscert_get_pem(const xmpp_tlscert_t *cert)
 
 /** Get the dnsName entries out of the SubjectAlternativeNames.
  *
- *  Note: Max. `MAX_NUM_DNSNAMES` are supported.
- *
  *  @param cert a Strophe TLS certificate object
  *  @param n which dnsName entry
  *
@@ -162,9 +164,13 @@ const char *xmpp_tlscert_get_description(xmpp_cert_element_t elmnt)
         "Expires On",
         "Public Key Algorithm",
         "Certificate Signature Algorithm",
-        "Fingerprint SHA-1",
-        "Fingerprint SHA-256",
+        "Certificate Fingerprint SHA-1",
+        "Certificate Fingerprint SHA-256",
+        "Public Key Fingerprint SHA-256",
     };
+    STROPHE_STATIC_ASSERT(
+        ARRAY_SIZE(descriptions) == XMPP_CERT_ELEMENT_MAX,
+        "descriptions don't match the number of enum elements");
     if (elmnt < 0 || elmnt >= XMPP_CERT_ELEMENT_MAX)
         return NULL;
     return descriptions[elmnt];

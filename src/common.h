@@ -29,6 +29,17 @@
 #include "parser.h"
 #include "snprintf.h"
 
+/** Define your own `STROPHE_STATIC_ASSERT` if your compiler doesn't support one
+ * of the below ones or define as noop if your compiler provides no replacement.
+ */
+#if !defined(STROPHE_STATIC_ASSERT)
+#if (__STDC_VERSION__ >= 202000L)
+#define STROPHE_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
+#else
+#define STROPHE_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
+#endif
+#endif
+
 /** handlers **/
 #if (__STDC_VERSION__ >= 202000L)
 typedef void *xmpp_void_handler;

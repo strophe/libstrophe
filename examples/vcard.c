@@ -11,11 +11,16 @@
  */
 
 #include <assert.h>
-#include <libgen.h> /* basename */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strophe.h>
+#ifndef _WIN32
+#include <libgen.h> /* basename */
+#else
+#define strtok_r strtok_s
+#define basename(x) "vcard"
+#endif
 
 typedef struct {
     xmpp_ctx_t *ctx;

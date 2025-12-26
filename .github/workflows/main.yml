@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [master]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux-tests:
     runs-on: ubuntu-24.04
@@ -51,10 +55,13 @@ jobs:
       matrix:
         xssl_versions:
            - { version: "master",          continue: true,  libressl: true }
+           - { version: "OPENBSD_7_8",     continue: true,  libressl: true }
+           - { version: "v4.2.1",          continue: true,  libressl: true }
+           - { version: "OPENBSD_7_7",     continue: true,  libressl: true }
+           - { version: "v4.1.2",          continue: true,  libressl: true }
+           - { version: "OPENBSD_7_6",     continue: true,  libressl: true }
            - { version: "OPENBSD_7_5",     continue: true,  libressl: true }
-           - { version: "v3.9.2",          continue: true,  libressl: true }
            - { version: "OPENBSD_7_4",     continue: true,  libressl: true }
-           - { version: "v3.8.4",          continue: true,  libressl: true }
            - { version: "OPENBSD_7_3",     continue: true,  libressl: true }
            - { version: "OPENBSD_7_2",     continue: true,  libressl: true }
            - { version: "OPENBSD_7_1",     continue: true,  libressl: true }
@@ -68,13 +75,17 @@ jobs:
            - { version: "v3.1.5",          continue: true,  libressl: true }
            - { version: "v2.1.10",         continue: true,  libressl: true }
            - { version: "openssl-3.0",     continue: true,  libressl: false }
-           - { version: "openssl-3.0.13",  continue: false, libressl: false }
-           - { version: "openssl-3.1",     continue: true,  libressl: false }
-           - { version: "openssl-3.1.5",   continue: false, libressl: false }
+           - { version: "openssl-3.0.18",  continue: false, libressl: false }
            - { version: "openssl-3.2",     continue: true,  libressl: false }
-           - { version: "openssl-3.2.1",   continue: false, libressl: false }
+           - { version: "openssl-3.2.6",   continue: false, libressl: false }
            - { version: "openssl-3.3",     continue: true,  libressl: false }
-           - { version: "openssl-3.3.0",   continue: false, libressl: false }
+           - { version: "openssl-3.3.5",   continue: false, libressl: false }
+           - { version: "openssl-3.4",     continue: true,  libressl: false }
+           - { version: "openssl-3.4.3",   continue: false, libressl: false }
+           - { version: "openssl-3.5",     continue: true,  libressl: false }
+           - { version: "openssl-3.5.3",   continue: false, libressl: false }
+           - { version: "openssl-3.6",     continue: true,  libressl: false }
+           - { version: "openssl-3.6.0",   continue: false, libressl: false }
     name: xSSL tests
     continue-on-error: ${{ matrix.xssl_versions.continue }}
     steps:
@@ -111,7 +122,7 @@ jobs:
           cat test-suite*.log || true
 
   release-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Check if release would work
     steps:
       - uses: actions/checkout@v2

@@ -334,6 +334,12 @@ static xmpp_tlscert_t *_x509_to_tlscert(xmpp_ctx_t *ctx, gnutls_x509_crt_t cert)
     gnutls_x509_crt_get_fingerprint(cert, GNUTLS_DIG_SHA256, smallbuf, &size);
     hex_encode(buf, smallbuf, size);
     tlscert->elements[XMPP_CERT_FINGERPRINT_SHA256] = strophe_strdup(ctx, buf);
+    size = sizeof(smallbuf);
+    gnutls_x509_crt_get_key_id(cert, GNUTLS_KEYID_USE_SHA256, (void *)smallbuf,
+                               &size);
+    hex_encode(buf, smallbuf, size);
+    tlscert->elements[XMPP_CERT_PUBKEY_FINGERPRINT_SHA256] =
+        strophe_strdup(ctx, buf);
 
     strophe_snprintf(buf, sizeof(buf), "%d", gnutls_x509_crt_get_version(cert));
     tlscert->elements[XMPP_CERT_VERSION] = strophe_strdup(ctx, buf);
@@ -421,6 +427,8 @@ static int _tls_verify(gnutls_session_t session)
             gnutls_free(out.data);
             return -1;
         }
+
+        tlscert->conn = tls->conn;
 
         if (tls->conn->certfail_handler(tlscert, (char *)out.data) == 0) {
             xmpp_tlscert_free(tlscert);

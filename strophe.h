@@ -188,6 +188,7 @@ typedef struct _xmpp_sm_t xmpp_sm_state_t;
 #define XMPP_CONN_FLAG_DISABLE_TLS (1UL << 0)
 #define XMPP_CONN_FLAG_MANDATORY_TLS (1UL << 1)
 #define XMPP_CONN_FLAG_LEGACY_SSL (1UL << 2)
+#define XMPP_CONN_FLAG_DIRECT_TLS XMPP_CONN_FLAG_LEGACY_SSL
 /** @def XMPP_CONN_FLAG_TRUST_TLS
  *  Trust server's certificate even if it is invalid.
  */
@@ -250,17 +251,18 @@ typedef enum {
  *  @ingroup TLS
  */
 typedef enum {
-    XMPP_CERT_VERSION,            /**< X.509 Version */
-    XMPP_CERT_SERIALNUMBER,       /**< SerialNumber */
-    XMPP_CERT_SUBJECT,            /**< Subject */
-    XMPP_CERT_ISSUER,             /**< Issuer */
-    XMPP_CERT_NOTBEFORE,          /**< Issued on */
-    XMPP_CERT_NOTAFTER,           /**< Expires on */
-    XMPP_CERT_KEYALG,             /**< Public Key Algorithm */
-    XMPP_CERT_SIGALG,             /**< Certificate Signature Algorithm */
-    XMPP_CERT_FINGERPRINT_SHA1,   /**< Fingerprint SHA-1 */
-    XMPP_CERT_FINGERPRINT_SHA256, /**< Fingerprint SHA-256 */
-    XMPP_CERT_ELEMENT_MAX         /**< Last element of the enum */
+    XMPP_CERT_VERSION,                   /**< X.509 Version */
+    XMPP_CERT_SERIALNUMBER,              /**< SerialNumber */
+    XMPP_CERT_SUBJECT,                   /**< Subject */
+    XMPP_CERT_ISSUER,                    /**< Issuer */
+    XMPP_CERT_NOTBEFORE,                 /**< Issued on */
+    XMPP_CERT_NOTAFTER,                  /**< Expires on */
+    XMPP_CERT_KEYALG,                    /**< Public Key Algorithm */
+    XMPP_CERT_SIGALG,                    /**< Certificate Signature Algorithm */
+    XMPP_CERT_FINGERPRINT_SHA1,          /**< Fingerprint SHA-1 */
+    XMPP_CERT_FINGERPRINT_SHA256,        /**< Fingerprint SHA-256 */
+    XMPP_CERT_PUBKEY_FINGERPRINT_SHA256, /**< SHA-256 fingerprint of pubkey */
+    XMPP_CERT_ELEMENT_MAX                /**< Last element of the enum */
 } xmpp_cert_element_t;
 
 typedef struct {
