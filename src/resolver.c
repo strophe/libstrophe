@@ -98,6 +98,13 @@ void resolver_initialize(void)
 #endif
 }
 
+void resolver_reinitialize(void)
+{
+#ifdef HAVE_CARES
+    ares_reinit(ares_chan);
+#endif
+}
+
 void resolver_shutdown(void)
 {
 #ifdef HAVE_CARES

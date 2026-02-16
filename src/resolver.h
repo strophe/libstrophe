@@ -60,6 +60,7 @@ typedef struct resolver_srv_rr_struc {
 } resolver_srv_rr_t;
 
 void resolver_initialize(void);
+void resolver_reinitialize(void);
 void resolver_shutdown(void);
 
 resolver_srv_rr_t *resolver_srv_rr_new(xmpp_ctx_t *ctx,

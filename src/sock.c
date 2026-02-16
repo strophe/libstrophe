@@ -192,6 +192,8 @@ int sock_new(xmpp_conn_t *conn,
     xsock->ainfo_list = NULL;
     conn->xsock = xsock;
 
+    resolver_reinitialize();
+
     if (host) {
         xsock->srv_rr_list = resolver_srv_rr_new(ctx, host, port, 0, 0);
     } else {
