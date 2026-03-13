@@ -682,106 +682,97 @@ static xmpp_stanza_t *_make_starttls(xmpp_conn_t *conn)
     return starttls;
 }
 
+static int _add_sasl2_child(xmpp_ctx_t *ctx,
+                            xmpp_stanza_t *dst,
+                            const char *name,
+                            const char *data)
+{
+    xmpp_stanza_t *element = xmpp_stanza_new(ctx);
+    if (!element)
+        return 1;
+    xmpp_stanza_t *sub = xmpp_stanza_new(ctx);
+    if (!sub) {
+        xmpp_stanza_release(element);
+        return 1;
+    }
+
+    xmpp_stanza_set_name(element, name);
+    xmpp_stanza_set_ns(element, XMPP_NS_SASL2);
+    xmpp_stanza_set_text(sub, data);
+    xmpp_stanza_add_child_ex(element, sub, 0);
+    xmpp_stanza_add_child_ex(dst, element, 0);
+
+    return 0;
+}
+
 static xmpp_stanza_t *_make_sasl_auth(xmpp_conn_t *conn,
                                       const char *mechanism,
                                       const char *initial_data)
 {
-    xmpp_stanza_t *auth, *init, *user_agent;
-    xmpp_stanza_t *inittxt = NULL;
+    xmpp_stanza_t *auth = NULL, *user_agent = NULL;
 
     /* build auth stanza */
-    if (initial_data) {
-        inittxt = xmpp_stanza_new(conn->ctx);
-        if (!inittxt)
-            return NULL;
-    }
     auth = xmpp_stanza_new(conn->ctx);
-    if (auth) {
-        if (conn->sasl_support & SASL_MASK_SASL2) {
-            xmpp_stanza_set_name(auth, "authenticate");
-            xmpp_stanza_set_ns(auth, XMPP_NS_SASL2);
-            if (initial_data) {
-                init = xmpp_stanza_new(conn->ctx);
-                if (!init) {
-                    xmpp_stanza_release(auth);
-                    return NULL;
-                }
-                xmpp_stanza_set_name(init, "initial-response");
-                xmpp_stanza_set_ns(init, XMPP_NS_SASL2);
-                xmpp_stanza_set_text(inittxt, initial_data);
-                xmpp_stanza_add_child_ex(init, inittxt, 0);
-                xmpp_stanza_add_child_ex(auth, init, 0);
-            }
-            if (conn->user_agent_id || conn->user_agent_software ||
-                conn->user_agent_device) {
-                user_agent = xmpp_stanza_new(conn->ctx);
-                if (!user_agent) {
-                    xmpp_stanza_release(auth);
-                    return NULL;
-                }
-                xmpp_stanza_set_name(user_agent, "user-agent");
-                xmpp_stanza_set_ns(user_agent, XMPP_NS_SASL2);
-                if (conn->user_agent_id) {
-                    xmpp_stanza_set_attribute(user_agent, "id",
-                                              conn->user_agent_id);
-                }
-                if (conn->user_agent_software) {
-                    xmpp_stanza_t *software = xmpp_stanza_new(conn->ctx);
-                    if (!software) {
-                        xmpp_stanza_release(user_agent);
-                        xmpp_stanza_release(auth);
-                        return NULL;
-                    }
-                    xmpp_stanza_set_name(software, "software");
-                    xmpp_stanza_set_ns(software, XMPP_NS_SASL2);
-                    xmpp_stanza_t *txt = xmpp_stanza_new(conn->ctx);
-                    if (!txt) {
-                        xmpp_stanza_release(software);
-                        xmpp_stanza_release(user_agent);
-                        xmpp_stanza_release(auth);
-                        return NULL;
-                    }
-                    xmpp_stanza_set_text(txt, conn->user_agent_software);
-                    xmpp_stanza_add_child_ex(software, txt, 0);
-                    xmpp_stanza_add_child_ex(user_agent, software, 0);
-                }
-                if (conn->user_agent_device) {
-                    xmpp_stanza_t *device = xmpp_stanza_new(conn->ctx);
-                    if (!device) {
-                        xmpp_stanza_release(user_agent);
-                        xmpp_stanza_release(auth);
-                        return NULL;
-                    }
-                    xmpp_stanza_set_name(device, "device");
-                    xmpp_stanza_set_ns(device, XMPP_NS_SASL2);
-                    xmpp_stanza_t *txt = xmpp_stanza_new(conn->ctx);
-                    if (!txt) {
-                        xmpp_stanza_release(device);
-                        xmpp_stanza_release(user_agent);
-                        xmpp_stanza_release(auth);
-                        return NULL;
-                    }
-                    xmpp_stanza_set_text(txt, conn->user_agent_device);
-                    xmpp_stanza_add_child_ex(device, txt, 0);
-                    xmpp_stanza_add_child_ex(user_agent, device, 0);
-                }
-                xmpp_stanza_add_child_ex(auth, user_agent, 0);
-            }
-        } else {
-            xmpp_stanza_set_name(auth, "auth");
-            xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
-            if (initial_data) {
-                xmpp_stanza_set_text(inittxt, initial_data);
-                xmpp_stanza_add_child_ex(auth, inittxt, 0);
+    if (auth == NULL)
+        return NULL;
+
+    if (conn->sasl_support & SASL_MASK_SASL2) {
+        xmpp_stanza_set_name(auth, "authenticate");
+        xmpp_stanza_set_ns(auth, XMPP_NS_SASL2);
+        if (initial_data) {
+            if (_add_sasl2_child(conn->ctx, auth, "initial-response",
+                                 initial_data)) {
+                goto error_out;
             }
         }
-        xmpp_stanza_set_attribute(auth, "mechanism", mechanism);
+        if (conn->user_agent_id || conn->user_agent_software ||
+            conn->user_agent_device) {
+            user_agent = xmpp_stanza_new(conn->ctx);
+            if (!user_agent) {
+                goto error_out;
+            }
+            xmpp_stanza_set_name(user_agent, "user-agent");
+            xmpp_stanza_set_ns(user_agent, XMPP_NS_SASL2);
+            if (conn->user_agent_id) {
+                xmpp_stanza_set_attribute(user_agent, "id",
+                                          conn->user_agent_id);
+            }
+            if (conn->user_agent_software) {
+                if (_add_sasl2_child(conn->ctx, user_agent, "software",
+                                     conn->user_agent_software)) {
+                    goto error_out;
+                }
+            }
+            if (conn->user_agent_device) {
+                if (_add_sasl2_child(conn->ctx, user_agent, "device",
+                                     conn->user_agent_device)) {
+                    goto error_out;
+                }
+            }
+            xmpp_stanza_add_child_ex(auth, user_agent, 0);
+        }
     } else {
-        if (inittxt)
-            xmpp_stanza_release(inittxt);
+        xmpp_stanza_set_name(auth, "auth");
+        xmpp_stanza_set_ns(auth, XMPP_NS_SASL);
+        if (initial_data) {
+            xmpp_stanza_t *inittxt = xmpp_stanza_new(conn->ctx);
+            if (!inittxt) {
+                goto error_out;
+            }
+            xmpp_stanza_set_text(inittxt, initial_data);
+            xmpp_stanza_add_child_ex(auth, inittxt, 0);
+        }
     }
+    xmpp_stanza_set_attribute(auth, "mechanism", mechanism);
 
     return auth;
+
+error_out:
+    if (user_agent)
+        xmpp_stanza_release(user_agent);
+    if (auth)
+        xmpp_stanza_release(auth);
+    return NULL;
 }
 
 /* authenticate the connection
