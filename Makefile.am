@@ -189,6 +189,7 @@ STATIC_TESTS = \
 	tests/test_hash \
 	tests/test_jid \
 	tests/test_ctx \
+	tests/test_sasl \
 	tests/test_send_queue \
 	tests/test_serialize_sm \
 	tests/test_string \
@@ -264,6 +265,10 @@ tests_test_resolver_LDFLAGS = -static
 
 tests_test_rand_SOURCES = tests/test_rand.c tests/test.c src/sha1.c
 tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
+
+tests_test_sasl_SOURCES = tests/test_sasl.c src/sasl.c \
+	src/crypto.c src/hash.c src/jid.c src/md5.c src/scram.c src/sha1.c src/sha256.c src/sha512.c src/snprintf.c src/util.c
+tests_test_sasl_CFLAGS = -I$(top_srcdir)/src
 
 tests_test_scram_SOURCES = tests/test_scram.c tests/test.c src/sha1.c \
 	src/sha256.c src/sha512.c
