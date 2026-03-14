@@ -190,6 +190,7 @@ STATIC_TESTS = \
 	tests/test_jid \
 	tests/test_ctx \
 	tests/test_sasl \
+	tests/test_sasl2_syntax \
 	tests/test_send_queue \
 	tests/test_serialize_sm \
 	tests/test_string \
@@ -269,6 +270,15 @@ tests_test_rand_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_sasl_SOURCES = tests/test_sasl.c src/sasl.c \
 	src/crypto.c src/hash.c src/jid.c src/md5.c src/scram.c src/sha1.c src/sha256.c src/sha512.c src/snprintf.c src/util.c
 tests_test_sasl_CFLAGS = -I$(top_srcdir)/src
+
+tests_test_sasl2_syntax_SOURCES = tests/test_sasl2_syntax.c src/stanza.c src/util.c src/jid.c src/snprintf.c src/hash.c src/md5.c src/sha1.c src/sha256.c src/sha512.c src/crypto.c src/rand.c src/scram.c src/sasl.c
+tests_test_sasl2_syntax_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src $(PARSER_CFLAGS)
+if PARSER_EXPAT
+tests_test_sasl2_syntax_SOURCES += src/parser_expat.c
+else
+tests_test_sasl2_syntax_SOURCES += src/parser_libxml2.c
+endif
+tests_test_sasl2_syntax_LDADD = $(PARSER_LIBS)
 
 tests_test_scram_SOURCES = tests/test_scram.c tests/test.c src/sha1.c \
 	src/sha256.c src/sha512.c
