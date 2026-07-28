@@ -602,8 +602,18 @@ static int _make_scram_init_msg(struct scram_user_data *scram)
         l = strophe_snprintf(message, message_len, "p=%s,,n=%s,r=%s",
                              binding_type, node, buf);
     } else {
-        l = strophe_snprintf(message, message_len, "%c,,n=%s,r=%s",
-                             is_secured ? 'y' : 'n', node, buf);
+        char cb_flag = 'n';
+        const char *dummy_type;
+        size_t dummy_len;
+
+        /* determine if channel binding is supported before advertising it */
+        if (is_secured &&
+            tls_init_channel_binding(conn->tls, &dummy_type, &dummy_len) == 0) {
+            cb_flag = 'y';
+        }
+
+        l = strophe_snprintf(message, message_len, "%c,,n=%s,r=%s", cb_flag,
+                             node, buf);
     }
     if (l < 0 || (size_t)l >= message_len) {
         goto err_msg;
@@ -820,9 +830,11 @@ static void _auth(xmpp_conn_t *conn)
         scram_ctx->sasl_plus =
             scram_ctx->alg->mask & SASL_MASK_SCRAM_PLUS ? 1 : 0;
         if (_make_scram_init_msg(scram_ctx)) {
+            /* Gracefully drop the unsupported mechanism and try the next */
+            conn->sasl_support &= ~scram_ctx->alg->mask;
             strophe_free(conn->ctx, scram_ctx);
             xmpp_stanza_release(auth);
-            disconnect_mem_error(conn);
+            _auth(conn);
             return;
         }
 
@@ -1759,6 +1771,4 @@ void auth_handle_open_raw(xmpp_conn_t *conn)
 }
 
 void auth_handle_open_stub(xmpp_conn_t *conn)
-{
-    strophe_warn(conn->ctx, "auth", "Stub callback is called.");
-}
+{ strophe_warn(conn->ctx, "auth", "Stub callback is called."); }
