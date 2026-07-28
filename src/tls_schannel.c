@@ -479,7 +479,7 @@ int tls_read(struct conn_interface *intf, void *buff, size_t len)
             int read;
             tls->readybufferpos += bytes;
             newbuff += bytes;
-            read = tls_read(tls, newbuff, len - bytes);
+            read = tls_read(intf, newbuff, len - bytes);
 
             if (read == -1) {
                 if (tls_is_recoverable(intf, tls->lasterror)) {
@@ -553,7 +553,7 @@ int tls_read(struct conn_interface *intf, void *buff, size_t len)
                 tls->recvbufferpos = 0;
             }
 
-            return tls_read(tls, buff, len);
+            return tls_read(intf, buff, len);
         } else if (ret == SEC_E_INCOMPLETE_MESSAGE) {
             tls->lasterror = SEC_E_INCOMPLETE_MESSAGE;
             return -1;
@@ -611,7 +611,7 @@ int tls_write(struct conn_interface *intf, const void *buff, size_t len)
     int sent = 0, ret, remain = len;
     tls_t *tls = intf->conn->tls;
 
-    ret = tls_clear_pending_write(tls);
+    ret = tls_clear_pending_write(intf);
     if (ret <= 0) {
         return ret;
     }
@@ -667,9 +667,9 @@ int tls_write(struct conn_interface *intf, const void *buff, size_t len)
 
         tls->sendbufferpos = 0;
 
-        ret = tls_clear_pending_write(tls);
+        ret = tls_clear_pending_write(intf);
 
-        if (ret == -1 && !tls_is_recoverable(intf, tls_error(tls))) {
+        if (ret == -1 && !tls_is_recoverable(intf, tls_error(intf))) {
             return -1;
         }
 
@@ -682,7 +682,7 @@ int tls_write(struct conn_interface *intf, const void *buff, size_t len)
         }
 
         if (ret == 0 ||
-            (ret == -1 && tls_is_recoverable(intf, tls_error(tls)))) {
+            (ret == -1 && tls_is_recoverable(intf, tls_error(intf)))) {
             return sent;
         }
     }
