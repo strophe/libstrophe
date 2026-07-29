@@ -93,12 +93,14 @@ const struct hash_alg scram_sha512_plus = {
  * https://datatracker.ietf.org/doc/html/draft-ietf-kitten-password-storage
  */
 const struct hash_alg *scram_algs[] = {
+#if !defined(STROPHE_TLS_SCHANNEL)
     /* *1 */
     &scram_sha512_plus,
     /* *1 */
     &scram_sha256_plus,
     /* *1 */
     &scram_sha1_plus,
+#endif
     /* *1 */
     &scram_sha512,
     /* *1 */
