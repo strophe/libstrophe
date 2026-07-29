@@ -75,6 +75,12 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
     return -1;
 }
 
+int tls_supports_channel_binding(tls_t *tls)
+{
+    UNUSED(tls);
+    return 0;
+}
+
 int tls_init_channel_binding(tls_t *tls,
                              const char **binding_prefix,
                              size_t *binding_prefix_len)

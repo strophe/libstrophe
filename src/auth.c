@@ -602,8 +602,10 @@ static int _make_scram_init_msg(struct scram_user_data *scram)
         l = strophe_snprintf(message, message_len, "p=%s,,n=%s,r=%s",
                              binding_type, node, buf);
     } else {
-        l = strophe_snprintf(message, message_len, "%c,,n=%s,r=%s",
-                             is_secured ? 'y' : 'n', node, buf);
+        l = strophe_snprintf(
+            message, message_len, "%c,,n=%s,r=%s",
+            is_secured && tls_supports_channel_binding(conn->tls) ? 'y' : 'n',
+            node, buf);
     }
     if (l < 0 || (size_t)l >= message_len) {
         goto err_msg;

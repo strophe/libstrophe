@@ -45,6 +45,7 @@ unsigned int tls_id_on_xmppaddr_num(xmpp_conn_t *conn);
 
 xmpp_tlscert_t *tls_peer_cert(xmpp_conn_t *conn);
 int tls_set_credentials(tls_t *tls, const char *cafilename);
+int tls_supports_channel_binding(tls_t *tls);
 int tls_init_channel_binding(tls_t *tls,
                              const char **binding_prefix,
                              size_t *binding_prefix_len);

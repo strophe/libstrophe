@@ -793,6 +793,22 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
     return -1;
 }
 
+int tls_supports_channel_binding(tls_t *tls)
+{
+    switch (SSL_version(tls->ssl)) {
+    case SSL3_VERSION:
+    case TLS1_VERSION:
+    case TLS1_1_VERSION:
+    case TLS1_2_VERSION:
+#ifdef TLS1_3_VERSION
+    case TLS1_3_VERSION:
+#endif
+        return 1;
+    default:
+        return 0;
+    }
+}
+
 int tls_init_channel_binding(tls_t *tls,
                              const char **binding_prefix,
                              size_t *binding_prefix_len)

@@ -577,6 +577,20 @@ int tls_set_credentials(tls_t *tls, const char *cafilename)
     return err == GNUTLS_E_SUCCESS;
 }
 
+int tls_supports_channel_binding(tls_t *tls)
+{
+    switch (gnutls_protocol_get_version(tls->session)) {
+    case GNUTLS_SSL3:
+    case GNUTLS_TLS1_0:
+    case GNUTLS_TLS1_1:
+    case GNUTLS_TLS1_2:
+    case GNUTLS_TLS1_3:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
 int tls_init_channel_binding(tls_t *tls,
                              const char **binding_prefix,
                              size_t *binding_prefix_len)
