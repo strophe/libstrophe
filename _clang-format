@@ -1,8 +1,8 @@
 ﻿---
 AlignConsecutiveAssignments: 'false'
 AlignEscapedNewlines: Left
-AllowShortBlocksOnASingleLine: 'true'
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: 'false'
 BinPackParameters: 'false'
 BreakBeforeBraces: Linux
