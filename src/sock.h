@@ -39,12 +39,12 @@ void sock_shutdown(void);
 
 int sock_error(struct conn_interface *intf);
 
-xmpp_sock_t *sock_new(xmpp_conn_t *conn,
-                      const char *domain,
-                      const char *host,
-                      unsigned short port);
+int sock_new(xmpp_conn_t *conn,
+             const char *domain,
+             const char *host,
+             unsigned short port);
 void sock_free(xmpp_sock_t *xsock);
-sock_t sock_connect(xmpp_sock_t *xsock);
+void sock_connect(xmpp_sock_t *xsock);
 int sock_close(sock_t sock);
 
 int sock_set_blocking(sock_t sock);
