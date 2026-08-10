@@ -19,6 +19,7 @@
 
 #ifndef _WIN32
 #include <sys/select.h>
+#include <sys/socket.h>
 #else
 #include <winsock2.h>
 #endif
@@ -962,6 +963,19 @@ int tls_read(struct conn_interface *intf, void *buff, size_t len)
 
     ret = SSL_read(tls->ssl, buff, len);
     _tls_set_error(tls, ret <= 0 ? SSL_get_error(tls->ssl, ret) : 0);
+
+#ifndef _WIN32
+    if (tls->lasterror == SSL_ERROR_WANT_READ) {
+        char c;
+        ssize_t n = recv(intf->conn->sock, &c, 1, MSG_PEEK);
+        if (n < 0 && errno == ENOTCONN) {
+            strophe_debug(tls->ctx, "tls",
+                          "WANT_READ but connection is closed");
+            _tls_set_error(tls,
+                           SSL_ERROR_SYSCALL); // Set a more appropriate error
+        }
+    }
+#endif
 
     return ret;
 }

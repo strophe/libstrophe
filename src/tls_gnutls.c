@@ -14,7 +14,9 @@
  *  TLS implementation with GNUTLS
  */
 
+#include <errno.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gnutls/x509-ext.h>
@@ -664,6 +666,15 @@ int tls_read(struct conn_interface *intf, void *buff, size_t len)
 
     ret = gnutls_record_recv(tls->session, buff, len);
     tls->lasterror = ret < 0 ? ret : 0;
+
+    if (ret == GNUTLS_E_AGAIN || ret == GNUTLS_E_INTERRUPTED) {
+        char c;
+        ssize_t n = recv(intf->conn->sock, &c, 1, MSG_PEEK);
+        if (n < 0 && errno == ENOTCONN) {
+            strophe_debug(tls->ctx, "tls", "EAGAIN but connection is closed");
+            tls->lasterror = GNUTLS_E_PULL_ERROR;
+        }
+    }
 
     return ret;
 }
