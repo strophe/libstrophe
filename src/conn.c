@@ -1390,8 +1390,9 @@ int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
     memset(conn->sm_state, 0, sizeof(*conn->sm_state));
     conn->sm_state->ctx = conn->ctx;
 
+    conn->sm_state->bound_jid = strophe_strdup(conn->ctx, conn->jid);
     conn->sm_state->sm_support = 1;
-    conn->sm_state->sm_enabled = 1;
+    conn->sm_state->sm_enabled = 0;
     conn->sm_state->can_resume = 1;
     conn->sm_state->resume = 1;
 
@@ -1405,7 +1406,7 @@ int xmpp_conn_restore_sm_state(xmpp_conn_t *conn,
         goto err_reload;
 
     size_t id_len;
-    ret = sm_load_string(&sm, &conn->sm_state->id, &id_len);
+    ret = sm_load_string(&sm, &conn->sm_state->previd, &id_len);
     if (ret)
         goto err_reload;
 
@@ -1486,7 +1487,7 @@ static int sm_store_u32(unsigned char **next_,
 static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
 {
     if (!conn->sm_state->sm_support || !conn->sm_state->sm_enabled ||
-        !conn->sm_state->can_resume) {
+        !conn->sm_state->can_resume || !conn->sm_state->id) {
         *buf = NULL;
         return 0;
     }
@@ -1572,13 +1573,13 @@ static size_t sm_state_serialize(xmpp_conn_t *conn, unsigned char **buf)
 
 err_serialize:
     strophe_error(conn->ctx, "conn", "Can't serialize more data, buffer full");
-    strophe_free(conn->ctx, buf);
+    strophe_free(conn->ctx, *buf);
     return 0;
 }
 
 void trigger_sm_callback(xmpp_conn_t *conn)
 {
-    if (!conn || !conn->sm_callback)
+    if (!conn || !conn->sm_callback || !conn->sm_state->sm_enabled)
         return;
 
     unsigned char *buf;
