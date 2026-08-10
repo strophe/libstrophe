@@ -799,7 +799,9 @@ static void _auth(xmpp_conn_t *conn)
             conn->ctx, "auth",
             "Password hasn't been set, and SASL ANONYMOUS unsupported.");
         xmpp_disconnect(conn);
-    } else if (conn->sasl_support & SASL_MASK_SCRAM) {
+    } else if ((conn->sasl_support & SASL_MASK_SCRAM_PLUS) ||
+               ((conn->sasl_support & SASL_MASK_SCRAM_WEAK) &&
+                !conn->only_strong_auth)) {
         size_t n;
         scram_ctx = strophe_alloc(conn->ctx, sizeof(*scram_ctx));
         memset(scram_ctx, 0, sizeof(*scram_ctx));
@@ -857,7 +859,8 @@ static void _auth(xmpp_conn_t *conn)
 
         /* SASL algorithm was tried, unset flag */
         conn->sasl_support &= ~scram_ctx->alg->mask;
-    } else if (conn->sasl_support & SASL_MASK_DIGESTMD5) {
+    } else if ((conn->sasl_support & SASL_MASK_DIGESTMD5) &&
+               conn->weak_auth_enabled) {
         auth = _make_sasl_auth(conn, "DIGEST-MD5");
         if (!auth) {
             disconnect_mem_error(conn);
@@ -871,7 +874,8 @@ static void _auth(xmpp_conn_t *conn)
 
         /* SASL DIGEST-MD5 was tried, unset flag */
         conn->sasl_support &= ~SASL_MASK_DIGESTMD5;
-    } else if (conn->sasl_support & SASL_MASK_PLAIN) {
+    } else if ((conn->sasl_support & SASL_MASK_PLAIN) &&
+               conn->weak_auth_enabled) {
         auth = _make_sasl_auth(conn, "PLAIN");
         if (!auth) {
             disconnect_mem_error(conn);
