@@ -80,8 +80,8 @@ int main(int argc, char **argv)
     conn = xmpp_conn_new(ctx);
 
     /* setup authentication information */
-    xmpp_conn_set_jid(conn, jid);
-    xmpp_conn_set_pass(conn, pass);
+    xmpp_conn_set_string(conn, XMPP_SETTING_JID, jid);
+    xmpp_conn_set_string(conn, XMPP_SETTING_PASS, pass);
 
     /* initiate connection */
     xmpp_connect_component(conn, host, port, conn_handler, ctx);

@@ -331,27 +331,31 @@ int main(int argc, char **argv)
     xmpp_conn_set_flags(conn, flags);
     /* configure TCP keepalive (optional) */
     if (tcp_keepalive)
-        xmpp_conn_set_sockopt_callback(conn, sockopt_cb);
+        xmpp_conn_set_functionpointer(conn, XMPP_SETTING_SOCKOPT_CALLBACK,
+                                      sockopt_cb);
 
     /* ask for a password if key is protected */
-    xmpp_conn_set_password_callback(conn, password_callback, NULL);
+    xmpp_conn_set_functionpointer(conn, XMPP_SETTING_PASSWORD_CALLBACK,
+                                  password_callback);
     /* try at max 3 times in case the user enters the password wrong */
-    xmpp_conn_set_password_retries(conn, 3);
+    xmpp_conn_set_int(conn, XMPP_SETTING_PASSWORD_RETRIES, 3);
     /* setup authentication information */
     if (key) {
-        xmpp_conn_set_client_cert(conn, cert, key);
+        xmpp_conn_set_string(conn, XMPP_SETTING_CLIENT_CERT, cert);
+        xmpp_conn_set_string(conn, XMPP_SETTING_CLIENT_KEY, key);
     }
     if (jid)
-        xmpp_conn_set_jid(conn, jid);
+        xmpp_conn_set_string(conn, XMPP_SETTING_JID, jid);
     if (password)
-        xmpp_conn_set_pass(conn, password);
+        xmpp_conn_set_string(conn, XMPP_SETTING_PASS, password);
 
     if (certfail)
-        xmpp_conn_set_certfail_handler(conn, certfail_handler);
+        xmpp_conn_set_functionpointer(conn, XMPP_SETTING_CERTFAIL_HANDLER,
+                                      certfail_handler);
     if (capath)
-        xmpp_conn_set_capath(conn, capath);
+        xmpp_conn_set_string(conn, XMPP_SETTING_CAPATH, capath);
     if (cafile)
-        xmpp_conn_set_cafile(conn, cafile);
+        xmpp_conn_set_string(conn, XMPP_SETTING_CAFILE, cafile);
 
     /* initiate connection */
     if (xmpp_connect_client(conn, host, port, conn_handler, ctx) == XMPP_EOK) {
