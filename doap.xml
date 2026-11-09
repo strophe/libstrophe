@@ -42,6 +42,7 @@
 
     <implements rdf:resource='https://xmpp.org/rfcs/rfc6120.html' />
     <implements rdf:resource='https://xmpp.org/rfcs/rfc6121.html' />
+    <implements rdf:resource='https://xmpp.org/rfcs/rfc7622.html' />
 
     <implements>
       <xmpp:SupportedXep>
