@@ -40,6 +40,54 @@
 
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-library" />
 
+    <implements rdf:resource='https://xmpp.org/rfcs/rfc6120.html' />
+    <implements rdf:resource='https://xmpp.org/rfcs/rfc6121.html' />
+
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0077.html' />
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:version>2.4</xmpp:version>
+        <xmpp:since>0.10.0</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0114.html' />
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:version>1.6</xmpp:version>
+        <xmpp:since>0.8.8</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0138.html' />
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:version>2.1</xmpp:version>
+        <xmpp:since>0.13.0</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0178.html' />
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:version>1.2</xmpp:version>
+        <xmpp:since>0.11.0</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0198.html' />
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:version>1.6.3</xmpp:version>
+        <xmpp:since>0.11.0</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+
     <release>
       <Version>
         <revision>0.14.0</revision>
