@@ -29,6 +29,7 @@
     <bug-database rdf:resource="https://github.com/strophe/libstrophe/issues" />
     <developer-forum rdf:resource="https://groups.google.com/g/libstrophe" />
     <support-forum rdf:resource="https://groups.google.com/g/libstrophe" />
+    <mailing-list rdf:resource="mailto:libstrophe@googlegroups.com" />
 
     <license
       rdf:resource="https://github.com/strophe/libstrophe/blob/master/COPYING" />
