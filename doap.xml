@@ -40,9 +40,9 @@
 
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-library" />
 
-    <implements rdf:resource='https://xmpp.org/rfcs/rfc6120.html' />
-    <implements rdf:resource='https://xmpp.org/rfcs/rfc6121.html' />
-    <implements rdf:resource='https://xmpp.org/rfcs/rfc7622.html' />
+    <implements rdf:resource='https://www.rfc-editor.org/info/rfc6120/' />
+    <implements rdf:resource='https://www.rfc-editor.org/info/rfc6121/' />
+    <implements rdf:resource='https://www.rfc-editor.org/info/rfc7622/' />
 
     <implements>
       <xmpp:SupportedXep>
