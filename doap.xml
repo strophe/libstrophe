@@ -2,6 +2,7 @@
 <?xml-model href="http://www.w3.org/2000/01/rdf-schema#"?>
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   xmlns="http://usefulinc.com/ns/doap#"
+  xmlns:foaf="http://xmlns.com/foaf/0.1/"
   xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#"
   xmlns:schema="https://schema.org/">
   <Project>
@@ -124,6 +125,14 @@
           rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.14.0/libstrophe-0.14.0.tar.gz" />
       </Version>
     </release>
+
+    <maintainer>
+		  <foaf:Person>
+			  <foaf:name>Steffen “sjaeckel” Jaeckel</foaf:name>
+        <foaf:mbox>mailto:gh@jaeckel.eu</foaf:mbox>
+        <foaf:homepage rdf:resource="https://github.com/sjaeckel" />
+      </foaf:Person>
+    </maintainer>
 
     <repository>
       <GitRepository>
