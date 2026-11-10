@@ -37,8 +37,6 @@
 
     <programming-language>C</programming-language>
 
-    <os>Linux</os>
-
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-library" />
 
     <implements rdf:resource='https://www.rfc-editor.org/info/rfc6120/' />
