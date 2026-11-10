@@ -124,5 +124,13 @@
           rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.14.0/libstrophe-0.14.0.tar.gz" />
       </Version>
     </release>
+
+    <repository>
+      <GitRepository>
+        <location rdf:resource="https://github.com/strophe/libstrophe.git"/>
+        <browse rdf:resource="https://github.com/strophe/libstrophe"/>
+      </GitRepository>
+    </repository>
+
   </Project>
 </rdf:RDF>
