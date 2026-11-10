@@ -132,6 +132,9 @@
       </foaf:Person>
     </maintainer>
 
+    <audience xml:lang="en">Developers</audience>
+    <audience xml:lang="fr">Développeurs</audience>
+
     <repository>
       <GitRepository>
         <location rdf:resource="https://github.com/strophe/libstrophe.git"/>
