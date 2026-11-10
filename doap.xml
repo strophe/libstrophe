@@ -25,7 +25,7 @@
 
     <homepage rdf:resource="https://strophe.im/libstrophe/" />
     <download-page rdf:resource="https://github.com/strophe/libstrophe/releases" />
-    <schema:documentation rdf:resource="https://strophe.im/libstrophe/doc/0.13.0" />
+    <documentation rdf:resource="https://strophe.im/libstrophe/doc/0.13.0" />
     <bug-database rdf:resource="https://github.com/strophe/libstrophe/issues" />
     <developer-forum rdf:resource="https://groups.google.com/g/libstrophe" />
     <support-forum rdf:resource="https://groups.google.com/g/libstrophe" />
@@ -40,13 +40,13 @@
 
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-library" />
 
-    <implements rdf:resource='https://www.rfc-editor.org/info/rfc6120/' />
-    <implements rdf:resource='https://www.rfc-editor.org/info/rfc6121/' />
-    <implements rdf:resource='https://www.rfc-editor.org/info/rfc7622/' />
+    <implements rdf:resource="https://www.rfc-editor.org/info/rfc6120/" />
+    <implements rdf:resource="https://www.rfc-editor.org/info/rfc6121/" />
+    <implements rdf:resource="https://www.rfc-editor.org/info/rfc7622/" />
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0030.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0030.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>2.5.0</xmpp:version>
         <xmpp:since>0.7.0</xmpp:since>
@@ -55,7 +55,7 @@
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0077.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0077.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>2.4</xmpp:version>
         <xmpp:since>0.10.0</xmpp:since>
@@ -64,7 +64,7 @@
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0078.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0078.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>2.5</xmpp:version>
         <xmpp:since>0.7.0</xmpp:since>
@@ -73,7 +73,7 @@
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0114.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0114.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>1.6</xmpp:version>
         <xmpp:since>0.8.8</xmpp:since>
@@ -82,7 +82,7 @@
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0138.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0138.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>2.1</xmpp:version>
         <xmpp:since>0.13.0</xmpp:since>
@@ -91,7 +91,7 @@
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0178.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0178.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>1.2</xmpp:version>
         <xmpp:since>0.11.0</xmpp:since>
@@ -100,7 +100,7 @@
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0198.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0198.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>1.6.3</xmpp:version>
         <xmpp:since>0.11.0</xmpp:since>
@@ -109,7 +109,7 @@
 
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0453.html' />
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0453.html" />
         <xmpp:status>complete</xmpp:status>
         <xmpp:version>0.1.2</xmpp:version>
         <xmpp:since>0.14.0</xmpp:since>
@@ -126,8 +126,8 @@
     </release>
 
     <maintainer>
-		  <foaf:Person>
-			  <foaf:name>Steffen “sjaeckel” Jaeckel</foaf:name>
+      <foaf:Person>
+        <foaf:name>Steffen “sjaeckel” Jaeckel</foaf:name>
         <foaf:mbox rdf:resource="mailto:gh@jaeckel.eu" />
         <foaf:homepage rdf:resource="https://github.com/sjaeckel" />
       </foaf:Person>
