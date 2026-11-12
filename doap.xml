@@ -31,7 +31,7 @@
     <mailing-list rdf:resource="mailto:libstrophe@googlegroups.com" />
 
     <license
-      rdf:resource="https://github.com/strophe/libstrophe/blob/master/COPYING" />
+      rdf:resource="https://github.com/strophe/libstrophe/blob/master/LICENSE.txt" />
 
     <language>en</language>
 
