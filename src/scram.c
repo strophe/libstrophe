@@ -30,6 +30,11 @@
 
 #define HMAC_BLOCK_SIZE_MAX 128
 
+/* Maximum length of a salt SCRAM_Hi() can process. The salt is concatenated
+ * with INT(1) into a buffer on the stack, see SCRAM_Hi().
+ */
+#define SCRAM_SALT_MAX 124
+
 static const uint8_t ipad = 0x36;
 static const uint8_t opad = 0x5C;
 
@@ -163,26 +168,31 @@ static void crypto_HMAC(const struct hash_alg *alg,
     alg->final((void *)&ctx, digest);
 }
 
-static void SCRAM_Hi(const struct hash_alg *alg,
-                     const uint8_t *text,
-                     size_t len,
-                     const uint8_t *salt,
-                     size_t salt_len,
-                     uint32_t i,
-                     uint8_t *digest)
+static int SCRAM_Hi(const struct hash_alg *alg,
+                    const uint8_t *text,
+                    size_t len,
+                    const uint8_t *salt,
+                    size_t salt_len,
+                    uint32_t i,
+                    uint8_t *digest)
 {
-    size_t k;
-    uint32_t j;
-    uint8_t tmp[128];
-
     static uint8_t int1[] = {0x0, 0x0, 0x0, 0x1};
 
-    /* assume salt + INT(1) isn't longer than sizeof(tmp) */
-    assert(salt_len <= sizeof(tmp) - sizeof(int1));
+    size_t k;
+    uint32_t j;
+    uint8_t tmp[SCRAM_SALT_MAX + sizeof(int1)];
+
+    /* The salt is attacker-controlled, it comes from the 's=' attribute of
+     * the server-first-message, therefore this has to be checked at runtime
+     * instead of with assert().
+     */
+    if (salt_len > SCRAM_SALT_MAX) {
+        return -1;
+    }
 
     memset(digest, 0, alg->digest_size);
     if (i == 0) {
-        return;
+        return 0;
     }
 
     memcpy(tmp, salt, salt_len);
@@ -198,23 +208,29 @@ static void SCRAM_Hi(const struct hash_alg *alg,
             digest[k] ^= tmp[k];
         }
     }
+
+    return 0;
 }
 
-void SCRAM_ClientKey(const struct hash_alg *alg,
-                     const uint8_t *password,
-                     size_t len,
-                     const uint8_t *salt,
-                     size_t salt_len,
-                     uint32_t i,
-                     uint8_t *key)
+int SCRAM_ClientKey(const struct hash_alg *alg,
+                    const uint8_t *password,
+                    size_t len,
+                    const uint8_t *salt,
+                    size_t salt_len,
+                    uint32_t i,
+                    uint8_t *key)
 {
     uint8_t salted[SCRAM_DIGEST_SIZE];
 
     /* XXX: Normalize(password) is omitted */
 
-    SCRAM_Hi(alg, password, len, salt, salt_len, i, salted);
+    if (SCRAM_Hi(alg, password, len, salt, salt_len, i, salted) != 0) {
+        return -1;
+    }
     crypto_HMAC(alg, salted, alg->digest_size, (uint8_t *)"Client Key",
                 strlen("Client Key"), key);
+
+    return 0;
 }
 
 void SCRAM_ClientSignature(const struct hash_alg *alg,
