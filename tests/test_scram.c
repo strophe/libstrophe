@@ -68,11 +68,47 @@ static void test_df(const struct hash_alg *alg)
     printf("Derivation function SCRAM_Hi tests for %s.\n", alg->scram_name);
     for (i = 0; i < ARRAY_SIZE(df_vectors); ++i) {
         printf("Test #%d: ", (int)i + 1);
-        SCRAM_Hi(alg, (uint8_t *)df_vectors[i].P, df_vectors[i].P_len,
-                 (uint8_t *)df_vectors[i].S, df_vectors[i].S_len,
-                 df_vectors[i].c, dk);
+        ENSURE_EQ(0, SCRAM_Hi(alg, (uint8_t *)df_vectors[i].P,
+                              df_vectors[i].P_len, (uint8_t *)df_vectors[i].S,
+                              df_vectors[i].S_len, df_vectors[i].c, dk));
         s = test_bin_to_hex(dk, alg->digest_size);
         COMPARE(df_vectors[i].DK, s);
+        printf("ok\n");
+    }
+}
+
+/*
+ * CVE-2026-112063: a malicious server could send a 's=' attribute in its
+ * server-first-message that decodes to a salt longer than the buffer
+ * SCRAM_Hi() concatenates it into. An oversized salt has to be rejected
+ * instead of overflowing that buffer.
+ */
+static const struct {
+    size_t salt_len;
+    int rc;
+} salt_vectors[] = {
+    {SCRAM_SALT_MAX, 0},
+    {SCRAM_SALT_MAX + 1, -1},
+};
+
+static void test_salt_len(const struct hash_alg *alg)
+{
+    size_t i;
+    uint8_t salt[SCRAM_SALT_MAX + 1];
+    uint8_t dk[SCRAM_DIGEST_SIZE];
+    uint8_t key[SCRAM_DIGEST_SIZE];
+
+    printf("Salt length tests for %s.\n", alg->scram_name);
+    memset(salt, 'A', sizeof(salt));
+    for (i = 0; i < ARRAY_SIZE(salt_vectors); ++i) {
+        printf("Test #%d: ", (int)i + 1);
+        ENSURE_EQ(salt_vectors[i].rc,
+                  SCRAM_Hi(alg, (uint8_t *)"password", 8, salt,
+                           salt_vectors[i].salt_len, 1, dk));
+        /* the result has to be propagated to the caller */
+        ENSURE_EQ(salt_vectors[i].rc,
+                  SCRAM_ClientKey(alg, (uint8_t *)"password", 8, salt,
+                                  salt_vectors[i].salt_len, 1, key));
         printf("ok\n");
     }
 }
@@ -121,9 +157,9 @@ static void test_scram(const struct hash_alg *alg)
                  scram_vectors[i].challenge, scram_vectors[i].response);
         test_hex_to_bin(scram_vectors[i].salt, salt, &salt_len);
 
-        SCRAM_ClientKey(alg, (uint8_t *)scram_vectors[i].password,
-                        strlen(scram_vectors[i].password), salt, salt_len,
-                        scram_vectors[i].i, key);
+        ENSURE_EQ(0, SCRAM_ClientKey(alg, (uint8_t *)scram_vectors[i].password,
+                                     strlen(scram_vectors[i].password), salt,
+                                     salt_len, scram_vectors[i].i, key));
         SCRAM_ClientSignature(alg, key, (uint8_t *)auth, strlen(auth), sign);
         for (j = 0; j < alg->digest_size; j++) {
             sign[j] ^= key[j];
@@ -207,6 +243,9 @@ static void test_hmac(const struct hash_alg *alg)
 int main()
 {
     test_df(&scram_sha1);
+    test_salt_len(&scram_sha1);
+    test_salt_len(&scram_sha256);
+    test_salt_len(&scram_sha512);
     test_scram(&scram_sha1);
     test_hmac(&scram_sha1);
     test_hmac(&scram_sha256);
