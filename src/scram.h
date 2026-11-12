@@ -37,13 +37,18 @@ struct hash_alg {
 extern const struct hash_alg *scram_algs[];
 extern const size_t scram_algs_num;
 
-void SCRAM_ClientKey(const struct hash_alg *alg,
-                     const uint8_t *password,
-                     size_t len,
-                     const uint8_t *salt,
-                     size_t salt_len,
-                     uint32_t i,
-                     uint8_t *key);
+/** Compute the SCRAM ClientKey.
+ *
+ *  @return 0 on success, -1 if the salt is too long to be processed. 'key' is
+ *      left untouched in the error case.
+ */
+int SCRAM_ClientKey(const struct hash_alg *alg,
+                    const uint8_t *password,
+                    size_t len,
+                    const uint8_t *salt,
+                    size_t salt_len,
+                    uint32_t i,
+                    uint8_t *key);
 
 void SCRAM_ClientSignature(const struct hash_alg *alg,
                            const uint8_t *ClientKey,

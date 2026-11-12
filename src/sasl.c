@@ -454,8 +454,11 @@ char *sasl_scram(xmpp_ctx_t *ctx,
         goto out_auth;
     }
 
-    SCRAM_ClientKey(alg, (uint8_t *)password, strlen(password), (uint8_t *)sval,
-                    sval_len, (uint32_t)ival, key);
+    if (SCRAM_ClientKey(alg, (uint8_t *)password, strlen(password),
+                        (uint8_t *)sval, sval_len, (uint32_t)ival, key) != 0) {
+        strophe_error(ctx, "SASL", "can't process the salt sent by the server");
+        goto out_auth;
+    }
     SCRAM_ClientSignature(alg, key, (uint8_t *)auth, strlen(auth), sign);
     SCRAM_ClientProof(alg, key, sign, sign);
 
