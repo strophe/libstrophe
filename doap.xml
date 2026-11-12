@@ -122,6 +122,60 @@
         <file-release
           rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.14.0/libstrophe-0.14.0.tar.gz" />
       </Version>
+      <Version>
+        <revision>0.13.1</revision>
+        <created>2024-02-21</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.13.1/libstrophe-0.13.1.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.13.0</revision>
+        <created>2024-02-01</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.13.0/libstrophe-0.13.0.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.12.3</revision>
+        <created>2023-08-02</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.12.3/libstrophe-0.12.3.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.12.2</revision>
+        <created>2022-08-08</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.12.2/libstrophe-0.12.2.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.12.1</revision>
+        <created>2022-07-05</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.12.1/libstrophe-0.12.1.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.12.0</revision>
+        <created>2022-05-09</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.12.0/libstrophe-0.12.0.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.11.0</revision>
+        <created>2021-10-28</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.11.0/libstrophe-0.11.0.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.10.1</revision>
+        <created>2020-12-24</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.10.1/libstrophe-0.10.1.tar.gz" />
+      </Version>
+      <Version>
+        <revision>0.10.0</revision>
+        <created>2020-09-15</created>
+        <file-release
+          rdf:resource="https://github.com/strophe/libstrophe/releases/download/0.10.0/libstrophe-0.10.0.tar.gz" />
+      </Version>
     </release>
 
     <maintainer>
