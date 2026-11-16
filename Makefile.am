@@ -309,10 +309,12 @@ tests_test_xmppaddr_CFLAGS = $(STROPHE_FLAGS) -I$(top_srcdir)/src
 tests_test_xmppaddr_LDADD = $(STROPHE_LIBS)
 tests_test_xmppaddr_LDFLAGS = -static
 
+CLANG_FORMAT = clang-format
+
 format:
 	@echo "   * run clang-format on all sources"
 	@dos2unix -k -q $(top_srcdir)/src/*.[ch] $(top_srcdir)/*.h $(top_srcdir)/tests/*.[ch] $(top_srcdir)/examples/*.c
-	@clang-format -i $(top_srcdir)/src/*.[ch] $(top_srcdir)/*.h $(top_srcdir)/tests/*.[ch] $(top_srcdir)/examples/*.c
+	@$(CLANG_FORMAT) -i $(top_srcdir)/src/*.[ch] $(top_srcdir)/*.h $(top_srcdir)/tests/*.[ch] $(top_srcdir)/examples/*.c
 
 if COVERAGE
 MOSTLYCLEANFILES = src/*.gcno src/*.gcda coverage.info
