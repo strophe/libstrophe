@@ -20,7 +20,6 @@
 /** @defgroup Encodings Encodings
  */
 
-#include <assert.h>
 #include <string.h> /* memset, memcpy */
 
 #include "common.h"  /* strophe_alloc */
@@ -57,7 +56,7 @@ static char *digest_to_string_alloc(xmpp_ctx_t *ctx, const uint8_t *digest)
     s = strophe_alloc(ctx, slen);
     if (s) {
         s = digest_to_string(digest, s, slen);
-        assert(s != NULL);
+        STROPHE_ASSERT(s != NULL, NULL);
     }
     return s;
 }
@@ -212,7 +211,8 @@ char *xmpp_sha1_to_string_alloc(xmpp_sha1_t *sha1)
  */
 void xmpp_sha1_to_digest(xmpp_sha1_t *sha1, unsigned char *digest)
 {
-    assert(SHA1_DIGEST_SIZE == XMPP_SHA1_DIGEST_SIZE);
+    STROPHE_STATIC_ASSERT(SHA1_DIGEST_SIZE == XMPP_SHA1_DIGEST_SIZE,
+                          "SHA1 digest size mismatch");
     memcpy(digest, sha1->digest, SHA1_DIGEST_SIZE);
 }
 

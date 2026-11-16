@@ -40,6 +40,21 @@
 #endif
 #endif
 
+#if !defined(STROPHE_ASSERT)
+#if defined(NDEBUG)
+#define STROPHE_ASSERT(x, r) \
+    if (!(x))                \
+        return (r);
+#define STROPHE_ASSERTVD(x) \
+    if (!(x))               \
+        return;
+#else
+#include <assert.h>
+#define STROPHE_ASSERT(x, r) assert(x)
+#define STROPHE_ASSERTVD(x) assert(x)
+#endif
+#endif /* STROPHE_ASSERT */
+
 /** handlers **/
 #if (__STDC_VERSION__ >= 202000L)
 typedef void *xmpp_void_handler;

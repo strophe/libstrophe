@@ -17,7 +17,6 @@
  *  SCRAM-SHA1 helper functions.
  */
 
-#include <assert.h>
 #include <string.h>
 
 #include "common.h"
@@ -136,7 +135,7 @@ static void crypto_HMAC(const struct hash_alg *alg,
     size_t i;
     union common_hash_ctx ctx;
 
-    assert(alg->digest_size <= HMAC_BLOCK_SIZE_MAX);
+    STROPHE_ASSERTVD(alg->digest_size <= HMAC_BLOCK_SIZE_MAX);
     blocksize = alg->digest_size < 48 ? 64 : 128;
 
     memset(key_pad, 0, blocksize);
@@ -178,7 +177,7 @@ static void SCRAM_Hi(const struct hash_alg *alg,
     static uint8_t int1[] = {0x0, 0x0, 0x0, 0x1};
 
     /* assume salt + INT(1) isn't longer than sizeof(tmp) */
-    assert(salt_len <= sizeof(tmp) - sizeof(int1));
+    STROPHE_ASSERTVD(salt_len <= sizeof(tmp) - sizeof(int1));
 
     memset(digest, 0, alg->digest_size);
     if (i == 0) {

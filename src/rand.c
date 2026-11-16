@@ -20,7 +20,6 @@
 /** @defgroup Random Pseudo-random number generator
  */
 
-#include <assert.h>
 #include <string.h> /* memeset */
 #include <time.h>   /* clock, time */
 
@@ -82,7 +81,7 @@ arr_add(uint8_t *arr1, size_t arr1_len, uint8_t *arr2, size_t arr2_len)
     uint32_t acc;
     uint32_t carry = 0;
 
-    assert(arr1_len >= arr2_len);
+    STROPHE_ASSERTVD(arr1_len >= arr2_len);
 
     for (i = 1; (i <= arr2_len) || (carry != 0 && i <= arr1_len); ++i) {
         acc = (uint32_t)arr1[arr1_len - i] + carry;
@@ -114,8 +113,8 @@ static void Hash_df(uint8_t *input_string,
     size_t i;
     size_t offset;
 
-    assert(no_of_bytes_to_return <= sizeof(temp));
-    assert(input_string_len + 5 <= sizeof(conj));
+    STROPHE_ASSERTVD(no_of_bytes_to_return <= sizeof(temp));
+    STROPHE_ASSERTVD(input_string_len + 5 <= sizeof(conj));
 
     len = div_round_up(no_of_bytes_to_return, outlen);
     for (i = 1; i <= len; ++i) {
@@ -141,9 +140,9 @@ static void Hash_DRBG_Instantiate(Hash_DRBG_CTX *ctx,
     uint8_t seed0[seedlen + 1];
     uint8_t *seed = seed0 + 1;
 
-    assert(entropy_input_len <= ENTROPY_MAX);
-    assert(nonce_len <= NONCE_MAX);
-    assert(nonce != NULL || nonce_len == 0);
+    STROPHE_ASSERTVD(entropy_input_len <= ENTROPY_MAX);
+    STROPHE_ASSERTVD(nonce_len <= NONCE_MAX);
+    STROPHE_ASSERTVD(nonce != NULL || nonce_len == 0);
 
     memcpy(seed_material, entropy_input, entropy_input_len);
     if (nonce != NULL)
@@ -165,7 +164,7 @@ static void Hash_DRBG_Reseed(Hash_DRBG_CTX *ctx,
     uint8_t seed0[seedlen + 1];
     uint8_t *seed = seed0 + 1;
 
-    assert(entropy_input_len <= ENTROPY_MAX);
+    STROPHE_ASSERTVD(entropy_input_len <= ENTROPY_MAX);
 
     seed_material[0] = 1;
     memcpy(seed_material + 1, ctx->V, seedlen);
@@ -188,7 +187,7 @@ Hashgen(uint8_t *V, uint8_t *output, size_t requested_number_of_bytes)
     size_t i;
     size_t offset;
 
-    assert(requested_number_of_bytes <= sizeof(W));
+    STROPHE_ASSERTVD(requested_number_of_bytes <= sizeof(W));
 
     m = div_round_up(requested_number_of_bytes, outlen);
     memcpy(data, V, seedlen);
@@ -298,7 +297,7 @@ void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len)
         if (rc == RESEED_NEEDED) {
             xmpp_rand_reseed(rand);
             rc = Hash_DRBG_Generate(&rand->ctx, (uint8_t *)output + tot, gen);
-            assert(rc == 0);
+            STROPHE_ASSERTVD(rc == 0);
         }
         tot += gen;
     }
@@ -338,13 +337,13 @@ xmpp_rand_t *xmpp_rand_new(xmpp_ctx_t *ctx)
 void xmpp_rand_free(xmpp_ctx_t *ctx, xmpp_rand_t *rand)
 {
     UNUSED(ctx);
-    assert(rand == &_xmpp_rand);
+    STROPHE_ASSERTVD(rand == &_xmpp_rand);
 }
 
 void xmpp_rand_bytes(xmpp_rand_t *rand, unsigned char *output, size_t len)
 {
-    assert(rand == &_xmpp_rand);
-    assert(_read_getrandom(output, len) == 0);
+    STROPHE_ASSERTVD(rand == &_xmpp_rand);
+    STROPHE_ASSERTVD(_read_getrandom(output, len) == 0);
 }
 
 #endif
