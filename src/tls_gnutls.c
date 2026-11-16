@@ -383,7 +383,8 @@ static int _tls_verify(gnutls_session_t session)
     if (gnutls_certificate_type_get(session) != GNUTLS_CRT_X509)
         return -1;
 
-    if (gnutls_certificate_verify_peers2(session, &status) < 0) {
+    if (gnutls_certificate_verify_peers3(session, tls->conn->domain, &status) <
+        0) {
         strophe_error(tls->ctx, "tls", "Verify peers failed");
         return -1;
     }
