@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "strophe.h"
 #include "common.h"
@@ -428,7 +429,13 @@ char *sasl_scram(xmpp_ctx_t *ctx,
     if (!sval) {
         goto out;
     }
+    errno = 0;
     ival = strtol(i, &saveptr, 10);
+    if (saveptr == s || *saveptr != '\0')
+        goto out;
+    if (errno == ERANGE || ival < alg->min_iteration_count ||
+        ival > SCRAM_MAX_ITERATION_COUNT)
+        goto out;
 
     /* "c=<channel_binding>," + r + ",p=" + sign_b64 + '\0' */
     response_len = 3 + strlen(channel_binding) + strlen(r) + 3 +

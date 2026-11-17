@@ -23,11 +23,13 @@
 /* Maximum possible digest size. Used for buffers allocation. */
 #include "sha512.h"
 #define SCRAM_DIGEST_SIZE SHA512_DIGEST_SIZE
+#define SCRAM_MAX_ITERATION_COUNT 20000000
 
 struct hash_alg {
     const char *scram_name;
     int mask;
     size_t digest_size;
+    long min_iteration_count;
     void (*hash)(const uint8_t *, size_t, uint8_t *);
     void (*init)(void *);
     void (*update)(void *, const uint8_t *, size_t);
