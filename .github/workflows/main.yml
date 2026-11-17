@@ -26,7 +26,7 @@ jobs:
         id: check
         run: |
           git fetch origin master
-          if git merge-base --is-ancestor HEAD origin/master; then
+          if [[ "$GITHUB_REF_NAME" != "master" ]] && git merge-base --is-ancestor HEAD origin/master; then
             echo "should_run=false" >> "$GITHUB_OUTPUT"
           else
             echo "should_run=true" >> "$GITHUB_OUTPUT"
