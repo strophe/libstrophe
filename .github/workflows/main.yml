@@ -13,8 +13,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-containment:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check ancestry
+        id: check
+        run: |
+          git fetch origin master
+          if git merge-base --is-ancestor HEAD origin/master; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   linux-tests:
     runs-on: ubuntu-24.04
+    needs: check-containment
+    if: needs.check-containment.outputs.should_run == 'true'
     strategy:
       matrix:
         valgrind:
@@ -51,6 +72,8 @@ jobs:
 
   xssl-tests:
     runs-on: ubuntu-24.04
+    needs: check-containment
+    if: needs.check-containment.outputs.should_run == 'true'
     strategy:
       matrix:
         xssl_versions:
@@ -123,6 +146,8 @@ jobs:
 
   release-test:
     runs-on: ubuntu-22.04
+    needs: check-containment
+    if: needs.check-containment.outputs.should_run == 'true'
     name: Check if release would work
     steps:
       - uses: actions/checkout@v2
@@ -154,6 +179,8 @@ jobs:
 
   code-style:
     runs-on: ubuntu-24.04
+    needs: check-containment
+    if: needs.check-containment.outputs.should_run == 'true'
     name: Check coding style
     continue-on-error: true
     steps:
